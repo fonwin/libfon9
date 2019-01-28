@@ -63,7 +63,8 @@ public:
    //--------------------------------------------------------------------------//
 
    struct FdrEventAux {
-      FdrSocket*  IsNeedsUpdateFdrEvent_;
+      using FdrSocketSP = intrusive_ptr<FdrSocket>;
+      FdrSocketSP IsNeedsUpdateFdrEvent_;
       FdrEventAux() : IsNeedsUpdateFdrEvent_{nullptr} {
       }
       ~FdrEventAux() {
@@ -73,7 +74,7 @@ public:
       void DisableEvent(FdrSocket& impl, FdrEventFlag ev) {
          // 現在還是 alocker 的狀態! 所以只設定 Flag_, this 解構時再呼叫 UpdateFdrEvent();
          if (impl.SetDisableEventBit(ev))
-            this->IsNeedsUpdateFdrEvent_ = &impl;
+            this->IsNeedsUpdateFdrEvent_.reset(&impl);
       }
    };
       
