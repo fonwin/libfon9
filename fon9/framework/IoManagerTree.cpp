@@ -247,7 +247,7 @@ struct IoManagerTree::TreeOp : public seed::TreeOp {
       DeviceMapImpl        oldmap;
       {  // lock curmap.
          DeviceMap::Locker curmap{static_cast<IoManagerTree*>(&this->Tree_)->DeviceMap_};
-         if (req.BeforeGrid_.begin() != nullptr) {
+         if (!req.BeforeGrid_.IsNull()) {
             seed::MakeGridView(*curmap, curmap->begin(), seed::GridViewRequestFull{*req.Tab_}, gvres, &MakePolicyRecordView);
             if (req.BeforeGrid_ != ToStrView(gvres.GridView_)) {
                res.OpResult_ = seed::OpResult::bad_apply_submit;

@@ -170,7 +170,7 @@ public:
    /// 取得第一個出現 argid 的格式設定.
    /// \retval false 沒有此 argid 的輸出.
    /// \retval true
-   /// - retval.begin()==nullptr 表示有此參數，但沒有提供格式: {n}
+   /// - fmt.IsNull() 表示有此參數，但沒有提供格式: {n}
    /// - 此參數，且有提供格式: {n:fmt}，fmt可能為 empty();
    bool GetArgIdFormat(unsigned argid, StrView& fmt) const;
 

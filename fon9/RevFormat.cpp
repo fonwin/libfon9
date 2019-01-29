@@ -144,7 +144,7 @@ bool FmtPre::GetArgIdFormat(unsigned argid, StrView& fmt) const {
       const FmtPreSlice& slice = this->Slices_[--L];
       if (static_cast<unsigned>(slice.ArgId_) == argid) {
          if (slice.Begin_ == 0)
-            fmt.Reset(nullptr, nullptr);
+            fmt.Reset(nullptr);
          else {
             const char* pbeg = this->FmtStr_.c_str();
             fmt.Reset(pbeg + slice.Begin_, pbeg + slice.End_);

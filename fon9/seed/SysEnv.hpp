@@ -73,12 +73,12 @@ public:
 };
 
 
-/// 從 root/SysEnv/envItemName 取得 Value_; 若不存在則傳回 begin()==nullptr;
+/// 從 root/SysEnv/envItemName 取得 Value_; 若不存在則傳回 retval.IsNull();
 fon9_API StrView SysEnv_GetEnvValue(const MaTree& root,
                                     StrView envItemName,
                                     StrView sysEnvName = StrView{fon9_kCSTR_SysEnv_DefaultName});
 
-/// 從 root/SysEnv/ConfigPath 取得 Value_; 若不存在則傳回 begin()==nullptr;
+/// 從 root/SysEnv/ConfigPath 取得 Value_; 若不存在則傳回 retval.IsNull();
 inline StrView SysEnv_GetConfigPath(const MaTree& root, StrView sysEnvName = StrView{fon9_kCSTR_SysEnv_DefaultName}) {
    return  SysEnv_GetEnvValue(root, fon9_kCSTR_SysEnvItem_ConfigPath, sysEnvName);
 }

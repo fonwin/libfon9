@@ -209,7 +209,7 @@ struct GridApplySubmitRequest {
    Tab*     Tab_;
    /// 要 ApplySubmit 的資料表(GridView).
    StrView  EditingGrid_;
-   /// 若 BeforeGrid_.begin() != nullptr,
+   /// 若 !BeforeGrid_.IsNull(),
    /// 則在套用前必須檢查:「現在gv」== BeforeGrid_ 才能執行套用.
    StrView  BeforeGrid_;
 };

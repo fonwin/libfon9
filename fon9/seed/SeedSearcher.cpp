@@ -10,7 +10,7 @@ namespace fon9 { namespace seed {
 
 fon9_API StrView ParseKeyTextAndTabName(StrView& tabName) {
    StrView keyText = SbrFetchInsideNoTrim(tabName, StrBrArg::Quotation_);
-   if (keyText.begin() == nullptr) { // 沒有引號時 keyText 為 nullptr, 此時採用無引號的方法.
+   if (keyText.IsNull()) { // 沒有引號時 keyText 為 IsNull(), 此時採用無引號的方法.
       keyText = StrFetchNoTrim(tabName, '^');
       return keyText.empty() ? TextBegin() : keyText;
    }
@@ -42,7 +42,7 @@ void SeedSearcher::ContinuePod(TreeOp& opTree, StrView keyText, StrView tabName)
          this->ContinueSeed(opTree, keyText, *tab);
    }
    else {
-      this->RemainPath_.SetBegin(tabName.empty() && keyText.begin() != nullptr ? keyText.begin() : tabName.begin());
+      this->RemainPath_.SetBegin(tabName.empty() && !keyText.IsNull() ? keyText.begin() : tabName.begin());
       this->OnError(OpResult::not_found_tab);
    }
 }
@@ -65,7 +65,7 @@ static void ContinueSeedSearch(Tree& curr, SeedSearcherSP searcher) {
       void operator()(const TreeOpResult& resTree, TreeOp* opTree) {
          if (opTree == nullptr)
             this->Searcher_->OnError(resTree.OpResult_);
-         else if (this->TabName_.begin() == nullptr) // 建構時 searcher->RemainPath_.empty()
+         else if (this->TabName_.IsNull()) // 建構時 searcher->RemainPath_.empty()
             this->Searcher_->OnFoundTree(*opTree);
          else
             this->Searcher_->ContinuePod(*opTree, this->KeyText_, this->TabName_);

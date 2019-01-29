@@ -166,7 +166,7 @@ void TestCommandFixSession(ConnectionType connectionType) {
    for (;;) {
       printf("%c> ", static_cast<char>(connectionType));
       fon9::StrView  fixmsg{fgetstr(strbuf, sizeof(strbuf), stdin)};
-      if (fixmsg.begin() == nullptr)
+      if (fixmsg.IsNull())
          break;
       if (fixmsg.empty())
          continue;
@@ -200,7 +200,7 @@ int main(int argc, char** args) {
       printf("Connection type(A:Acceptor or I:Initiator or q:quit) = ");
       char  strbuf[f9fix::FixRecorder::kMaxFixMsgBufferSize];
       auto  connectionType{fgetstr(strbuf, sizeof(strbuf), stdin)};
-      if (connectionType.begin() == nullptr)
+      if (connectionType.IsNull())
          break;
       switch (connectionType.Get1st()) {
       case 'A': TestCommandFixSession(ConnectionType::Acceptor);  break;

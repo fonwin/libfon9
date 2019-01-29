@@ -17,8 +17,8 @@ void TestStrViewCompare(const fon9::StrView s1, const fon9::StrView s2, int expe
    int cmp = s1.Compare(s2);
    printf("[%-5s] %7s.Compare(%-7s) = %2d\n"
           , cmp == expectResult ? "OK" : "ERR"
-          , s1.begin() == nullptr ? "nullptr" : ("\"" + s1.ToString() + "\"").c_str()
-          , s2.begin() == nullptr ? "nullptr" : ("\"" + s2.ToString() + "\"").c_str()
+          , s1.IsNull() ? "nullptr" : ("\"" + s1.ToString() + "\"").c_str()
+          , s2.IsNull() ? "nullptr" : ("\"" + s2.ToString() + "\"").c_str()
           , cmp);
    if (s1.Compare(s2) != expectResult) {
       printf("ExpectResult = %d\n", expectResult);

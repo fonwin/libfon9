@@ -71,7 +71,7 @@ ConfigParser::Result SocketConfig::OnTagValue(StrView tag, StrView& value) {
 }
 
 ConfigParser::Result SocketConfig::Parser::OnTagValue(StrView tag, StrView& value) {
-   if (value.begin() == nullptr && this->AddrDefault_ && !this->AddrDefault_->GetPort()) {
+   if (value.IsNull() && this->AddrDefault_ && !this->AddrDefault_->GetPort()) {
       this->AddrDefault_->FromStr(tag);
       this->AddrDefault_ = nullptr;
    }

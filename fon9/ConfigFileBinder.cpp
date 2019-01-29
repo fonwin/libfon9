@@ -9,7 +9,7 @@ namespace fon9 {
 
 static std::string MakeErr(StrView logErrHeader, StrView func, File::Result fres, File& fd) {
    std::string errstr = RevPrintTo<std::string>("func=", func, '|', fres, "|file=", fd.GetOpenName());
-   if (logErrHeader.begin() != nullptr)
+   if (!logErrHeader.IsNull())
       fon9_LOG_ERROR(logErrHeader, '|', errstr);
    return errstr;
 }
@@ -22,7 +22,7 @@ static std::string CheckRW(StrView logErrHeader, StrView func, File::Result fres
                                                 "|err.size=", fres.GetResult(),
                                                 "|expected=", expected,
                                                 "|file=", fd.GetOpenName());
-   if (logErrHeader.begin() != nullptr)
+   if (!logErrHeader.IsNull())
       fon9_LOG_ERROR(logErrHeader, '|', errstr);
    return errstr;
 }

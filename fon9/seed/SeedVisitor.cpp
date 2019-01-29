@@ -15,7 +15,7 @@ static void TicketLogRequest(StrView opName, TicketRunner& ticket, const Tab* ta
       return;
    RevBufferList rbuf{kLogBlockNodeSize};
    RevPutChar(rbuf, '\n');
-   if (cmd.begin() != nullptr)
+   if (!cmd.IsNull())
       RevPrint(rbuf, "|cmd=", cmd);
    if (tab)
       RevPrint(rbuf, "|tab=", tab->Name_);
@@ -30,7 +30,7 @@ static void TicketLogResult(StrView opName, TicketRunner& ticket, OpResult opRes
       return;
    RevBufferList rbuf{kLogBlockNodeSize};
    RevPutChar(rbuf, '\n');
-   if (msg.begin() != nullptr)
+   if (!msg.IsNull())
       RevPrint(rbuf, "|msg=", msg);
    RevPrint(rbuf, opName,
             "|ticket=", ToPtr(&ticket),

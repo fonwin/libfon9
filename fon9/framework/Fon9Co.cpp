@@ -262,7 +262,7 @@ int main(int argc, char** argv) {
    fon9::SeedSession::State  res = ConsoleSeedSession::State::UserExit;
 
    // 使用 "--admin" 啟動 AdminMode.
-   if (fon9::GetCmdArg(argc, argv, fon9::StrView{}, "admin").begin() != nullptr) {
+   if (!fon9::GetCmdArg(argc, argv, fon9::StrView{}, "admin").IsNull()) {
       coSession->SetAdminMode();
       puts("Fon9Co admin mode.");
       res = coSession->RunLoop();

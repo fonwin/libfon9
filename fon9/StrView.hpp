@@ -38,15 +38,16 @@ class StrView : public Comparable<StrView> {
 public:
    using traits_type = std::char_traits<char>;
 
-   constexpr StrView() : StrView{"", static_cast<size_t>(0u)} {
-   }
-   /// \param ibegin 字串開頭, 不可使用 nullptr!
-   /// \param sz     字串長度.
-   constexpr StrView(const char* ibegin, size_t sz) : Begin_{ibegin}, End_{ibegin + sz} {
+   /// 預設建構 nullptr.
+   constexpr StrView() : StrView{nullptr} {
    }
    constexpr StrView(std::nullptr_t) : Begin_{nullptr}, End_{nullptr} {
    }
 
+   /// \param ibegin 字串開頭, 不可使用 nullptr!
+   /// \param sz     字串長度.
+   constexpr StrView(const char* ibegin, size_t sz) : Begin_{ibegin}, End_{ibegin + sz} {
+   }
    /// 使用 [ibegin..iend) 方式建構.
    /// \param ibegin 字串開頭.
    /// \param iend   字串結尾.
@@ -125,10 +126,19 @@ public:
    constexpr const char* cend() const {
       return this->end();
    }
-   /// 取得字串是否為空(長度為0)?
+   /// 取得字串是否為空(長度為0)? 等同於 IsNullOrEmpty();
    constexpr bool empty() const {
       return this->begin() == this->end();
    }
+   /// 取得字串是否為空(長度為0)? 等同於 empty();
+   constexpr bool IsNullOrEmpty() const {
+      return this->begin() == this->end();
+   }
+   /// 取得字串是否為 nullptr?
+   constexpr bool IsNull() const {
+      return this->begin() == nullptr;
+   }
+
    /// 不含 EOS 的字元數量.
    constexpr size_t size() const {
       return static_cast<size_t>(this->End_ - this->Begin_);
@@ -213,7 +223,7 @@ public:
 /// \ingroup AlNum
 /// 使用一般 C 字串, 包含EOS, 長度需要使用strlen()取得的字串建構, cstr 可以是 nullptr.
 constexpr StrView StrView_cstr(const char* cstr) {
-   return cstr ? StrView{cstr, StrView::traits_type::length(cstr)} : StrView{};
+   return cstr ? StrView{cstr, StrView::traits_type::length(cstr)} : StrView{nullptr};
 }
 constexpr StrView ToStrView(const char* cstr) {
    return StrView_cstr(cstr);

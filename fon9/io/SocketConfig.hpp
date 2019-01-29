@@ -85,7 +85,7 @@ struct fon9_API SocketConfig {
       /// 解構時呼叫 this->Owner_.SetAddrFamily();
       ~Parser();
 
-      /// - 第一個沒有「=」的欄位(value.begin()==nullptr): 將該值填入 *this->AddrDefault_;
+      /// - 第一個沒有「=」的欄位(value.IsNull()): 將該值填入 *this->AddrDefault_;
       ///   然後將 this->AddrDefault_ = nullptr;
       ///   也就是只有第一個沒有「=」的欄位會填入 *this->AddrDefault_, 其餘視為錯誤.
       /// - 其餘轉給 this->Owner_.OnTagValue() 處理.

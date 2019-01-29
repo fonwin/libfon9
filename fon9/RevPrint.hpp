@@ -110,11 +110,11 @@ inline StrT RevPrintTo(ArgsT&&... args) {
 //--------------------------------------------------------------------------//
 
 /// \ingroup AlNum
-/// - 當 fmt.begin()==nullptr: 轉呼叫 RevPrint(out, std::forward<T>(value));
-/// - 當 fmt.begin()!=nullptr: 轉呼叫 RevPrint(out, std::forward<T>(value), AutoFmt<T>{fmt});
+/// - 當  fmt.IsNull(): 轉呼叫 RevPrint(out, std::forward<T>(value));
+/// - 當 !fmt.IsNull(): 轉呼叫 RevPrint(out, std::forward<T>(value), AutoFmt<T>{fmt});
 template <class RevBuffer, class T>
 inline void FmtRevPrint(StrView fmt, RevBuffer& rbuf, T&& value) {
-   if (fmt.begin() == nullptr)
+   if (fmt.IsNull())
       RevPrint(rbuf, std::forward<T>(value));
    else
       RevPrint(rbuf, std::forward<T>(value), AutoFmt<T>{fmt});

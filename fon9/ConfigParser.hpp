@@ -43,7 +43,7 @@ public:
    Result Parse(StrView& cfgstr, char chFieldDelim = '|', char chEqual = '=');
 
    /// 處理取出的欄位, 若 value 有錯, 則返回時 value.begin() 應指向錯誤的位置.
-   /// 若欄位沒有 chEqual, 則 value.begin() == nullptr;
+   /// 若欄位沒有 chEqual, 則 value.IsNull();
    virtual Result OnTagValue(StrView tag, StrView& value) = 0;
 
    /// 預設傳回 true;
