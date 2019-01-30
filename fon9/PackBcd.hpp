@@ -67,8 +67,10 @@ constexpr unsigned PackBcdWidthToSize(unsigned packedWidth) {
    return (packedWidth + 1) / 2;
 }
 
+// 使用 [PackBcdWidthToSize(PackedWidth)] 會造成 VS 的 IntelliSense 失效;
+// 所以這裡改成直接計算.
 template <unsigned PackedWidth>
-using PackBcd = unsigned char[PackBcdWidthToSize(PackedWidth)];
+using PackBcd = unsigned char[(PackedWidth + 1) / 2];
 
 template <typename IntT, unsigned sz>
 inline IntT PackBcdTo(const unsigned char (&pbcd)[sz]) {
