@@ -1,7 +1,7 @@
 ﻿// \file f9tws/ExgMktFeeder.hpp
 // \author fonwinz@gmail.com
-#ifndef __f9tws_ExgMktFeedert_hpp__
-#define __f9tws_ExgMktFeedert_hpp__
+#ifndef __f9tws_ExgMktFeeder_hpp__
+#define __f9tws_ExgMktFeeder_hpp__
 #include "f9tws/ExgMktFmt.hpp"
 #include "fon9/buffer/DcQueue.hpp"
 
@@ -44,4 +44,4 @@ protected:
 fon9_WARN_POP;
 
 } // namespaces
-#endif//__f9tws_ExgMktFeedert_hpp__
+#endif//__f9tws_ExgMktFeeder_hpp__

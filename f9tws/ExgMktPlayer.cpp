@@ -15,6 +15,7 @@ struct ExgMktPlayerArgs {
    fon9::File::PosType  RdTo_{0};
    uint64_t             RdBytes_{0};
    fon9::TimeInterval   RdInterval_{fon9::TimeInterval_Millisecond(1)};
+   fon9::TimeInterval   AtEnd_;
 };
 class ExgMktPlayer : public ExgMktFeeder, public fon9::io::Session {
    fon9_NON_COPY_NON_MOVE(ExgMktPlayer);
@@ -25,17 +26,6 @@ class ExgMktPlayer : public ExgMktFeeder, public fon9::io::Session {
    fon9::TimeStamp      LastStTime_;
    uint64_t             SentPkCount_{0};
 
-   struct RdTimer : public fon9::DataMemberTimer {
-      fon9_NON_COPY_NON_MOVE(RdTimer);
-      RdTimer() = default;
-      void EmitOnTimer(fon9::TimeStamp now) override {
-         ExgMktPlayer& rthis = fon9::ContainerOf(*this, &ExgMktPlayer::RdTimer_);
-         rthis.ReadMktFile(now);
-         intrusive_ptr_release(rthis.Device_);
-      }
-   };
-   RdTimer RdTimer_;
-
    struct NodeSend : public fon9::BufferNodeVirtual {
       fon9_NON_COPY_NON_MOVE(NodeSend);
       using base = fon9::BufferNodeVirtual;
@@ -44,17 +34,8 @@ class ExgMktPlayer : public ExgMktFeeder, public fon9::io::Session {
       using base::base;
    protected:
       void OnBufferConsumed() override {
-         // 因為此時正鎖定 SendBuffer & OpQueue,
-         // 所以在這裡呼叫 SendBuffered() 或 OpQueue 會死結!
-         // 因此將 player->ReadMktFile(); 移到 ThreadPool 處理.
-         if (auto player = this->Player_) {
-            intrusive_ptr_add_ref(player->Device_);
-            //fon9::GetDefaultThreadPool().EmplaceMessage([player]() {
-            //   player->ReadMktFile(fon9::UtcNow());
-            //   intrusive_ptr_release(player->Device_);
-            //});
-            player->RdTimer_.RunAfter(player->Args_.RdInterval_);
-         }
+         if (auto player = this->Player_)
+            player->Device_->CommonTimerRunAfter(player->Args_.RdInterval_);
       }
       void OnBufferConsumedErr(const fon9::ErrC&) override {}
    public:
@@ -80,16 +61,22 @@ class ExgMktPlayer : public ExgMktFeeder, public fon9::io::Session {
       this->ReadMktFile(fon9::UtcNow());
       return fon9::io::RecvBufferSize::NoRecvEvent;
    }
-   void ExgMktOnReceived(const ExgMktHeader& pk, unsigned pksz) override {
-      ++this->SentPkCount_;
-      NodeSend::Send(*this, &pk, pksz);
+   void OnDevice_CommonTimer(fon9::io::Device&, fon9::TimeStamp now) override {
+      this->ReadMktFile(now);
    }
+
+   template <class... ArgsT>
+   std::string RdInfoStr(ArgsT&&... args) {
+      return fon9::RevPrintTo<std::string>("Pk=", this->SentPkCount_, "|Pos=", this->Args_.RdFrom_, std::forward<ArgsT>(args)...);
+   }
+
    void ReadMktFile(fon9::TimeStamp now) {
       if (this->Device_->OpImpl_GetState() != fon9::io::State::LinkReady)
          return;
       if (this->Args_.RdTo_ != 0 && this->Args_.RdTo_ <= this->Args_.RdFrom_) {
-         std::string stmsg = fon9::RevPrintTo<std::string>("Pk=", this->SentPkCount_, "|Pos=", this->Args_.RdFrom_, "|End=", this->Args_.RdTo_);
-         this->Device_->Manager_->OnSession_StateUpdated(*this->Device_, &stmsg, fon9::LogLevel::Info);
+         this->Device_->Manager_->OnSession_StateUpdated(*this->Device_,
+                                                         fon9::ToStrView(this->RdInfoStr("|End=", this->Args_.RdTo_)),
+                                                         fon9::LogLevel::Info);
          return;
       }
       auto node = fon9::FwdBufferNode::Alloc(this->Args_.RdBytes_ ? this->Args_.RdBytes_ : 1024);
@@ -100,23 +87,43 @@ class ExgMktPlayer : public ExgMktFeeder, public fon9::io::Session {
             rdsz = remain;
       }
       auto rdres = this->MktFile_.Read(this->Args_.RdFrom_, node->GetDataEnd(), rdsz);
-      if (rdres.HasResult() && rdres.GetResult() > 0) {
-         this->Args_.RdFrom_ += rdres.GetResult();
-         node->SetDataEnd(node->GetDataEnd() + rdres.GetResult());
-         this->RdBuffer_.push_back(node);
-         this->FeedBuffer(this->RdBuffer_);
-         if (now - this->LastStTime_ >= fon9::TimeInterval_Second(1)) {
-            this->LastStTime_ = now;
-            std::string stmsg = fon9::RevPrintTo<std::string>("Pk=", this->SentPkCount_, "|Pos=", this->Args_.RdFrom_);
-            this->Device_->Manager_->OnSession_StateUpdated(*this->Device_, &stmsg, fon9::LogLevel::Trace);
+      std::string    stmsg;
+      fon9::LogLevel stlv = fon9::LogLevel::Trace;
+      if (rdres.HasResult()) {
+         if (rdres.GetResult() > 0) {
+            this->Args_.RdFrom_ += rdres.GetResult();
+            node->SetDataEnd(node->GetDataEnd() + rdres.GetResult());
+            this->RdBuffer_.push_back(node);
+            node = nullptr;
+            this->FeedBuffer(this->RdBuffer_);
+            if (now - this->LastStTime_ >= fon9::TimeInterval_Second(1)) {
+               this->LastStTime_ = now;
+               stmsg = this->RdInfoStr();
+            }
+            NodeSend::Wait(*this);
          }
-         NodeSend::Wait(*this);
+         else if (this->Args_.AtEnd_.GetOrigValue() > 0) {
+            stmsg = this->RdInfoStr("|WaitNew");
+            this->Device_->CommonTimerRunAfter(this->Args_.AtEnd_);
+         }
+         else {
+            stmsg = this->RdInfoStr("|AtEnd");
+            stlv = fon9::LogLevel::Info;
+         }
       }
-      else {
+      else { // read error.
+         stmsg = this->RdInfoStr("|Rd=", rdres);
+         stlv = fon9::LogLevel::Info;
+      }
+      if (node)
          fon9::FreeNode(node);
-         std::string stmsg = fon9::RevPrintTo<std::string>("Pk=", this->SentPkCount_, "|Pos=", this->Args_.RdFrom_, "|Rd=", rdres);
-         this->Device_->Manager_->OnSession_StateUpdated(*this->Device_, &stmsg, fon9::LogLevel::Info);
-      }
+      if (!stmsg.empty())
+         this->Device_->Manager_->OnSession_StateUpdated(*this->Device_, &stmsg, stlv);
+   }
+
+   void ExgMktOnReceived(const ExgMktHeader& pk, unsigned pksz) override {
+      ++this->SentPkCount_;
+      NodeSend::Send(*this, &pk, pksz);
    }
 public:
    ExgMktPlayer(fon9::File&& fd, const ExgMktPlayerArgs& args)
@@ -150,6 +157,8 @@ public:
             args.RdBytes_ = fon9::StrTo(value, args.RdBytes_);
          else if (tag == "Interval")
             args.RdInterval_ = fon9::StrTo(value, args.RdInterval_);
+         else if (tag == "AtEnd")
+            args.AtEnd_ = fon9::StrTo(value, args.AtEnd_);
          else {
             errReason = fon9::RevPrintTo<std::string>("Create:TwsExgMktPlayer|err=Unknown tag: ", tag);
             return fon9::io::SessionSP{};
