@@ -1,4 +1,4 @@
-﻿// \file f9tws/ExgExgTradingLineMgr.hpp
+﻿// \file f9tws/ExgTradingLineMgr.hpp
 // \author fonwinz@gmail.com
 #ifndef __f9tws_ExgTradingLineMgr_hpp__
 #define __f9tws_ExgTradingLineMgr_hpp__

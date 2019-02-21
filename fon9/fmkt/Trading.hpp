@@ -14,13 +14,11 @@ class fon9_API TradingLineManager;
 class fon9_API TradingRequest : public intrusive_ref_counter<TradingRequest> {
    fon9_NON_COPY_NON_MOVE(TradingRequest);
 protected:
-   f9fmkt_TradingRequestSt RequestSt_{f9fmkt_TradingRequestSt_Init};
+   f9fmkt_TradingRequestSt RequestSt_{f9fmkt_TradingRequestSt_Initialing};
    byte                    pending______[3];
 public:
    TradingRequest() = default;
    virtual ~TradingRequest();
-
-   virtual void SetState(f9fmkt_TradingRequestSt st, StrView cause) = 0;
 };
 using TradingRequestSP = intrusive_ptr<TradingRequest>;
 

@@ -70,4 +70,13 @@ struct CharVectorComparer {
 };
 
 } // namespaces
+
+namespace std {
+template<>
+struct hash<fon9::CharVector> : public hash<fon9::StrView> {
+   size_t operator()(const fon9::CharVector& val) const {
+      return hash<fon9::StrView>::operator()(fon9::ToStrView(val));
+   }
+};
+}
 #endif//__fon9_CharVector_hpp__

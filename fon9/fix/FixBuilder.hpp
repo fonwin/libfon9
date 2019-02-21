@@ -72,6 +72,16 @@ public:
    RevBuffer& GetBuffer() {
       return this->Buffer_;
    }
+
+   /// 取得目前為止已填入的欄位字串, 不包含尾端的 "|10=xxx|"
+   template <class StrT>
+   StrT GetCurrMsgStr() {
+      StrT retval = BufferTo<StrT>(this->Buffer_.cfront());
+      auto msgsz = retval.size();
+      if (msgsz > kFixTailWidth)
+         retval.resize(msgsz - kFixTailWidth);
+      return retval;
+   }
    /// 開始建立 FIX Message.
    /// - 呼叫時機: Finish()之後, 再次使用之前.
    /// - 尾端保留 CheckSum 的空間.

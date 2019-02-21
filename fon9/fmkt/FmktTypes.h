@@ -57,10 +57,13 @@ enum f9fmkt_TradingSessionId   fon9_ENUM_underlying(char) {
 /// \ingroup fmkt
 /// 下單要求狀態.
 enum f9fmkt_TradingRequestSt   fon9_ENUM_underlying(uint8_t) {
-   f9fmkt_TradingRequestSt_Init = 0,
+   /// 建構時的初始值.
+   f9fmkt_TradingRequestSt_Initialing = 0,
+   /// 下單要求已填妥.
+   f9fmkt_TradingRequestSt_Initialed = 1,
 
    /// - 當檢查方式需要他方協助, 無法立即得到結果, 則在檢查前設定此狀態.
-   /// - 如果檢查方式可立即完成:「失敗拒絕下單 or 檢查通過繼續下一步驟」, 則檢查前不必設定此狀態.
+   /// - 如果檢查方式可立即完成:「失敗拒絕下單 or 檢查通過繼續下一步驟」, 則檢查前可以不用設定此狀態.
    f9fmkt_TradingRequestSt_Checking = 0x1c,
 
    f9fmkt_TradingRequestSt_Queuing = 0x20,

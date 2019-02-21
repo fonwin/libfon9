@@ -21,13 +21,13 @@ public:
    void OnParentSeedClear() override;
 
    template <class IoTree = IoManagerTree, class... ArgsT>
-   static IoTree* Plant(seed::MaTree& maTree, const IoManagerArgs& ioargs, ArgsT&&... args) {
+   static intrusive_ptr<IoTree> Plant(seed::MaTree& maTree, const IoManagerArgs& ioargs, ArgsT&&... args) {
       intrusive_ptr<IoTree> retval{new IoTree(ioargs, std::forward<ArgsT>(args)...)};
       seed::NamedSapling*   seed;
       if (!maTree.Add(seed = new seed::NamedSapling(retval, ioargs.Name_)))
          return nullptr;
       seed->SetDescription(ioargs.Result_);
-      return retval.get();
+      return retval;
    }
 private:
    struct TreeOp;
