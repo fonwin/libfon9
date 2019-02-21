@@ -8,7 +8,7 @@ namespace fon9 {
 void TimeChecker::Reset(TimeStamp tm) {
    this->UtcTime_ = tm;
    tm += this->TimeZoneOffset_;
-   this->AdjustedYMDHMS_ = ToYYYYMMDDHHMMSS(tm);
+   this->AdjustedYMDHMS_ = GetYYYYMMDDHHMMSS(tm);
    if (this->Scale_ > TimeScale::No)
       this->AdjustedYMDHMS_ /= static_cast<DateTime14T>(this->Scale_);
 }
@@ -26,7 +26,7 @@ bool TimeChecker::CheckTime(TimeStamp tm) {
       return false;
    this->UtcTime_ = tm;
    tm += this->TimeZoneOffset_;
-   DateTime14T ymdhms = ToYYYYMMDDHHMMSS(tm) / static_cast<DateTime14T>(this->Scale_);
+   DateTime14T ymdhms = GetYYYYMMDDHHMMSS(tm) / static_cast<DateTime14T>(this->Scale_);
    if (this->AdjustedYMDHMS_ == ymdhms)
       return false;
    this->AdjustedYMDHMS_ = ymdhms;

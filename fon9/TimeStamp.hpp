@@ -121,12 +121,16 @@ fon9_API DateTime14T EpochSecondsToYYYYMMDDHHMMSS(TimeStamp::OrigType epochSecon
 
 /// \ingroup AlNum
 /// 將 TimeStamp 轉成 YYYYMMDDHHMMSS.
-inline DateTime14T ToYYYYMMDDHHMMSS(TimeStamp ts) {
+inline DateTime14T GetYYYYMMDDHHMMSS(TimeStamp ts) {
    return EpochSecondsToYYYYMMDDHHMMSS(ts.ToEpochSeconds());
 }
 
-inline DateYYYYMMDD ToYYYYMMDD(TimeStamp ts) {
-   return static_cast<DateYYYYMMDD>(ToYYYYMMDDHHMMSS(ts) / kDivHHMMSS);
+inline DateYYYYMMDD GetYYYYMMDD(TimeStamp ts) {
+   return static_cast<DateYYYYMMDD>(GetYYYYMMDDHHMMSS(ts) / kDivHHMMSS);
+}
+
+inline TimeHHMMSS GetHHMMSS(TimeStamp ts) {
+   return static_cast<TimeHHMMSS>(GetYYYYMMDDHHMMSS(ts) % kDivHHMMSS);
 }
 
 //--------------------------------------------------------------------------//
@@ -142,7 +146,7 @@ inline TimeStamp YYYYMMDDHHMMSS_ToTimeStamp(DateYYYYMMDD yyyymmdd, TimeHHMMSS hh
    return YYYYMMDDHHMMSS_ToTimeStamp(yyyymmdd * kDivHHMMSS + hhmmss);
 }
 inline TimeStamp TimeStampResetHHMMSS(TimeStamp ts, TimeHHMMSS hhmmss = 0) {
-   DateTime14T  yyyymmddhhmmss = ToYYYYMMDDHHMMSS(ts);
+   DateTime14T  yyyymmddhhmmss = GetYYYYMMDDHHMMSS(ts);
    return YYYYMMDDHHMMSS_ToTimeStamp(yyyymmddhhmmss - (yyyymmddhhmmss % kDivHHMMSS) + hhmmss);
 }
 
