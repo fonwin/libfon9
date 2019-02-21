@@ -99,6 +99,12 @@ public:
       this->WaitFlushed();
       return this->File_.Close();
    }
+   /// 因為 Open() 為非同步操作:
+   /// - 在取得 Open() 的結果之前呼叫 IsOpened() 則為 false.
+   /// - 在取得 Open() 的結果之後呼叫 IsOpened() 則為檔案是否有開啟成功.
+   bool IsOpened() const {
+      return this->File_.IsOpened();
+   }
    Result GetFileSize() {
       this->WaitFlushed();
       return this->File_.GetFileSize();

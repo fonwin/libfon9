@@ -42,10 +42,11 @@ class fon9_API LogFileAppender : public AsyncFileAppender {
    }
 
 protected:
-   LogFileAppender() {
+   LogFileAppender(TimeInterval ti = TimeInterval_Second(1)) : FlushInterval_{ti} {
       this->StartFlushTimer();
    }
-   LogFileAppender(FileMode fm) : base{fm} {
+   LogFileAppender(FileMode fm, TimeInterval ti = TimeInterval_Second(1))
+      : base{fm}, FlushInterval_{ti} {
       this->StartFlushTimer();
    }
    ~LogFileAppender();
