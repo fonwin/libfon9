@@ -151,6 +151,7 @@
     <ClInclude Include="..\..\..\fon9\fix\FixSession.hpp" />
     <ClInclude Include="..\..\..\fon9\fix\IoFixSender.hpp" />
     <ClInclude Include="..\..\..\fon9\fix\IoFixSession.hpp" />
+    <ClInclude Include="..\..\..\fon9\FlowCounter.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\FmktTypes.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\Symb.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\SymbBS.hpp" />

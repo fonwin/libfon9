@@ -109,6 +109,9 @@ public:
    /// 如果一個FIX訊息有多個時間(e.g. TransactTime#60, SendingTime#52), 則直接使用相同時間.
    /// 時間格式: RevPut_TimeFIXMS();
    void PutUtcNow();
+   /// 將 now 填入 FIX, 並將時間設定成 PutUtcNow() 可重複使用, 可透過 GetUtcNow() 取得時間.
+   /// 時間格式: RevPut_TimeFIXMS();
+   void PutUtcTime(TimeStamp now);
    /// 取得上次呼叫 PutUtcNow() 的時間.
    TimeStamp GetUtcNow() const {
       return this->Time_;

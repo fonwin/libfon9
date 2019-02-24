@@ -10,28 +10,28 @@
 #include "fon9/fix/IoFixSender.hpp"
 #include "fon9/fmkt/Trading.hpp"
 #include "fon9/CharAry.hpp"
+#include "fon9/FlowCounter.hpp"
 
 namespace f9tws {
 namespace f9fix = fon9::fix;
 namespace f9fmkt = fon9::fmkt;
 
-// 衍生者必須 override:
-// void OnFixSessionApReady(f9fix::IoFixSession& fixses) override;
-using TradingLineFixMgr = f9fix::IoFixManager;
-
-//--------------------------------------------------------------------------//
-
 fon9_WARN_DISABLE_PADDING;
 struct ExgTradingLineFixArgs {
+   f9fmkt_TradingMarket Market_;
    BrkId                BrkId_;
    fon9::CharAry<2>     SocketId_;
    uint16_t             PassCode_;
-   /// 流量管制: 每秒最多筆數. 0=不限制.
-   uint32_t             MaxRequestsPerSec_;
-   f9fmkt_TradingMarket Market_;
+   /// 流量管制: FcCount_(筆數) / FcTimeMS_(時間單位)
+   /// 流量管制筆數(0=不限制).
+   uint16_t             FcCount_;
+   /// 流量管制, 時間單位, 1000=每秒.
+   uint16_t             FcTimeMS_;
 };
 /// 不改變 args.Market_ 您必須自行處理.
-/// cfg = "BrkId=|SocketId=|Pass=|Fc=每秒最多筆數" 每個欄位都必須提供.
+/// cfg = "BrkId=|SocketId=|Pass=|Fc=筆數/ms";
+/// 除了 "Fc=" 每個欄位都必須提供.
+/// 若省略 "Fc=" 則表示 FcCount_=0; 若省略 "/ms" 則用設為 1000; 
 /// retval.empty() 成功, retval = 失敗訊息.
 f9tws_API std::string TwsFixArgParser(ExgTradingLineFixArgs& args, fon9::StrView cfg);
 
@@ -49,6 +49,8 @@ class f9tws_API ExgTradingLineFix : public f9fix::IoFixSession, public f9fmkt::T
    unsigned RawAppendNo_;
 
 protected:
+   fon9::FlowCounter FlowCounter_;
+
    /// 連線成功, 在此主動送出 Logon 訊息.
    void OnFixSessionConnected() override;
    f9fix::FixSenderSP OnFixSessionDisconnected(const fon9::StrView& info) override;
@@ -59,7 +61,7 @@ public:
 
    /// 建構前 fixSender->Initialize(fileName) 必須已經成功,
    /// 可考慮使用 MakeExgTradingLineFixSender() 建立 fixSender;
-   ExgTradingLineFix(TradingLineFixMgr&           mgr,
+   ExgTradingLineFix(f9fix::IoFixManager&         mgr,
                      const f9fix::FixConfig&      fixcfg,
                      const ExgTradingLineFixArgs& lineargs,
                      f9fix::IoFixSenderSP&&       fixSender);

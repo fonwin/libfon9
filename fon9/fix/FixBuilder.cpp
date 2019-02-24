@@ -4,13 +4,15 @@
 
 namespace fon9 { namespace fix {
 
+void FixBuilder::PutUtcTime(TimeStamp now) {
+   RevPut_TimeFIXMS(this->Buffer_, this->Time_ = now);
+   this->TimeFIXMS_ = this->Buffer_.GetCurrent();
+}
 void FixBuilder::PutUtcNow() {
    if (this->TimeFIXMS_)
       RevPutMem(this->Buffer_, this->TimeFIXMS_, kDateTimeStrWidth_FIXMS);
-   else {
-      RevPut_TimeFIXMS(this->Buffer_, this->Time_ = UtcNow());
-      this->TimeFIXMS_ = this->Buffer_.GetCurrent();
-   }
+   else
+      this->PutUtcTime(UtcNow());
 }
 
 BufferList FixBuilder::Final(const StrView& beginHeader) {

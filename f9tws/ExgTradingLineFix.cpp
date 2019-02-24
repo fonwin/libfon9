@@ -16,7 +16,8 @@ f9tws_API std::string TwsFixArgParser(ExgTradingLineFixArgs& args, fon9::StrView
    args.BrkId_.Clear(' ');
    args.SocketId_.Clear(' ');
    args.PassCode_ = static_cast<uint16_t>(-1);
-   args.MaxRequestsPerSec_ = static_cast<uint32_t>(-1);
+   args.FcCount_ = 0;
+   args.FcTimeMS_ = 1000;
    fon9::StrView tag, value;
    while (fon9::StrFetchTagValue(cfg, tag, value)) {
       if (tag == "BrkId")
@@ -26,12 +27,17 @@ f9tws_API std::string TwsFixArgParser(ExgTradingLineFixArgs& args, fon9::StrView
       else {
          if (tag == "Pass")
             args.PassCode_ = fon9::StrTo(&value, args.PassCode_);
-         else if (tag == "Fc")
-            args.MaxRequestsPerSec_ = fon9::StrTo(&value, args.MaxRequestsPerSec_);
+         else if (tag == "Fc") {
+            args.FcCount_ = fon9::StrTo(&value, args.FcCount_);
+            if (StrTrimHead(&value).Get1st() == '/') {
+               value.SetBegin(value.begin() + 1);
+               args.FcTimeMS_ = fon9::StrTo(&value, args.FcTimeMS_);
+            }
+         }
          else
             return tag.ToString("Unknown tag: ");
          if (!StrTrim(&value).empty())
-            return tag.ToString() + value.ToString("Unknown value: ");
+            return tag.ToString() + value.ToString(" unknown value: ");
       }
    }
    if (fon9::isspace(args.BrkId_.Chars_[0]))
@@ -40,8 +46,6 @@ f9tws_API std::string TwsFixArgParser(ExgTradingLineFixArgs& args, fon9::StrView
       return "Unknown SocketId";
    if (static_cast<int16_t>(args.PassCode_) < 0)
       return "Unknown Pass";
-   if (static_cast<int32_t>(args.MaxRequestsPerSec_) < 0)
-      return "Unknown Fc";
    return std::string{};
 }
 
@@ -77,12 +81,13 @@ f9tws_API std::string MakeExgTradingLineFixSender(const ExgTradingLineFixArgs& a
 
 //--------------------------------------------------------------------------//
 
-ExgTradingLineFix::ExgTradingLineFix(TradingLineFixMgr&           mgr,
+ExgTradingLineFix::ExgTradingLineFix(f9fix::IoFixManager&         mgr,
                                      const f9fix::FixConfig&      fixcfg,
                                      const ExgTradingLineFixArgs& lineargs,
                                      f9fix::IoFixSenderSP&&       fixSender)
    : base(mgr, fixcfg)
    , RawAppendNo_{static_cast<unsigned>(fon9::UtcNow().GetDecPart() / 1000)}
+   , FlowCounter_{lineargs.FcCount_, fon9::TimeInterval_Millisecond(lineargs.FcTimeMS_)}
    , LineArgs_(lineargs)
    , FixSender_{std::move(fixSender)} {
 }
