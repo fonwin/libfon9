@@ -255,12 +255,16 @@ void DeviceContinueSend(DeviceT& dev, SendBuffer& sbuf, Aux& aux) {
       fon9_LOG_DEBUG("Async.DeviceContinueSend|dev=", ToPtr{&dev});
       if (fon9_LIKELY(IsAllowContinueSend(dev.OpImpl_GetState()))
           && fon9_LIKELY(aux.IsSendBufferAlive(dev, sbuf))) {
-         ContinueSendChecker sc;
-         sc.Create(dev, AQueueTaskKind::Send);
-         if (DcQueueList* toSend = aux.GetContinueToSend(sbuf))
-            aux.ContinueToSend(sc, *toSend);
-         else
-            Device::OpThr_CheckLingerClose(dev, std::string{});
+             {
+                ContinueSendChecker sc;
+                sc.Create(dev, AQueueTaskKind::Send);
+                if (DcQueueList* toSend = aux.GetContinueToSend(sbuf)) {
+                   aux.ContinueToSend(sc, *toSend);
+                   return;
+                }
+             } // ContinueSendChecker 必須 unlock,
+               // 否則 OpThr_CheckLingerClose() 裡面的 dev.IsSendBufferEmpty() 會死結!
+             Device::OpThr_CheckLingerClose(dev, std::string{});
       }
    }});
    fon9_WARN_POP;
