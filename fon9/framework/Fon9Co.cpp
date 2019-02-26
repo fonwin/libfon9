@@ -156,10 +156,13 @@ class ConsoleSeedSession : public fon9::SeedSession {
          this->GetPrompt(prompt);
          this->WritePrompt(&prompt);
          // TODO: fgets() 可以考慮使用 gnu readline library.
+         //       Windows 的 fgets() 無法處理 utf8 字串!
          if (!fgets(cmdbuf, sizeof(cmdbuf), stdin))
              return State::Broken;
          fon9::StrView cmdln{fon9::StrView_cstr(cmdbuf)};
          if (StrTrim(&cmdln).empty())
+            continue;
+         if (cmdln.Get1st() == '#')
             continue;
          if (cmdln == "quit") {
             fon9_LOG_IMP("main.quit|user=", this->GetAuthr().GetUserId());
