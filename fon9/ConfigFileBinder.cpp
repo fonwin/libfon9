@@ -29,8 +29,10 @@ static std::string CheckRW(StrView logErrHeader, StrView func, File::Result fres
 
 std::string ConfigFileBinder::OpenRead(StrView logErrHeader, std::string cfgfn, bool isAutoBackup) {
    this->FileName_ = cfgfn;
-   File fd;
-   auto fres = fd.Open(std::move(cfgfn), FileMode::Read);
+   // isAutoBackup 表示之後可能會 WriteConfig(); 因此如果檔案不存在(例如:初次執行), 應建立新檔.
+   FileMode fm = isAutoBackup ? (FileMode::Read | FileMode::CreatePath) : FileMode::Read;
+   File     fd;
+   auto fres = fd.Open(std::move(cfgfn), fm);
    if (!fres)
       return MakeErr(logErrHeader, "Open", fres, fd);
    fres = fd.GetFileSize();
