@@ -4,31 +4,37 @@
 
 namespace fon9 {
 
-fon9_API uintmax_t HexStrTo(StrView hexstr, const char** endptr) {
+fon9_API uintmax_t HexStrTo(StrView hexstr, const char** endptr, uintmax_t null) {
    const char ch1 = static_cast<char>(StrTrimHead(&hexstr).Get1st());
    if (ch1 == 'x' || ch1 == 'X')
       hexstr.SetBegin(hexstr.begin() + 1);
-   uintmax_t  value = 0;
-   for (const char& ch : hexstr) {
-      int8_t i = Alpha2Hex(ch);
-      if (fon9_UNLIKELY(i < 0)) {
-         if (endptr)
-            *endptr = &ch;
+   const char*       pcur = hexstr.begin();
+   const char* const pend = hexstr.end();
+   uintmax_t         value = 0;
+   for (; pcur != pend; ++pcur) {
+      int8_t i = Alpha2Hex(*pcur);
+      if (fon9_UNLIKELY(i < 0))
          break;
-      }
       value = (value << 4) | static_cast<uint8_t>(i);
    }
-   return value;
+   if (endptr)
+      *endptr = pcur;
+   return(pcur == hexstr.begin() ? null : value);
 }
-fon9_API uintmax_t HIntStrTo(StrView str, const char** endptr) {
+fon9_API uintmax_t HIntStrTo(StrView str, const char** endptr, uintmax_t null) {
    char ch = static_cast<char>(StrTrimHead(&str).Get1st());
+   const char* const pbeg = str.begin();
    if (ch == '0') {
       str.SetBegin(str.begin() + 1);
       ch = static_cast<char>(str.Get1st());
    }
    if (ch == 'x' || ch == 'X')
-      return HexStrTo(str, endptr);
-   return NaiveStrToUInt(str, endptr);
+      return HexStrTo(str, endptr, null);
+   const char* pend;
+   auto        res = NaiveStrToUInt(str, &pend);
+   if (endptr)
+      *endptr = pend;
+   return pbeg == str.begin() ? null : res;
 }
 
 fon9_API intmax_t NaiveStrToSInt(const char *pbeg, const char* pend, const char** endptr) {

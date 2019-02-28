@@ -7,6 +7,13 @@
 
 namespace fon9 { namespace fmkt {
 
+inline f9fmkt_TradingRequestSt StrTo(StrView s, f9fmkt_TradingRequestSt null, const char** endptr = nullptr) {
+   return static_cast<f9fmkt_TradingRequestSt>(HexStrTo(s, endptr, null));
+}
+inline char* ToStrRev(char* pout, f9fmkt_TradingRequestSt v) {
+   return HexToStrRev(pout, cast_to_underlying(v));
+}
+
 /// \ingroup fmkt
 /// 一般價格型別, 最大/最小值: +- 92,233,720,368.54775807
 using Pri = Decimal<int64_t, 8>;
