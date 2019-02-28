@@ -67,7 +67,7 @@ void TimerEntry::SetupRun(TimeStamp atTimePoint, const TimeInterval* after) {
       timerThread->Erase(this->Key_);
 
    this->Key_.EmitTime_ = atTimePoint;
-   timerThread->LastSeqNo_ = static_cast<TimerSeqNo>(static_cast<underlying_type_t<TimerSeqNo>>(timerThread->LastSeqNo_) + 1);
+   timerThread->LastSeqNo_ = static_cast<TimerSeqNo>(cast_to_underlying(timerThread->LastSeqNo_) + 1);
    if (fon9_UNLIKELY(!IsTimerWaitInLine(timerThread->LastSeqNo_)))
       timerThread->LastSeqNo_ = TimerSeqNo::WaitInLine;
    this->Key_.SeqNo_ = timerThread->LastSeqNo_;

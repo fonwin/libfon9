@@ -48,13 +48,13 @@ inline char* UnderlyingToStrRev(char* pstart, char value, const FmtDef& fmt) {
 }
 template <typename EnumT>
 inline auto ToStrRev(char* pout, EnumT value, const FmtDef& fmt) -> enable_if_t<std::is_enum<EnumT>::value && !HasBitOpT<EnumT>::value, char*> {
-   return UnderlyingToStrRev(pout, static_cast<underlying_type_t<EnumT>>(value), fmt);
+   return UnderlyingToStrRev(pout, cast_to_underlying(value), fmt);
 }
 template <typename EnumT>
 inline auto ToStrRev(char* pout, EnumT value, FmtDef fmt) -> enable_if_t<std::is_enum<EnumT>::value && HasBitOpT<EnumT>::value, char*> {
    if (!IsEnumContainsAny(fmt.Flags_, FmtFlag::MaskBase))
       fmt.Flags_ |= FmtFlag::BaseHex;
-   return ToStrRev(pout, static_cast<underlying_type_t<EnumT>>(value), fmt);
+   return ToStrRev(pout, cast_to_underlying(value), fmt);
 }
 
 //--------------------------------------------------------------------------//
@@ -84,7 +84,7 @@ struct BaseFmt {
    explicit BaseFmt(const T* v) : Value_{reinterpret_cast<uintmax_t>(v)} {
    }
    template <typename T, enable_if_t<std::is_enum<T>::value, T> = T{}>
-   explicit BaseFmt(T v) : Value_{unsigned_cast(static_cast<underlying_type_t<T>>(v))} {
+   explicit BaseFmt(T v) : Value_{unsigned_cast(cast_to_underlying(v))} {
    }
 };
 inline char* ToStrRev(char* pout, BaseFmt value, FmtDef fmt) {

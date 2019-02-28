@@ -176,11 +176,11 @@ inline char* UnderlyingToStrRev(char* pout, char value) {
 }
 template <typename EnumT>
 inline auto ToStrRev(char* pout, EnumT value) -> enable_if_t<std::is_enum<EnumT>::value && !HasBitOpT<EnumT>::value, char*> {
-   return UnderlyingToStrRev(pout, static_cast<underlying_type_t<EnumT>>(value));
+   return UnderlyingToStrRev(pout, cast_to_underlying(value));
 }
 template <typename EnumT>
 inline auto ToStrRev(char* pout, EnumT value) -> enable_if_t<std::is_enum<EnumT>::value && HasBitOpT<EnumT>::value, char*> {
-   pout = HexToStrRev(pout, static_cast<underlying_type_t<EnumT>>(value));
+   pout = HexToStrRev(pout, cast_to_underlying(value));
    *--pout = 'x';
    return pout;
 }
