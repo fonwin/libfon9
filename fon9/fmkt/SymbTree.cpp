@@ -12,10 +12,12 @@ class SymbTree::PodOp : public seed::PodOpDefault {
    fon9_NON_COPY_NON_MOVE(PodOp);
    using base = seed::PodOpDefault;
 public:
-   const SymbSP   Symb_;
-   PodOp(Tree& sender, const StrView& keyText, SymbSP&& symb)
+   const SymbSP            Symb_;
+   const SymbMap::Locker&  LockedMap_;
+   PodOp(Tree& sender, const StrView& keyText, SymbSP&& symb, const SymbMap::Locker& lockedMap)
       : base(sender, seed::OpResult::no_error, keyText)
-      , Symb_{std::move(symb)} {
+      , Symb_{std::move(symb)}
+      , LockedMap_(lockedMap) {
    }
    void BeginRead(seed::Tab& tab, seed::FnReadOp fnCallback) override {
       if (auto dat = this->Symb_->GetSymbData(tab.GetIndex()))
@@ -28,7 +30,7 @@ public:
    void BeginWrite(seed::Tab& tab, seed::FnWriteOp fnCallback) override {
       if (auto dat = this->Symb_->FetchSymbData(tab.GetIndex())) {
          this->BeginRW(tab, std::move(fnCallback), seed::SimpleRawWr{*dat});
-         static_cast<SymbTree*>(this->Sender_)->OnAfterPodOpWrite(*this->Symb_, tab);
+         static_cast<SymbTree*>(this->Sender_)->OnAfterPodOpWrite(*this->Symb_, tab, this->LockedMap_);
       }
       else {
          this->OpResult_ = seed::OpResult::not_found_seed;
@@ -84,24 +86,26 @@ public:
       RevPrint(rbuf, GetSymbId(*ivalue));
    }
 
-   void OnPodOp(const StrView& strKeyText, SymbSP&& symb, seed::FnPodOp&& fnCallback) {
+   void OnPodOp(const StrView& strKeyText, SymbSP&& symb, seed::FnPodOp&& fnCallback, const SymbMap::Locker& lockedMap) {
       if (symb) {
-         PodOp op(this->Tree_, strKeyText, std::move(symb));
+         PodOp op(this->Tree_, strKeyText, std::move(symb), lockedMap);
          fnCallback(op, &op);
       }
       else
          fnCallback(seed::PodOpResult{this->Tree_, seed::OpResult::not_found_key, strKeyText}, nullptr);
    }
    void Get(StrView strKeyText, seed::FnPodOp fnCallback) override {
-      SymbSP symb = static_cast<SymbTree*>(&this->Tree_)->GetSymb(strKeyText);
-      this->OnPodOp(strKeyText, std::move(symb), std::move(fnCallback));
+      SymbMap::Locker lockedMap{static_cast<SymbTree*>(&this->Tree_)->SymbMap_};
+      SymbSP          symb = static_cast<SymbTree*>(&this->Tree_)->GetSymb(lockedMap, strKeyText);
+      this->OnPodOp(strKeyText, std::move(symb), std::move(fnCallback), lockedMap);
    }
    void Add(StrView strKeyText, seed::FnPodOp fnCallback) override {
       if (seed::IsTextBeginOrEnd(strKeyText))
          fnCallback(seed::PodOpResult{this->Tree_, seed::OpResult::not_found_key, strKeyText}, nullptr);
       else {
-         SymbSP symb = static_cast<SymbTree*>(&this->Tree_)->FetchSymb(strKeyText);
-         this->OnPodOp(strKeyText, std::move(symb), std::move(fnCallback));
+         SymbMap::Locker lockedMap{static_cast<SymbTree*>(&this->Tree_)->SymbMap_};
+         SymbSP          symb = static_cast<SymbTree*>(&this->Tree_)->FetchSymb(lockedMap, strKeyText);
+         this->OnPodOp(strKeyText, std::move(symb), std::move(fnCallback), lockedMap);
       }
    }
    void Remove(StrView strKeyText, seed::Tab* tab, seed::FnPodRemoved fnCallback) override {
@@ -119,8 +123,8 @@ public:
 };
 fon9_MSC_WARN_POP;
 
-void SymbTree::OnAfterPodOpWrite(Symb& symb, seed::Tab& tab) {
-   (void)symb; (void)tab;
+void SymbTree::OnAfterPodOpWrite(Symb& symb, seed::Tab& tab, const SymbMap::Locker& symbs) {
+   (void)symb; (void)tab; (void)symbs;
 }
 void SymbTree::OnTreeOp(seed::FnTreeOp fnCallback) {
    TreeOp op{*this};
