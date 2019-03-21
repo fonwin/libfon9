@@ -55,9 +55,11 @@ struct FixRecorder::FixRevSercher : public FileRevSearch {
    const char* ParseFixLine_MsgSeqNum(const char* pbeg, const char* pend, FixSeqNum& seqn);
 };
 
-struct FixRecorder::LastSeqSearcher : public FileRevReadBuffer<kLastSeqSearcherBlockSize, kMaxFixMsgBufferSize>, public FixRevSercher {
+using FixLastSeqSearcherBuffer = FileRevReadBuffer<kLastSeqSearcherBlockSize, FixRecorder::kMaxFixMsgBufferSize>;
+struct FixRecorder::LastSeqSearcher : public RevReadSearcher<FixLastSeqSearcherBuffer, FixRevSercher> {
    fon9_NON_COPY_NON_MOVE(LastSeqSearcher);
-   LastSeqSearcher(FixParser& fixParser) : FixRevSercher{fixParser, kLastSeqSearcherBlockSize, kMaxFixMsgBufferSize, BlockBuffer_} {
+   using base = RevReadSearcher<FixLastSeqSearcherBuffer, FixRevSercher>;
+   LastSeqSearcher(FixParser& fixParser) : base{fixParser, kLastSeqSearcherBlockSize, kMaxFixMsgBufferSize, BlockBuffer_} {
    }
 
    FixSeqNum   NextSendSeq_ = 0;

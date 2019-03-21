@@ -104,7 +104,9 @@ void FixRecorder::LastSeqSearcher::ParseFixLine_MsgSeqNum_ToNextSeq(const char* 
 }
 LoopControl FixRecorder::LastSeqSearcher::OnFoundChar(char* pbeg, char* pend) {
    assert(pbeg < pend);
-   switch (*++pbeg) {
+   if (++pbeg == pend)
+      return LoopControl::Continue;
+   switch (*pbeg) {
    default: return LoopControl::Continue;
    case f9fix_kCSTR_HdrRecv[0]:
       this->ParseFixLine_MsgSeqNum_ToNextSeq(pbeg, pend, this->NextRecvSeq_);
