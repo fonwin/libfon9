@@ -20,10 +20,6 @@ class FieldSchCfgStrT : public BaseField {
 public:
    using base::base;
 
-   #define fon9_kCSTR_UDFieldMaker_SchCfgStr "Sch"
-   StrView GetTypeId(NumOutBuf&) const override {
-      return StrView{fon9_kCSTR_UDFieldMaker_Head fon9_kCSTR_UDFieldMaker_SchCfgStr};
-   }
    OpResult StrToCell(const RawWr& wr, StrView value) const {
       if (StrTrim(&value).empty())
          base::StrToCell(wr, value);
@@ -43,6 +39,9 @@ class fon9_API FieldSchCfgStr : public FieldSchCfgStrT<FieldString<SchCfgStr::ba
    using base = FieldSchCfgStrT<FieldString<SchCfgStr::base> >;
 public:
    using base::base;
+
+   #define fon9_kCSTR_UDFieldMaker_SchCfgStr "Sch"
+   StrView GetTypeId(NumOutBuf&) const override;
 };
 
 inline FieldSPT<FieldSchCfgStr> MakeField(Named&& named, int32_t ofs, SchCfgStr&) {

@@ -5,6 +5,10 @@
 
 namespace fon9 { namespace seed {
 
+StrView FieldSchCfgStr::GetTypeId(NumOutBuf&) const {
+   return StrView{fon9_kCSTR_UDFieldMaker_Head fon9_kCSTR_UDFieldMaker_SchCfgStr};
+}
+
 static FieldSP SchCfgStrFieldMaker(StrView& fldcfg, char chSpl, char chTail) {
    Named named{DeserializeNamed(fldcfg, chSpl, chTail)};
    if (named.Name_.empty())
