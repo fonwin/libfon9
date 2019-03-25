@@ -264,7 +264,7 @@ void FixSession::FixSessionOnTimer() {
 }
 //--------------------------------------------------------------------------//
 std::string FixSession::ResetNextSendSeq(StrView strNum) {
-   FixSeqNum nextSendSeq = StrTo(StrTrim(&strNum), FixSeqNum{0});
+   FixSeqNum nextSendSeq = StrTo(&StrTrim(&strNum), FixSeqNum{0});
    if (!strNum.empty())
       return "Invalid next SEND seqNum string.";
    std::string res = RevPrintTo<std::string>("New next SEND seqNum = ", nextSendSeq, '\n');
@@ -285,7 +285,7 @@ std::string FixSession::ResetNextSendSeq(StrView strNum) {
    return res;
 }
 std::string FixSession::ResetNextRecvSeq(StrView strNum) {
-   FixSeqNum nextRecvSeq = StrTo(StrTrim(&strNum), FixSeqNum{0});
+   FixSeqNum nextRecvSeq = StrTo(&StrTrim(&strNum), FixSeqNum{0});
    if (!strNum.empty())
       return "Invalid next RECV seqNum string.";
    std::string res = RevPrintTo<std::string>("New next RECV seqNum = ", nextRecvSeq, '\n');
