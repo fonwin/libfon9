@@ -24,7 +24,7 @@ void IoFixManager::OnFixSessionApReady(IoFixSession& fixses) {
 }
 
 void IoFixManager::OnLogonInitiate(IoFixSession& fixses, uint32_t heartBtInt, FixBuilder&& fixb, FixSenderSP fixout) {
-   fixout->GetFixRecorder().Write(f9fix_kCSTR_HdrInfo, "OnLogon.Initiate:|from=", fixses.GetDeviceId());
+   fixout->GetFixRecorder().Write(f9fix_kCSTR_HdrInfo, "OnLogon.Initiate|from=", fixses.GetDeviceId());
    fixses.SendLogon(std::move(fixout), heartBtInt, std::move(fixb));
 }
 bool IoFixManager::OnLogonAccepted(FixRecvEvArgs& rxargs, FixSenderSP fixout) {
@@ -33,7 +33,7 @@ bool IoFixManager::OnLogonAccepted(FixRecvEvArgs& rxargs, FixSenderSP fixout) {
    rxargs.ResetSeqSt();
 
    FixRecorder& recorder = fixout->GetFixRecorder();
-   recorder.Write(f9fix_kCSTR_HdrInfo, "OnLogon.Accepted:|from=", static_cast<IoFixSession*>(rxargs.FixSession_)->GetDeviceId());
+   recorder.Write(f9fix_kCSTR_HdrInfo, "OnLogon.Accepted|from=", static_cast<IoFixSession*>(rxargs.FixSession_)->GetDeviceId());
    FixBuilder  fixb;
    if (rxargs.SeqSt_ == FixSeqSt::TooLow) {
       recorder.Write(f9fix_kCSTR_HdrError, rxargs.MsgStr_);

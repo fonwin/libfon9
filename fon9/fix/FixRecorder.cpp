@@ -34,7 +34,7 @@ File::Result FixRecorder::Initialize(std::string fileName) {
          this->NextRecvSeq_ = 1;
       this->IdxInfoSizeInterval_ = 0;
       this->Write(f9fix_kCSTR_HdrInfo,
-                  "f9fix.FixRecorder Initialized:"
+                  "f9fix.FixRecorder Initialized"
                   "|NextSendSeq=", this->NextSendSeq_,
                   "|NextRecvSeq=", this->NextRecvSeq_);
    }

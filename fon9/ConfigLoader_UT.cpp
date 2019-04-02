@@ -42,9 +42,9 @@ ConfigLoaderSP Test_CheckLoad(const char* testItem, const std::string& init, Res
 void Test_CheckVar(const std::string& init, fon9::StrView varName, fon9::StrView varCtx, LineCount lineCount) {
    auto cfgld = Test_CheckLoad("CheckLoad:", init, Result{lineCount});
    auto var = cfgld->GetVariable(varName);
-   std::string varmsg = "Variable::|";
+   std::string varmsg = "Variable:   ";
    varName.AppendTo(varmsg);
-   varmsg.push_back('=');
+   varmsg.append(" = ");
    if (var) {
       varmsg.push_back('"');
       varmsg += fon9::StrView_ToEscapeStr(&var->Value_.Str_);
@@ -82,8 +82,8 @@ void TestConfigLoader() {
    Test_CheckVar("$TxLang = {en} $TxLang = ${TxLang:-zh}", "TxLang", "en", 1);
    Test_CheckVar("$TxLang = {en} $TxLang = ${TxLang-zh}",  "TxLang", "en", 1);
 
-   Test_CheckLoad("BadMessage", "$TxLang = {en", Result{std::errc::bad_message});
-   Test_CheckLoad("BadMessage", "$TxLang = {en} $TxLang = ${TxLang-zh", Result{std::errc::bad_message});
+   Test_CheckLoad("BadMessage:", "$TxLang = {en", Result{std::errc::bad_message});
+   Test_CheckLoad("BadMessage:", "$TxLang = {en} $TxLang = ${TxLang-zh", Result{std::errc::bad_message});
 }
 
 //--------------------------------------------------------------------------//

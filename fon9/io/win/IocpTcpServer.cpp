@@ -143,7 +143,7 @@ void IocpTcpListener::OnIocp_Error(OVERLAPPED* lpOverlapped, DWORD eno) {
       this->Server_->OpQueue_.AddTask(DeviceAsyncTask{[=](Device& dev) {
          IocpTcpServer& server = *static_cast<IocpTcpServer*>(&dev);
          if (server.Listener_ == this)
-            Device::OpThr_SetBrokenState(server, RevPrintTo<std::string>("IocpTcpListener.OnIocp_Error:|err=", GetSysErrC(eno)));
+            Device::OpThr_SetBrokenState(server, RevPrintTo<std::string>("IocpTcpListener.OnIocp_Error|err=", GetSysErrC(eno)));
       }});
    }
    intrusive_ptr_release(this);

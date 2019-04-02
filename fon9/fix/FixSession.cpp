@@ -88,7 +88,7 @@ bool FixSession::Check1stMustLogon() {
 FixParser::Result FixSession::OnFixMessageError(FixParser::Result res, StrView& fixmsgStream, const char* perr) {
    (void)fixmsgStream; (void)perr;
    RevBufferList rbuf{64};
-   RevPrint(rbuf, "FixSession.OnFixMessageError:|err=", res);
+   RevPrint(rbuf, "FixSession.OnFixMessageError|err=", res);
    this->CloseFixSession(BufferTo<std::string>(rbuf.MoveOut()));
    return res;
 }
@@ -183,7 +183,7 @@ void FixSession::SetApReadyStImpl() {
       this->OnFixSessionApReady();
    }
    else
-      this->CloseFixSession("SetApReadySt:|err=No FixSender.");
+      this->CloseFixSession("SetApReadySt|err=No FixSender.");
 }
 void FixSession::SendSessionReject(FixSeqNum refSeqNum, FixTag refTagID, const StrView& refMsgType, FixBuilder&& fixb) {
    if (FixSender* fixout = this->FixSender_.get())
@@ -219,7 +219,7 @@ void FixSession::FixSessionOnTimer() {
       if (this->MsgReceivedCount_ == 0) {
          ++this->HbTestCount_;
          if (this->HbTestCount_ >= this->RxArgs_.FixConfig_->MaxLogonTestCount_) {
-            this->CloseFixSession("LogonTest:|err=Remote no response");
+            this->CloseFixSession("LogonTest|err=Remote no response");
             break;
          }
       }

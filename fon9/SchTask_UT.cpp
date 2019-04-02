@@ -24,7 +24,7 @@ void TestSchConfigCheck(fon9::SchConfig& cfg, fon9::TimeStamp localNow, fon9::Sc
    }
    std::cout << rbuf.GetCurrent() << '\n';
    rbuf.RewindEOS();
-   fon9::RevPrint(rbuf, "      not match expect:|InSch=", localExpect.SchSt_, "|Next=", localExpect.NextCheckTime_, fmtts);
+   fon9::RevPrint(rbuf, "      not match expect|InSch=", localExpect.SchSt_, "|Next=", localExpect.NextCheckTime_, fmtts);
    std::cout << rbuf.GetCurrent() << std::endl;
    abort();
 }

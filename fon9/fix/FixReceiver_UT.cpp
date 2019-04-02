@@ -63,7 +63,7 @@ int main(int argc, char** argv) {
 
    auto  rres = fixo->GetFixRecorder().Initialize(argv[1]);
    if (!rres) {
-      std::cout << "FixRecorder.Initialize:|err=" << fon9::RevPrintTo<std::string>(rres) << std::endl;
+      std::cout << "FixRecorder.Initialize|err=" << fon9::RevPrintTo<std::string>(rres) << std::endl;
       return 3;
    }
    static_cast<FixTestOutput*>(fixo.get())->outfd = outfd;
@@ -89,7 +89,7 @@ int main(int argc, char** argv) {
          fixr.DispatchFixMessage(rxargs);
       else
          fixo->GetFixRecorder().Write(f9fix_kCSTR_HdrError, rxargs.MsgStr_, "\n"
-                                      f9fix_kCSTR_HdrError "ParseError:|err=", pres);
+                                      f9fix_kCSTR_HdrError "ParseError|err=", pres);
    }
    return 0;
 }

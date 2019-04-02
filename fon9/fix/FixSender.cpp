@@ -215,9 +215,9 @@ struct FixSender::Replayer {
                bool isGapFill = (this->BeginSeqNo_ < nextSendSeq);
                this->SeqReset(isGapFill, this->BeginSeqNo_, nextSendSeq, logbuf);
                if (isGapFill)
-                  FwdPrint(logbuf, f9fix_kCSTR_HdrInfo "Replay.End.GapFill:|NewSeqNo=");
+                  FwdPrint(logbuf, f9fix_kCSTR_HdrInfo "Replay.End.GapFill|NewSeqNo=");
                else
-                  FwdPrint(logbuf, f9fix_kCSTR_HdrInfo "Replay.End.SequenceReset:|NewSeqNo=");
+                  FwdPrint(logbuf, f9fix_kCSTR_HdrInfo "Replay.End.SequenceReset|NewSeqNo=");
                FwdPrint(logbuf, nextSendSeq, '\n');
             }
          }
@@ -270,9 +270,9 @@ void FixSender::GapFill(FixSeqNum beginSeqNo, FixSeqNum endSeqNo) {
       bool      isGapFill = (beginSeqNo < nextSendSeq);
       replayer.SeqReset(isGapFill, beginSeqNo, nextSendSeq, logbuf);
       if (isGapFill)
-         FwdPrint(logbuf, f9fix_kCSTR_HdrInfo "GapFill:|NewSeqNo=");
+         FwdPrint(logbuf, f9fix_kCSTR_HdrInfo "GapFill|NewSeqNo=");
       else
-         FwdPrint(logbuf, f9fix_kCSTR_HdrInfo "SequenceReset:|NewSeqNo=");
+         FwdPrint(logbuf, f9fix_kCSTR_HdrInfo "SequenceReset|NewSeqNo=");
       FwdPrint(logbuf, nextSendSeq, '\n');
    }
    else if (beginSeqNo < endSeqNo)

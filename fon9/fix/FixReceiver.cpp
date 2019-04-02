@@ -142,7 +142,7 @@ void FixReceiver::OnRecoverDone(const FixRecvEvArgs& rxargs) {
    this->ResendRequestEndSeqNo_ = this->LastGapSeqNo_ = 0;
    FixRecorder& fixRecorder = rxargs.FixSender_->GetFixRecorder();
    fixRecorder.Write(f9fix_kCSTR_HdrInfo,
-                     "OnRecoverDone:|NextRecvSeq=",
+                     "OnRecoverDone|NextRecvSeq=",
                      fixRecorder.GetNextRecvSeq());
 }
 void FixReceiver::SendResendRequest(FixSender& fixSender, FixSeqNum beginSeqNo, FixSeqNum endSeqNo) {
