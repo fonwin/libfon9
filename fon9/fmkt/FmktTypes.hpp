@@ -14,6 +14,13 @@ inline char* ToStrRev(char* pout, f9fmkt_TradingRequestSt v) {
    return HexToStrRev(pout, cast_to_underlying(v));
 }
 
+inline f9fmkt_OrderSt StrTo(StrView s, f9fmkt_OrderSt null, const char** endptr = nullptr) {
+   return static_cast<f9fmkt_OrderSt>(HexStrTo(s, endptr, null));
+}
+inline char* ToStrRev(char* pout, f9fmkt_OrderSt v) {
+   return HexToStrRev(pout, cast_to_underlying(v));
+}
+
 /// \ingroup fmkt
 /// 一般價格型別, 最大/最小值: +- 92,233,720,368.54775807
 using Pri = Decimal<int64_t, 8>;

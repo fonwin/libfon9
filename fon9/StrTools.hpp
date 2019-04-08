@@ -325,6 +325,12 @@ inline StrView StrTrimSplit(StrView& src, char chDelim) {
 fon9_API bool StrFetchTagValue(StrView& src, StrView& tag, StrView& value, char chFieldDelim = '|', char chEqual = '=');
 
 /// \ingroup AlNum
+/// 透過 StrFetchTagValue() 尋找指定的 tag.
+/// - 若有找到則傳回 value, 如果沒找到則傳回 nullptr;
+/// - 若有發現沒有chEqual的欄位: "|tag|" 則不理會, 繼續往後尋找.
+fon9_API StrView StrFindValue(StrView src, const StrView tag, char chFieldDelim = '|', char chEqual = '=');
+
+/// \ingroup AlNum
 /// 若第一個字元為引號「單引號 ' or 雙引號 " or 反引號 `」, 則移除第一個字元引號, 然後:
 /// - 若最後字元為對應的引號, 則移除最後引號字元.
 /// - if(pQuote)  *pQuote = 引號字元.
@@ -433,6 +439,13 @@ inline StrView SbrTrimHeadFetchInside(StrView& src, const StrBrArg& brArg = StrB
 fon9_API bool SbrFetchTagValue(StrView& src, StrView& tag, StrView& value,
                                char chFieldDelim = '|', char chEqual = '=',
                                const StrBrArg& brArg = StrBrArg::Default_);
+
+/// \ingroup AlNum
+/// 透過 SbrFetchTagValue() 尋找指定的 tag.
+/// - 若有找到則傳回 value, 如果沒找到則傳回 nullptr;
+/// - 若有發現沒有chEqual的欄位: "|tag|" 則不理會, 繼續往後尋找.
+fon9_API StrView SbrFindValue(StrView src, const StrView tag,
+                              char chFieldDelim = '|', char chEqual = '=', const StrBrArg& brArg = StrBrArg::Default_);
 
 //--------------------------------------------------------------------------//
 

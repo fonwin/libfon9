@@ -53,23 +53,8 @@ IoManagerTree::IoManagerTree(const IoManagerArgs& args)
       return;
    std::string logHeader = "IoManager." + args.Name_;
    args.Result_ = this->ConfigFileBinder_.OpenRead(&logHeader, args.CfgFileName_);
-   if (!args.Result_.empty())
-      return;
-   struct ToContainer : public seed::GridViewToContainer {
-      DeviceMapImpl* Container_;
-      ToContainer(DeviceMapImpl* container) : Container_{container} {
-      }
-      void OnNewRow(StrView keyText, StrView ln) override {
-         DeviceMapImpl::value_type& item = *this->Container_->insert(new DeviceItem{keyText}).first;
-         this->FillRaw(seed::SimpleRawWr{*item}, ln);
-         item->Sch_.Parse(ToStrView(item->Config_.SchArgs_));
-      }
-   };
-   DeviceMap::Locker curmap{this->DeviceMap_};
-   ToContainer       toContainer{curmap.get()};
-   toContainer.ParseConfigStr(this->LayoutSP_->GetTab(kTabConfigIndex)->Fields_,
-                              &this->ConfigFileBinder_.GetConfigStr());
-   this->StartTimerForOpen();
+   if (args.Result_.empty())
+      this->LoadConfigStr(&this->ConfigFileBinder_.GetConfigStr());
 }
 IoManagerTree::~IoManagerTree() {
    this->DeviceFactoryPark_->Unsubscribe(this->SubConnDev_);
@@ -84,6 +69,24 @@ unsigned IoManagerTree::IoManagerRelease() {
 }
 void IoManagerTree::OnFactoryParkChanged() {
    this->Timer_.RunAfter(TimeInterval_Second(1));
+}
+
+std::string IoManagerTree::LoadConfigStr(StrView cfgstr) {
+   struct ToContainer : public seed::GridViewToContainer {
+      DeviceMapImpl* Container_;
+      ToContainer(DeviceMapImpl* container) : Container_{container} {
+      }
+      void OnNewRow(StrView keyText, StrView ln) override {
+         DeviceMapImpl::value_type& item = *this->Container_->insert(new DeviceItem{keyText}).first;
+         this->FillRaw(seed::SimpleRawWr{*item}, ln);
+         item->Sch_.Parse(ToStrView(item->Config_.SchArgs_));
+      }
+   };
+   DeviceMap::Locker curmap{this->DeviceMap_};
+   ToContainer       toContainer{curmap.get()};
+   toContainer.ParseConfigStr(this->LayoutSP_->GetTab(kTabConfigIndex)->Fields_, cfgstr);
+   this->StartTimerForOpen();
+   return std::string{};
 }
 void IoManagerTree::StartTimerForOpen() {
    this->Timer_.RunAfter(TimeInterval_Second(1));

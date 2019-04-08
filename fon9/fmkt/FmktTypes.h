@@ -140,23 +140,39 @@ enum f9fmkt_TradingRequestSt   fon9_ENUM_underlying(uint8_t) {
 ///   - Queuing:    排隊中.
 /// - 新單已送出但尚未收到回報.
 ///   - Sending:    傳送中.
-///   - Sent:       已送出.
+///   - Sent:       已送出, 但尚未收到交易所回報.
 ///   - Broken:     狀態不明: 送出後,未收到回報,但是斷線了.
 /// - 委託已成立:
 ///   - Accepted:   交易所已收單.
 ///   - PartFilled: 部分成交.
 /// - 委託已結束:
-///   - 進入此階段後, 狀態就不會再變動, 例如:
-///     - 刪單成功(已刪單狀態), 若有在途成交, 則收完成交後, **不會變成全部成交**
-///   - FullFilled: 全部成交.
-///   - Canceled:   已刪單: 但 LeavesQty 不一定為 0, 因為可能有「在途成交」或「其他未收到的減量」.
-///     - UserCanceled:     使用者刪單, 或減量成功後的 AfterQty==0;
-///     - ExchangeCanceled: 交易所刪單.
+///   - 進入此階段後, 狀態就不會再變動.
+///   - 當本機發現交易所的 WorkQty 變成 0 時.
+///     - 刪減後的 AfterQty=0: 使用者刪減、交易所刪減(IOC、FOK、超過限額...)
+///     - 收到成交回報後的 LeavesQty=0
+///     - 交易所收盤.
+///     - 要注意的是: 「成交回報、刪減回報」可能會亂序!
+///       - 假設某筆委託交易所異動順序如下:   
+///         新10, 減1(Bf=10,Af=9), 成2, 減2(Bf=7,Af=5), 成2, 刪(Bf=3,Af=0)
+///       - 若分別在不同的主機上操作, 最多可能有 6*5*4*3*2*1=720 種順序組合!!
 ///   - Rejected:   委託被拒絕.
 ///     - BrokerRejected:   券商拒絕.
 ///     - ExchangeRejected: 交易所拒絕.
+///   - Canceled:   刪單成功(已刪單狀態), 刪減後 AfterQty=0
+///     - 透過刪減回報的「BeforeQty - AfterQty」來調整 LeavesQty.
+///     - 但此時本機的 LeavesQty 不一定為 0, 因為可能有「在途成交」或「其他未收到的減量」.
+///     - 若有在途成交, 則收完成交後, **不會變成全部成交**
+///     - UserCanceled:     使用者刪單, 或減量成功後的 AfterQty=0;
+///     - ExchangeCanceled: 交易所刪單(IOC、FOK...).
+///   - FullFilled: 全部成交.
+///   - PartCanceled: 部分成交(其實是全部成交)之後, 才收到成交前的減量回報.
+///     - 例: 新單10:Accepted, 成交3:PartFilled, 減量7(Bf=10,Af=3):PartCanceled
 ///   - DoneForDay: 已收盤.
 enum f9fmkt_OrderSt   fon9_ENUM_underlying(uint8_t) {
+   f9fmkt_OrderSt_Initialing = 0,
+   f9fmkt_OrderSt_NewChecking = f9fmkt_TradingRequestSt_Checking,
+   f9fmkt_OrderSt_NewQueuing = f9fmkt_TradingRequestSt_Queuing,
+   f9fmkt_OrderSt_NewSending = f9fmkt_TradingRequestSt_Sending,
 };
 
 #endif//__fon9_fmkt_FmktTypes_h__

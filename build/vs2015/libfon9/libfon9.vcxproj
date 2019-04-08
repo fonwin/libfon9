@@ -167,6 +167,7 @@
     <ClInclude Include="..\..\..\fon9\framework\IoManager.hpp" />
     <ClInclude Include="..\..\..\fon9\framework\IoManagerTree.hpp" />
     <ClInclude Include="..\..\..\fon9\framework\SeedSession.hpp" />
+    <ClInclude Include="..\..\..\fon9\framework\SessionFactoryConfigWithAuthMgr.hpp" />
     <ClInclude Include="..\..\..\fon9\FwdPrint.hpp" />
     <ClInclude Include="..\..\..\fon9\HistoryArray.hpp" />
     <ClInclude Include="..\..\..\fon9\HostId.hpp" />
@@ -225,6 +226,9 @@
     <ClInclude Include="..\..\..\fon9\PackBcd.hpp" />
     <ClInclude Include="..\..\..\fon9\PkCont.hpp" />
     <ClInclude Include="..\..\..\fon9\Random.hpp" />
+    <ClInclude Include="..\..\..\fon9\rc\Rc.hpp" />
+    <ClInclude Include="..\..\..\fon9\rc\RcFuncConn.hpp" />
+    <ClInclude Include="..\..\..\fon9\rc\RcSession.hpp" />
     <ClInclude Include="..\..\..\fon9\RevFormat.hpp" />
     <ClInclude Include="..\..\..\fon9\RevPrint.hpp" />
     <ClInclude Include="..\..\..\fon9\RevPut.hpp" />
@@ -322,6 +326,7 @@
     <None Include="..\..\..\fon9\buffer\README.md" />
     <None Include="..\..\..\fon9\fix\README.md" />
     <None Include="..\..\..\fon9\io\README.md" />
+    <None Include="..\..\..\fon9\rc\README.md" />
     <None Include="..\..\..\fon9\seed\README.md" />
     <None Include="..\..\..\fon9\web\HttpStatic.cfg" />
     <None Include="..\..\..\Overview\ThreadTools.md" />
@@ -404,6 +409,7 @@
     <ClCompile Include="..\..\..\fon9\framework\NamedIoManager.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\SeedImporter.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\SeedSession.cpp" />
+    <ClCompile Include="..\..\..\fon9\framework\SessionFactoryConfigWithAuthMgr.cpp" />
     <ClCompile Include="..\..\..\fon9\HostId.cpp" />
     <ClCompile Include="..\..\..\fon9\InnFile.cpp" />
     <ClCompile Include="..\..\..\fon9\InnDbf.cpp" />
@@ -447,6 +453,11 @@
     <ClCompile Include="..\..\..\fon9\Named.cpp" />
     <ClCompile Include="..\..\..\fon9\PkCont.cpp" />
     <ClCompile Include="..\..\..\fon9\Random.cpp" />
+    <ClCompile Include="..\..\..\fon9\rc\Rc.cpp" />
+    <ClCompile Include="..\..\..\fon9\rc\RcFuncConn.cpp" />
+    <ClCompile Include="..\..\..\fon9\rc\RcFuncConnClient.cpp" />
+    <ClCompile Include="..\..\..\fon9\rc\RcFuncConnServer.cpp" />
+    <ClCompile Include="..\..\..\fon9\rc\RcSession.cpp" />
     <ClCompile Include="..\..\..\fon9\RevFormat.cpp" />
     <ClCompile Include="..\..\..\fon9\CountDownLatch.cpp" />
     <ClCompile Include="..\..\..\fon9\CyclicBarrier.cpp" />

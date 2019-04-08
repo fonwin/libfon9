@@ -40,7 +40,7 @@ protected:
 
    void FrontToCurrBlock();
 
-   virtual bool DcQueuePeekMore(byte* tmpbuf, size_t sz) override;
+   virtual bool DcQueuePeekMore(byte* tmpbuf, size_t sz) const override;
    virtual bool DcQueueHasMore(size_t sz) const override;
    /// 移除已用掉的資料量.
    /// 歸還已用掉的 BufferNode, 如果有控制節點, 則會觸發 OnBufferConsumed() 通知.

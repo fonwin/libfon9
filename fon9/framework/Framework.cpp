@@ -171,11 +171,13 @@ void Framework::Start() {
    GetDefaultThreadPool();
    GetDefaultTimerThread();
    this->MaAuth_->Storage_->LoadAll();
-   this->Syncer_->StartSync();
+   if (this->Syncer_)
+      this->Syncer_->StartSync();
 }
 
 void Framework::Dispose() {
-   this->Syncer_->StopSync();
+   if (this->Syncer_)
+      this->Syncer_->StopSync();
    this->MaAuth_->Storage_->Close();
    this->Root_->OnParentSeedClear();
 }

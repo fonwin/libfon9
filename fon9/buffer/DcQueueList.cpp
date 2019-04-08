@@ -19,7 +19,7 @@ void DcQueueList::FrontToCurrBlock() {
       front = this->BlockList_.front();
    }
 }
-bool DcQueueList::DcQueuePeekMore(byte* tmpbuf, size_t sz) {
+bool DcQueueList::DcQueuePeekMore(byte* tmpbuf, size_t sz) const {
    if (const BufferNode* node = this->BlockList_.front()) {
       while ((node = node->GetNext()) != nullptr) {
          if (const size_t nodesz = node->GetDataSize()) {

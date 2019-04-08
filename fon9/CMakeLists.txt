@@ -150,6 +150,7 @@ set(fon9src
  framework/IoFactoryDgram.cpp
  framework/IoFactoryFileIO.cpp
  framework/SeedImporter.cpp
+ framework/SessionFactoryConfigWithAuthMgr.cpp
 
  fmkt/Symb.cpp
  fmkt/SymbTree.cpp
@@ -175,6 +176,12 @@ set(fon9src
  fix/FixSession.cpp
  fix/IoFixSession.cpp
  fix/IoFixSender.cpp
+ 
+ rc/Rc.cpp
+ rc/RcFuncConn.cpp
+ rc/RcFuncConnClient.cpp
+ rc/RcFuncConnServer.cpp
+ rc/RcSession.cpp
 )
 add_library(fon9_s STATIC ${fon9src})
 target_link_libraries(fon9_s pthread rt dl)
@@ -276,6 +283,9 @@ target_link_libraries(Socket_UT fon9_s)
 
 add_executable(IoDev_UT io/IoDev_UT.cpp)
 target_link_libraries(IoDev_UT fon9_s)
+
+add_executable(Rc_UT rc/Rc_UT.cpp)
+target_link_libraries(Rc_UT fon9_s)
 
 # unit tests: seed
 add_executable(Seed_UT seed/Seed_UT.cpp)

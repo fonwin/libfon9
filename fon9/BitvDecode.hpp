@@ -23,10 +23,11 @@ namespace fon9 { struct CharVector; } // #include "fon9/CharVector.hpp"
 namespace fon9 {
 
 fon9_MSC_WARN_DISABLE(4623/*default constructor was implicitly defined as deleted*/);
-fon9_DEFINE_EXCEPTION(BitvNeedsMore, std::runtime_error);
-fon9_DEFINE_EXCEPTION(BitvTypeNotMatch, std::runtime_error);
-fon9_DEFINE_EXCEPTION(BitvUnknownValue, std::runtime_error);
-fon9_DEFINE_EXCEPTION(BitvSignedError, std::runtime_error);
+fon9_DEFINE_EXCEPTION(BitvDecodeError,  std::runtime_error);
+fon9_DEFINE_EXCEPTION(BitvNeedsMore,    BitvDecodeError);
+fon9_DEFINE_EXCEPTION(BitvTypeNotMatch, BitvDecodeError);
+fon9_DEFINE_EXCEPTION(BitvUnknownValue, BitvDecodeError);
+fon9_DEFINE_EXCEPTION(BitvSignedError,  BitvDecodeError);
 fon9_MSC_WARN_POP;
 
 //--------------------------------------------------------------------------//
@@ -43,6 +44,24 @@ inline void BitvTo(DcQueue& buf, bool& out) {
 
 //--------------------------------------------------------------------------//
 
+enum class PeekBitvByteArraySizeR : int {
+   /// 資料不足, 無法取得「儲存長度的部分」
+   NeedsMoreHead = -1,
+   /// 正確取出了長度, 長度存放在 barySize.
+   /// 但 buf 的資料量 < (「儲存長度的部分」 + barySize).
+   NeedsMoreData = 0,
+   /// retval >= PeekBitvByteArraySizeR::DataReady
+   /// - 正確取出了長度, 長度存放在 barySize.
+   /// - buf 的資料量必定 >= (「儲存長度的部分」 + barySize).
+   /// - retval = 「儲存長度的部分」.
+   DataReady = 1,
+};
+
+/// \ingroup AlNum
+/// 取得 ByteArray 資料的長度.
+/// 若資料型別不是 ByteArray 則會拋出 BitvTypeNotMatch 異常.
+fon9_API PeekBitvByteArraySizeR PeekBitvByteArraySize(const DcQueue& buf, size_t& barySize);
+   
 /// \ingroup AlNum
 /// 取得 ByteArray 資料的長度.
 /// 若資料型別不是 ByteArray 則會拋出 BitvTypeNotMatch 異常.

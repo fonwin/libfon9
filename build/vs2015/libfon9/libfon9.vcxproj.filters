@@ -168,6 +168,12 @@
     <Filter Include="Source Files\io\more devs">
       <UniqueIdentifier>{d378f90c-b763-4a96-b413-d1e749181ead}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\rc">
+      <UniqueIdentifier>{48fa4db3-cc1b-4939-ba14-11c1514341a8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\rc">
+      <UniqueIdentifier>{69b4cf02-ff06-4fdd-8150-58bd2b6bdc30}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\fon9\sys\Config.h">
@@ -899,6 +905,18 @@
     <ClInclude Include="..\..\..\fon9\FlowCounter.hpp">
       <Filter>Header Files\_base\_Tools / Utility</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\rc\Rc.hpp">
+      <Filter>Header Files\rc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\rc\RcFuncConn.hpp">
+      <Filter>Header Files\rc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\rc\RcSession.hpp">
+      <Filter>Header Files\rc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\framework\SessionFactoryConfigWithAuthMgr.hpp">
+      <Filter>Header Files\framework</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -919,6 +937,9 @@
     </None>
     <None Include="..\..\..\fon9\fix\README.md">
       <Filter>Header Files\fix</Filter>
+    </None>
+    <None Include="..\..\..\fon9\rc\README.md">
+      <Filter>Header Files\rc</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -1431,6 +1452,24 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\io\FileIO.cpp">
       <Filter>Source Files\io\more devs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\rc\Rc.cpp">
+      <Filter>Source Files\rc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\rc\RcFuncConn.cpp">
+      <Filter>Source Files\rc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\rc\RcFuncConnClient.cpp">
+      <Filter>Source Files\rc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\rc\RcFuncConnServer.cpp">
+      <Filter>Source Files\rc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\rc\RcSession.cpp">
+      <Filter>Source Files\rc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\framework\SessionFactoryConfigWithAuthMgr.cpp">
+      <Filter>Source Files\framework</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

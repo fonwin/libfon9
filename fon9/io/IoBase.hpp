@@ -29,12 +29,6 @@ using SessionSP = SessionSPT<Session>;
 class Manager;
 using ManagerSP = intrusive_ptr<Manager>;
 
-struct DeviceFactoryPark;
-using DeviceFactoryParkSP = intrusive_ptr<DeviceFactoryPark>;
-
-struct SessionFactoryPark;
-using SessionFactoryParkSP = intrusive_ptr<SessionFactoryPark>;
-
 //--------------------------------------------------------------------------//
 
 /// \ingroup io

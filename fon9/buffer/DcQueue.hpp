@@ -29,7 +29,7 @@ protected:
    /// 將後續資料的 sz bytes 複製到 tmpbuf, 但不移除.
    /// 此時 sz 必定 > 0;
    /// \retval false 資料不足, 沒有複製任何資料.
-   virtual bool DcQueuePeekMore(byte* tmpbuf, size_t sz) = 0;
+   virtual bool DcQueuePeekMore(byte* tmpbuf, size_t sz) const = 0;
 
    /// - sz == 0, 表示移除 MemCurrent_ 區塊, 並取出新的區塊放到 MemCurrent_, MemEnd_;
    /// - sz > 0, 將後續資料移除 sz bytes 之後, 將後續資料放到 MemCurrent_, MemEnd_;
@@ -78,7 +78,7 @@ public:
    /// \retval !=nullptr 有效資料量 >= sz
    ///   - 若 CurrBlock 的資料量>=sz, 則直接傳回 CurrBlock 的資料開始位置.
    ///   - 否則將資料複製到 tmpbuf, 並傳回 tmpbuf.
-   const void* Peek(void* tmpbuf, size_t sz) {
+   const void* Peek(void* tmpbuf, size_t sz) const {
       const size_t blkszCurr = this->GetCurrBlockSize();
       if (fon9_LIKELY(sz <= blkszCurr))
          return this->MemCurrent_;
@@ -152,7 +152,7 @@ class DcQueueFixedMem : public DcQueue {
    fon9_NON_COPYABLE(DcQueueFixedMem);
    using base = DcQueue;
 protected:
-   virtual bool DcQueuePeekMore(byte* tmpbuf, size_t sz) override {
+   virtual bool DcQueuePeekMore(byte* tmpbuf, size_t sz) const override {
       (void)tmpbuf; (void)sz;
       return false;
    }

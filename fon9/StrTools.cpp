@@ -132,6 +132,14 @@ fon9_API bool StrFetchTagValue(StrView& src, StrView& tag, StrView& value, char 
    tag = StrSplit(value, chEqual);
    return true;
 }
+fon9_API StrView StrFindValue(StrView src, const StrView tag, char chFieldDelim, char chEqual) {
+   StrView vtag, value;
+   while (StrFetchTagValue(src, vtag, value, chFieldDelim, chEqual)) {
+      if (vtag == tag && !value.IsNull())
+         return value;
+   }
+   return nullptr;
+}
 
 //--------------------------------------------------------------------------//
 
@@ -230,6 +238,14 @@ fon9_API bool SbrFetchTagValue(StrView& src, StrView& tag, StrView& value, char 
    tag = StrSplit(value, chEqual);
    StrTrimTail(&value);
    return true;
+}
+fon9_API StrView SbrFindValue(StrView src, const StrView tag, char chFieldDelim, char chEqual, const StrBrArg& brArg) {
+   StrView vtag, value;
+   while (SbrFetchTagValue(src, vtag, value, chFieldDelim, chEqual, brArg)) {
+      if (vtag == tag && !value.IsNull())
+         return value;
+   }
+   return nullptr;
 }
 
 //--------------------------------------------------------------------------//

@@ -7,24 +7,30 @@
 namespace fon9 {
 
 fon9_API bool PopBitvByteArraySize(DcQueue& buf, size_t& barySize) {
-   const byte* const ptype = buf.Peek1();
-   if (ptype == nullptr) {
-      barySize = 0;
-      return false;
+   auto hdrSize = PeekBitvByteArraySize(buf, barySize);
+   if (fon9_LIKELY(hdrSize >= PeekBitvByteArraySizeR::DataReady)) {
+      buf.PopConsumed(static_cast<size_t>(hdrSize));
+      return true;
    }
+   if (hdrSize == PeekBitvByteArraySizeR::NeedsMoreHead)
+      barySize = 0;
+   return false;
+}
+fon9_API PeekBitvByteArraySizeR PeekBitvByteArraySize(const DcQueue& buf, size_t& barySize) {
+   const byte* const ptype = buf.Peek1();
+   if (ptype == nullptr)
+      return PeekBitvByteArraySizeR::NeedsMoreHead;
 
    if (fon9_LIKELY((*ptype & 0x80) == 0x00)) {
       barySize = *ptype + 1u;
       if (fon9_UNLIKELY(!buf.IsSizeEnough(barySize + 1u)))
-         return false;
-      buf.PopConsumed(1);
-      return true;
+         return PeekBitvByteArraySizeR::NeedsMoreData;
+      return static_cast<PeekBitvByteArraySizeR>(1);
    }
 
    if (fon9_UNLIKELY(*ptype == fon9_BitvV_ByteArrayEmpty)) {
       barySize = 0;
-      buf.PopConsumed(1);
-      return true;
+      return static_cast<PeekBitvByteArraySizeR>(1);
    }
 
    if (fon9_UNLIKELY((*ptype & fon9_BitvT_Mask) != fon9_BitvT_ByteArray))
@@ -33,10 +39,8 @@ fon9_API bool PopBitvByteArraySize(DcQueue& buf, size_t& barySize) {
    byte        bCount = static_cast<byte>(((*ptype >> 1) & 0x03) + 1); // = 用了幾個 byte 儲存 barySize?
    uintmax_t   numbuf[2];
    const byte* pnum = static_cast<const byte*>(buf.Peek(numbuf, bCount + 1u)); // +1 for skip *ptype.
-   if (fon9_UNLIKELY(pnum == nullptr)) {
-      barySize = 0;
-      return false;
-   }
+   if (fon9_UNLIKELY(pnum == nullptr))
+      return PeekBitvByteArraySizeR::NeedsMoreHead;
 
    barySize = GetPackedBigEndian<uint32_t>(pnum + 1, bCount);
    if (*pnum & 0x01)
@@ -44,9 +48,8 @@ fon9_API bool PopBitvByteArraySize(DcQueue& buf, size_t& barySize) {
    barySize += 0x80 + 1;
    ++bCount; // = fon9_BitvT[1] + used_of(barySize)
    if (!buf.IsSizeEnough(barySize + bCount))
-      return false;
-   buf.PopConsumed(bCount);
-   return true;
+      return PeekBitvByteArraySizeR::NeedsMoreData;
+   return static_cast<PeekBitvByteArraySizeR>(bCount);
 }
 
 //--------------------------------------------------------------------------//

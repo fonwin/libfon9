@@ -257,6 +257,13 @@ struct PluginsMgr::PluginsTree : public Tree {
       }
       return std::string{};
    }
+   std::string LoadConfigStr(StrView cfgstr) {
+      std::string res;
+      this->TaskQu_.InplaceOrWait(AQueueTaskKind::Set, [this, cfgstr, &res]() {
+         res = this->ParseConfigStr(cfgstr);
+      });
+      return res;
+   }
 };
 //--------------------------------------------------------------------------//
 void PluginsMgr::PluginsTree::TaskInvoker::MakeCallForWork() {
@@ -313,6 +320,9 @@ std::string PluginsMgr::BindConfigFile(StrView cfgfn) {
    this->SetTitle(cfgfn.ToString());
    this->SetDescription(res);
    return res;
+}
+std::string PluginsMgr::LoadConfigStr(StrView cfgstr) {
+   return static_cast<PluginsTree*>(this->Sapling_.get())->LoadConfigStr(cfgstr);
 }
 fon9_WARN_POP;
 

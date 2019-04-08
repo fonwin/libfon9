@@ -21,7 +21,7 @@
 ///   ss,PriRef=35.7,PriUpLmt=39.25,PriDnLmt=32.15 /SymbIn/1101^Ref
 ///
 /// \author fonwinz@gmail.com
-#include "fon9/framework/IoFactory.hpp"
+#include "fon9/framework/SessionFactoryConfigWithAuthMgr.hpp"
 #include "fon9/auth/AuthMgr.hpp"
 #include "fon9/auth/PolicyAcl.hpp"
 #include "fon9/seed/SeedVisitor.hpp"
@@ -227,37 +227,20 @@ struct SeedImporterFactory : public SessionFactory {
       return this->CreateSeedImporter<SeedImporterServer>(cfg, errReason);
    }
 };
-class SeedImporterArgsParser : public SessionFactoryConfigParser {
+class SeedImporterArgsParser : public SessionFactoryConfigWithAuthMgr {
    fon9_NON_COPY_NON_MOVE(SeedImporterArgsParser);
-   using base = SessionFactoryConfigParser;
-   seed::PluginsHolder& PluginsHolder_;
-   StrView              AuthMgrName_;
+   using base = SessionFactoryConfigWithAuthMgr;
 public:
-   SeedImporterArgsParser(seed::PluginsHolder& pluginsHolder)
-      : SessionFactoryConfigParser{"SeedImporter"}
-      , PluginsHolder_{pluginsHolder} {
-   }
-   bool OnUnknownTag(seed::PluginsHolder& holder, StrView tag, StrView value) override {
-      if (tag == "AuthMgr") {
-         this->AuthMgrName_ = value;
-         return true;
-      }
-      return base::OnUnknownTag(holder, tag, value);
-   }
+   using base::base;
    SessionFactorySP CreateSessionFactory() override {
-      if (auto authMgr = this->PluginsHolder_.Root_->Get<auth::AuthMgr>(this->AuthMgrName_))
+      if (auto authMgr = this->GetAuthMgr())
          return new SeedImporterFactory(this->Name_, std::move(authMgr));
-      this->ErrMsg_ += "|err=Unknown AuthMgr";
-      if (!this->AuthMgrName_.empty()) {
-         this->ErrMsg_.push_back('=');
-         this->AuthMgrName_.AppendTo(this->ErrMsg_);
-      }
       return nullptr;
    }
 };
 
 static bool SeedImporter_Start(seed::PluginsHolder& holder, StrView args) {
-   return SeedImporterArgsParser{holder}.Parse(holder, args);
+   return SeedImporterArgsParser{holder, "SeedImporter"}.Parse(holder, args);
 }
 
 } // namespaces

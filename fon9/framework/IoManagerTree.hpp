@@ -20,6 +20,10 @@ public:
    void OnTabTreeOp(seed::FnTreeOp fnCallback) override;
    void OnParentSeedClear() override;
 
+   /// 直接載入設定字串, 字串格式 = 設定檔內容.
+   /// retval.empty() 表示成功, 否則傳回錯誤訊息.
+   std::string LoadConfigStr(StrView cfgstr);
+
    template <class IoTree = IoManagerTree, class... ArgsT>
    static intrusive_ptr<IoTree> Plant(seed::MaTree& maTree, const IoManagerArgs& ioargs, ArgsT&&... args) {
       intrusive_ptr<IoTree> retval{new IoTree(ioargs, std::forward<ArgsT>(args)...)};

@@ -25,7 +25,14 @@ public:
              std::forward<NamedArgsT>(namedargs)...) {
    }
    /// retval.empty() 表示成功, 否則傳回錯誤訊息.
+   /// 返回前設定:
+   /// - this->SetTitle(cfgfn);
+   /// - this->SetDescription(retval);
    std::string BindConfigFile(StrView cfgfn);
+
+   /// 直接載入設定字串, 字串格式 = 設定檔內容.
+   /// retval.empty() 表示成功, 否則傳回錯誤訊息.
+   std::string LoadConfigStr(StrView cfgstr);
 
    struct PluginsRec;
 };
