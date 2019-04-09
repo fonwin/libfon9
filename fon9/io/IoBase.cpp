@@ -57,6 +57,8 @@ ConfigParser::Result DeviceOptions::OnTagValue(StrView tag, StrView& value) {
       return ParseTimeIntervalToMS(value, this->LinkErrorRetryInterval_);
    if (tag == "ReopenInterval")
       return ParseTimeIntervalToMS(value, this->LinkBrokenReopenInterval_);
+   if (tag == "ClosedReopen")
+      return ParseTimeIntervalToMS(value, this->ClosedReopenInterval_);
    return ConfigParser::Result::EUnknownTag;
 }
 

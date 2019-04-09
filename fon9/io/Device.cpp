@@ -151,17 +151,22 @@ bool Device::OpImpl_SetState(State afst, StrView stmsg) {
    e.BeforeState_ = bfst;
    e.After_.State_ = afst;
    this->OpImpl_StateChanged(e);
+   uint32_t msTimerInterval{0u};
+   if (afst == State::LinkBroken || afst == State::ListenBroken)
+      msTimerInterval = this->Options_.LinkBrokenReopenInterval_;
+   else if (afst == State::LinkError)
+      msTimerInterval = this->Options_.LinkErrorRetryInterval_;
+   else if (afst == State::Closed)
+      msTimerInterval = this->Options_.ClosedReopenInterval_;
+
+   if (msTimerInterval > 0u)
+      this->CommonTimer_.RunAfter(TimeInterval_Millisecond(msTimerInterval));
+   else
+      this->CommonTimer_.StopNoWait();
+
    this->Session_->OnDevice_StateChanged(*this, e);
    if (this->Manager_)
       this->Manager_->OnDevice_StateChanged(*this, e);
-   if (afst == State::LinkBroken || afst == State::ListenBroken) {
-      if (this->Options_.LinkBrokenReopenInterval_ > 0)
-         this->CommonTimer_.RunAfter(TimeInterval_Millisecond(this->Options_.LinkBrokenReopenInterval_));
-   }
-   else if (afst == State::LinkError) {
-      if (this->Options_.LinkErrorRetryInterval_ > 0)
-         this->CommonTimer_.RunAfter(TimeInterval_Millisecond(this->Options_.LinkErrorRetryInterval_));
-   }
    return true;
 }
 
@@ -277,7 +282,7 @@ enum class StateTimerAct {
    ToDerived,
    ToSession,
 };
-static StateTimerAct GetStateTimerAct(State st) {
+static StateTimerAct GetStateTimerAct(const DeviceOptions& opts, State st) {
    switch (st) {
    case State::Initializing:
    case State::Initialized:
@@ -287,9 +292,12 @@ static StateTimerAct GetStateTimerAct(State st) {
       return StateTimerAct::Ignore;
 
    case State::LinkError:
+      return (opts.LinkErrorRetryInterval_ > 0 ? StateTimerAct::Reopen : StateTimerAct::Ignore);
    case State::LinkBroken:
    case State::ListenBroken:
-      return StateTimerAct::Reopen;
+      return (opts.LinkBrokenReopenInterval_ > 0 ? StateTimerAct::Reopen : StateTimerAct::Ignore);
+   case State::Closed:
+      return (opts.ClosedReopenInterval_ > 0 ? StateTimerAct::Reopen : StateTimerAct::Ignore);
 
    case State::LinkReady:
       return StateTimerAct::ToSession;
@@ -301,19 +309,18 @@ static StateTimerAct GetStateTimerAct(State st) {
    case State::Linking:
    case State::Listening:
    case State::Closing:
-   case State::Closed:
       return StateTimerAct::ToDerived;
    }
 }
 void Device::EmitOnCommonTimer(TimerEntry* timer, TimeStamp now) {
    Device& rthis = ContainerOf(*static_cast<CommonTimer*>(timer), &Device::CommonTimer_);
-   switch (GetStateTimerAct(rthis.State_)) {
+   switch (GetStateTimerAct(rthis.Options_, rthis.State_)) {
    default:
    case StateTimerAct::Ignore:
       break;
    case StateTimerAct::Reopen:
       rthis.OpQueue_.AddTask(DeviceAsyncOp{[](Device& dev) {
-         if(GetStateTimerAct(dev.State_) == StateTimerAct::Reopen)
+         if(GetStateTimerAct(dev.Options_, dev.State_) == StateTimerAct::Reopen)
             dev.OpImpl_Reopen();
       }});
       break;

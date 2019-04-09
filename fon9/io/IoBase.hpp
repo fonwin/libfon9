@@ -188,15 +188,18 @@ fon9_WARN_DISABLE_PADDING;
 struct DeviceOptions {
    DeviceFlag  Flags_{DeviceFlag::SendASAP};
 
-   // ms, =0 表示 LinkError 時, 不用 reopen, 預設為 15 秒.
+   // 單位:ms, 0 表示 LinkError 時不用 reopen; 預設為 15 秒.
    uint32_t    LinkErrorRetryInterval_{15000};
-   // ms, =0 表示 LinkBroken 時, 不用 reopen, 預設為 3 秒.
+   // 單位:ms, 0 表示 LinkBroken 時不用 reopen; 預設為 3 秒.
    uint32_t    LinkBrokenReopenInterval_{3000};
+   // 單位:ms, 0 表示進入 Closed 狀態後不用 reopen; 預設為 0.
+   uint32_t    ClosedReopenInterval_{0};
 
    /// 設定屬性參數:
    /// - SendASAP=N        預設值為 'Y'，只要不是 'N' 就會設定成 Yes(若未設定，初始值為 Yes)。
    /// - RetryInterval=n   LinkError 之後重新嘗試的延遲時間, 預設值為 15 秒, 0=不要 retry.
    /// - ReopenInterval=n  LinkBroken 或 ListenBroken 之後, 重新嘗試的延遲時間, 預設值為 3 秒, 0=不要 reopen.
+   /// - ClosedReopen=n    Closed 之後, 重新開啟的延遲時間, 預設值為 0=不要 reopen.
    ///   使用 TimeInterval 格式設定, 延遲最小單位為 ms, e.g.
    ///   "RetryInterval=3"    表示連線失敗後, 延遲  3 秒後重新連線.
    ///   "ReopenInterval=0.5" 表示斷線後, 延遲  0.5 秒後重新連線.

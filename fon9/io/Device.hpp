@@ -22,6 +22,7 @@ class fon9_API Device : public intrusive_ref_counter<Device> {
    Bookmark       ManagerBookmark_{0};
    std::string    DeviceId_;
    DeviceOptions  Options_;
+   char           padding___[4];
    
 public:
    const Style       Style_;
