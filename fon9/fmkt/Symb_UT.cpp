@@ -59,9 +59,9 @@ static void Benchmark(const char* benchFor, const SymbList& symbs) {
    MapT            map;
    uint64_t        memused = GetMemUsed();
    stopWatch.ResetTimer();
-   for (const auto& symb : symbs) {
+   for (fon9::fmkt::SymbSP symb : symbs) {
       Locker lk{mx};
-      map.emplace(fon9::ToStrView(symb->SymbId_), symb);
+      fon9::fmkt::InsertSymb(map, std::move(symb));
    }
    stopWatch.PrintResultNoEOL("emplace:    ", symbs.size()) << "|MemUsed(KB)=" << (GetMemUsed() - memused) << std::endl;
 
@@ -96,7 +96,7 @@ int main(int argc, char** argv) {
 
    using SymbTrieMap = fon9::fmkt::SymbTrieMap;
    using SymbHashMap = fon9::fmkt::SymbHashMap;
-   using SymbSvectMap = fon9::SortedVector<fon9::StrView, fon9::fmkt::SymbSP>;
+   using SymbSvectMap = fon9::fmkt::SymbSortedVector;
    using SymbStdMap = std::map<fon9::StrView, fon9::fmkt::SymbSP>;
    for (int n = 1; n < argc; ++n) {
       const char* arg = argv[n];

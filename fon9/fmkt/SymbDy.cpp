@@ -1,11 +1,6 @@
 ﻿// \file fon9/fmkt/SymbDy.cpp
 // \author fonwinz@gmail.com
 #include "fon9/fmkt/SymbDy.hpp"
-#include "fon9/fmkt/SymbRef.hpp"
-#include "fon9/fmkt/SymbBS.hpp"
-#include "fon9/fmkt/SymbDeal.hpp"
-#include "fon9/seed/FieldMaker.hpp"
-#include "fon9/seed/Plugins.hpp"
 
 namespace fon9 { namespace fmkt {
 
@@ -37,34 +32,4 @@ SymbSP SymbDyTree::MakeSymb(const StrView& symbid) {
    return SymbSP{new SymbDy(this, symbid)};
 }
 
-static bool SymbMap_Start(seed::PluginsHolder& holder, StrView args) {
-   // args = symbMapName.
-   if (!StrTrim(&args).empty() && !ValidateName(args)) {
-      holder.SetPluginsSt(LogLevel::Error, "Invalid SymbDy map name=", args);
-      return false;
-   }
-   std::string    symbMapName = args.empty() ? "SymbDy" : args.ToString();
-   seed::LayoutSP layout{new seed::LayoutDy(fon9_MakeField(Named{"Id"}, Symb, SymbId_),
-      seed::TabSP{new seed::Tab{Named{"Base"}, Symb::MakeFields(), seed::TabFlag::NoSapling_NoSeedCommand_Writable}},
-      seed::TreeFlag::AddableRemovable | seed::TreeFlag::Unordered)};
-   SymbDyTree* dy = new SymbDyTree{std::move(layout)};
-   if (holder.Root_->Add(new fon9::seed::NamedSapling(dy, std::move(symbMapName)))) {
-      // 使用 SymbRef 驗證 SymbDy 機制.
-      dy->AddSymbDataTab(new SymbRefTabDy(Named{"Ref"}));
-      dy->AddSymbDataTab(new SymbBSTabDy(Named{"BS"}));
-      dy->AddSymbDataTab(new SymbDealTabDy(Named{"Deal"}));
-   }
-   return true;
-}
-
 } } // namespaces
-
-extern "C" fon9_API fon9::seed::PluginsDesc f9p_SymbDyMap;
-static fon9::seed::PluginsPark f9pRegister{"SymbDy", &f9p_SymbDyMap};
-
-fon9::seed::PluginsDesc f9p_SymbDyMap{
-   "",
-   &fon9::fmkt::SymbMap_Start,
-   nullptr,
-   nullptr,
-};

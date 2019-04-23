@@ -32,7 +32,7 @@ public:
    static seed::Fields MakeFields();
 };
 
-class SymbDealTabDy : public SymbDataTab {
+class fon9_API SymbDealTabDy : public SymbDataTab {
    fon9_NON_COPY_NON_MOVE(SymbDealTabDy);
    using base = SymbDataTab;
 public:

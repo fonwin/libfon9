@@ -22,4 +22,5 @@ string(REPLACE ";" " " CMAKE_CXX_FLAGS "${CXX_FLAGS}")
 include_directories(.)
 
 add_subdirectory(fon9)
+add_subdirectory(f9extests)
 add_subdirectory(f9tws)

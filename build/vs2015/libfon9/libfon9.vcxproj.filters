@@ -872,9 +872,6 @@
     <ClInclude Include="..\..\..\fon9\fmkt\FmktTypes.hpp">
       <Filter>Header Files\fmkt</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\fon9\fmkt\SymbIn.hpp">
-      <Filter>Header Files\fmkt</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\fon9\fmkt\SymbBS.hpp">
       <Filter>Header Files\fmkt</Filter>
     </ClInclude>
@@ -940,6 +937,9 @@
     </None>
     <None Include="..\..\..\fon9\rc\README.md">
       <Filter>Header Files\rc</Filter>
+    </None>
+    <None Include="..\..\..\fon9\fmkt\README.md">
+      <Filter>Header Files\fmkt</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -1424,9 +1424,6 @@
       <Filter>Source Files\fmkt</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\fmkt\SymbRef.cpp">
-      <Filter>Source Files\fmkt</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\fon9\fmkt\SymbIn.cpp">
       <Filter>Source Files\fmkt</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\fmkt\SymbBS.cpp">

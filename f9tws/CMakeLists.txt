@@ -13,4 +13,4 @@ target_link_libraries(f9tws pthread rt dl)
 
 # unit tests
 add_executable(f9twsExgMkt_UT ExgMkt_UT.cpp)
-target_link_libraries(f9twsExgMkt_UT fon9_s f9tws_s)
+target_link_libraries(f9twsExgMkt_UT fon9_s f9tws_s f9extests_s)

@@ -6,6 +6,7 @@
 #include "fon9/CharVector.hpp"
 #include "fon9/intrusive_ref_counter.hpp"
 #include "fon9/Trie.hpp"
+#include "fon9/SortedVector.hpp"
 #include "fon9/seed/Tab.hpp"
 
 #include <unordered_map>
@@ -57,17 +58,34 @@ using SymbSP = intrusive_ptr<Symb>;
 //--------------------------------------------------------------------------//
 
 using SymbHashMap = std::unordered_map<StrView, SymbSP>;
-inline StrView GetSymbId(const std::pair<StrView, SymbSP>& v) {
-   return v.first;
-}
 inline Symb& GetSymbValue(const std::pair<StrView, SymbSP>& v) {
    return *v.second;
 }
-inline void ResetSymbValue(std::pair<StrView, SymbSP>& v, SymbSP symb) {
-   v.second = std::move(symb);
+
+template <class Symbs>
+inline SymbSP InsertSymb(Symbs& symbs, SymbSP v) {
+   return symbs.insert(typename Symbs::value_type(ToStrView(v->SymbId_), v)).first->second;
 }
-inline void ResetSymbValue(SymbHashMap::value_type& v, SymbSP symb) {
-   v.second = std::move(symb);
+
+//--------------------------------------------------------------------------//
+
+struct SymbSP_Comparer {
+   bool operator()(const SymbSP& lhs, const SymbSP& rhs) const {
+      return lhs->SymbId_ < rhs->SymbId_;
+   }
+   bool operator()(const StrView& lhs, const SymbSP& rhs) const {
+      return lhs < ToStrView(rhs->SymbId_);
+   }
+   bool operator()(const SymbSP& lhs, const StrView& rhs) const {
+      return ToStrView(lhs->SymbId_) < rhs;
+   }
+};
+using SymbSortedVector = SortedVectorSet<SymbSP, SymbSP_Comparer>;
+inline Symb& GetSymbValue(const SymbSP& v) {
+   return *v;
+}
+inline SymbSP InsertSymb(SymbSortedVector& symbs, SymbSP&& v) {
+   return *symbs.insert(std::move(v)).first;
 }
 
 //--------------------------------------------------------------------------//
@@ -93,14 +111,11 @@ struct TrieSymbKey {
    fon9_GCC_WARN_POP;
 };
 using SymbTrieMap = Trie<TrieSymbKey, SymbSP>;
-inline StrView GetSymbId(const SymbTrieMap::value_type& v) {
-   return ToStrView(v.value()->SymbId_);
-}
 inline Symb& GetSymbValue(const SymbTrieMap::value_type& v) {
    return *v.value();
 }
-inline void ResetSymbValue(SymbTrieMap::value_type& v, SymbSP symb) {
-   v.value() = std::move(symb);
+inline SymbSP InsertSymb(SymbTrieMap& symbs, SymbSP v) {
+   return symbs.emplace(ToStrView(v->SymbId_), v).first->value();
 }
 
 //--------------------------------------------------------------------------//

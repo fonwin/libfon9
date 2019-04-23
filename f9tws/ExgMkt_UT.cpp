@@ -1,9 +1,12 @@
 ﻿// \file f9tws/ExgMkt_UT.cpp
+//
+// 測試 TSEC 行情格式解析.
+//
 // \author fonwinz@gmail.com
 #define _CRT_SECURE_NO_WARNINGS
 #include "f9tws/ExgMktFeeder.hpp"
 #include "f9tws/ExgMktFmt6.hpp"
-#include "fon9/fmkt/SymbIn.hpp"
+#include "f9extests/SymbIn.hpp"
 #include "fon9/RevPrint.hpp"
 #include "fon9/TestTools.hpp"
 
@@ -69,9 +72,8 @@ struct Fmt6Parser : public Feeder, public fon9::fmkt::SymbTree {
    using baseTree = fon9::fmkt::SymbTree;
    Fmt6Parser() : baseTree{fon9::seed::LayoutSP{}} {
    }
-
    fon9::fmkt::SymbSP MakeSymb(const fon9::StrView& symbid) override {
-      return new fon9::fmkt::SymbIn{symbid};
+      return new f9extests::SymbIn{symbid};
    }
    void ExgMktOnReceived(const f9tws::ExgMktHeader& pk, unsigned pksz) override {
       baseFeeder::ExgMktOnReceived(pk, pksz);
@@ -88,7 +90,7 @@ struct Fmt6Parser : public Feeder, public fon9::fmkt::SymbTree {
       tmu6 = (tmu6 * 1000000) + fon9::PackBcdTo<unsigned>(fmt6.Time_.U6_);
       fon9::StrView        stkno{f9tws::ToStrView(fmt6.StkNo_)};
       SymbMap::Locker      symbs{this->SymbMap_};
-      fon9::fmkt::SymbIn&  symb = *static_cast<fon9::fmkt::SymbIn*>(this->FetchSymb(symbs, stkno).get());
+      f9extests::SymbIn&   symb = *static_cast<f9extests::SymbIn*>(this->FetchSymb(symbs, stkno).get());
       if (fmt6.ItemMask_ & 0x80) {
          symb.Deal_.Data_.Time_.Assign<6>(tmu6);
          symb.Deal_.Data_.TotalQty_ = fon9::PackBcdTo<fon9::fmkt::Qty>(fmt6.TotalQty_);
@@ -219,7 +221,7 @@ int main(int argc, char* argv[]) {
          auto symb = fmt6parser.GetSymb("2330");
          if (!symb && !fmt6parser.SymbMap_.Lock()->empty())
             symb.reset(&fon9::fmkt::GetSymbValue(*fmt6parser.SymbMap_.Lock()->begin()));
-         if (const fon9::fmkt::SymbIn* symi = static_cast<const fon9::fmkt::SymbIn*>(symb.get())) {
+         if (const f9extests::SymbIn* symi = static_cast<const f9extests::SymbIn*>(symb.get())) {
             fon9::RevBufferList rbuf{256};
             fon9::FmtDef fmtPri{7,2};
             fon9::FmtDef fmtQty{7};

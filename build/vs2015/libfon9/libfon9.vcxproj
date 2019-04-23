@@ -157,7 +157,6 @@
     <ClInclude Include="..\..\..\fon9\fmkt\SymbBS.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\SymbDeal.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\SymbDy.hpp" />
-    <ClInclude Include="..\..\..\fon9\fmkt\SymbIn.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\SymbRef.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\SymbTree.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\FmktTypes.h" />
@@ -325,6 +324,7 @@
   <ItemGroup>
     <None Include="..\..\..\fon9\buffer\README.md" />
     <None Include="..\..\..\fon9\fix\README.md" />
+    <None Include="..\..\..\fon9\fmkt\README.md" />
     <None Include="..\..\..\fon9\io\README.md" />
     <None Include="..\..\..\fon9\rc\README.md" />
     <None Include="..\..\..\fon9\seed\README.md" />
@@ -394,7 +394,6 @@
     <ClCompile Include="..\..\..\fon9\fmkt\SymbBS.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\SymbDeal.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\SymbDy.cpp" />
-    <ClCompile Include="..\..\..\fon9\fmkt\SymbIn.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\SymbRef.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\SymbTree.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\Trading.cpp" />

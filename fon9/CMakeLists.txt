@@ -155,7 +155,6 @@ set(fon9src
  fmkt/Symb.cpp
  fmkt/SymbTree.cpp
  fmkt/SymbDy.cpp
- fmkt/SymbIn.cpp
  fmkt/SymbRef.cpp
  fmkt/SymbBS.cpp
  fmkt/SymbDeal.cpp

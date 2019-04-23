@@ -34,7 +34,7 @@ public:
    static seed::Fields MakeFields();
 };
 
-class SymbBSTabDy : public SymbDataTab {
+class fon9_API SymbBSTabDy : public SymbDataTab {
    fon9_NON_COPY_NON_MOVE(SymbBSTabDy);
    using base = SymbDataTab;
 public:

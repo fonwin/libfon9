@@ -5,6 +5,10 @@
 #include "fon9/sys/Config.h"
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /// \ingroup fmkt
 /// 買賣別. 
 enum f9fmkt_Side fon9_ENUM_underlying(char) {
@@ -34,7 +38,14 @@ enum f9fmkt_TradingMarket   fon9_ENUM_underlying(char) {
    f9fmkt_TradingMarket_TwEmg = 'E',
    /// 台灣期交所.
    f9fmkt_TradingMarket_TwFex = 'F',
+
+   /// 提供給陣列使用, 例如:
+   /// using MarketMap = std::array<MarketRec, f9fmkt_TradingMarket_MaxIndex + 1u>;
+   f9fmkt_TradingMarket_MaxIndex = 'z'
 };
+inline int f9fmkt_TradingMarketToIndex(f9fmkt_TradingMarket v) {
+   return (int)(v);
+}
 
 /// \ingroup fmkt
 /// 交易時段代碼.
@@ -58,9 +69,12 @@ enum f9fmkt_TradingSessionId   fon9_ENUM_underlying(char) {
    f9fmkt_TradingSessionId_AfterHour = '6',
 
    /// 提供給陣列使用, 例如:
-   /// using SessionMap = std::array<SessionRec, TradingSessionId_MaxIndex + 1u>;
-   f9fmkt_TradingSessionId_MaxIndex = 'z',
+   /// using MarketMap = std::array<MarketRec, f9fmkt_TradingSessionId_MaxIndex + 1u>;
+   f9fmkt_TradingSessionId_MaxIndex = 'z'
 };
+inline int f9fmkt_TradingSessionIdToIndex(f9fmkt_TradingSessionId v) {
+   return (int)(v);
+}
 
 /// \ingroup fmkt
 /// 下單要求狀態.
@@ -175,4 +189,7 @@ enum f9fmkt_OrderSt   fon9_ENUM_underlying(uint8_t) {
    f9fmkt_OrderSt_NewSending = f9fmkt_TradingRequestSt_Sending,
 };
 
+#ifdef __cplusplus
+}
+#endif
 #endif//__fon9_fmkt_FmktTypes_h__

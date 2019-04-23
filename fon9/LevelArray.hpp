@@ -14,7 +14,7 @@ namespace fon9 {
 ///   - 例如: Request Map: RequestKey = index = 每次依序加 1
 /// - 如果資料量很大, 且 Key 非常分散, 則 std::unordered_map 可能會是更好的選擇.
 /// - DeepN: 實際深度, e.g. uint32_t:
-///   - 正常而言深度為 4, 但可設為 3 表示 Key 的值域儘可能是 0..0xffffff;
+///   - 正常而言深度為 4, 但可設為 3 表示 Key 的值域是 0..0xffffff;
 ///   - 但不應 <= 2, 如果值域確實是 0..0xffff, 則應使用 uint16_t.
 template <class KeyT, class ValueT, byte DeepN = sizeof(KeyT)>
 class LevelArray {
