@@ -14,7 +14,6 @@ struct SeedFairy::AclTree : public Tree {
       , Acl_(acl) {
    }
 
-   fon9_MSC_WARN_DISABLE(4265 /* class has virtual functions, but destructor is not virtual. */);
    struct TreeOp : public seed::TreeOp {
       fon9_NON_COPY_NON_MOVE(TreeOp);
       using base = seed::TreeOp;
@@ -39,7 +38,6 @@ struct SeedFairy::AclTree : public Tree {
          }
       }
    };
-   fon9_MSC_WARN_POP;
    void OnTreeOp(FnTreeOp fnCallback) override {
       TreeOp op{*this};
       fnCallback(TreeOpResult{this, OpResult::no_error}, &op);

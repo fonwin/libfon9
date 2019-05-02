@@ -9,7 +9,6 @@
 
 namespace fon9 { namespace seed {
 
-fon9_MSC_WARN_DISABLE(4265 /* class has virtual functions, but destructor is not virtual. */);
 template <class Pod, class Locker>
 class PodOpLockerNoWrite : public PodOpDefault {
    fon9_NON_COPY_NON_MOVE(PodOpLockerNoWrite);
@@ -64,7 +63,6 @@ public:
       this->BeginRW(tab, std::move(fnCallback), SimpleRawWr{this->Pod_.GetSeedRW(tab)});
    }
 };
-fon9_MSC_WARN_POP;
 
 //--------------------------------------------------------------------------//
 

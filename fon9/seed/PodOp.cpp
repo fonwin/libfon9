@@ -6,6 +6,8 @@
 
 namespace fon9 { namespace seed {
 
+PodOp::~PodOp() {
+}
 TreeSP PodOp::MakeSapling(Tab& tab) {
    return this->GetSapling(tab);
 }

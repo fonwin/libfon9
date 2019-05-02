@@ -29,6 +29,8 @@ class LevelArray {
       void Clear(byte lv);
       ValueT& Fetch(byte lv, const byte* keys);
       ValueT* Get(byte lv, const byte* keys);
+      ValueT* GetFirst(byte lv, byte* keys);
+      ValueT* GetNext(byte lv, byte* keys);
    };
    using LevelBlock = std::array<LevelRec, 0x100>;
    mutable LevelRec  Head_;
@@ -78,6 +80,15 @@ public:
    const ValueT* Get(KeyT key) const {
       return const_cast<LevelArray*>(this)->Get(key);
    }
+
+   ValueT* GetFirst(KeyT& key);
+   const ValueT* GetFirst(KeyT& key) const {
+      return const_cast<LevelArray*>(this)->GetFirst(key);
+   }
+   ValueT* GetNext(KeyT& key);
+   const ValueT* GetNext(KeyT& key) const {
+      return const_cast<LevelArray*>(this)->GetNext(key);
+   }
 };
 
 template <class KeyT, class ValueT, byte DeepN>
@@ -118,6 +129,63 @@ ValueT* LevelArray<KeyT,ValueT,DeepN>::LevelRec::Get(byte lv, const byte* keys) 
    else if (fon9_LIKELY(this->NextLevel_ != nullptr))
       return &(*reinterpret_cast<ValueBlock*>(this->NextLevel_))[*keys];
    return nullptr;
+}
+
+template <class KeyT, class ValueT, byte DeepN>
+ValueT* LevelArray<KeyT, ValueT, DeepN>::LevelRec::GetFirst(byte lv, byte* keys) {
+   if (lv < sizeof(KeyT) - 1) {
+      for (unsigned L = 0; L <= 0xff; ++L) {
+         auto& blk = (*reinterpret_cast<LevelBlock*>(this->NextLevel_))[L];
+         if (blk.NextLevel_) {
+            if (ValueT* retval = blk.GetFirst(static_cast<byte>(lv + 1), keys + 1)) {
+               *keys = static_cast<byte>(L);
+               return retval;
+            }
+         }
+      }
+      return nullptr;
+   }
+   return &(*reinterpret_cast<ValueBlock*>(this->NextLevel_))[*keys = 0];
+}
+template <class KeyT, class ValueT, byte DeepN>
+ValueT* LevelArray<KeyT, ValueT, DeepN>::GetFirst(KeyT& key) {
+   key = KeyT{};
+   if (this->Head_.NextLevel_ == nullptr)
+      return nullptr;
+   ValueT* retval = this->Head_.GetFirst(kDeepStart, reinterpret_cast<byte*>(&key) + kDeepStart);
+   PutBigEndian(&key, key);
+   return retval;
+}
+
+template <class KeyT, class ValueT, byte DeepN>
+ValueT* LevelArray<KeyT, ValueT, DeepN>::LevelRec::GetNext(byte lv, byte* keys) {
+   if (lv < sizeof(KeyT) - 1) {
+      unsigned L = *keys;
+      auto*    blk = &(*reinterpret_cast<LevelBlock*>(this->NextLevel_))[L];
+      ValueT*  retval;
+      if (blk->NextLevel_ && (retval = blk->GetNext(static_cast<byte>(lv + 1), keys + 1)) != nullptr)
+         return retval;
+      for (++L; L <= 0xff; ++L) {
+         blk = &(*reinterpret_cast<LevelBlock*>(this->NextLevel_))[L];
+         if (blk->NextLevel_) {
+            if ((retval = blk->GetFirst(static_cast<byte>(lv + 1), keys + 1)) != nullptr) {
+               *keys = static_cast<byte>(L);
+               return retval;
+            }
+         }
+      }
+      return nullptr;
+   }
+   return &(*reinterpret_cast<ValueBlock*>(this->NextLevel_))[*keys];
+}
+template <class KeyT, class ValueT, byte DeepN>
+ValueT* LevelArray<KeyT, ValueT, DeepN>::GetNext(KeyT& key) {
+   PutBigEndian(&key, ++key);
+   ValueT* retval = (this->Head_.NextLevel_
+                     ? this->Head_.GetNext(kDeepStart, reinterpret_cast<byte*>(&key) + kDeepStart)
+                     : nullptr);
+   PutBigEndian(&key, key);
+   return retval;
 }
 
 } // namespace

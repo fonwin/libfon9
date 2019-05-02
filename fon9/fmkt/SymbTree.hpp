@@ -9,7 +9,6 @@
 
 namespace fon9 { namespace fmkt {
 
-fon9_MSC_WARN_DISABLE(4265 /* class has virtual functions, but destructor is not virtual. */);
 class fon9_API SymbPodOp : public seed::PodOpDefault {
    fon9_NON_COPY_NON_MOVE(SymbPodOp);
    using base = seed::PodOpDefault;
@@ -21,6 +20,7 @@ public:
       : base(sender, seed::OpResult::no_error, keyText)
       , Symb_{std::move(symb)} {
    }
+
    void BeginRead(seed::Tab& tab, seed::FnReadOp fnCallback) override;
    void BeginWrite(seed::Tab& tab, seed::FnWriteOp fnCallback) override;
 };
@@ -32,12 +32,13 @@ public:
    using base::base;
 
    template <class Iterator>
-   static void MakeRowView(Iterator ivalue, seed::Tab* tab, RevBuffer& rbuf) {
+   static bool MakeRowView(Iterator ivalue, seed::Tab* tab, RevBuffer& rbuf) {
       if (tab) {
          if (auto dat = GetSymbValue(*ivalue).GetSymbData(tab->GetIndex()))
             FieldsCellRevPrint(tab->Fields_, seed::SimpleRawRd{*dat}, rbuf, seed::GridViewResult::kCellSplitter);
       }
       RevPrint(rbuf, GetSymbValue(*ivalue).SymbId_);
+      return true;
    }
    /// 如果不是 unordered_map, 則可以使用一般的 GridView.
    template <class Container>
@@ -46,28 +47,8 @@ public:
    }
    /// 若使用 unordered_map 則 req.OrigKey_ = "key list";
    template <class Container>
-   static void GridViewUnordered(const Container& container, const seed::GridViewRequest& req, seed::GridViewResult& res) {
-      if (req.OrigKey_.Get1st() != seed::GridViewResult::kCellSplitter)
-         res.OpResult_ = seed::OpResult::not_supported_grid_view;
-      else {
-         res.ContainerSize_ = container.size();
-         StrView        keys{req.OrigKey_.begin() + 1, req.OrigKey_.end()};
-         RevBufferList  rbuf{256};
-         for (;;) {
-            const char* pkey = static_cast<const char*>(memrchr(keys.begin(), seed::GridViewResult::kCellSplitter, keys.size()));
-            StrView     key{pkey ? (pkey + 1) : keys.begin(), keys.end()};
-            auto        ifind = seed::GetIteratorForPod(container, key);
-            if (ifind == container.end())
-               RevPrint(rbuf, key);
-            else
-               MakeRowView(ifind, res.Tab_, rbuf);
-            if (pkey == nullptr)
-               break;
-            keys.SetEnd(pkey);
-            RevPrint(rbuf, seed::GridViewResult::kRowSplitter);
-         }
-         res.GridView_ = BufferTo<std::string>(rbuf.MoveOut());
-      }
+   static void GridViewUnordered(const Container& c, const seed::GridViewRequest& req, seed::GridViewResult& res) {
+      seed::MakeGridViewUnordered(c, c.end(), req, res, &MakeRowView<typename Container::const_iterator>);
    }
 
    template <class Container>
@@ -93,7 +74,6 @@ public:
       GridViewOrdered(c, req, res);
    }
 };
-fon9_MSC_WARN_POP;
 //--------------------------------------------------------------------------//
 template <class SymbMapImplT, class MutexT>
 class SymbTreeT : public seed::Tree {
@@ -146,7 +126,6 @@ public:
    }
 
 private:
-   fon9_MSC_WARN_DISABLE(4265 /* class has virtual functions, but destructor is not virtual. */);
    class PodOp : public SymbPodOp {
       fon9_NON_COPY_NON_MOVE(PodOp);
       using base = SymbPodOp;
@@ -211,7 +190,6 @@ private:
          fnCallback(res);
       }
    };
-   fon9_MSC_WARN_POP;
 };
 //--------------------------------------------------------------------------//
 

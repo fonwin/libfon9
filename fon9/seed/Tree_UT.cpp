@@ -166,7 +166,6 @@ public:
       , Symbs_(symbs) {
    }
 
-   fon9_MSC_WARN_DISABLE(4265);//class has virtual functions, but destructor is not virtual
    class PodOp : public fon9::seed::PodOpDefault {
       fon9_NON_COPY_NON_MOVE(PodOp);
       using base = fon9::seed::PodOpDefault;
@@ -258,7 +257,6 @@ public:
                    std::move(fnCallback));
       }
    };
-   fon9_MSC_WARN_POP;
 
    virtual void OnTreeOp(fon9::seed::FnTreeOp fnCallback) override {
       TreeOp op{*this};
@@ -298,7 +296,6 @@ public:
       , Ivacs_(ivacs) {
    }
 
-   fon9_MSC_WARN_DISABLE(4265);//class has virtual functions, but destructor is not virtual
    class PodOp : public fon9::seed::PodOpDefault {
       fon9_NON_COPY_NON_MOVE(PodOp);
       using base = fon9::seed::PodOpDefault;
@@ -442,7 +439,6 @@ public:
          fnCallback(res);
       }
    };
-   fon9_MSC_WARN_POP;
 
    virtual void OnTreeOp(fon9::seed::FnTreeOp fnCallback) override {
       TreeOp op{*this};
@@ -469,7 +465,6 @@ public:
                                      fon9::seed::TreeFlag::AddableRemovable)) {
    }
 
-   fon9_MSC_WARN_DISABLE(4265);//class has virtual functions, but destructor is not virtual
    class PodOp : public fon9::seed::PodOpDefault {
       fon9_NON_COPY_NON_MOVE(PodOp);
       using base = fon9::seed::PodOpDefault;
@@ -524,7 +519,6 @@ public:
                    std::move(fnCallback));
       }
    };
-   fon9_MSC_WARN_POP;
 
    virtual void OnTreeOp(fon9::seed::FnTreeOp fnCallback) override {
       TreeOp op{*this};

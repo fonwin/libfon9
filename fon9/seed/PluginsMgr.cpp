@@ -93,7 +93,6 @@ struct PluginsMgr::PluginsTree : public Tree {
       SeedSubj_Notify(this->SeedSubj_, *this, *this->LayoutSP_->GetTab(0), ToStrView(rec.Id_), rec);
    }
 
-   fon9_MSC_WARN_DISABLE(4265 /* class has virtual functions, but destructor is not virtual. */);
    struct PodOp : public PodOpDefault {
       fon9_NON_COPY_NON_MOVE(PodOp);
       using base = PodOpDefault;
@@ -188,7 +187,6 @@ struct PluginsMgr::PluginsTree : public Tree {
          return OpResult::no_error;
       }
    };
-   fon9_MSC_WARN_POP;
 
    PluginsTree(PluginsMgr& pluginsMgr, MaTreeSP&& root)
       : base{MakePluginsLayout()}

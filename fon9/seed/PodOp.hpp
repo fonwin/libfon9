@@ -8,6 +8,9 @@ namespace fon9 { namespace seed {
 
 class fon9_API PodOp {
    fon9_NON_COPY_NON_MOVE(PodOp);
+protected:
+   virtual ~PodOp();
+
 public:
    PodOp() = default;
 

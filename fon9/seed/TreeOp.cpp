@@ -4,6 +4,8 @@
 
 namespace fon9 { namespace seed {
 
+TreeOp::~TreeOp() {
+}
 void TreeOp::Remove(StrView strKeyText, Tab* tab, FnPodRemoved fnCallback) {
    fnCallback(PodRemoveResult{this->Tree_,
               tab ? OpResult::not_supported_remove_seed : OpResult::not_supported_remove_pod,

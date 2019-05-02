@@ -62,6 +62,9 @@ class fon9_API Layout1 : public Layout {
 public:
    const TabSP   KeyTab_;
    Layout1(FieldSP&& keyField, TabSP&& keyTab, TreeFlag flags = TreeFlag{});
+   Layout1(FieldSP&& keyField, TreeFlag flags, TabSP&& keyTab)
+      : Layout1(std::move(keyField), std::move(keyTab), flags) {
+   }
    ~Layout1();
    virtual Tab* GetTab(StrView name) const override;
    virtual Tab* GetTab(size_t index) const override;

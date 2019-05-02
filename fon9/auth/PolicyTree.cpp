@@ -24,8 +24,7 @@ void PolicyTree::OnParentSeedClear() {
 }
 
 fon9_WARN_DISABLE_PADDING;
-fon9_MSC_WARN_DISABLE_NO_PUSH(4265 /* class has virtual functions, but destructor is not virtual. */
-                              4355 /* 'this' : used in base member initializer list*/);
+fon9_MSC_WARN_DISABLE_NO_PUSH(4355 /* 'this' : used in base member initializer list*/);
 struct PolicyTree::PodOp : public seed::PodOpLocker<PodOp, PolicyMaps::Locker> {
    fon9_NON_COPY_NON_MOVE(PodOp);
    using base = seed::PodOpLocker<PodOp, PolicyMaps::Locker>;

@@ -3,12 +3,11 @@
 #ifndef __fon9_seed_TreeOp_hpp__
 #define __fon9_seed_TreeOp_hpp__
 #include "fon9/seed/SeedSubr.hpp"
-#include "fon9/buffer/RevBufferList.hpp"
+#include "fon9/RevPrint.hpp"
 #include "fon9/StrVref.hpp"
 
 namespace fon9 { namespace seed {
 fon9_WARN_DISABLE_PADDING;
-fon9_MSC_WARN_DISABLE_NO_PUSH(4265 /* class has virtual functions, but destructor is not virtual. */);
 
 //--------------------------------------------------------------------------//
 
@@ -186,10 +185,9 @@ struct GridViewResult {
    };
 
    template <class Container>
-   auto SetContainerSize(Container& container) -> decltype(container.size(), void()) {
-      this->ContainerSize_ = container.size();
+   auto SetContainerSize(const Container* container) -> decltype(container->size(), void()) {
+      this->ContainerSize_ = container->size();
    }
-   template <class Container>
    void SetContainerSize(...) {
       this->ContainerSize_ = kNotSupported;
    }
@@ -256,13 +254,12 @@ static Iterator GetIteratorForPod(Container& container, StrView strKeyText) {
 class fon9_API TreeOp {
    fon9_NON_COPY_NON_MOVE(TreeOp);
 protected:
-   ~TreeOp() {
-   }
-   TreeOp(Tree& tree) : Tree_(tree) {
-   }
+   virtual ~TreeOp();
 
 public:
    Tree& Tree_;
+   TreeOp(Tree& tree) : Tree_(tree) {
+   }
 
    virtual void GridView(const GridViewRequest& req, FnGridViewOp fnCallback);
    virtual void GridApplySubmit(const GridApplySubmitRequest& req, FnCommandResultHandler fnCallback);
@@ -402,9 +399,36 @@ template <class Container, class Iterator, class FnRowAppender>
 void MakeGridView(Container& container, Iterator istart,
                   const GridViewRequest& req, GridViewResult& res,
                   FnRowAppender&& fnRowAppender) {
-   res.SetContainerSize(container);
+   res.SetContainerSize(&container);
    MakeGridViewRange(istart, container.begin(), container.end(),
                      req, res, std::forward<FnRowAppender>(fnRowAppender));
+}
+
+/// \ingroup seed
+/// 若使用 unordered_map 則 req.OrigKey_ = "key list";
+template <class Container, class Iterator, class FnMakeRowView>
+void MakeGridViewUnordered(const Container& container, Iterator iend,
+                           const GridViewRequest& req, GridViewResult& res,
+                           FnMakeRowView fnMakeRowView) {
+   if (req.OrigKey_.Get1st() != GridViewResult::kCellSplitter)
+      res.OpResult_ = OpResult::not_supported_grid_view;
+   else {
+      res.SetContainerSize(&container);
+      StrView        keys{req.OrigKey_.begin() + 1, req.OrigKey_.end()};
+      RevBufferList  rbuf{256};
+      for (;;) {
+         const char* pkey = static_cast<const char*>(memrchr(keys.begin(), GridViewResult::kCellSplitter, keys.size()));
+         StrView     key{pkey ? (pkey + 1) : keys.begin(), keys.end()};
+         auto        ifind = GetIteratorForPod(container, key);
+         if ((ifind == iend) || !fnMakeRowView(ifind, res.Tab_, rbuf))
+            RevPrint(rbuf, key);
+         if (pkey == nullptr)
+            break;
+         keys.SetEnd(pkey);
+         RevPrint(rbuf, GridViewResult::kRowSplitter);
+      }
+      res.GridView_ = BufferTo<std::string>(rbuf.MoveOut());
+   }
 }
 
 /// \ingroup seed
@@ -419,16 +443,16 @@ void MakeGridViewArrayRange(Iterator istart, Iterator iend,
       if (istart >= static_cast<Iterator>(-req.Offset_))
          istart += req.Offset_;
       else
-         istart = 0;
+         istart = Iterator{};
    }
    else if (req.Offset_ > 0) {
-      if (iend - istart <= static_cast<Iterator>(req.Offset_))
+      if (unsigned_cast(iend - istart) <= unsigned_cast(req.Offset_))
          istart = iend;
       else
          istart += req.Offset_;
    }
-   res.DistanceBegin_ = istart;
-   if ((res.DistanceEnd_ = (iend - istart)) != 0) {
+   res.DistanceBegin_ = unsigned_cast(istart - Iterator{});
+   if (istart < iend) {
       RevBufferList  rbuf{256};
       size_t         lastLinePos = 0;
       for (;;) {
@@ -452,6 +476,7 @@ void MakeGridViewArrayRange(Iterator istart, Iterator iend,
       }
       res.SetLastKey(lastLinePos);
    }
+   res.DistanceEnd_ = unsigned_cast(iend - istart);
 }
 
 //--------------------------------------------------------------------------//

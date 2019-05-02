@@ -36,8 +36,7 @@ seed::LayoutSP IoManagerTree::GetLayout() {
 }
 //--------------------------------------------------------------------------//
 fon9_WARN_DISABLE_PADDING;
-fon9_MSC_WARN_DISABLE_NO_PUSH(4265 /* class has virtual functions, but destructor is not virtual. */
-                              4355 /* 'this' : used in base member initializer list*/);
+fon9_MSC_WARN_DISABLE_NO_PUSH(4355 /* 'this' : used in base member initializer list*/);
 IoManagerTree::IoManagerTree(const IoManagerArgs& args)
    : baseTree{IoManagerTree::GetLayout()}
    , IoManager(args)
