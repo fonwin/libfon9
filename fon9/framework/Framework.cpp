@@ -119,7 +119,9 @@ void Framework::Initialize(int argc, char** argv) {
    // (3) ConfigPath_/MaAuthName.f9dbf
    cfgstr = &cfgld.GetVariable(fon9_kCSTR_MaAuthName)->Value_.Str_;
    InnDbfSP maAuthStorage{new InnDbf(StrTrim(&cfgstr), this->Syncer_)};
-   maAuthStorage->Open(this->ConfigPath_ + cfgstr.ToString() + ".f9dbf");
+   auto     openres = maAuthStorage->Open(fname = this->ConfigPath_ + cfgstr.ToString() + ".f9dbf");
+   if (!openres)
+      RaiseInitializeError(RevPrintTo<std::string>("AuthStorage.Open|fname=", fname, '|', openres));
    this->MaAuth_ = auth::AuthMgr::Plant(this->Root_, maAuthStorage, cfgstr.ToString());
 
    #define fon9_kCSTR_MemLock       "MemLock"

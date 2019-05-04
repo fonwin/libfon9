@@ -3,6 +3,7 @@
 #include "fon9/Log.hpp"
 #include "fon9/ThreadId.hpp"
 #include "fon9/buffer/DcQueueList.hpp"
+#include "fon9/buffer/BufferNodeWaiter.hpp"
 
 namespace fon9 {
 
@@ -64,6 +65,15 @@ fon9_API void LogWrite(LogLevel level, RevBufferList&& rbuf) {
    LogArgs logArgs{level};
    AddLogHeader(rbuf, logArgs.UtcTime_, level);
    FnLogWriter_(logArgs, rbuf.MoveOut());
+}
+
+fon9_API void WaitLogFlush() {
+   LogArgs        la{LogLevel::Info};
+   CountDownLatch waiter{1};
+   BufferList     buf;
+   buf.push_back(BufferNodeWaiter::Alloc(waiter));
+   LogWrite(la, std::move(buf));
+   waiter.Wait();
 }
 
 }// namespace

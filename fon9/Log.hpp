@@ -84,6 +84,10 @@ fon9_API void LogWrite(const LogArgs& logArgs, BufferList&& buf);
 /// `FnLogWriter(tm, rbuf.MoveOut());` 所以返回前 rbuf 會被清空.
 fon9_API void LogWrite(LogLevel level, RevBufferList&& rbuf);
 
+/// \ingroup Misc
+/// 等候在 WaitLogFlush(); 之前的 log 輸出完畢.
+fon9_API void WaitLogFlush();
+
 enum {
    kLogBlockNodeSize = 128 + sizeof(fon9::NumOutBuf),
 };

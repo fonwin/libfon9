@@ -16,7 +16,7 @@ using TicketRunnerSP = intrusive_ptr<TicketRunner>;
 
 fon9_WARN_DISABLE_PADDING;
 /// \ingroup seed
-/// 一個 fairy 負責引道一個 visitor 在森林(Tree、Pod、Seed...)間穿梭.
+/// 一個 fairy 負責引導一個 visitor 在森林(Tree、Pod、Seed...)間穿梭.
 /// - 所有的操作都 **不是 thread safe**
 /// - 檢查訪問的權限: NormalizeSeedPath()
 class fon9_API SeedFairy : public intrusive_ref_counter<SeedFairy> {
@@ -59,9 +59,9 @@ public:
 
    /// - 正規化路徑, 並檢查訪問權限.
    /// - 正規化的前置路徑:
-   ///   - if(seed.Get1st()=='~') 則將 this->Ac_.Home_ 加到 seed 前端後再正規畫.
-   ///   - if(seed.Get1st()=='/') 則直接正規畫 seed.
-   ///   - 其餘, 則將 this->CurrPath_ 加到 seed 前端後再正規畫.
+   ///   - if(seed.Get1st()=='~') 則將 this->Ac_.Home_ 加到 seed 前端, 然後再正規化.
+   ///   - if(seed.Get1st()=='/') 則直接正規化 seed.
+   ///   - 其餘, 則將 this->CurrPath_ 加到 seed 前端, 然後再正規化.
    /// - 不論結果如何, 返回時:
    ///   - seed 指向 outpath
    ///   - *reRights = 實際的可用權限.
@@ -87,7 +87,7 @@ public:
    /// - cmdln 格式:
    ///   - 開頭為引號「' " `」或「/ . ~」表示為要切換 CurrPath 或執行 SeedCommand.
    ///     此時建立的是 TicketRunnerCommand;
-   ///   - 否則為特定指令, 格視為 `指令,指令參數 [seedName]`, 若 "seedName" 不存在, 則使用 GetCurrPath();
+   ///   - 否則為特定指令, 格式為: `指令,指令參數 [seedName]`, 若 "seedName" 不存在, 則使用 GetCurrPath();
    ///   - ss,fld1=val1,fld2=val2... [seedName]
    ///     - Set seed field value. 若 seed 不存在則會建立, 建立後再設定 field 的值.
    ///     - 返回 TicketRunnerWrite

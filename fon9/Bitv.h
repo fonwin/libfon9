@@ -8,6 +8,10 @@
 #include "fon9/sys/Config.h"
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /// \ingroup AlNum
 /// - 假設 v = first byte of package.
 /// - if ((v & 0x80) == 0): 表示之後接著 (v + 1) 個 bytes 的自訂資料(或 byte[]、或字串).
@@ -132,4 +136,7 @@ struct fon9_BitvNumR {
 };
 fon9_WARN_POP;
 
+#ifdef __cplusplus
+}//extern "C"
+#endif
 #endif//__fon9_Bitv_h__
