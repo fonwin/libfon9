@@ -15,7 +15,7 @@ class fon9_API SymbDeal : public SymbData {
 public:
    struct Data {
       /// 成交時間.
-      TimeInterval   Time_{TimeInterval::Null()};
+      DayTime        Time_{DayTime::Null()};
       /// 單筆成交價量.
       /// this->Deal_.Qty_ 不一定等於 this->TotalQty_ - prev->TotalQty_;
       /// 因為行情資料可能有漏.

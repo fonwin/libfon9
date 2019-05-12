@@ -115,8 +115,48 @@ inline unsigned StrToHHMMSS(const StrView& str) {
    return StrTo(str, DayTimeSec{}).ToHHMMSS();
 }
 
+/// if(IsEnumContains(flags, FmtFlag::IntPad0) || days > 0) 則輸出 "days-"
+fon9_API char* ToStrRevSecs(char* pout, uintmax_t secs, FmtFlag flags);
+
 fon9_API char* ToStrRev(char* pout, DayTimeSec value, FmtDef fmt);
-fon9_API char* ToStrRev(char* pout, DayTimeSec value);
+inline char* ToStrRev(char* pout, DayTimeSec value) {
+   return ToStrRevSecs(pout, value.Seconds_, FmtFlag{});
+}
+
+//--------------------------------------------------------------------------//
+
+/// \ingroup AlNum
+/// 一日間的時間: 整數單位=秒, 小數部分可記錄到us.
+class DayTime : public TimeInterval {
+   using base = TimeInterval;
+protected:
+   constexpr explicit DayTime(OrigType us) : base(us) {
+   }
+public:
+   using DecimalBase = base::DecimalBase;
+   using base::base;
+   constexpr DayTime(TimeInterval v) : base{v} {
+   }
+   constexpr DayTime() : base{} {
+   }
+   static constexpr DayTime Null() {
+      return DayTime{base::Null()};
+   }
+   TimeInterval ToTimeInterval() const {
+      return *this;
+   }
+};
+
+/// \ingroup AlNum
+/// 輸出 DayTime 字串, 格式為: `days-hh:mm:ss.uuuuuu`; 例: `3-12:34:56.789`
+fon9_API char* ToStrRev(char* pout, DayTime value);
+fon9_API char* ToStrRev(char* pout, DayTime value, FmtDef fmt);
+
+/// \ingroup AlNum
+/// 字串轉成 DayTime, 支援的格式參考 \ref char* ToStrRev(char* pout, TimeInterval ti);
+inline DayTime StrTo(StrView str, DayTime value = DayTime::Null(), const char** endptr = nullptr) {
+   return DayTime{StrTo(str, value.ToTimeInterval(), endptr)};
+}
 
 } // namespaces
 #endif//__fon9_TimeInterval_hpp__

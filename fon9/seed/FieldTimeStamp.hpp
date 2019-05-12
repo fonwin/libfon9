@@ -59,5 +59,31 @@ inline FieldSPT<FieldTimeInterval> MakeField(Named&& named, int32_t ofs, const T
    return FieldSPT<FieldTimeInterval>{new FieldConst<FieldTimeInterval>{std::move(named), ofs}};
 }
 
+//--------------------------------------------------------------------------//
+
+class fon9_API FieldDayTime : public FieldValueFmt<DayTime> {
+   fon9_NON_COPY_NON_MOVE(FieldDayTime);
+   using base = FieldValueFmt<DayTime>;
+public:
+   /// 建構:
+   /// - 固定為 FieldType::FieldDayTime; FieldSource::DataMember;
+   FieldDayTime(Named&& named, int32_t ofs) : base{std::move(named), FieldType::DayTime, ofs, DayTime::Scale} {
+   }
+   /// 建構:
+   /// - 固定為 FieldType::DayTime; FieldSource::DyMem;
+   FieldDayTime(Named&& named) : base(std::move(named), FieldType::DayTime, DayTime::Scale) {
+   }
+
+   /// 傳回: "Td";
+   virtual StrView GetTypeId(NumOutBuf&) const override;
+};
+
+inline FieldSPT<FieldDayTime> MakeField(Named&& named, int32_t ofs, DayTime&) {
+   return FieldSPT<FieldDayTime>{new FieldDayTime{std::move(named), ofs}};
+}
+inline FieldSPT<FieldDayTime> MakeField(Named&& named, int32_t ofs, const DayTime&) {
+   return FieldSPT<FieldDayTime>{new FieldConst<FieldDayTime>{std::move(named), ofs}};
+}
+
 } } // namespaces
 #endif//__fon9_seed_FieldTimeStamp_hpp__

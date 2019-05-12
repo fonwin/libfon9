@@ -87,14 +87,22 @@ fon9_API char* ToStrRev_TimeIntervalDec(char* pout, uintmax_t& value, FmtDef fmt
    return pout;
 }
 
-fon9_API char* ToStrRev(char* const pstart, TimeInterval ti, FmtDef fmt) {
-   uintmax_t value = abs_cast(ti.GetOrigValue());
-   if (ti.IsNull() || (value == 0 && IsEnumContains(fmt.Flags_, FmtFlag::Hide0))) {
+static char* ToStrRev_TimeIntervalFmt_ZeroOrNull(char* pstart, uintmax_t iorg, const FmtDef& fmt) {
+   if (static_cast<TimeInterval::OrigType>(iorg) == TimeInterval::OrigNull
+   || (iorg == 0 && IsEnumContains(fmt.Flags_, FmtFlag::Hide0))) {
       if (fmt.Width_ > 0)
          return reinterpret_cast<char*>(memset(pstart - fmt.Width_, ' ', fmt.Width_));
       return pstart;
    }
-   char*    pout = ToStrRev_TimeIntervalDec(pstart, value, fmt);
+   return nullptr;
+}
+
+fon9_API char* ToStrRev(char* const pstart, TimeInterval ti, FmtDef fmt) {
+   uintmax_t value = abs_cast(ti.GetOrigValue());
+   char*     pout = ToStrRev_TimeIntervalFmt_ZeroOrNull(pstart, value, fmt);
+   if (pout)
+      return pout;
+   pout = ToStrRev_TimeIntervalDec(pstart, value, fmt);
    unsigned ss = (static_cast<unsigned>(value) % 60u);
    if (ss < 10)
       *--pout = static_cast<char>(ss + '0');
@@ -263,21 +271,20 @@ fon9_API TimeInterval StrTo(StrView str, TimeInterval value, const char** endptr
 
 //--------------------------------------------------------------------------//
 
-static char* ToStrRevNN(char* pout, DayTimeSec::Value& v) {
-   unsigned nn = (v % 60u);
+static char* ToStrRevNN(char* pout, uintmax_t& v) {
+   unsigned nn = static_cast<unsigned>(v % 60u);
    v /= 60u;
    pout = Pic9ToStrRev<2>(pout, nn);
    *--pout = ':';
    return pout;
 }
-
-fon9_API char* ToStrRev(char* pout, DayTimeSec value) {
-   pout = ToStrRevNN(pout, value.Seconds_);
-   pout = ToStrRevNN(pout, value.Seconds_);
-   pout = Pic9ToStrRev<2>(pout, value.Seconds_ % 24);
-   if ((value.Seconds_ /= 24) > 0) {
+fon9_API char* ToStrRevSecs(char* pout, uintmax_t secs, FmtFlag flags) {
+   pout = ToStrRevNN(pout, secs);
+   pout = ToStrRevNN(pout, secs);
+   pout = Pic9ToStrRev<2>(pout, secs % 24);
+   if ((secs /= 24) > 0 || IsEnumContains(flags, FmtFlag::IntPad0)) {
       *--pout = '-';
-      pout = UIntToStrRev(pout, value.Seconds_);
+      pout = UIntToStrRev(pout, secs);
    }
    return pout;
 }
@@ -285,6 +292,34 @@ fon9_API char* ToStrRev(char* pout, DayTimeSec value) {
 fon9_API char* ToStrRev(char* const pstart, DayTimeSec value, FmtDef fmt) {
    char* pout = ToStrRev(pstart, value);
    return IntToStrRev_LastJustify(pout, pstart, false, fmt);
+}
+
+//--------------------------------------------------------------------------//
+fon9_API char* ToStrRev(char* pout, DayTime value) {
+   auto iorg = value.GetOrigValue();
+   bool isNeg = (iorg < 0);
+   if (fon9_UNLIKELY(isNeg)) {
+      if (iorg == DayTime::OrigNull)
+         return pout;
+      iorg = -iorg;
+   }
+   uintmax_t secs = static_cast<uintmax_t>(iorg);
+   pout = PutAutoPrecision(pout, secs, TimeInterval::Scale);
+   pout = ToStrRevSecs(pout, secs, FmtFlag{});
+   if (isNeg)
+      *--pout = '-';
+   return pout;
+}
+fon9_API char* ToStrRev(char* pstart, DayTime value, FmtDef fmt) {
+   uintmax_t iorg = abs_cast(value.GetOrigValue());
+   char*     pout = ToStrRev_TimeIntervalFmt_ZeroOrNull(pstart, iorg, fmt);
+   if (pout)
+      return pout;
+   pout = ToStrRev_TimeIntervalDec(pstart, iorg, fmt);
+   fmt.Precision_ = 0;
+   fmt.Flags_ -= FmtFlag::Hide0 | FmtFlag::HasPrecision;
+   pout = ToStrRevSecs(pout, iorg, fmt.Flags_);
+   return IntToStrRev_LastJustify(pout, pstart, value.GetOrigValue() < 0, fmt);
 }
 
 } // namespaces

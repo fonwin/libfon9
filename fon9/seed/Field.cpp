@@ -24,5 +24,8 @@ StrView FieldTimeStamp::GetTypeId(NumOutBuf&) const {
 StrView FieldTimeInterval::GetTypeId(NumOutBuf&) const {
    return StrView{"Ti"};
 }
+StrView FieldDayTime::GetTypeId(NumOutBuf&) const {
+   return StrView{"Td"};
+}
 
 } } // namespaces

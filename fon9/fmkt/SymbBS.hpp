@@ -19,7 +19,7 @@ public:
    };
    struct Data {
       /// 報價時間.
-      TimeInterval   Time_{TimeInterval::Null()};
+      DayTime        Time_{DayTime::Null()};
       /// 賣出價量列表, [0]=最佳賣出價量.
       PriQty         Sells_[kBSCount];
       /// 買進價量列表, [0]=最佳買進價量.

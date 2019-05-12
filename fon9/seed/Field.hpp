@@ -54,6 +54,9 @@ enum class FieldType : uint8_t {
 
    /// 時間間隔.
    TimeInterval,
+   /// 時間: 距離 00:00:00 的時間間隔.
+   /// 輸出格式 `days-hh:mm:ss.uuuuuu`
+   DayTime,
 };
 inline bool IsFieldTypeNumber(FieldType t) {
    return t >= FieldType::Integer;

@@ -59,6 +59,8 @@ static FieldSP MakeFieldTime(StrView& fldcfg, char chSpl, char chTail) {
       return FieldSP{new FieldTimeInterval{std::move(named)}};
    case 's': // Ts = TimeStamp.
       return FieldSP{new FieldTimeStamp{std::move(named)}};
+   case 'd': // Td = DayTime.
+      return FieldSP{new FieldDayTime{std::move(named)}};
    }
    fldcfg.SetBegin(perr);
    return FieldSP{};
@@ -79,33 +81,13 @@ struct MakeField_SelUnsigned {
    using I8 = uint64_t;
 };
 
-template <class BSelInt>
-static FieldSP MakeFieldInt(Named&& named, size_t byteCount) {
+template <class BSelInt, template<typename IntT> class FieldT, class... ArgsT>
+static FieldSP MakeFieldNumber(Named&& named, size_t byteCount, ArgsT&&... args) {
    switch (byteCount) {
-   case 1:  return FieldSP{new FieldInt<typename BSelInt::I1>{std::move(named)}};
-   case 2:  return FieldSP{new FieldInt<typename BSelInt::I2>{std::move(named)}};
-   case 4:  return FieldSP{new FieldInt<typename BSelInt::I4>{std::move(named)}};
-   case 8:  return FieldSP{new FieldInt<typename BSelInt::I8>{std::move(named)}};
-   }
-   return FieldSP{};
-}
-template <class BSelInt>
-static FieldSP MakeFieldIntHex(Named&& named, size_t byteCount) {
-   switch (byteCount) {
-   case 1:  return FieldSP{new FieldIntHex<typename BSelInt::I1>{std::move(named)}};
-   case 2:  return FieldSP{new FieldIntHex<typename BSelInt::I2>{std::move(named)}};
-   case 4:  return FieldSP{new FieldIntHex<typename BSelInt::I4>{std::move(named)}};
-   case 8:  return FieldSP{new FieldIntHex<typename BSelInt::I8>{std::move(named)}};
-   }
-   return FieldSP{};
-}
-template <class BSelInt>
-static FieldSP MakeFieldDecimal(Named&& named, size_t byteCount, DecScaleT scale) {
-   switch (byteCount) {
-   case 1:  return FieldSP{new FieldDecimalDyScale<typename BSelInt::I1>{std::move(named), scale}};
-   case 2:  return FieldSP{new FieldDecimalDyScale<typename BSelInt::I2>{std::move(named), scale}};
-   case 4:  return FieldSP{new FieldDecimalDyScale<typename BSelInt::I4>{std::move(named), scale}};
-   case 8:  return FieldSP{new FieldDecimalDyScale<typename BSelInt::I8>{std::move(named), scale}};
+   case 1:  return FieldSP{new FieldT<typename BSelInt::I1>{std::move(named), std::forward<ArgsT>(args)...}};
+   case 2:  return FieldSP{new FieldT<typename BSelInt::I2>{std::move(named), std::forward<ArgsT>(args)...}};
+   case 4:  return FieldSP{new FieldT<typename BSelInt::I4>{std::move(named), std::forward<ArgsT>(args)...}};
+   case 8:  return FieldSP{new FieldT<typename BSelInt::I8>{std::move(named), std::forward<ArgsT>(args)...}};
    }
    return FieldSP{};
 }
@@ -153,9 +135,13 @@ static FieldSP MakeFieldImpl(StrView& fldcfg, char chSpl, char chTail) {
       default:
          scale = static_cast<DecScaleT>(-1);
          break;
-      case 'x':// hex.
+      case 'x':// FieldIntHex: 字串IO支援 "0x" 或 "x"
          fldcfg.SetBegin(fldcfg.begin() + 1);
          scale = static_cast<DecScaleT>(-2);
+         break;
+      case 'H':// FieldIntHx: 字串IO不支援 "0x" 或 "x"
+         fldcfg.SetBegin(fldcfg.begin() + 1);
+         scale = static_cast<DecScaleT>(-3);
          break;
       case '.':
          fldcfg.SetBegin(fldcfg.begin() + 1);
@@ -169,18 +155,23 @@ static FieldSP MakeFieldImpl(StrView& fldcfg, char chSpl, char chTail) {
       switch (scale) {
       case static_cast<DecScaleT>(-1):
          fld = (chType == 'S'
-                ? MakeFieldInt<MakeField_SelSigned>(std::move(named), byteCount)
-                : MakeFieldInt<MakeField_SelUnsigned>(std::move(named), byteCount));
+                ? MakeFieldNumber<MakeField_SelSigned, FieldInt>(std::move(named), byteCount)
+                : MakeFieldNumber<MakeField_SelUnsigned, FieldInt>(std::move(named), byteCount));
          break;
       case static_cast<DecScaleT>(-2):
          fld = (chType == 'S'
-                ? MakeFieldIntHex<MakeField_SelSigned>(std::move(named), byteCount)
-                : MakeFieldIntHex<MakeField_SelUnsigned>(std::move(named), byteCount));
+                ? MakeFieldNumber<MakeField_SelSigned, FieldIntHex>(std::move(named), byteCount)
+                : MakeFieldNumber<MakeField_SelUnsigned, FieldIntHex>(std::move(named), byteCount));
+         break;
+      case static_cast<DecScaleT>(-3):
+         fld = (chType == 'S'
+                ? MakeFieldNumber<MakeField_SelSigned, FieldIntHx>(std::move(named), byteCount)
+                : MakeFieldNumber<MakeField_SelUnsigned, FieldIntHx>(std::move(named), byteCount));
          break;
       default:
          fld = (chType == 'S' // 允許小數位=0, 此欄位支援 Null.
-                ? MakeFieldDecimal<MakeField_SelSigned>(std::move(named), byteCount, scale)
-                : MakeFieldDecimal<MakeField_SelUnsigned>(std::move(named), byteCount, scale));
+                ? MakeFieldNumber<MakeField_SelSigned, FieldDecimalDyScale>(std::move(named), byteCount, scale)
+                : MakeFieldNumber<MakeField_SelUnsigned, FieldDecimalDyScale>(std::move(named), byteCount, scale));
          break;
       }
       if (fld)

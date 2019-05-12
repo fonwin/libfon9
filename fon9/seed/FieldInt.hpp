@@ -105,15 +105,6 @@ public:
    }
 };
 
-template class FieldInt<int8_t> fon9_API;
-template class FieldInt<int16_t> fon9_API;
-template class FieldInt<int32_t> fon9_API;
-template class FieldInt<int64_t> fon9_API;
-template class FieldInt<uint8_t> fon9_API;
-template class FieldInt<uint16_t> fon9_API;
-template class FieldInt<uint32_t> fon9_API;
-template class FieldInt<uint64_t> fon9_API;
-
 template <typename IntT, class FieldT = FieldInt<decay_t<IntT>>>
 inline enable_if_t<std::is_integral<IntT>::value, FieldSPT<FieldT>>
 MakeField(Named&& named, int32_t ofs, IntT&) {
@@ -204,6 +195,65 @@ template <typename EnumT, class Selector = FieldEnumSelector<EnumT>>
 inline typename Selector::FieldSP MakeField(Named&& named, int32_t ofs, const EnumT&) {
    return typename Selector::FieldSP{new FieldConst<typename Selector::Field>{std::move(named), ofs}};
 }
+
+//--------------------------------------------------------------------------//
+
+template <bool isSigned, size_t sz> struct FieldIntHxTypeId;
+template <> struct FieldIntHxTypeId<true,  1> { static constexpr StrView TypeId() { return StrView{"S1H"}; } };
+template <> struct FieldIntHxTypeId<true,  2> { static constexpr StrView TypeId() { return StrView{"S2H"}; } };
+template <> struct FieldIntHxTypeId<true,  4> { static constexpr StrView TypeId() { return StrView{"S4H"}; } };
+template <> struct FieldIntHxTypeId<true,  8> { static constexpr StrView TypeId() { return StrView{"S8H"}; } };
+template <> struct FieldIntHxTypeId<false, 1> { static constexpr StrView TypeId() { return StrView{"U1H"}; } };
+template <> struct FieldIntHxTypeId<false, 2> { static constexpr StrView TypeId() { return StrView{"U2H"}; } };
+template <> struct FieldIntHxTypeId<false, 4> { static constexpr StrView TypeId() { return StrView{"U4H"}; } };
+template <> struct FieldIntHxTypeId<false, 8> { static constexpr StrView TypeId() { return StrView{"U8H"}; } };
+template <typename IntT>
+inline constexpr StrView GetFieldIntHxTypeId() {
+   return FieldIntHxTypeId<std::is_signed<IntT>::value, sizeof(IntT)>::TypeId();
+}
+
+/// CellRevPrint(); StrToCell() 不支援 "0x" 或 "x" 前置; 一律使用 16 進位.
+/// 不支援 MakeField(); 必須自行手動建立, 例如:
+/// `new FieldIntHx<uint8_t>(fon9::Named{"OrdSt"}, fon9_OffsetOfRawPointer(OmsOrderRaw, OrderSt_));`
+template <typename IntT>
+class FieldIntHx : public FieldInt<IntT> {
+   fon9_NON_COPY_NON_MOVE(FieldIntHx);
+   using base = FieldInt<IntT>;
+public:
+   using base::base;
+
+   static constexpr StrView TypeId() {
+      return GetFieldIntHxTypeId<IntT>();
+   }
+   /// 傳回: "SnH" or "UnH";  n = this->Size_;
+   virtual StrView GetTypeId(NumOutBuf&) const override {
+      return TypeId();
+   }
+
+   virtual void CellRevPrint(const RawRd& rd, StrView fmt, RevBuffer& out) const override {
+      RevPrint(out, ToHex{this->GetValue(rd)}, fmt);
+   }
+   virtual OpResult StrToCell(const RawWr& wr, StrView value) const override {
+      this->PutValue(wr, static_cast<IntT>(HexStrTo(value)));
+      return OpResult::no_error;
+   }
+};
+
+//--------------------------------------------------------------------------//
+
+#define fon9_API_DEFINE_SEED_FIELDS(FieldT) \
+template class FieldT<int8_t> fon9_API;     \
+template class FieldT<int16_t> fon9_API;    \
+template class FieldT<int32_t> fon9_API;    \
+template class FieldT<int64_t> fon9_API;    \
+template class FieldT<uint8_t> fon9_API;    \
+template class FieldT<uint16_t> fon9_API;   \
+template class FieldT<uint32_t> fon9_API;   \
+template class FieldT<uint64_t> fon9_API;
+//-------------------------------------------
+fon9_API_DEFINE_SEED_FIELDS(FieldInt);
+fon9_API_DEFINE_SEED_FIELDS(FieldIntHex);
+fon9_API_DEFINE_SEED_FIELDS(FieldIntHx);
 
 } } // namespaces
 #endif//__fon9_seed_FieldInt_hpp__

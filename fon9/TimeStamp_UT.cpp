@@ -99,6 +99,58 @@ void TimeInterval_TestToStrRev() {
    ti += fon9::TimeInterval_Day(3);
    CheckToStrRev(ti, fnToStrRevFmt, "                      ", "+3-09:08:07.123456  ");
 }
+void DayTime_TestToStrRev() {
+   fon9::DayTime td;
+   CheckToStrRev(td, &fon9::ToStrRev, "ToStrRev(DayTime)", "00:00:00");
+
+   td += fon9::TimeInterval_Microsecond(456);
+   CheckToStrRev(td, &fon9::ToStrRev, "                 ", "00:00:00.000456");
+   td += fon9::TimeInterval_Millisecond(123);
+   CheckToStrRev(td, &fon9::ToStrRev, "                 ", "00:00:00.123456");
+   td += fon9::TimeInterval_Second(7);
+   CheckToStrRev(td, &fon9::ToStrRev, "                 ", "00:00:07.123456");
+   td += fon9::TimeInterval_Minute(8);
+   CheckToStrRev(td, &fon9::ToStrRev, "                 ", "00:08:07.123456");
+   td += fon9::TimeInterval_Hour(9);
+   CheckToStrRev(td, &fon9::ToStrRev, "                 ", "09:08:07.123456");
+   td += fon9::TimeInterval_Day(3);
+   CheckToStrRev(td, &fon9::ToStrRev, "                 ", "3-09:08:07.123456");
+
+   typedef char* (*FnToStrRev)(char*, fon9::DayTime);
+   FnToStrRev fnToStrRevFmt = [](char* pout, fon9::DayTime t) {
+      return fon9::ToStrRev(pout, t, fon9::FmtDef{"+020."});
+   };
+   td = fon9::DayTime{};
+   td += fon9::TimeInterval_Microsecond(456);
+   CheckToStrRev(td, fnToStrRevFmt, "(DayTime,FmtDef) ", "+000-00:00:00.000456");
+   td += fon9::TimeInterval_Millisecond(123);
+   CheckToStrRev(td, fnToStrRevFmt, "                 ", "+000-00:00:00.123456");
+   td += fon9::TimeInterval_Second(7);
+   CheckToStrRev(td, fnToStrRevFmt, "                 ", "+000-00:00:07.123456");
+   td += fon9::TimeInterval_Minute(8);
+   CheckToStrRev(td, fnToStrRevFmt, "                 ", "+000-00:08:07.123456");
+   td += fon9::TimeInterval_Hour(9);
+   CheckToStrRev(td, fnToStrRevFmt, "                 ", "+000-09:08:07.123456");
+   td += fon9::TimeInterval_Day(3);
+   CheckToStrRev(td, fnToStrRevFmt, "                 ", "+003-09:08:07.123456");
+
+   fnToStrRevFmt = [](char* pout, fon9::DayTime t) {
+      return fon9::ToStrRev(pout, t, fon9::FmtDef{"-+020."});
+   };
+   td = fon9::DayTime{};
+   td += fon9::TimeInterval_Microsecond(456);
+   CheckToStrRev(td, fnToStrRevFmt, "(DayTime,FmtDef-)", "+0-00:00:00.000456  ");
+   td += fon9::TimeInterval_Millisecond(123);
+   CheckToStrRev(td, fnToStrRevFmt, "                 ", "+0-00:00:00.123456  ");
+   td += fon9::TimeInterval_Second(7);
+   CheckToStrRev(td, fnToStrRevFmt, "                 ", "+0-00:00:07.123456  ");
+   td += fon9::TimeInterval_Minute(8);
+   CheckToStrRev(td, fnToStrRevFmt, "                 ", "+0-00:08:07.123456  ");
+   td += fon9::TimeInterval_Hour(9);
+   CheckToStrRev(td, fnToStrRevFmt, "                 ", "+0-09:08:07.123456  ");
+   td += fon9::TimeInterval_Day(3);
+   CheckToStrRev(td, fnToStrRevFmt, "                 ", "+3-09:08:07.123456  ");
+}
 void TimeStamp_TestToStrRev() {
    fon9::TimeStamp ts{fon9::TimeInterval_Second(fon9::YYYYMMDDHHMMSS_ToEpochSeconds(20180301102030))};
    ts += fon9::TimeStamp::Make<6>(123456);
@@ -478,6 +530,7 @@ int main() {
    fon9::AutoPrintTestInfo utinfo{"TimeStamp"};
 
    TimeInterval_TestToStrRev();
+   DayTime_TestToStrRev();
    TimeInterval_TestStrTo();
 
    utinfo.PrintSplitter();
