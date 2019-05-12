@@ -10,14 +10,6 @@ extern "C" {
 #endif
 
 /// \ingroup fmkt
-/// 買賣別. 
-enum f9fmkt_Side fon9_ENUM_underlying(char) {
-   f9fmkt_Side_Unknown = 0,
-   f9fmkt_Side_Buy = 'B',
-   f9fmkt_Side_Sell = 'S',
-};
-
-/// \ingroup fmkt
 /// 商品的交易市場.
 /// - 由系統決定市場別, 用於可直接連線的交易市場.
 /// - 這裡沒有將所有可能的 market 都定義出來, 當有實際需求時可自行依下述方式增加.
@@ -75,6 +67,50 @@ enum f9fmkt_TradingSessionId   fon9_ENUM_underlying(char) {
 inline int f9fmkt_TradingSessionIdToIndex(f9fmkt_TradingSessionId v) {
    return (int)(v);
 }
+
+/// \ingroup fmkt
+/// 要求種類.
+enum f9fmkt_RequestKind   fon9_ENUM_underlying(char) {
+   f9fmkt_RequestKind_Unknown = 0,
+   f9fmkt_RequestKind_New    = 'N',
+   f9fmkt_RequestKind_Cancel = 'C',
+   f9fmkt_RequestKind_ChgQty = 'q',
+   f9fmkt_RequestKind_ChgPri = 'p',
+   f9fmkt_RequestKind_Query  = 'Q',
+
+   /// 成交回報.
+   f9fmkt_RequestKind_Match  = 'm',
+};
+
+enum f9fmkt_PriType fon9_ENUM_underlying(char) {
+   /// f9fmkt_PriType{}=預設值為限價.
+   f9fmkt_PriType_Limit = 0,
+   /// 市價.
+   f9fmkt_PriType_Market = 'M',
+   /// 一定範圍內市價.
+   f9fmkt_PriType_MWP = 'm',
+};
+
+/// \ingroup fmkt
+/// 時間限制.
+enum f9fmkt_TimeInForce fon9_ENUM_underlying(char) {
+   /// 當日有效. ROD, GFD.
+   f9fmkt_TimeInForce_ROD = 0,
+   /// 立即成交否則取消.
+   f9fmkt_TimeInForce_IOC = 'I',
+   /// 立即全部成交否則取消.
+   f9fmkt_TimeInForce_FOK = 'F',
+   /// 報價單,一定期間後交易所自動刪除.
+   f9fmkt_TimeInForce_QuotAutoCancel = '8',
+};
+
+/// \ingroup fmkt
+/// 買賣別.
+enum f9fmkt_Side fon9_ENUM_underlying(char) {
+   f9fmkt_Side_Unknown = 0,
+   f9fmkt_Side_Buy = 'B',
+   f9fmkt_Side_Sell = 'S',
+};
 
 /// \ingroup fmkt
 /// 下單要求狀態.

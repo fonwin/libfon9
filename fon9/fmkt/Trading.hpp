@@ -14,12 +14,23 @@ class fon9_API TradingLineManager;
 /// 下單要求基底.
 class fon9_API TradingRequest : public intrusive_ref_counter<TradingRequest> {
    fon9_NON_COPY_NON_MOVE(TradingRequest);
+
 protected:
-   f9fmkt_TradingRequestSt RequestSt_{f9fmkt_TradingRequestSt_Initialing};
-   byte                    pending______[3];
+   f9fmkt_RequestKind      RequestKind_{};
+   f9fmkt_TradingMarket    Market_{};
+   f9fmkt_TradingSessionId SessionId_{};
+   /// 由衍生者自行決定如何使用.
+   uint8_t                 RequestFlags_{};
+
 public:
    TradingRequest() = default;
+   TradingRequest(f9fmkt_RequestKind reqKind) : RequestKind_{reqKind} {
+   }
    virtual ~TradingRequest();
+
+   f9fmkt_RequestKind      RequestKind() const  { return this->RequestKind_; }
+   f9fmkt_TradingMarket    Market() const       { return this->Market_; }
+   f9fmkt_TradingSessionId SessionId() const    { return this->SessionId_; }
 
    /// - 無可用線路時的拒絕.
    /// - TradingLineManager 解構時, 拒絕還在 Queue 裡面的要求.
@@ -132,15 +143,6 @@ private:
       virtual void EmitOnTimer(TimeStamp now) override;
    };
    FlowControlTimer FlowControlTimer_;
-};
-
-/// \ingroup fmkt
-/// 每個 TradingCore 可以包含:「1 個 TradingLineManager」或「1 個 TradingLineGroupManager」.
-/// - TwSEC, TwOTC, TwEmg 各個 TradingMarket 一個 TradingCore.
-/// - 台灣期交所的「期貨、選擇權」各一個 TradingCore.
-class TradingCore {
-public:
-   virtual void SendRequest(TradingRequest& req) = 0;
 };
 fon9_WARN_POP;
 
