@@ -147,6 +147,22 @@ constexpr const char* StrRFindIf(const StrView& str, FnPredicate&&... fnPred) {
 //--------------------------------------------------------------------------//
 
 /// \ingroup AlNum
+/// 若 ch == '?' 或 '*' 傳回 true; 否則傳回 false;
+constexpr bool iswildc(int ch) { return ch == '*' || ch == '?'; }
+
+/// \ingroup AlNum
+/// 尋找第一個 iswildc() 的位置.
+inline const char* FindWildcard(const StrView& str) {
+   return StrFindIf(str, &iswildc);
+}
+
+/// \ingroup AlNum
+/// 比較 str 是否符合 wild 的設定.
+fon9_API bool IsStrWildMatch(StrView str, StrView wild);
+
+//--------------------------------------------------------------------------//
+
+/// \ingroup AlNum
 /// 從頭往後找第一個非空白的字元位置.
 /// \retval pend  全都是空白.
 /// \retval !pend 非空白字元位置.

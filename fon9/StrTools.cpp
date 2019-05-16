@@ -392,4 +392,41 @@ fon9_API const void* memrmem(const void* v, size_t size, const void *pat, size_t
 }
 #endif
 
+fon9_API bool IsStrWildMatch(StrView str, StrView wild) {
+   int wch, sch;
+   while ((wch = wild.Get1st()) != '*' && (sch = str.Get1st()) != EOF) {
+      if ((wch != sch) && (wch != '?'))
+         return false;
+      str.SetBegin(str.begin() + 1);
+      wild.SetBegin(wild.begin() + 1);
+   }
+
+   const char* pWild = nullptr;
+   const char* pStr = nullptr;
+   while ((sch = str.Get1st()) != EOF) {
+      if (wch == '*') {
+         wild.SetBegin(wild.begin() + 1);
+         if (wild.empty())
+            return true;
+         pWild = wild.begin();
+         pStr = str.begin() + 1;
+      }
+      else if ((wch == sch) || (wch == '?')) {
+         wild.SetBegin(wild.begin() + 1);
+         str.SetBegin(str.begin() + 1);
+      }
+      else {
+         wild.SetBegin(pWild);
+         str.SetBegin(pStr++);
+      }
+      wch = wild.Get1st();
+   }
+   while (!wild.empty()) {
+      if (*wild.begin() != '*')
+         return false;
+      wild.SetBegin(wild.begin() + 1);
+   }
+   return true;
+}
+
 } // namespace fon9
