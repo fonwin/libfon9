@@ -79,7 +79,8 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\fon9\framework\Fon9Co.cpp" />
+    <ClCompile Include="..\..\..\fon9\framework\Fon9CoRun.cpp" />
+    <ClCompile Include="..\..\..\fon9\framework\Fon9Co_main.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

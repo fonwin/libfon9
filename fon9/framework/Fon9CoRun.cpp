@@ -1,4 +1,4 @@
-﻿// \file fon9/framework/fon9Co.cpp
+﻿// \file fon9/framework/Fon9CoRun.cpp
 // fon9 console
 // \author fonwinz@gmail.com
 #include "fon9/framework/Framework.hpp"
@@ -217,7 +217,7 @@ public:
 
 //--------------------------------------------------------------------------//
 
-int main(int argc, char** argv) {
+int fon9::Fon9CoRun(int argc, char** argv, int (*fnBeforeStart)(fon9::Framework&)) {
    #if defined(_MSC_VER) && defined(_DEBUG)
       _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
       //_CrtSetBreakAlloc(176);
@@ -258,56 +258,61 @@ int main(int argc, char** argv) {
 //    >/MaIo/^apply:Config submit 123
 // ---------------------------------------------------------------
 
-   fon9sys.Start();
+   int retval = fnBeforeStart ? fnBeforeStart(fon9sys) : 0;
+   if (retval)
+      AppBreakMsg_ = "Before fon9sys.Start()";
+   else {
+      fon9sys.Start();
 
-   using SeedSessionSP = fon9::intrusive_ptr<ConsoleSeedSession>;
-   SeedSessionSP             coSession{new ConsoleSeedSession{fon9sys}};
-   fon9::SeedSession::State  res = ConsoleSeedSession::State::UserExit;
+      using CoSeedSessionSP = fon9::intrusive_ptr<ConsoleSeedSession>;
+      CoSeedSessionSP           coSession{new ConsoleSeedSession{fon9sys}};
+      fon9::SeedSession::State  res = ConsoleSeedSession::State::UserExit;
 
-   // 使用 "--admin" 啟動 AdminMode.
-   if (!fon9::GetCmdArg(argc, argv, fon9::StrView{}, "admin").IsNull()) {
-      coSession->SetAdminMode();
-      puts("Fon9Co admin mode.");
-      res = coSession->RunLoop();
-   }
-
-   while (AppBreakMsg_ == nullptr) {
-      switch (res) {
-      case ConsoleSeedSession::State::None:
-      case ConsoleSeedSession::State::AuthError:
-      case ConsoleSeedSession::State::UserExit:
-         res = coSession->ReadUser();
-         break;
-      case ConsoleSeedSession::State::UserReady:
+      // 使用 "--admin" 啟動 AdminMode.
+      if (!fon9::GetCmdArg(argc, argv, fon9::StrView{}, "admin").IsNull()) {
+         coSession->SetAdminMode();
+         puts("Fon9Co admin mode.");
          res = coSession->RunLoop();
-         break;
-      case ConsoleSeedSession::State::QuitApp:
-         AppBreakMsg_ = "Normal QuitApp";
-         break;
-      default:
-      case ConsoleSeedSession::State::Authing:
-      case ConsoleSeedSession::State::Logouting:
-         coSession->Wait();
-         res = coSession->GetState();
-         break;
-      case ConsoleSeedSession::State::Broken:
-         // stdin EOF, sleep() and retry read.
-         // wait signal for quit app.
-         // 一旦遇到 EOF, 就需要重新登入?
-         int c;
-         do {
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
-            clearerr(stdin);
-            c = fgetc(stdin);
-         } while (c == EOF && AppBreakMsg_ == nullptr);
-         ungetc(c, stdin);
-         res = coSession->GetState();
-         continue;
+      }
+
+      while (AppBreakMsg_ == nullptr) {
+         switch (res) {
+         case ConsoleSeedSession::State::None:
+         case ConsoleSeedSession::State::AuthError:
+         case ConsoleSeedSession::State::UserExit:
+            res = coSession->ReadUser();
+            break;
+         case ConsoleSeedSession::State::UserReady:
+            res = coSession->RunLoop();
+            break;
+         case ConsoleSeedSession::State::QuitApp:
+            AppBreakMsg_ = "Normal QuitApp";
+            break;
+         default:
+         case ConsoleSeedSession::State::Authing:
+         case ConsoleSeedSession::State::Logouting:
+            coSession->Wait();
+            res = coSession->GetState();
+            break;
+         case ConsoleSeedSession::State::Broken:
+            // stdin EOF, sleep() and retry read.
+            // wait signal for quit app.
+            // 一旦遇到 EOF, 就需要重新登入?
+            int c;
+            do {
+               std::this_thread::sleep_for(std::chrono::milliseconds(500));
+               clearerr(stdin);
+               c = fgetc(stdin);
+            } while (c == EOF && AppBreakMsg_ == nullptr);
+            ungetc(c, stdin);
+            res = coSession->GetState();
+            continue;
+         }
       }
    }
    fon9_LOG_IMP("main.quit|cause=console:", AppBreakMsg_);
    puts(AppBreakMsg_);
    AppBreakMsg_ = nullptr;
    fon9sys.DisposeForAppQuit();
-   return 0;
+   return retval;
 }

@@ -42,5 +42,11 @@ struct fon9_API Framework {
    void DisposeForAppQuit();
 };
 
+/// 必須將 fon9/framework/Fon9CoRun.cpp 加入您的執行專案裡面, 在 int main() 呼叫 Fon9CoRun();
+/// - 在 framework.Start() 之前會呼叫 fnBeforeStart(framework), 若傳回非0, 則立即結束 Fon9CoRun().
+/// - 您可以在 fnBeforeStart() 啟動您自訂的物件, 例如:
+///   - `f9omstw::PolicyIvListAgent::Plant(*fon9sys.MaAuth_);`
+int Fon9CoRun(int argc, char** argv, int (*fnBeforeStart)(Framework&));
+
 } // namespaces
 #endif//__fon9_framework_Framework_hpp__

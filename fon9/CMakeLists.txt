@@ -188,7 +188,7 @@ target_link_libraries(fon9_s pthread rt dl)
 add_library(fon9 SHARED ${fon9src})
 target_link_libraries(fon9 pthread rt dl)
 
-add_executable(Fon9Co framework/Fon9Co.cpp)
+add_executable(Fon9Co framework/Fon9CoRun.cpp framework/Fon9Co_main.cpp)
 target_link_libraries(Fon9Co pthread fon9)
 
 # unit tests: Tools / Utility
