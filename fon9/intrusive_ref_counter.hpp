@@ -167,14 +167,17 @@ public:
         return CounterPolicyT::load(m_ref_counter);
     }
 
-    /// fonwin: 增加與 shared_ptr 相容的做法.
-    /// 用 this 建立 intrusive_ptr 指標.
-    intrusive_ptr<DerivedT> shared_from_this() {
-       return static_cast<DerivedT*>(this);
-    }
-    intrusive_ptr<const DerivedT> shared_from_this() const {
-       return static_cast<const DerivedT*>(this);
-    }
+    // fonwin: 增加與 shared_ptr 相容的做法.
+    // 用 this 建立 intrusive_ptr 指標.
+    // => 但是有可能 this 只想支援 intrusive_ptr_add_ref(); intrusive_ptr_release();
+    //    不想支援 intrusive_ptr<>;
+    // => 例如: ObjSupplier.hpp: class ObjArrayMem;
+    // intrusive_ptr<DerivedT> shared_from_this() {
+    //    return static_cast<DerivedT*>(this);
+    // }
+    // intrusive_ptr<const DerivedT> shared_from_this() const {
+    //    return static_cast<const DerivedT*>(this);
+    // }
 
 protected:
     /*!
@@ -212,8 +215,8 @@ inline unsigned int intrusive_ptr_release(const intrusive_ref_counter< DerivedT,
 //       ...Do something after delete p;
 //    }
 // \endcode
-template <class DerivedT>
-inline void intrusive_ptr_deleter(const DerivedT* p) {
+template <typename DerivedT>
+inline void intrusive_ptr_deleter(const DerivedT* p) BOOST_NOEXCEPT {
    delete p;
 }
 // fonwin:]

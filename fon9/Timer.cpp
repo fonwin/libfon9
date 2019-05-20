@@ -72,7 +72,7 @@ void TimerEntry::SetupRun(TimeStamp atTimePoint, const TimeInterval* after) {
       timerThread->LastSeqNo_ = TimerSeqNo::WaitInLine;
    this->Key_.SeqNo_ = timerThread->LastSeqNo_;
 
-   auto ifind = timerThread->Timers_.insert(TimerThread::TimerThreadData::Timers::value_type{this->Key_, this->shared_from_this()}).first;
+   auto ifind = timerThread->Timers_.insert(TimerThread::TimerThreadData::Timers::value_type{this->Key_, this}).first;
    if (fon9_LIKELY(ifind != timerThread->Timers_.end() - 1))
       return;
    TimeInterval wsecs = after ? *after : TimeInterval{atTimePoint - UtcNow()};
