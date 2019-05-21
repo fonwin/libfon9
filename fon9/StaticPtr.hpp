@@ -32,6 +32,9 @@ public:
       // 造成省略該步驟 this->Ptr_ 仍維持舊資料,
       // 而在 MemBlock::Alloc(size_t sz) 裡面無法正確判斷 IsDisposed();
    }
+   T* get() const {
+      return reinterpret_cast<uintptr_t>(this->Ptr_) <= 1 ? nullptr : this->Ptr_;
+   }
    T* operator->() {
       return this->Ptr_;
    }

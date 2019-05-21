@@ -6,6 +6,12 @@
 
 namespace fon9 {
 
+/// \ingroup Misc
+/// - 透過一個陣列重複使用裡面的物件.
+/// - 使用 Add(), Alloc() 取得 pool 裡面的物件索引.
+/// - 當需要使用物件時, 用 GetObjPtr(idx); 取得物件指標, 或 GetObj() 取得物件副本.
+/// - 當物件不再需要時, 用 RemoveObj(); RemoveObjPtr(); 清除物件資源.
+///   - 但物件仍然存在沒有被解構.
 template <class T>
 class ObjPool {
 public:
@@ -49,6 +55,20 @@ public:
       return idx;
    }
 
+   SizeT Alloc() {
+      SizeT idx;
+      if (this->FreeIndex_.empty()) {
+         idx = this->Objs_.size();
+         this->Objs_.resize(idx + 1);
+      }
+      else {
+         idx = this->FreeIndex_.back();
+         this->FreeIndex_.pop_back();
+      }
+      return idx;
+   }
+
+   /// 如果 idx 的物件 == obj; 則將 idx 的物件透過 = T{} 的方式清除資源.
    template <class X>
    bool RemoveObj(SizeT idx, X obj) {
       if (idx >= this->Objs_.size())
@@ -62,10 +82,11 @@ public:
    }
 
    /// pobj 必須是透過 GetPtrObj(idx) 取得, 且 pobj 必須已經清理過(釋放資源).
+   /// 如果 pobj == nullptr, 則不檢查 pobj 是否正確.
    bool RemoveObjPtr(SizeT idx, T* pobj) {
       if (idx >= this->Objs_.size())
          return false;
-      if (pobj != &this->Objs_[idx])
+      if (pobj && pobj != &this->Objs_[idx])
          return false;
       this->FreeIndex_.push_back(idx);
       return true;

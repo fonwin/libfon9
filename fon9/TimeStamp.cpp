@@ -103,16 +103,18 @@ struct TimeStampThreadLocalCache {
 };
 fon9_WARN_POP;
 
-static thread_local TimeStampThreadLocalCache  Cached_;
+static thread_local TimeStampThreadLocalCache  TlsCached_;
 
 //--------------------------------------------------------------------------//
 
 fon9_API const struct tm& EpochSecondsInfo(TimeStamp::OrigType epochSeconds) {
+   auto& Cached_ = TlsCached_;
    Cached_.CheckCachedTm(epochSeconds);
    return Cached_.Tm_;
 }
 
 fon9_API DateTime14T EpochSecondsToYYYYMMDDHHMMSS(TimeStamp::OrigType epochSeconds) {
+   auto& Cached_ = TlsCached_;
    Cached_.CheckCachedTm(epochSeconds);
    return Cached_.YYYYMMDDHHMMSS_;
 }
@@ -138,6 +140,7 @@ fon9_API const char* ToStrRev_Full(TimeStamp ts) {
    if (fon9_LIKELY(!ts.IsNull())) {
       const TsOrigType  es = ts.GetOrigValue();
       const TimeUS      us = static_cast<TimeUS>((es < 0 ? -es : es) % ts.Divisor);
+      auto& Cached_ = TlsCached_;
       if (Cached_.CheckCachedTm(ts.ToEpochSeconds()) || Cached_.BufferDateTimeStr_[0] == 0) {
          SPic9ToStrRev<14>(Cached_.BufferDateTimeStr_ + 14, Cached_.YYYYMMDDHHMMSS_);
          goto __SET_US;
@@ -154,7 +157,7 @@ fon9_API const char* ToStrRev_Full(TimeStamp ts) {
 
 fon9_API char* ToStrRev_FIX(char* pout, TimeStamp ts) {
    if (fon9_LIKELY(!ts.IsNull()))
-      return Cached_.ToStrRev_FIX(pout, ts.ToEpochSeconds());
+      return TlsCached_.ToStrRev_FIX(pout, ts.ToEpochSeconds());
    memset(pout -= kDateTimeStrWidth_FIX, ' ', kDateTimeStrWidth_FIX);
    return pout;
 }
@@ -162,7 +165,7 @@ fon9_API char* ToStrRev_FIXMS(char* pout, TimeStamp ts) {
    if (fon9_LIKELY(!ts.IsNull())) {
       const TsOrigType  es = ts.GetOrigValue();
       const TimeUS      ms = static_cast<TimeUS>((es < 0 ? -es : es) % ts.Divisor) / 1000;
-      return Cached_.ToStrRev_FIXMS(pout, ts.ToEpochSeconds(), ms);
+      return TlsCached_.ToStrRev_FIXMS(pout, ts.ToEpochSeconds(), ms);
    }
    memset(pout -= kDateTimeStrWidth_FIXMS, ' ', kDateTimeStrWidth_FIXMS);
    return pout;

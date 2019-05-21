@@ -6,7 +6,10 @@ namespace fon9 { namespace fmkt {
 
 TradingRequest::~TradingRequest() {
 }
-
+void TradingRequest::FreeThis() {
+   delete this;
+}
+//--------------------------------------------------------------------------//
 TradingLine::~TradingLine() {
 }
 //--------------------------------------------------------------------------//

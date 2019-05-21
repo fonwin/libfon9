@@ -22,11 +22,20 @@ protected:
    /// 由衍生者自行決定如何使用.
    uint8_t                 RequestFlags_{};
 
+   virtual ~TradingRequest();
+
 public:
    TradingRequest() = default;
    TradingRequest(f9fmkt_RequestKind reqKind) : RequestKind_{reqKind} {
    }
-   virtual ~TradingRequest();
+
+   /// 必須透過 FreeThis() 來刪除, 預設 delete this;
+   /// 若有使用 ObjCarrierTape 則將 this 還給 ObjCarrierTape;
+   virtual void FreeThis();
+
+   inline friend void intrusive_ptr_deleter(const TradingRequest* p) {
+      const_cast<TradingRequest*>(p)->FreeThis();
+   }
 
    f9fmkt_RequestKind      RequestKind() const  { return this->RequestKind_; }
    f9fmkt_TradingMarket    Market() const       { return this->Market_; }

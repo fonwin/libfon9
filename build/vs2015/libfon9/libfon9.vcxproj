@@ -218,6 +218,7 @@
     <ClInclude Include="..\..\..\fon9\Log.hpp" />
     <ClInclude Include="..\..\..\fon9\LogFile.hpp" />
     <ClInclude Include="..\..\..\fon9\MessageQueue.hpp" />
+    <ClInclude Include="..\..\..\fon9\ObjSupplier.hpp" />
     <ClInclude Include="..\..\..\fon9\ObjPool.hpp" />
     <ClInclude Include="..\..\..\fon9\Outcome.hpp" />
     <ClInclude Include="..\..\..\fon9\Named.hpp" />
@@ -448,6 +449,7 @@
     <ClCompile Include="..\..\..\fon9\io\win\IocpTcpServer.cpp" />
     <ClCompile Include="..\..\..\fon9\Log.cpp" />
     <ClCompile Include="..\..\..\fon9\LogFile.cpp" />
+    <ClCompile Include="..\..\..\fon9\ObjSupplier.cpp" />
     <ClCompile Include="..\..\..\fon9\Outcome.cpp" />
     <ClCompile Include="..\..\..\fon9\Named.cpp" />
     <ClCompile Include="..\..\..\fon9\PkCont.cpp" />

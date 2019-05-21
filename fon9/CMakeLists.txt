@@ -34,6 +34,7 @@ set(fon9src
  ConfigParser.cpp
  DllHandle.cpp
  PkCont.cpp
+ ObjSupplier.cpp
 
  File.cpp
  FilePath.cpp
@@ -206,6 +207,9 @@ target_link_libraries(ConfigLoader_UT fon9_s)
 
 add_executable(PkCont_UT PkCont_UT.cpp)
 target_link_libraries(PkCont_UT fon9_s)
+
+add_executable(ObjSupplier_UT ObjSupplier_UT.cpp)
+target_link_libraries(ObjSupplier_UT fon9_s)
 
 # unit tests: Container / Algorithm
 add_executable(Trie_UT Trie_UT.cpp)

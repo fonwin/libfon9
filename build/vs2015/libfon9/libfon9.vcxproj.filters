@@ -452,9 +452,6 @@
     <ClInclude Include="..\..\..\fon9\io\TcpServerBase.hpp">
       <Filter>Header Files\io\_socket</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\fon9\ObjPool.hpp">
-      <Filter>Header Files\_base\_Container / Algorithm</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\fon9\io\FdrSocket.hpp">
       <Filter>Header Files\io\_fdr</Filter>
     </ClInclude>
@@ -913,6 +910,12 @@
     </ClInclude>
     <ClInclude Include="..\..\..\fon9\framework\SessionFactoryConfigWithAuthMgr.hpp">
       <Filter>Header Files\framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\ObjPool.hpp">
+      <Filter>Header Files\_base\_Tools / Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\ObjSupplier.hpp">
+      <Filter>Header Files\_base\_Tools / Utility</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1467,6 +1470,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\framework\SessionFactoryConfigWithAuthMgr.cpp">
       <Filter>Source Files\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\ObjSupplier.cpp">
+      <Filter>Source Files\_base\_Tools / Utility</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

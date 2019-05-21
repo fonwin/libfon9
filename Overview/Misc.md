@@ -49,6 +49,9 @@
 * [`fon9/HostId.hpp`](../fon9/HostId.hpp)
 * `extern fon9_API HostId  LocalHostId_;`
 
+### 快速物件分配機制 ObjSupplier
+* [`fon9/ObjSupplier.hpp`](../fon9/ObjSupplier.hpp)
+
 ---------------------------------------
 
 ## 設定檔載入工具

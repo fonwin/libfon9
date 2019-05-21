@@ -215,25 +215,27 @@ public:
       lv.FreeMemCurr_.push_front(node);
    }
 };
-static thread_local StaticPtr<MemBlock::TCache> TCache_;
+static thread_local StaticPtr<MemBlock::TCache> TlsTCache_;
 
 //--------------------------------------------------------------------------//
 
 byte* MemBlock::Alloc(MemBlockSize sz) {
+   auto* TCache_ = TlsTCache_.get();
    if (fon9_LIKELY(TCache_)) {
 __TCACHE_READY:
       return TCache_->Alloc(*this, sz);
    }
-   if (!TCache_.IsDisposed()) {
-      TCache_.reset(new MemBlock::TCache);
+   if (!TlsTCache_.IsDisposed()) {
+      TlsTCache_.reset(TCache_ = new MemBlock::TCache);
       if (TCache_->Center_)
          goto __TCACHE_READY;
-      TCache_.dispose();
+      TlsTCache_.dispose();
    }
    return TCache::UseMalloc(*this, sz);
 }
 void MemBlock::FreeBlock(void* mem, MemBlockSize sz) {
    if (fon9_LIKELY(mem)) {
+      auto* TCache_ = TlsTCache_.get();
       if (fon9_LIKELY(TCache_))
          TCache_->Free(mem, sz);
       else
