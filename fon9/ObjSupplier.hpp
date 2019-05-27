@@ -125,7 +125,7 @@ protected:
       assert(reinterpret_cast<byte*>(this) + this->ArrayOffset_ <= reinterpret_cast<byte*>(pobj)
              && reinterpret_cast<byte*>(pobj) < reinterpret_cast<byte*>(this) + this->ArrayOffset_ + this->ObjectSize_ * this->ObjectCount_);
       static_cast<ObjInjection*>(pobj)->MemOwner_ = nullptr;
-      pobj->~Derived();
+      fon9::destroy_at(pobj);
       intrusive_ptr_release(this);
    }
 };

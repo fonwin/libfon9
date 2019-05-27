@@ -203,6 +203,11 @@ inline T* InplaceNew(void* p, ArgsT&&... args) {
    #define new DBG_NEW
    #endif
 }
+template<class T, class... ArgsT>
+inline T* InplaceNew(T* p, ArgsT&&... args) {
+   return InplaceNew<T>(static_cast<void*>(p), std::forward<ArgsT>(args)...);
+}
+
 // 直接呼叫解構, 同 C++17 所提供的.
 template<class T>
 inline void destroy_at(T* p) {

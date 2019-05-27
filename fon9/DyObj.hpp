@@ -84,7 +84,7 @@ public:
    size_t clear() {
       if (value_type* val = this->get()) {
          this->HasValue_ = false;
-         val->~value_type();
+         fon9::destroy_at(val);
          return 1;
       }
       return 0;
