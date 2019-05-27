@@ -32,11 +32,17 @@ enum f9fmkt_TradingMarket   fon9_ENUM_underlying(char) {
    f9fmkt_TradingMarket_TwFex = 'F',
 
    /// 提供給陣列使用, 例如:
-   /// using MarketMap = std::array<MarketRec, f9fmkt_TradingMarket_MaxIndex + 1u>;
+   /// using MarketAry = std::array<MarketRec, f9fmkt_TradingMarket_MaxIndex + 1u>;
    f9fmkt_TradingMarket_MaxIndex = 'z'
 };
-inline int f9fmkt_TradingMarketToIndex(f9fmkt_TradingMarket v) {
-   return (int)(v);
+/// 返回值必定在 [0..f9fmkt_TradingMarket_MaxIndex] 之間.
+inline unsigned char f9fmkt_TradingMarket_ToIndex(f9fmkt_TradingMarket v) {
+   return (unsigned char)(v) > (unsigned char)f9fmkt_TradingMarket_MaxIndex
+      ? (unsigned char)(0) : (unsigned char)(v);
+}
+inline f9fmkt_TradingMarket IndexTo_f9fmkt_TradingMarket(unsigned idx) {
+   return idx > (unsigned char)f9fmkt_TradingMarket_MaxIndex
+      ? f9fmkt_TradingMarket_Unknown : (f9fmkt_TradingMarket)(idx);
 }
 
 /// \ingroup fmkt
@@ -61,11 +67,17 @@ enum f9fmkt_TradingSessionId   fon9_ENUM_underlying(char) {
    f9fmkt_TradingSessionId_AfterHour = '6',
 
    /// 提供給陣列使用, 例如:
-   /// using MarketMap = std::array<MarketRec, f9fmkt_TradingSessionId_MaxIndex + 1u>;
+   /// using SessionAry = std::array<SessionRec, f9fmkt_TradingSessionId_MaxIndex + 1u>;
    f9fmkt_TradingSessionId_MaxIndex = 'z'
 };
-inline int f9fmkt_TradingSessionIdToIndex(f9fmkt_TradingSessionId v) {
-   return (int)(v);
+/// 返回值必定在 [0..f9fmkt_TradingSessionId_MaxIndex] 之間.
+inline unsigned char f9fmkt_TradingSessionId_ToIndex(f9fmkt_TradingSessionId v) {
+   return (unsigned char)(v) > (unsigned char)f9fmkt_TradingSessionId_MaxIndex
+      ? (unsigned char)(0) : (unsigned char)(v);
+}
+inline f9fmkt_TradingSessionId IndexTo_f9fmkt_TradingSessionId(unsigned idx) {
+   return idx > (unsigned char)f9fmkt_TradingSessionId_MaxIndex
+      ? f9fmkt_TradingSessionId_Unknown : (f9fmkt_TradingSessionId)(idx);
 }
 
 /// \ingroup fmkt
@@ -154,6 +166,9 @@ enum f9fmkt_TradingRequestSt   fon9_ENUM_underlying(uint8_t) {
    /// 下單要求因「線路狀況」拒絕. 尚未送給交易所.
    /// 例如: 無可用線路.
    f9fmkt_TradingRequestSt_LineRejected = 0xe3,
+   /// 下單要求因「委託書號」拒絕. 尚未送給交易所.
+   /// 例如: 已無可用櫃號; 自編委託書號重複.
+   f9fmkt_TradingRequestSt_OrdNoRejected = 0xe4,
    /// 下單要求因「內部其他原因」拒絕. 尚未送給交易所.
    f9fmkt_TradingRequestSt_InternalRejected = 0xe9,
    /// 下單要求因「風控檢查」拒絕. 尚未送給交易所.
@@ -165,9 +180,12 @@ enum f9fmkt_TradingRequestSt   fon9_ENUM_underlying(uint8_t) {
    f9fmkt_TradingRequestSt_ExchangeNoLeavesQty  = 0xef,
 
    /// 新單要求: 尚未收到新單回報, 但先收到成交回報.
+   /// 如果有自動 Qu 回報機制, 則無此狀態.
    f9fmkt_TradingRequestSt_FilledBeforeNew = 0xf1,
-   /// 已收到交易所的確認回報.
+   /// 已收到交易所的確認回報: 包含新單回報、刪改回報、查詢回報...
    f9fmkt_TradingRequestSt_ExchangeAccepted = 0xf2,
+   /// 成交回報要求, 直接使用此狀態.
+   f9fmkt_TradingRequestSt_Filled = 0xf3,
 
    /// 交易所刪單: IOC, FOK...
    f9fmkt_TradingRequestSt_ExchangeCanceled = 0xfa,
@@ -182,6 +200,9 @@ enum f9fmkt_TradingRequestSt   fon9_ENUM_underlying(uint8_t) {
    /// 類似 FIX 的 ExecType=D(Restated).
    f9fmkt_TradingRequestSt_Restated = 0xfe,
 };
+inline bool f9fmkt_TradingRequestSt_IsRejected(f9fmkt_TradingRequestSt st) {
+   return (unsigned char)(st & 0xf0) == (unsigned char)(0xe0);
+}
 
 /// \ingroup fmkt
 /// OrderSt 分成 4 階段:
@@ -215,15 +236,44 @@ enum f9fmkt_TradingRequestSt   fon9_ENUM_underlying(uint8_t) {
 ///     - UserCanceled:     使用者刪單, 或減量成功後的 AfterQty=0;
 ///     - ExchangeCanceled: 交易所刪單(IOC、FOK...).
 ///   - FullFilled: 全部成交.
-///   - PartCanceled: 部分成交(其實是全部成交)之後, 才收到成交前的減量回報.
-///     - 例: 新單10:Accepted, 成交3:PartFilled, 減量7(Bf=10,Af=3):PartCanceled
 ///   - DoneForDay: 已收盤.
 enum f9fmkt_OrderSt   fon9_ENUM_underlying(uint8_t) {
    f9fmkt_OrderSt_Initialing = 0,
-   f9fmkt_OrderSt_NewChecking = f9fmkt_TradingRequestSt_Checking,
-   f9fmkt_OrderSt_NewQueuing = f9fmkt_TradingRequestSt_Queuing,
-   f9fmkt_OrderSt_NewSending = f9fmkt_TradingRequestSt_Sending,
+   f9fmkt_OrderSt_NewChecking             = f9fmkt_TradingRequestSt_Checking,
+   f9fmkt_OrderSt_NewQueuing              = f9fmkt_TradingRequestSt_Queuing,
+   f9fmkt_OrderSt_NewSending              = f9fmkt_TradingRequestSt_Sending,
+   f9fmkt_OrderSt_NewSent                 = f9fmkt_TradingRequestSt_Sent,
+   f9fmkt_OrderSt_NewPartExchangeAccepted = f9fmkt_TradingRequestSt_PartExchangeAccepted,
+   f9fmkt_OrderSt_NewPartExchangeRejected = f9fmkt_TradingRequestSt_PartExchangeRejected,
+
+   f9fmkt_OrderSt_NewDone                 = f9fmkt_TradingRequestSt_Done,
+   f9fmkt_OrderSt_NewBroken               = f9fmkt_TradingRequestSt_Broken,
+   f9fmkt_OrderSt_NewQueuingCanceled      = f9fmkt_TradingRequestSt_QueuingCanceled,
+
+   f9fmkt_OrderSt_NewLineRejected         = f9fmkt_TradingRequestSt_LineRejected,
+   f9fmkt_OrderSt_NewOrdNoRejected        = f9fmkt_TradingRequestSt_OrdNoRejected,
+   f9fmkt_OrderSt_NewInternalRejected     = f9fmkt_TradingRequestSt_InternalRejected,
+   f9fmkt_OrderSt_NewCheckingRejected     = f9fmkt_TradingRequestSt_CheckingRejected,
+   f9fmkt_OrderSt_NewExchangeRejected     = f9fmkt_TradingRequestSt_ExchangeRejected,
+
+   f9fmkt_OrderSt_ExchangeAccepted = f9fmkt_TradingRequestSt_ExchangeAccepted,
+   f9fmkt_OrderSt_PartFilled       = f9fmkt_TradingRequestSt_Filled,
+   f9fmkt_OrderSt_FullFilled       = 0xf4,
+   /// 部分成交之後(其實是全部成交), 才收到成交前的減量回報.
+   /// - 例: 新單10:Accepted, 成交3:PartFilled, 減量7(Bf=10,Af=3):PartCanceled
+   f9fmkt_OrderSt_PartCanceled     = 0xf5,
+   f9fmkt_OrderSt_ExchangeCanceled = f9fmkt_TradingRequestSt_ExchangeCanceled,
+   f9fmkt_OrderSt_UserCanceled     = 0xfd,
+   f9fmkt_OrderSt_DoneForDay       = 0xff,
 };
+inline bool f9fmkt_OrderSt_IsRejected(f9fmkt_OrderSt st) {
+   return f9fmkt_TradingRequestSt_IsRejected((f9fmkt_TradingRequestSt)st);
+}
+inline bool f9fmkt_OrderSt_IsDone(f9fmkt_OrderSt st) {
+   return f9fmkt_OrderSt_IsRejected(st)
+      || st == f9fmkt_OrderSt_NewQueuingCanceled
+      || st >= f9fmkt_OrderSt_FullFilled;
+}
 
 #ifdef __cplusplus
 }
