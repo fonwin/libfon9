@@ -113,18 +113,36 @@ struct TrieKeyAlNum : public TrieKeyAlNumNoBound {
    }
 };
 
+template <class ValueT>
+class TrieDummyPtrValue {
+   ValueT*  Ptr_{nullptr};
+public:
+   size_t clear() {
+      if (this->Ptr_ == nullptr)
+         return 0;
+      this->Ptr_ = nullptr;
+      return 1;
+   }
+   ValueT** get() {
+      return this->Ptr_ ? &this->Ptr_ : nullptr;
+   }
+   void emplace(ValueT* ptr) {
+      this->Ptr_ = ptr;
+   }
+};
+
 fon9_WARN_DISABLE_PADDING;
 /// \ingroup Misc
 /// 使用 level 的方式替「不定長度的Key」建立對照表.
 /// 如果是固定長度(e.g. uint32_t, uint64_t...) 則建議使用 LevelArray<>
-template <class KeyTransT, class ValueT>
+/// 若 ValueObj = TrieDummyPtrValue<> 則 this->size() 可能不會正確!
+template <class KeyTransT, class ValueT, class ValueObj = DyObj<ValueT>>
 class Trie {
    fon9_NON_COPYABLE(Trie);
    using LvKeyT = typename KeyTransT::LvKeyT;
    using LvIndexT = typename KeyTransT::LvIndexT;
    struct Node;
    using NodeObj = DyObj<Node>;
-   using ValueObj = DyObj<ValueT>;
    struct LvAry {
       fon9_NON_COPY_NON_MOVE(LvAry);
       using Ary = std::array<NodeObj, KeyTransT::MaxIndex() + 1u>;
@@ -497,17 +515,17 @@ public:
 };
 fon9_WARN_POP;
 
-template <class KeyTransT, class ValueT>
-typename Trie<KeyTransT, ValueT>::Node*
-Trie<KeyTransT, ValueT>::LvAry::First() {
+template <class KeyTransT, class ValueT, class ValueObj>
+typename Trie<KeyTransT, ValueT, ValueObj>::Node*
+Trie<KeyTransT, ValueT, ValueObj>::LvAry::First() {
    Node* node = this->Ary_[this->IndexMin_].get();
    assert(node != nullptr);
    return node->First();
 }
 
-template <class KeyTransT, class ValueT>
-typename Trie<KeyTransT, ValueT>::Node*
-Trie<KeyTransT, ValueT>::LvAry::Next(LvIndexT idx) {
+template <class KeyTransT, class ValueT, class ValueObj>
+typename Trie<KeyTransT, ValueT, ValueObj>::Node*
+Trie<KeyTransT, ValueT, ValueObj>::LvAry::Next(LvIndexT idx) {
    while (idx < this->IndexMax_) {
       if (Node* node = this->Ary_[++idx].get())
          return node->First();
@@ -515,17 +533,17 @@ Trie<KeyTransT, ValueT>::LvAry::Next(LvIndexT idx) {
    return this->OwnerNode_.OwnerNext();
 }
 
-template <class KeyTransT, class ValueT>
-typename Trie<KeyTransT, ValueT>::Node*
-Trie<KeyTransT, ValueT>::LvAry::Last() {
+template <class KeyTransT, class ValueT, class ValueObj>
+typename Trie<KeyTransT, ValueT, ValueObj>::Node*
+Trie<KeyTransT, ValueT, ValueObj>::LvAry::Last() {
    Node* node = this->Ary_[this->IndexMax_].get();
    assert(node != nullptr);
    return node->Last();
 }
 
-template <class KeyTransT, class ValueT>
-typename Trie<KeyTransT, ValueT>::Node*
-Trie<KeyTransT, ValueT>::LvAry::Prev(const Node& cur) {
+template <class KeyTransT, class ValueT, class ValueObj>
+typename Trie<KeyTransT, ValueT, ValueObj>::Node*
+Trie<KeyTransT, ValueT, ValueObj>::LvAry::Prev(const Node& cur) {
    LvIndexT idx = this->GetNodeIndex(cur);
    while (idx > this->IndexMin_) {
       if (Node* node = this->Ary_[--idx].get())
@@ -536,8 +554,8 @@ Trie<KeyTransT, ValueT>::LvAry::Prev(const Node& cur) {
    return this->OwnerNode_.Prev();
 }
 
-template <class KeyTransT, class ValueT>
-void Trie<KeyTransT, ValueT>::LvAry::DecCount(LvAry* pary) {
+template <class KeyTransT, class ValueT, class ValueObj>
+void Trie<KeyTransT, ValueT, ValueObj>::LvAry::DecCount(LvAry* pary) {
    while(pary) {
       assert(pary->Count_ > 0);
       --pary->Count_;
@@ -545,8 +563,8 @@ void Trie<KeyTransT, ValueT>::LvAry::DecCount(LvAry* pary) {
    }
 }
 
-template <class KeyTransT, class ValueT>
-void Trie<KeyTransT, ValueT>::LvAry::IncCount(LvAry* pary) {
+template <class KeyTransT, class ValueT, class ValueObj>
+void Trie<KeyTransT, ValueT, ValueObj>::LvAry::IncCount(LvAry* pary) {
    while (pary) {
       ++pary->Count_;
       pary = pary->OwnerNode_.OwnerAry_;
