@@ -361,9 +361,9 @@ seed::LayoutSP IoManager::GetAcceptedClientLayout() {
 }
 seed::LayoutSP IoManager::MakeAcceptedClientLayoutImpl() {
    seed::Fields fields;
-   fields.Add(fon9_MakeField(Named{"SessionSt"}, DeviceRun, SessionSt_));
-   fields.Add(fon9_MakeField(Named{"DeviceSt"},  DeviceRun, DeviceSt_));
-   fields.Add(fon9_MakeField(Named{"OpenArgs"},  DeviceRun, OpenArgs_));
+   fields.Add(fon9_MakeField2(DeviceRun, SessionSt));
+   fields.Add(fon9_MakeField2(DeviceRun, DeviceSt));
+   fields.Add(fon9_MakeField2(DeviceRun, OpenArgs));
    seed::TabSP tabSt{new seed::Tab(Named{"Status"}, std::move(fields), seed::TabFlag::HasSameCommandsSet)};
    return new seed::Layout1(seed::MakeField(Named{"Id"}, 0, *static_cast<const io::DeviceAcceptedClientSeq*>(nullptr)),
                             std::move(tabSt));

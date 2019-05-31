@@ -49,13 +49,13 @@ using PluginsRecs = SortedVectorSet<PluginsRecSP, PluginsIdCmp>;
 //--------------------------------------------------------------------------//
 static LayoutSP MakePluginsLayout() {
    Fields flds;
-   flds.Add(fon9_MakeField(Named{"Enabled"}, PluginsRec, Enabled_));
-   flds.Add(fon9_MakeField(Named{"FileName"}, PluginsRec, FileName_));
-   flds.Add(fon9_MakeField(Named{"EntryName"}, PluginsRec, EntryName_));
-   flds.Add(fon9_MakeField_const(Named{"Description"}, PluginsRec, Description_));
-   flds.Add(fon9_MakeField(Named{"Args"}, PluginsRec, Args_));
-   flds.Add(fon9_MakeField_const(Named{"Status"}, PluginsRec, Status_));
-   return new Layout1(fon9_MakeField(Named{"Id"}, PluginsRec, Id_),
+   flds.Add(fon9_MakeField2(PluginsRec, Enabled));
+   flds.Add(fon9_MakeField2(PluginsRec, FileName));
+   flds.Add(fon9_MakeField2(PluginsRec, EntryName));
+   flds.Add(fon9_MakeField2_const(PluginsRec, Description));
+   flds.Add(fon9_MakeField2(PluginsRec, Args));
+   flds.Add(fon9_MakeField2_const(PluginsRec, Status));
+   return new Layout1(fon9_MakeField2(PluginsRec, Id),
                       new Tab{Named{"Plugins"}, std::move(flds), TabFlag::NoSapling | TabFlag::Writable},
                       TreeFlag::AddableRemovable);
 }

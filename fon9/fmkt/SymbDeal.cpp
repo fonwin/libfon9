@@ -7,10 +7,10 @@ namespace fon9 { namespace fmkt {
 
 seed::Fields SymbDeal::MakeFields() {
    seed::Fields flds;
-   flds.Add(fon9_MakeField(Named{"Time"},     SymbDeal, Data_.Time_));
-   flds.Add(fon9_MakeField(Named{"DealPri"},  SymbDeal, Data_.Deal_.Pri_));
-   flds.Add(fon9_MakeField(Named{"DealQty"},  SymbDeal, Data_.Deal_.Qty_));
-   flds.Add(fon9_MakeField(Named{"TotalQty"}, SymbDeal, Data_.TotalQty_));
+   flds.Add(fon9_MakeField(SymbDeal, Data_.Time_,      "Time"));
+   flds.Add(fon9_MakeField(SymbDeal, Data_.Deal_.Pri_, "DealPri"));
+   flds.Add(fon9_MakeField(SymbDeal, Data_.Deal_.Qty_, "DealQty"));
+   flds.Add(fon9_MakeField(SymbDeal, Data_.TotalQty_,  "TotalQty"));
    return flds;
 }
 

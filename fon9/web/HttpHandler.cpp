@@ -71,8 +71,8 @@ HttpDispatcher::~HttpDispatcher() {
 
 seed::LayoutSP HttpDispatcher::MakeDefaultLayout() {
    seed::Fields fields = NamedSeed::MakeDefaultFields();
-   //fields.Add(fon9_MakeField(Named{"Config"}, HttpHandler, Value_));
-   return new seed::Layout1(fon9_MakeField(Named{"Name"}, HttpHandler, Name_),
+   //fields.Add(fon9_MakeField(HttpHandler, Value_, "Config"));
+   return new seed::Layout1(fon9_MakeField2(HttpHandler, Name),
                             new seed::Tab{Named{"Handler"}, std::move(fields)});
 }
 seed::TreeSP HttpDispatcher::GetSapling() {

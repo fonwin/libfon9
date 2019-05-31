@@ -9,24 +9,24 @@ namespace fon9 {
 seed::LayoutSP IoManagerTree::MakeLayoutImpl() {
    seed::LayoutSP saplingLayout = IoManager::GetAcceptedClientLayout();
    seed::Fields   fields;
-   fields.Add(fon9_MakeField(Named{"Session"},   DeviceItem, Config_.SessionName_));
-   fields.Add(fon9_MakeField(Named{"SessionSt"}, DeviceItem, SessionSt_));
-   fields.Add(fon9_MakeField(Named{"Device"},    DeviceItem, Config_.DeviceName_));
-   fields.Add(fon9_MakeField(Named{"DeviceSt"},  DeviceItem, DeviceSt_));
-   fields.Add(fon9_MakeField(Named{"OpenArgs"},  DeviceItem, OpenArgs_));
+   fields.Add(fon9_MakeField(DeviceItem,  Config_.SessionName_, "Session"));
+   fields.Add(fon9_MakeField2(DeviceItem, SessionSt));
+   fields.Add(fon9_MakeField(DeviceItem,  Config_.DeviceName_,  "Device"));
+   fields.Add(fon9_MakeField2(DeviceItem, DeviceSt));
+   fields.Add(fon9_MakeField2(DeviceItem, OpenArgs));
    seed::TabSP tabSt{new seed::Tab(Named{"Status"}, std::move(fields), saplingLayout)};
 
-   fields.Add(fon9_MakeField(Named{"Enabled"},     DeviceItem, Config_.Enabled_));
-   fields.Add(fon9_MakeField(Named{"Sch"},         DeviceItem, Config_.SchArgs_));
-   fields.Add(fon9_MakeField(Named{"Session"},     DeviceItem, Config_.SessionName_));
-   fields.Add(fon9_MakeField(Named{"SessionArgs"}, DeviceItem, Config_.SessionArgs_));
-   fields.Add(fon9_MakeField(Named{"Device"},      DeviceItem, Config_.DeviceName_));
-   fields.Add(fon9_MakeField(Named{"DeviceArgs"},  DeviceItem, Config_.DeviceArgs_));
+   fields.Add(fon9_MakeField(DeviceItem, Config_.Enabled_,     "Enabled"));
+   fields.Add(fon9_MakeField(DeviceItem, Config_.SchArgs_,     "Sch"));
+   fields.Add(fon9_MakeField(DeviceItem, Config_.SessionName_, "Session"));
+   fields.Add(fon9_MakeField(DeviceItem, Config_.SessionArgs_, "SessionArgs"));
+   fields.Add(fon9_MakeField(DeviceItem, Config_.DeviceName_,  "Device"));
+   fields.Add(fon9_MakeField(DeviceItem, Config_.DeviceArgs_,  "DeviceArgs"));
    seed::TabSP tabConfig{new seed::Tab(Named{"Config"}, std::move(fields), saplingLayout, seed::TabFlag::NeedsApply)};
 
    #define kTabStatusIndex  0
    #define kTabConfigIndex  1
-   return new seed::LayoutN(fon9_MakeField(Named{"Id"}, DeviceItem, Id_),
+   return new seed::LayoutN(fon9_MakeField2(DeviceItem, Id),
                             std::move(tabSt),
                             std::move(tabConfig));
 }

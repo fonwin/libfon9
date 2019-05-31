@@ -8,11 +8,11 @@ namespace fon9 { namespace seed {
 
 static Fields MakeAclTreeFields() {
    Fields fields;
-   fields.Add(fon9_MakeField(Named{"Rights"}, AccessList::value_type, second));
+   fields.Add(fon9_MakeField(AccessList::value_type, second, "Rights"));
    return fields;
 }
 static LayoutSP MakeAclTreeLayout(TabFlag tabFlags, TreeFlag treeFlags) {
-   return LayoutSP{new Layout1(fon9_MakeField(Named{"Path"}, AccessList::value_type, first),
+   return LayoutSP{new Layout1(fon9_MakeField(AccessList::value_type, first, "Path"),
                                new Tab{Named{"AclRights"}, MakeAclTreeFields(), tabFlags},
                                treeFlags)};
 }

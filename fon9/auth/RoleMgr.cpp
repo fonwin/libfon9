@@ -42,17 +42,17 @@ class RoleTree : public MasterPolicyTree {
 
    static seed::LayoutSP MakeLayout() {
       seed::Fields fields;
-      fields.Add(fon9_MakeField(Named{"PolicyId"}, DetailTableImpl::value_type, second));
+      fields.Add(fon9_MakeField(DetailTableImpl::value_type, second, "PolicyId"));
       seed::LayoutSP saplingLayout{
-         new seed::Layout1(fon9_MakeField(Named{"PolicyName"}, DetailTableImpl::value_type, first),
+         new seed::Layout1(fon9_MakeField(DetailTableImpl::value_type, first, "PolicyName"),
                            new seed::Tab{Named{"RoleConfig"}, std::move(fields),
                                          seed::TabFlag::NoSapling | seed::TabFlag::Writable},
                            seed::TreeFlag::AddableRemovable)};
 
-      fields.Add(fon9_MakeField(Named{"Description"}, RoleItem, Description_));
+      fields.Add(fon9_MakeField2(RoleItem, Description));
       seed::TabSP tab{new seed::Tab(Named{"RoleCfg"}, std::move(fields), std::move(saplingLayout),
                                     seed::TabFlag::HasSapling | seed::TabFlag::Writable)};
-      return new seed::Layout1(fon9_MakeField(Named{"RoleId"}, PolicyItem, PolicyId_),
+      return new seed::Layout1(fon9_MakeField(PolicyItem, PolicyId_, "RoleId"),
                                std::move(tab), seed::TreeFlag::AddableRemovable);
    }
 

@@ -18,9 +18,9 @@ SymbData* Symb::FetchSymbData(int tabid) {
 }
 seed::Fields Symb::MakeFields() {
    seed::Fields flds;
-   flds.Add(fon9_MakeField(Named{"Market"},    Symb, TradingMarket_));
-   flds.Add(fon9_MakeField(Named{"ShUnit"},    Symb, ShUnit_));
-   flds.Add(fon9_MakeField(Named{"FlowGroup"}, Symb, FlowGroup_));
+   flds.Add(fon9_MakeField(Symb, TradingMarket_, "Market"));
+   flds.Add(fon9_MakeField2(Symb, ShUnit));
+   flds.Add(fon9_MakeField2(Symb, FlowGroup));
    return flds;
 }
 

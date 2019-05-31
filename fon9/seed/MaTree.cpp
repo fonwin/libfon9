@@ -18,8 +18,8 @@ void NamedSeed::OnNamedSeedReleased() {
 }
 Fields NamedSeed::MakeDefaultFields() {
    Fields fields;
-   fields.Add(fon9_MakeField(Named{"Title"},       NamedSeed, Title_));
-   fields.Add(fon9_MakeField(Named{"Description"}, NamedSeed, Description_));
+   fields.Add(fon9_MakeField2(NamedSeed, Title));
+   fields.Add(fon9_MakeField2(NamedSeed, Description));
    return fields;
 }
 
@@ -41,7 +41,7 @@ TreeSP NamedSapling::GetSapling() {
 //--------------------------------------------------------------------------//
 
 MaTree::MaTree(std::string tabName)
-   : base{new Layout1(fon9_MakeField(Named{"Name"}, NamedSeed, Name_),
+   : base{new Layout1(fon9_MakeField2(NamedSeed, Name),
                       new Tab{Named{std::move(tabName)}, NamedSeed::MakeDefaultFields()})} {
 }
 

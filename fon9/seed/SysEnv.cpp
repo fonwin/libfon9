@@ -19,8 +19,8 @@ namespace fon9 { namespace seed {
 
 LayoutSP SysEnv::MakeDefaultLayout() {
    Fields fields = NamedSeed::MakeDefaultFields();
-   fields.Add(fon9_MakeField(Named{"Value"}, SysEnvItem, Value_));
-   return new Layout1(fon9_MakeField(Named{"Name"}, SysEnvItem, Name_),
+   fields.Add(fon9_MakeField2(SysEnvItem, Value));
+   return new Layout1(fon9_MakeField2(SysEnvItem, Name),
                       new Tab{Named{"SysEnv"}, std::move(fields)});
 }
 SysEnvItemSP SysEnv::Add(int argc, char** argv, const CmdArgDef& def) {

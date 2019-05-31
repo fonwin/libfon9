@@ -15,7 +15,7 @@ static bool SymbMap_Start(fon9::seed::PluginsHolder& holder, fon9::StrView args)
       return false;
    }
    std::string          symbMapName = args.empty() ? "SymbDy" : args.ToString();
-   fon9::seed::LayoutSP layout{new fon9::seed::LayoutDy(fon9_MakeField(fon9::Named{"Id"}, fon9::fmkt::Symb, SymbId_),
+   fon9::seed::LayoutSP layout{new fon9::seed::LayoutDy(fon9_MakeField(fon9::fmkt::Symb, SymbId_, "Id"),
       fon9::seed::TabSP{new fon9::seed::Tab{fon9::Named{"Base"}, fon9::fmkt::Symb::MakeFields(), fon9::seed::TabFlag::NoSapling_NoSeedCommand_Writable}},
       fon9::seed::TreeFlag::AddableRemovable | fon9::seed::TreeFlag::Unordered)};
    fon9::fmkt::SymbDyTree* dy = new fon9::fmkt::SymbDyTree{std::move(layout)};

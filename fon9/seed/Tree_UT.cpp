@@ -130,28 +130,28 @@ class IvacSymbTree : public fon9::seed::Tree {
    using Pod = IvacSymbMap::value_type;
    static fon9::seed::TabSP MakeTabBal() {
       fon9::seed::Fields flds;
-      flds.Add(fon9_MakeField(fon9::Named{"GnQty"}, Pod, second.Bal_.GnQty_));
-      flds.Add(fon9_MakeField(fon9::Named{"CrQty"}, Pod, second.Bal_.CrQty_));
-      flds.Add(fon9_MakeField(fon9::Named{"DbQty"}, Pod, second.Bal_.DbQty_));
-      flds.Add(fon9_MakeField(fon9::Named{"CrAmt"}, Pod, second.Bal_.CrAmt_));
-      flds.Add(fon9_MakeField(fon9::Named{"DbAmt"}, Pod, second.Bal_.DbAmt_));
+      flds.Add(fon9_MakeField(Pod, second.Bal_.GnQty_, "GnQty"));
+      flds.Add(fon9_MakeField(Pod, second.Bal_.CrQty_, "CrQty"));
+      flds.Add(fon9_MakeField(Pod, second.Bal_.DbQty_, "DbQty"));
+      flds.Add(fon9_MakeField(Pod, second.Bal_.CrAmt_, "CrAmt"));
+      flds.Add(fon9_MakeField(Pod, second.Bal_.DbAmt_, "DbAmt"));
       return new fon9::seed::Tab{fon9::Named{"Bal"}, std::move(flds)};
    }
    static fon9::seed::TabSP MakeTabVol() {
       fon9::seed::Fields flds;
       // 為了簡化測試, 所以僅建立 Gn_ 欄位.
-      flds.Add(fon9_MakeField(fon9::Named{"GnOrderBuyQty"},  TVol, Gn_.Order_.BuyQty_));
-      flds.Add(fon9_MakeField(fon9::Named{"GnOrderSellQty"}, TVol, Gn_.Order_.SellQty_));
-      flds.Add(fon9_MakeField(fon9::Named{"GnOrderBuyAmt"},  TVol, Gn_.Order_.BuyAmt_));
-      flds.Add(fon9_MakeField(fon9::Named{"GnOrderSellAmt"}, TVol, Gn_.Order_.SellAmt_));
-      flds.Add(fon9_MakeField(fon9::Named{"GnMatchBuyQty"},  TVol, Gn_.Match_.BuyQty_));
-      flds.Add(fon9_MakeField(fon9::Named{"GnMatchSellQty"}, TVol, Gn_.Match_.SellQty_));
-      flds.Add(fon9_MakeField(fon9::Named{"GnMatchBuyAmt"},  TVol, Gn_.Match_.BuyAmt_));
-      flds.Add(fon9_MakeField(fon9::Named{"GnMatchSellAmt"}, TVol, Gn_.Match_.SellAmt_));
+      flds.Add(fon9_MakeField(TVol, Gn_.Order_.BuyQty_ , "GnOrderBuyQty"));
+      flds.Add(fon9_MakeField(TVol, Gn_.Order_.SellQty_, "GnOrderSellQty"));
+      flds.Add(fon9_MakeField(TVol, Gn_.Order_.BuyAmt_,  "GnOrderBuyAmt"));
+      flds.Add(fon9_MakeField(TVol, Gn_.Order_.SellAmt_, "GnOrderSellAmt"));
+      flds.Add(fon9_MakeField(TVol, Gn_.Match_.BuyQty_,  "GnMatchBuyQty"));
+      flds.Add(fon9_MakeField(TVol, Gn_.Match_.SellQty_, "GnMatchSellQty"));
+      flds.Add(fon9_MakeField(TVol, Gn_.Match_.BuyAmt_,  "GnMatchBuyAmt"));
+      flds.Add(fon9_MakeField(TVol, Gn_.Match_.SellAmt_, "GnMatchSellAmt"));
       return new fon9::seed::Tab{fon9::Named{"TVol"}, std::move(flds)};
    }
    static fon9::seed::FieldSP MakeKeyField() {
-      fon9::seed::FieldSP res{fon9_MakeField(fon9::Named{"SymbId"}, Pod, first)};
+      fon9::seed::FieldSP res{fon9_MakeField(Pod, first, "SymbId")};
       res->Source_ = fon9::seed::FieldSource::UserDefine;
       return res;
    }
@@ -270,10 +270,10 @@ class IvacTree : public fon9::seed::Tree {
    using Pod = IvacMap::value_type;
    static fon9::seed::TabSP MakeTabBasic() {
       fon9::seed::Fields flds;
-      flds.Add(fon9_MakeField(fon9::Named{"Name"},     Pod, Basic_.Name_));
-      flds.Add(fon9_MakeField(fon9::Named{"BSLimit"},  Pod, Basic_.BSLimit_));
-      flds.Add(fon9_MakeField(fon9::Named{"CrLimit_"}, Pod, Basic_.CrLimit_));
-      flds.Add(fon9_MakeField(fon9::Named{"DbLimit_"}, Pod, Basic_.DbLimit_));
+      flds.Add(fon9_MakeField(Pod, Basic_.Name_,    "Name"));
+      flds.Add(fon9_MakeField(Pod, Basic_.BSLimit_, "BSLimit"));
+      flds.Add(fon9_MakeField(Pod, Basic_.CrLimit_, "CrLimit"));
+      flds.Add(fon9_MakeField(Pod, Basic_.DbLimit_, "DbLimit"));
       return new fon9::seed::Tab{fon9::Named{"Basic"}, std::move(flds)};
    }
    static fon9::seed::TabSP MakeTabSymbs() {
@@ -289,7 +289,7 @@ public:
 
    IvacTree(IvacMap& ivacs)
       : base(new fon9::seed::LayoutN(
-                     fon9_MakeField(fon9::Named{"IvacNo"}, Pod, IvacNo_),
+                     fon9_MakeField2(Pod, IvacNo),
                      fon9::seed::TreeFlag::AddableRemovable,
                      MakeTabBasic(),
                      MakeTabSymbs()))
@@ -460,7 +460,7 @@ public:
    static constexpr size_t kTabIvacs = 0;
 
    BrkTree()
-      : base(new fon9::seed::Layout1(fon9_MakeField(fon9::Named{"BrkNo"}, Pod, first),
+      : base(new fon9::seed::Layout1(fon9_MakeField(Pod, first, "BrkNo"),
                                      MakeTab(),
                                      fon9::seed::TreeFlag::AddableRemovable)) {
    }

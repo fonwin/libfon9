@@ -89,23 +89,23 @@ void UserRec::OnSeedCommand(PolicyMaps::Locker& locker, seed::SeedOpResult& res,
 
 seed::Fields UserMgr::MakeFields() {
    seed::Fields fields;
-   fields.Add(fon9_MakeField(Named{"RoleId"}, UserRec, RoleId_));
+   fields.Add(fon9_MakeField2(UserRec, RoleId));
 
-   fields.Add(fon9_MakeField_const(Named{"AlgParam"},   UserRec, Pass_.AlgParam_));
- //fields.Add(fon9_MakeField_const(Named{"Salt"},       UserRec, Pass_.Salt_));
- //fields.Add(fon9_MakeField_const(Named{"SaltedPass"}, UserRec, Pass_.SaltedPass_));
+   fields.Add(fon9_MakeField_const(UserRec, Pass_.AlgParam_,   "AlgParam"));
+ //fields.Add(fon9_MakeField_const(UserRec, Pass_.Salt_,       "Salt"));
+ //fields.Add(fon9_MakeField_const(UserRec, Pass_.SaltedPass_, "SaltedPass"));
 
-   fields.Add(fon9_MakeField(Named{"Flags"},      UserRec, UserFlags_));
-   fields.Add(fon9_MakeField(Named{"NotBefore"},  UserRec, NotBefore_));
-   fields.Add(fon9_MakeField(Named{"NotAfter"},   UserRec, NotAfter_));
+   fields.Add(fon9_MakeField(UserRec, UserFlags_, "Flags"));
+   fields.Add(fon9_MakeField2(UserRec, NotBefore));
+   fields.Add(fon9_MakeField2(UserRec, NotAfter));
 
-   fields.Add(fon9_MakeField(Named{"ChgPassTime"},  UserRec, EvChgPass_.Time_));
-   fields.Add(fon9_MakeField(Named{"ChgPassFrom"},  UserRec, EvChgPass_.From_));
-   fields.Add(fon9_MakeField(Named{"LastAuthTime"}, UserRec, EvLastAuth_.Time_));
-   fields.Add(fon9_MakeField(Named{"LastAuthFrom"}, UserRec, EvLastAuth_.From_));
-   fields.Add(fon9_MakeField(Named{"LastErrTime"},  UserRec, EvLastErr_.Time_));
-   fields.Add(fon9_MakeField(Named{"LastErrFrom"},  UserRec, EvLastErr_.From_));
-   fields.Add(fon9_MakeField(Named{"ErrCount"},     UserRec, ErrCount_));
+   fields.Add(fon9_MakeField(UserRec, EvChgPass_.Time_,  "ChgPassTime"));
+   fields.Add(fon9_MakeField(UserRec, EvChgPass_.From_,  "ChgPassFrom"));
+   fields.Add(fon9_MakeField(UserRec, EvLastAuth_.Time_, "LastAuthTime"));
+   fields.Add(fon9_MakeField(UserRec, EvLastAuth_.From_, "LastAuthFrom"));
+   fields.Add(fon9_MakeField(UserRec, EvLastErr_.Time_,  "LastErrTime"));
+   fields.Add(fon9_MakeField(UserRec, EvLastErr_.From_,  "LastErrFrom"));
+   fields.Add(fon9_MakeField2(UserRec, ErrCount));
    return fields;
 }
 
