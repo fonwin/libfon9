@@ -114,6 +114,7 @@
     <ClInclude Include="..\..\..\fon9\buffer\RevBufferList.hpp" />
     <ClInclude Include="..\..\..\fon9\ByteVector.hpp" />
     <ClInclude Include="..\..\..\fon9\CharAry.hpp" />
+    <ClInclude Include="..\..\..\fon9\CharAryL.hpp" />
     <ClInclude Include="..\..\..\fon9\CharVector.hpp" />
     <ClInclude Include="..\..\..\fon9\CmdArgs.hpp" />
     <ClInclude Include="..\..\..\fon9\ConfigFileBinder.hpp" />
@@ -245,6 +246,7 @@
     <ClInclude Include="..\..\..\fon9\MustLock.hpp" />
     <ClInclude Include="..\..\..\fon9\SchTask.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\ConfigGridView.hpp" />
+    <ClInclude Include="..\..\..\fon9\seed\FieldCharsL.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\FieldSchCfgStr.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\NamedPark.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\Plugins.hpp" />
@@ -466,6 +468,7 @@
     <ClCompile Include="..\..\..\fon9\FmtDef.cpp" />
     <ClCompile Include="..\..\..\fon9\SchTask.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\ConfigGridView.cpp" />
+    <ClCompile Include="..\..\..\fon9\seed\FieldCharsL.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\FieldSchCfgStr.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\NamedPark.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\Plugins.cpp" />

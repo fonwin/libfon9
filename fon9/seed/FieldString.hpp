@@ -82,14 +82,14 @@ public:
 
 template <class StringT, class FieldT = FieldString<decay_t<StringT>>>
 inline auto MakeField(Named&& named, int32_t ofs, StringT& dataMember)
--> decltype(ToStrView(dataMember), dataMember.empty(), FieldSPT<FieldT>{}) {
+-> decltype(ToStrView(dataMember), dataMember.reserve(0), FieldSPT<FieldT>{}) {
    (void)dataMember;
    return FieldSPT<FieldT>{new FieldT{std::move(named), ofs}};
 }
 
 template <class StringT, class FieldT = FieldString<decay_t<StringT>>>
 inline auto MakeField(Named&& named, int32_t ofs, const StringT& dataMember)
--> decltype(ToStrView(dataMember), dataMember.empty(), FieldSPT<FieldT>{}) {
+-> decltype(ToStrView(dataMember), const_cast<StringT*>(&dataMember)->reserve(0), FieldSPT<FieldT>{}) {
    (void)dataMember;
    return FieldSPT<FieldT>{new FieldConst<FieldT>{std::move(named), ofs}};
 }

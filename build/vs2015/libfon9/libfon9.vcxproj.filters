@@ -917,6 +917,12 @@
     <ClInclude Include="..\..\..\fon9\ObjSupplier.hpp">
       <Filter>Header Files\_base\_Tools / Utility</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\CharAryL.hpp">
+      <Filter>Header Files\_base\_AlNum / StrTools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\seed\FieldCharsL.hpp">
+      <Filter>Header Files\seed\_fields</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -1473,6 +1479,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\ObjSupplier.cpp">
       <Filter>Source Files\_base\_Tools / Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\seed\FieldCharsL.cpp">
+      <Filter>Source Files\seed\_fields</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -41,6 +41,10 @@ struct Data {
    const Char4Ary    ConstChar4Ary_{"WXYZ"};
    Char4Ary          Char4Ary_{"wxyz"};
 
+   using Char7AryL = fon9::CharAryL<7>;
+   const Char7AryL   ConstChar7Ary_{"4321"};
+   Char7AryL         Char7Ary_{"1234567"};
+
    const int         ConstIntValue_{1234};
    unsigned          IntValue_{1234u};
    const EnumInt     ConstEnumIntValue_{EnumInt::Value0};
@@ -157,6 +161,8 @@ fon9::seed::Fields MakeReqFields() {
    fields.Add(fon9_MakeField(fon9::Named{"Char4"},         ReqT, Char4Value_));
    fields.Add(fon9_MakeField(fon9::Named{"ConstChar4A"},   ReqT, ConstChar4Ary_));
    fields.Add(fon9_MakeField(fon9::Named{"Char4A"},        ReqT, Char4Ary_));
+   fields.Add(fon9_MakeField(fon9::Named{"ConstChar7A"},   ReqT, ConstChar7Ary_));
+   fields.Add(fon9_MakeField(fon9::Named{"Char7A"},        ReqT, Char7Ary_));
    fields.Add(fon9_MakeField(fon9::Named{"ConstInt"},      ReqT, ConstIntValue_));
    fields.Add(fon9_MakeField(fon9::Named{"Int"},           ReqT, IntValue_));
    fields.Add(fon9_MakeField(fon9::Named{"ConstEnumInt"},  ReqT, ConstEnumIntValue_));
@@ -194,6 +200,8 @@ fon9::seed::Fields MakeReqFieldsIncData() {
    fields.Add(fon9_MakeField(fon9::Named{"Char4"},         ReqT, Data_.Char4Value_));
    fields.Add(fon9_MakeField(fon9::Named{"ConstChar4A"},   ReqT, Data_.ConstChar4Ary_));
    fields.Add(fon9_MakeField(fon9::Named{"Char4A"},        ReqT, Data_.Char4Ary_));
+   fields.Add(fon9_MakeField(fon9::Named{"ConstChar7A"},   ReqT, Data_.ConstChar7Ary_));
+   fields.Add(fon9_MakeField(fon9::Named{"Char7A"},        ReqT, Data_.Char7Ary_));
    fields.Add(fon9_MakeField(fon9::Named{"ConstInt"},      ReqT, Data_.ConstIntValue_));
    fields.Add(fon9_MakeField(fon9::Named{"Int"},           ReqT, Data_.IntValue_));
    fields.Add(fon9_MakeField(fon9::Named{"ConstEnumInt"},  ReqT, Data_.ConstEnumIntValue_));

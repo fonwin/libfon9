@@ -90,9 +90,9 @@ struct CharAry : public Comparable<CharAry<arysz, CharT, kChFiller>> {
    CharT* data() { return this->Chars_; }
    const CharT* data() const { return this->Chars_; }
 
-   constexpr size_t size() const { return arysz; }
-   constexpr size_t max_size() const { return arysz; }
-   constexpr CharT filler() const { return kChFiller; }
+   static constexpr size_t size() { return arysz; }
+   static constexpr size_t max_size() { return arysz; }
+   static constexpr CharT filler() { return kChFiller; }
 };
 
 /// \ingroup AlNum

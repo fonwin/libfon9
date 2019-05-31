@@ -4,6 +4,7 @@
 #define __fon9_seed_FieldMaker_hpp__
 #include "fon9/seed/FieldString.hpp"
 #include "fon9/seed/FieldChars.hpp"
+#include "fon9/seed/FieldCharsL.hpp"
 #include "fon9/seed/FieldInt.hpp"
 #include "fon9/seed/FieldBytes.hpp"
 #include "fon9/seed/FieldDecimal.hpp"

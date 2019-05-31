@@ -21,6 +21,11 @@ static FieldSP MakeFieldChars(StrView& fldcfg, char chSpl, char chTail) {
    Named named{DeserializeNamed(fldcfg, chSpl, chTail)};
    if (named.Name_.empty())
       return FieldSP{};
+   if (exType == 'L') { // "CnL"
+      if (1 <= byteCount && byteCount <= 255)
+         return FieldSP{new FieldCharsL{std::move(named), byteCount}};
+      byteCount = 0; // "CnL" n 只能在 1..255, 其他使用 FieldDyBlob;
+   }
    switch (byteCount) {
    default: return FieldSP{new FieldChars{std::move(named), byteCount}};
    case 0:  return FieldSP{new FieldDyBlob{std::move(named), FieldType::Chars}};

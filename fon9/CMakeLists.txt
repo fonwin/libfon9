@@ -111,6 +111,7 @@ set(fon9src
  seed/FieldMaker.cpp
  seed/FieldBytes.cpp
  seed/FieldChars.cpp
+ seed/FieldCharsL.cpp
  seed/FieldDyBlob.cpp
  seed/FieldSchCfgStr.cpp
  seed/SeedSearcher.cpp
