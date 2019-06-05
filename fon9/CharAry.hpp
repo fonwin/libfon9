@@ -81,18 +81,26 @@ struct CharAry : public Comparable<CharAry<arysz, CharT, kChFiller>> {
       return ToStrView(*this) == ToStrView(rhs);
    }
 
-   const CharT* begin() const { return this->Chars_; }
+   const CharT* begin() const  { return this->Chars_; }
    /// end() 為陣列尾端, 不考慮是否有 EOS.
-   const CharT* end() const { return this->Chars_ + sizeof(this->Chars_); }
-   CharT* begin() { return this->Chars_; }
-   CharT* end() { return this->Chars_ + sizeof(this->Chars_); }
+   const CharT* end() const    { return this->Chars_ + sizeof(this->Chars_); }
+   const CharT* cbegin() const { return this->Chars_; }
+   const CharT* cend() const   { return this->Chars_ + sizeof(this->Chars_); }
+   CharT*       begin()        { return this->Chars_; }
+   CharT*       end()          { return this->Chars_ + sizeof(this->Chars_); }
    
-   CharT* data() { return this->Chars_; }
+   CharT*       data() { return this->Chars_; }
    const CharT* data() const { return this->Chars_; }
 
-   static constexpr size_t size() { return arysz; }
+   static constexpr size_t size()     { return arysz; }
    static constexpr size_t max_size() { return arysz; }
-   static constexpr CharT filler() { return kChFiller; }
+   static constexpr CharT  filler()   { return kChFiller; }
+
+   CharT Get1st() const { return this->Chars_[0]; }
+   /// 僅檢查第1碼是否為空(kChFiller or '\0').
+   bool empty1st() const {
+      return this->Chars_[0] == kChFiller || this->Chars_[0] == static_cast<CharT>(0);
+   }
 };
 
 /// \ingroup AlNum
