@@ -29,6 +29,9 @@ namespace fon9 {
 ///               ... 在這裡處理 this->ConsumingMessage_
 ///            }
 ///         \endcode
+///   - 若想在喚醒後, 先做一些事情:
+///     - 可提供 `void MessageHandlerT::OnAfterWakeup(typename MessageQueue::Locker& queue);` 來處理.
+///     - 此時 queue 仍在 lock() 狀態, 若過程中有解鎖, 則在返回前必須再次鎖定.
 ///   - `void MessageHandlerT::OnThreadEnd(const std::string& thrName);`
 template <
    class MessageHandlerT,
@@ -64,8 +67,18 @@ class MessageQueue {
       return messageHandler.OnMessage(msg);
    }
 
+   template <class MessageHandler>
+   static auto OnAfterWakeup(MessageHandler& messageHandler, LockerT* queue) -> decltype(messageHandler.OnAfterWakeup(*queue)) {
+      messageHandler.OnAfterWakeup(*queue);
+      assert(queue->owns_lock());
+   }
+   template <class MessageHandler>
+   static void OnAfterWakeup(MessageHandler&, ...) {
+   }
+
    bool DoMessages(MessageHandlerT& messageHandler, LockerT& queue) {
       for (;;) {
+         this->OnAfterWakeup(messageHandler, &queue);
          switch (ThreadState threadState = this->QueueController_.GetState(queue)) {
          default:
          case ThreadState::Idle:
@@ -166,13 +179,21 @@ public:
    /// 傳回 <= ThreadState::ExecutingOrWaiting 表示有加入 MessageQueue.
    template <class... ArgsT>
    ThreadState EmplaceMessage(ArgsT&&... args) {
-      Locker      queue{this->QueueController_};
-      ThreadState st = this->QueueController_.GetState(queue);
-      if (st <= ThreadState::ExecutingOrWaiting) {
-         bool isNotifyRequired = (this->QueueController_.GetRunningCount(queue) > 1 || queue->empty());
+      Locker            queue{this->QueueController_};
+      const ThreadState st = this->CheckNotify(queue, queue->empty());
+      if (st <= ThreadState::ExecutingOrWaiting)
          queue->emplace_back(std::forward<ArgsT>(args)...);
-         if (isNotifyRequired)
-            this->QueueController_.NotifyOne(queue);
+      return st;
+   }
+
+   Locker Lock() {
+      return Locker{this->QueueController_};
+   }
+   ThreadState CheckNotify(Locker& locker, bool isQueueEmpty) {
+      const ThreadState st = this->QueueController_.GetState(locker);
+      if (st <= ThreadState::ExecutingOrWaiting) {
+         if (this->QueueController_.GetRunningCount(locker) > 1 || isQueueEmpty)
+            this->QueueController_.NotifyOne(locker);
       }
       return st;
    }
