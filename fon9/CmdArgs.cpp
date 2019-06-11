@@ -10,7 +10,8 @@ StrView GetCmdArg(int argc, char** argv, const StrView& argShort, const StrView&
       for (int L = argc; L > 0;) {
          const char*    vstr = argv[--L];
          const StrView* argName;
-         switch (vstr[0]) {
+         const char     chLead = vstr[0];
+         switch (chLead) {
          default:
             continue;
          case '-':
@@ -27,14 +28,21 @@ StrView GetCmdArg(int argc, char** argv, const StrView& argShort, const StrView&
          }
          if (argName->empty())
             continue;
-         StrView     opt = StrView_cstr(vstr);
-         const char* pvalue = opt.Find('=');
+         StrView           opt = StrView_cstr(vstr);
+         const char* const pvalue = opt.Find('=');
          vstr = opt.end();
          if (pvalue)
             opt = StrView{opt.begin(), pvalue};
-         if (opt == *argName)
-            return pvalue ? StrView{pvalue + 1, vstr}
-                          : (L + 1 >= argc ? StrView{""} : StrView_cstr(argv[L + 1]));
+         if (opt == *argName) {
+            if (pvalue)
+               return StrView{pvalue + 1, vstr};
+            if (L + 1 >= argc)
+               return StrView{""};
+            vstr = argv[L + 1];
+            if (vstr[0] == chLead)
+               return StrView{""};
+            return StrView_cstr(vstr);
+         }
       }
    }
    return StrView{nullptr};
