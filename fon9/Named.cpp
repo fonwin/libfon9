@@ -2,6 +2,7 @@
 /// \author fonwinz@gmail.com
 #include "fon9/Named.hpp"
 #include "fon9/StrTools.hpp"
+#include "fon9/RevPrint.hpp"
 
 namespace fon9 {
 
@@ -52,6 +53,28 @@ fon9_API void SerializeNamed(std::string& dst, const Named& named, char chSpl, i
    }
    if (chTail != -1)
       dst.push_back(static_cast<char>(chTail));
+}
+
+//--------------------------------------------------------------------------//
+
+static bool RevPrintEscapeStr(RevBuffer& rbuf, fon9::StrView str, char chSpl) {
+   if (str.empty())
+      return false;
+   std::string dst = StrView_ToEscapeStr(str);
+   if (dst.size() == str.size() && (chSpl == '\0' || !str.Find(chSpl)))
+      RevPrint(rbuf, str);
+   else
+      RevPrint(rbuf, '\'', dst, '\'');
+   return true;
+}
+
+fon9_API void RevPrintNamed(RevBuffer& rbuf, const Named& named, char chSpl) {
+   const bool hasDesc = RevPrintEscapeStr(rbuf, &named.GetDescription(), '\0');
+   if (hasDesc)
+      RevPrint(rbuf, chSpl);
+   if (RevPrintEscapeStr(rbuf, &named.GetTitle(), chSpl) || hasDesc)
+      RevPrint(rbuf, chSpl);
+   RevPrint(rbuf, named.Name_);
 }
 
 } // namespaces

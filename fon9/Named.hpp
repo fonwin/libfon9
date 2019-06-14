@@ -105,5 +105,11 @@ fon9_API Named DeserializeNamed(StrView& cfg, char chSpl, int chTail);
 /// - 若 chTail == -1; 則表示不加尾端字元.
 fon9_API void SerializeNamed(std::string& dst, const Named& named, char chSpl, int chTail);
 
+class RevBuffer;
+/// 輸出名稱設定.
+/// - 若 named.Description 有特殊字元, 則使用 StrView_ToEscapeStr() 之後, 加上引號.
+/// - 若 named.Title 有特殊字元或 chSpl, 則使用 StrView_ToEscapeStr() 之後, 加上引號.
+fon9_API void RevPrintNamed(RevBuffer& rbuf, const Named& named, char chSpl);
+
 } // namespaces
 #endif//__fon9_Named_hpp__
