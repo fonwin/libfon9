@@ -7,6 +7,7 @@
 #include "fon9/fix/FixAdminMsg.hpp"
 #include "fon9/buffer/FwdBufferList.hpp"
 #include "fon9/DefaultThreadPool.hpp"
+#include "fon9/io/TestDevice.hpp"
 
 namespace f9fix = fon9::fix;
 
@@ -85,71 +86,16 @@ struct FixTestMgr : public f9fix::IoFixManager {
 };
 fon9_WARN_POP;
 //--------------------------------------------------------------------------//
-class TestDevice : public fon9::io::Device {
-   fon9_NON_COPY_NON_MOVE(TestDevice);
-   using base = fon9::io::Device;
-   fon9::DcQueueList RxBuffer_;
-   void SetLinkReady() {
-      fon9::StrView devid{"R=TestDevice"};
-      fon9::io::Device::OpThr_SetDeviceId(*this, devid.ToString());
-      fon9::io::Device::OpThr_SetLinkReady(*this, devid.ToString());
-   }
-   void OpImpl_Open(std::string cfgstr) override {
-      fon9_LOG_DEBUG("Device.Open|cfg=", cfgstr);
-      this->SetLinkReady();
-   }
-   void OpImpl_Reopen() override {
-      fon9_LOG_DEBUG("Device.Reopen");
-      this->SetLinkReady();
-   }
-   void OpImpl_Close(std::string cause) override {
-      fon9_LOG_DEBUG("Device.Close|cause=", cause);
-      this->OpImpl_SetState(fon9::io::State::Closed, &cause);
-   }
-public:
-   TestDevice(f9fix::IoFixSessionSP fixses)
-      : base{std::move(fixses), nullptr, fon9::io::Style::Simulation} {
-   }
-   bool IsSendBufferEmpty() const override {
-      return true;
-   }
-   SendResult SendASAP(const void* src, size_t size) override {
-      fon9_LOG_DEBUG("Send:", fon9::StrView{reinterpret_cast<const char*>(src), size});
-      return SendResult{};
-   }
-   SendResult SendASAP(fon9::BufferList&& src) override {
-      fon9_LOG_DEBUG("Send:", src);
-      size_t srcsz = CalcDataSize(src.cfront());
-      fon9::DcQueueList{std::move(src)}.PopConsumed(srcsz);
-      return SendResult{};
-   }
-   SendResult SendBuffered(const void* src, size_t size) override {
-      return this->SendASAP(src, size);
-   }
-   SendResult SendBuffered(fon9::BufferList&& src) override {
-      return this->SendASAP(std::move(src));
-   }
-   void OnReceive(const fon9::StrView& str) {
-      this->OpQueue_.InplaceOrWait(fon9::AQueueTaskKind::Recv,
-                                   fon9::io::DeviceAsyncOp([](Device& dev, std::string rxstr) {
-         static_cast<TestDevice*>(&dev)->RxBuffer_.Append(rxstr.c_str(), rxstr.size());
-         if (dev.Session_->OnDevice_Recv(dev, static_cast<TestDevice*>(&dev)->RxBuffer_) == fon9::io::RecvBufferSize::NoRecvEvent)
-            fon9_LOG_DEBUG("OnReceive.NoRecvEvent");
-      }, str.ToString()));
-   }
-};
-using TestDeviceSP = fon9::intrusive_ptr<TestDevice>;
-//--------------------------------------------------------------------------//
 struct FixSessionTester {
    fon9_NON_COPY_NON_MOVE(FixSessionTester);
    FixTestMgr              FixMgr_;
    f9fix::FixConfig        FixConfig_;
    f9fix::IoFixSessionSP   FixSes_;
-   TestDeviceSP            Dev_;
+   fon9::io::TestDeviceSP  Dev_;
    FixSessionTester(ConnectionType connectionType) : FixMgr_{connectionType} {
       f9fix::FixSession::InitFixConfig(this->FixConfig_);
       this->FixSes_.reset(new f9fix::IoFixSession{this->FixMgr_, this->FixConfig_});
-      this->Dev_.reset(new TestDevice{this->FixSes_});
+      this->Dev_.reset(new fon9::io::TestDevice{this->FixSes_});
       this->Dev_->Initialize();
       this->Dev_->AsyncOpen("devopen");
    }

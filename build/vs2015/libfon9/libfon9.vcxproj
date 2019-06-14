@@ -209,6 +209,7 @@
     <ClInclude Include="..\..\..\fon9\io\TcpClientBase.hpp" />
     <ClInclude Include="..\..\..\fon9\io\TcpServerBase.hpp" />
     <ClInclude Include="..\..\..\fon9\io\DgramBase.hpp" />
+    <ClInclude Include="..\..\..\fon9\io\TestDevice.hpp" />
     <ClInclude Include="..\..\..\fon9\io\win\IocpDgram.hpp" />
     <ClInclude Include="..\..\..\fon9\io\win\IocpService.hpp" />
     <ClInclude Include="..\..\..\fon9\io\win\IocpSocket.hpp" />

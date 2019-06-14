@@ -923,6 +923,9 @@
     <ClInclude Include="..\..\..\fon9\seed\FieldCharsL.hpp">
       <Filter>Header Files\seed\_fields</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\TestDevice.hpp">
+      <Filter>Header Files\io\more devs</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
