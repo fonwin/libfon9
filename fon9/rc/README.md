@@ -95,7 +95,7 @@
 -------------------------
 
 ## 三、功能呼叫 Function code
-### 管理功能 0x00..0x0f
+### 管理功能 0x00..0x07
 #### Function code = 0x00: Connection
 - C -> S: Connection REQ: "ClientApVer" + "Description"
   - "FomsClient.0.0.1"
@@ -140,9 +140,14 @@
   - Decimal(TimeStamp) AckTime.
   - 原本的 Client data(Function param), 不含 Send() 加上的 ByteArraySizeToBitvT().
 
-### f9oms API: 0x08..0x09
-#### Function code = 0x08: f9oms api 'query/request'
-細節請參閱 f9oms api 的說明.
+#### Function code = 0x07: Seed/Tree
+* Query/Subscribe
+* Modify/Remove
 
-#### Function code = 0x09: f9oms api 'Order report'
+### f9oms API: 0x08
+#### Function code = 0x08: f9oms api
 細節請參閱 f9oms api 的說明.
+* Query config.
+* TDay changed.
+* Report recover/subscribe
+* Request: 下單要求(新刪改查)

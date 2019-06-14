@@ -82,20 +82,29 @@ public:
          return dynamic_cast<T*>(this->Notes_[static_cast<size_t>(fnCode)].get());
       return nullptr;
    }
+   RcFunctionNote* GetNote(RcFunctionCode fnCode) const {
+      if (static_cast<size_t>(fnCode) < this->Notes_.size())
+         return this->Notes_[static_cast<size_t>(fnCode)].get();
+      return nullptr;
+   }
 
    struct ProtocolParam {
-      RcFlag      Flags_{};
-      int         RcVer_{-1};
-      CharVector  ApVer_;
+      RcFlag   Flags_{};
+      int      RcVer_{-1};
       bool IsNoChecksum() const {
          return IsEnumContains(this->Flags_, RcFlag::NoChecksum);
       }
+      // local 端的 ApVer_ 放在 RcFuncConnection::ApVersion_;
    };
-   const ProtocolParam& GetRemoteParam() const {
-      return this->RemoteParam_;
-   }
    const ProtocolParam& GetLocalParam() const {
       return this->LocalParam_;
+   }
+
+   struct ProtocolParamRemote : public ProtocolParam {
+      CharVector  ApVer_;
+   };
+   const ProtocolParamRemote& GetRemoteParam() const {
+      return this->RemoteParam_;
    }
    void SetRemoteApVer(CharVector&& ver) {
       this->RemoteParam_.ApVer_ = std::move(ver);
@@ -127,6 +136,10 @@ public:
    /// 傳回密碼字串, 預設傳回 StrView{}, 由 Client Session 自行實作.
    virtual StrView GetAuthPassword() const;
 
+   io::Device* GetDevice() const {
+      return this->Dev_;
+   }
+
 protected:
    void SetLocalRcFlag(RcFlag flags) {
       this->LocalParam_.Flags_ = flags;
@@ -144,10 +157,6 @@ protected:
       this->SessionSt_ = st;
    }
    void SetApReady(StrView info);
-
-   io::Device* GetDevice() {
-      return this->Dev_;
-   }
 
 private:
    void ResetSessionSt(RcSessionSt st);
@@ -168,8 +177,8 @@ private:
    CharVector        UserId_;
    CharVector        RemoteIp_;
    io::Device*       Dev_{};
-   ProtocolParam     RemoteParam_;
-   ProtocolParam     LocalParam_;
+   ProtocolParamRemote  RemoteParam_;
+   ProtocolParam        LocalParam_;
 
    using Notes = std::array<RcFunctionNoteSP, GetRcFunctionCodeArraySize()>;
    Notes Notes_;

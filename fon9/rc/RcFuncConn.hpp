@@ -96,15 +96,16 @@ public:
 /// 提供 RcSession SASL 登入驗證處理.
 /// 可以透過底下方式取得 Policy:
 /// \code
-/// if (RcServerNote_SaslAuth* authNote = ses.GetNote<RcServerNote_SaslAuth>(RcFunctionCode::SASL)) {
-///    const auth::AuthResult& authr = authNote->GetAuthResult();
+/// if (fon9::rc::RcServerNote_SaslAuth* authNote = ses.GetNote<fon9::rc::RcServerNote_SaslAuth>(fon9::rc::RcFunctionCode::SASL)) {
+///    const fon9::auth::AuthResult& authr = authNote->GetAuthResult();
 ///    // 透過 authmgr 取得需要的 policy
-///    if (auto agent = authNote->AuthMgr_.Agents_->Get<AgentType>("PolicyName"))
-///       agent->GetPolicy(authr);
+///    if (auto agent = authr.AuthMgr_->Agents_->Get<AgentType>("PolicyName"))
+///       agent->GetPolicy(authr, policy);
 /// }
 /// \endcode
-struct RcServerNote_SaslAuth : public RcFunctionNote {
+class fon9_API RcServerNote_SaslAuth : public RcFunctionNote {
    fon9_NON_COPY_NON_MOVE(RcServerNote_SaslAuth);
+protected:
    RcSession&          RcSession_;
    auth::AuthRequest   AuthRequest_;
    auth::AuthSessionSP AuthSession_;

@@ -27,7 +27,7 @@ public:
    }
    void OnRecvFunctionCall(RcSession& ses, RcFunctionParam& param) override {
       if (IsEnumContains(ses.Role_, RcSessionRole::ProtocolInitiator))
-         param.RemoveParam();
+         param.RemoveRemainParam();
       else { // Ack hb: UtcNow + OrigHbMsg
          RevBufferList rbuf{64};
          char*         pout = rbuf.AllocPrefix(param.RemainParamSize_);
@@ -87,6 +87,9 @@ void RcFunctionAgent::OnSessionApReady(RcSession&) {
 }
 void RcFunctionAgent::OnSessionLinkBroken(RcSession& ses) {
    ses.ResetNote(this->FunctionCode_, nullptr);
+}
+void RcFunctionAgent::OnRecvFunctionCall(RcSession& ses, RcFunctionParam& param) {
+   (void)ses; (void)param;
 }
 //--------------------------------------------------------------------------//
 RcFunctionNote::~RcFunctionNote() {

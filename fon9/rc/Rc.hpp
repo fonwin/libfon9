@@ -22,12 +22,17 @@ enum class RcFunctionCode : uint8_t {
    Logout = 2,
    Heartbeat = 3,
 
+   SeedTree = 7,
+
+   OmsApi = 8,
+
    /// 這裡提供一個暫時的最大值, 可減少一些記憶體用量.
    /// 目前規劃:
    /// - admin 功能(登入、Heartbeat...)
+   /// - seed/tree
    /// - f9oms
    /// - 其他請參考 fon9/rc/README.md
-   Max = 0x0f,
+   Max = 8,
 };
 constexpr unsigned GetRcFunctionCodeArraySize() {
    return cast_to_underlying(RcFunctionCode::Max) + 1u;
@@ -90,20 +95,24 @@ fon9_WARN_DISABLE_PADDING;
 /// \ingroup rc
 /// 當 RcSession 收到一個封包後,
 /// 呼叫 RcFunctionAgent::OnRecvFunctionCall() 時, 提供此參數.
-/// 此時:
-/// - this->RecvBuffer_ 的資料量必定 >= this->ParamSize_;
-/// - 已經將 checksum、function code、param size 取出(移除).
+/// - 此時:
+///   - this->RecvBuffer_ 的資料量必定 >= this->RemainParamSize_;
+///   - 已經將 checksum、function code、param size 取出(移除).
+/// - OnRecvFunctionCall() 返回前有義務將剩餘沒用到的參數移除:
+///   - 取出參數時若有調整 this->RemainParamSize_,
+///     則返回前可呼叫 this->RemoveRemainParam();
 struct RcFunctionParam {
    fon9_NON_COPY_NON_MOVE(RcFunctionParam);
 
    DcQueue&    RecvBuffer_;
-   size_t      RemainParamSize_{0};
+   size_t      RemainParamSize_;
    TimeStamp   RecvTime_{UtcNow()};
 
-   RcFunctionParam(DcQueue& rxbuf)
-      : RecvBuffer_(rxbuf) {
+   RcFunctionParam(DcQueue& rxbuf, size_t remainParamSize = 0)
+      : RecvBuffer_(rxbuf)
+      , RemainParamSize_{remainParamSize} {
    }
-   void RemoveParam() {
+   void RemoveRemainParam() {
       this->RecvBuffer_.PopConsumed(this->RemainParamSize_);
    }
 };
@@ -128,7 +137,7 @@ public:
 
    /// 當 RcSession 沒找到對應的 RcFunctionNote 時, 呼叫此處進行處理.
    /// 如果有找到 RcFunctionNote, 就不會再呼叫此處了!
-   virtual void OnRecvFunctionCall(RcSession& ses, RcFunctionParam& param) = 0;
+   virtual void OnRecvFunctionCall(RcSession& ses, RcFunctionParam& param);
 };
 fon9_WARN_POP;
 

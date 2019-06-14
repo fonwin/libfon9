@@ -11,15 +11,18 @@ extern "C" {
 
 /// \ingroup fmkt
 /// 回報項目種類(下單要求種類).
+/// 用來標註 TradingRxItem 的種類.
 enum f9fmkt_RxKind   fon9_ENUM_underlying(char) {
    f9fmkt_RxKind_Unknown = 0,
-   f9fmkt_RxKind_RequestNew = 'N',
-   f9fmkt_RxKind_RequestCancel = 'C',
-   f9fmkt_RxKind_RequestChgQty = 'Q',
+   f9fmkt_RxKind_RequestNew    = 'N',
+   f9fmkt_RxKind_RequestDelete = 'D',
+   f9fmkt_RxKind_RequestChgQty = 'C',
    f9fmkt_RxKind_RequestChgPri = 'P',
-   f9fmkt_RxKind_RequestQuery = 'u',
+   f9fmkt_RxKind_RequestQuery  = 'Q',
    /// 成交回報.
-   f9fmkt_RxKind_RequestMatch = 'm',
+   f9fmkt_RxKind_Filled = 'f',
+   /// 委託回報: 外部委託回報進入系統時使用.
+   f9fmkt_RxKind_ImportReport = 'r',
    /// 委託異動.
    f9fmkt_RxKind_Order = 'o',
    /// 系統事件.
@@ -28,7 +31,7 @@ enum f9fmkt_RxKind   fon9_ENUM_underlying(char) {
 
 /// \ingroup fmkt
 /// 商品的交易市場.
-/// - 由系統決定市場別, 用於可直接連線的交易市場.
+/// - 在系統設計時決定市場別, 通常用來區分「可直接連線」的不同交易市場.
 /// - 這裡沒有將所有可能的 market 都定義出來, 當有實際需求時可自行依下述方式增加.
 /// - 底下以台灣市場為例:
 ///   - 如果系統有交易外匯, 則可增加:
@@ -98,8 +101,9 @@ inline f9fmkt_TradingSessionId IndexTo_f9fmkt_TradingSessionId(unsigned idx) {
 }
 
 enum f9fmkt_PriType fon9_ENUM_underlying(char) {
-   /// f9fmkt_PriType{}=預設值為限價.
-   f9fmkt_PriType_Limit = 0,
+   f9fmkt_PriType_Unknown = 0,
+   /// 限價.
+   f9fmkt_PriType_Limit = 'L',
    /// 市價.
    f9fmkt_PriType_Market = 'M',
    /// 一定範圍內市價.

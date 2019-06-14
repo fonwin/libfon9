@@ -46,8 +46,10 @@ void RcServerNote_SaslAuth::OnAuthVerifyCB(auth::AuthR rcode, auth::AuthSessionS
    this->RcSession_.SendSasl(std::move(rbuf));
    if (rcode.RCode_ == fon9_Auth_NeedsMore)
       return;
-   if (rcode.RCode_ == fon9_Auth_Success)
+   if (rcode.RCode_ == fon9_Auth_Success) {
       rcode.Info_ = authSession->GetAuthResult().ExtInfo_;
+      authSession->GetAuthResult().UpdateRoleConfig();
+   }
    this->RcSession_.OnSaslDone(rcode, ToStrView(authSession->GetAuthResult().AuthcId_));
 }
 void RcServerNote_SaslAuth::OnRecvFunctionCall(RcSession& ses, RcFunctionParam& param) {
