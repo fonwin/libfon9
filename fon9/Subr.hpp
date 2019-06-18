@@ -139,6 +139,15 @@ public:
       Locker subrs(this->Subrs_);
       return this->EraseIterator(subrs, subrs->find(connection));
    }
+   /// 取消訂閱, 並清除 *connection;
+   size_type Unsubscribe(SubConn* connection) {
+      if (SubConn c = *connection) {
+         *connection = SubConn{};
+         return this->Unsubscribe(c);
+      }
+      return 0;
+   }
+      
    /// 取消訂閱.
    /// \param subr  SubscriberT 必須支援: bool operator==(const SubscriberT&) const;
    /// \return 傳回實際移除的數量: 0 or 1
