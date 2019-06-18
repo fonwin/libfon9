@@ -24,6 +24,13 @@ struct DeviceAsyncOp {
    DeviceAsyncOp(DeviceAsyncTask task) : FnAsync_{nullptr}, AsyncTask_{std::move(task)} {
    }
 
+   template <class... ArgsT>
+   DeviceAsyncOp(ArgsT&&... args) : FnAsync_{nullptr}, AsyncTask_{std::forward<ArgsT>(args)...} {
+   }
+   template <class FnAsyncT>
+   DeviceAsyncOp(std::string arg, FnAsyncT fnAsync) : FnAsync_{fnAsync}, FnAsyncArg_{std::move(arg)} {
+   }
+
    DeviceAsyncOp(DeviceAsyncOp&& rhs) {
       this->InplaceMove(std::move(rhs));
    }
