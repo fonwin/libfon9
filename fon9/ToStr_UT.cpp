@@ -15,6 +15,21 @@ void CheckToStrRevResult(const char* pstr, int base, const char* fnName, long ex
       ", but strtol() result is " << res << std::endl;
    abort();
 }
+template <class ToXHEX>
+void CheckToXHEX(fon9::StrView fmt, ToXHEX value) {
+   fon9::NumOutBuf nbuf;
+   nbuf.SetEOS();
+   char* pstr;
+   if (fmt.IsNull())
+      pstr = fon9::ToStrRev(nbuf.end(), value);
+   else
+      pstr = fon9::ToStrRev(nbuf.end(), value, fon9::AutoFmt<ToXHEX>{fmt});
+   if (*pstr == 'x')
+      ++pstr;
+   else if (pstr[0] == '0' && (pstr[1] == 'x' || pstr[1] == 'X'))
+      pstr += 2;
+   CheckToStrRevResult(pstr, 16, "ToXHEX", static_cast<long>(value.Value_));
+}
 
 template <size_t Width>
 void TestPic9ToStrRev() {
@@ -107,6 +122,8 @@ int main() {
       CheckToStrRevResult(fon9::HEXToStrRev(nbuf.end(), L), 16, "HEXToStrRev", L);
       CheckToStrRevResult(fon9::OctToStrRev(nbuf.end(), L),  8, "OctToStrRev", L);
       CheckToStrRevResult(fon9::BinToStrRev(nbuf.end(), L),  2, "BinToStrRev", L);
+      CheckToXHEX(nullptr, fon9::ToxHex{L});
+      CheckToXHEX("#", fon9::ToxHex{L}); // 已加上 "0x"
    }
    std::cout << "[OK   ] " << "IntToStrRev(); HexToStrRev(); BinToStrRev();\n";
 

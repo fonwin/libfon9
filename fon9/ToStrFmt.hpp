@@ -98,8 +98,12 @@ struct BaseDefine : public BaseFmt {
    static constexpr FmtFlag BaseFlag() {
       return baseFlag;
    }
-   static char* ToStrRev(char* pout, uintmax_t value) {
-      return FnToStrRev(pout, value);
+   char* ToStrRev(char* pout) const {
+      return FnToStrRev(pout, this->Value_);
+   }
+   char* ToStrRev(char* pout, FmtDef fmt) const {
+      fmt.Flags_ = (fmt.Flags_ - FmtFlag::MaskBase) | BaseFlag();
+      return IntToStrRev(pout, this->Value_, false, fmt);
    }
 };
 using ToHEX = BaseDefine<FmtFlag::BaseHEX, HEXToStrRev>;
@@ -109,15 +113,36 @@ using ToOct = BaseDefine<FmtFlag::BaseOct, OctToStrRev>;
 using ToBin = BaseDefine<FmtFlag::BaseBin, BinToStrRev>;
 
 template <class BaseT>
-inline enable_if_t<std::is_base_of<BaseFmt, BaseT>::value, char*> ToStrRev(char* pout, BaseT value) {
-   return BaseT::ToStrRev(pout, value.Value_);
+inline auto ToStrRev(char* pout, BaseT value) -> decltype(value.ToStrRev(pout)) {
+   return value.ToStrRev(pout);
 }
 
 template <class BaseT>
-inline enable_if_t<std::is_base_of<BaseFmt, BaseT>::value, char*> ToStrRev(char* pout, BaseT value, FmtDef fmt) {
-   fmt.Flags_ = (fmt.Flags_ - FmtFlag::MaskBase) | BaseT::BaseFlag();
-   return IntToStrRev(pout, value.Value_, false, fmt);
+inline auto ToStrRev(char* pout, BaseT value, const FmtDef& fmt) -> decltype(value.ToStrRev(pout, fmt)) {
+   return value.ToStrRev(pout, fmt);
 }
+
+/// Hex 輸出前方加上 'x'; 若使用 fmt 且已有 "0x", 則不變動.
+template <char chX = 'x', class ToHexBase = ToHex>
+struct ToXHEX : public ToHexBase {
+   ToXHEX() = delete;
+   using base = ToHexBase;
+   using base::base;
+   char* ToStrRev(char* pout) const {
+      pout = base::ToStrRev(pout);
+      if (this->Value_ > 9)
+         *--pout = chX;
+      return pout;
+   }
+   char* ToStrRev(char* pout, const FmtDef& fmt) const {
+      const char* const pend = pout;
+      pout = base::ToStrRev(pout, fmt);
+      if (this->Value_ > 9 || (this->Value_ >= 8 && *pout == '0'))
+         return HexLeadRev(pout, pend, chX);
+      return pout;
+   }
+};
+using ToxHex = ToXHEX<'x', ToHex>;
 
 } // namespace
 #endif//__fon9_ToStrFmt_hpp__

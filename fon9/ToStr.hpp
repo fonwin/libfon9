@@ -96,6 +96,11 @@ inline auto OctToStrRev(char* pout, IntT value) -> decltype(OctToStrRev(pout, st
 fon9_API char* HexToStrRev(char* pout, uintmax_t value);
 fon9_API char* HEXToStrRev(char* pout, uintmax_t value);
 
+/// \ingroup AlNum
+/// 如果 pout 前方沒有填 "x" 或 "0x"; 且 [pout,pend) != "0"
+/// 則在 pout 前方加上 16 進位的 'x';
+fon9_API char* HexLeadRev(char* pout, const char* pend, char chX = 'x');
+
 template <typename IntT>
 inline auto HexToStrRev(char* pout, IntT value) -> decltype(HexToStrRev(pout, static_cast<uintmax_t>(unsigned_cast(value)))) {
    return HexToStrRev(pout, static_cast<uintmax_t>(unsigned_cast(value)));

@@ -43,5 +43,18 @@ fon9_API void FieldsCellRevPrint(const Fields& fields, const RawRd& rd, RevBuffe
       }
    }
 }
+fon9_API void FieldsNameRevPrint(const Layout* layout, const Tab& tab, RevBuffer& rbuf, char chSplitter) {
+   const Fields& flds = tab.Fields_;
+   if (size_t fldidx = flds.size()) {
+      RevPrint(rbuf, flds.Get(--fldidx)->Name_);
+      while (fldidx > 0) {
+         RevPrint(rbuf, flds.Get(--fldidx)->Name_, chSplitter);
+      }
+      if (layout)
+         RevPrint(rbuf, chSplitter);
+   }
+   if (layout)
+      RevPrint(rbuf, layout->KeyField_->Name_);
+}
 
 } } // namespaces

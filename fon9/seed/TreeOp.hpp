@@ -327,7 +327,7 @@ void GetPod(TreeT& sender, Container& container, Iterator ivalue, StrView strKey
 
 /// \ingroup seed
 /// 將欄位字串輸出到 rbuf, 每個欄位前都會加上 chSplitter 字元.
-fon9_API void FieldsCellRevPrint(const Fields& fields, const RawRd& rd, RevBuffer& rbuf, char chSplitter);
+fon9_API void FieldsCellRevPrint(const Fields& fields, const RawRd& rd, RevBuffer& rbuf, char chSplitter = GridViewResult::kRowSplitter);
 
 template <class Iterator>
 void SimpleMakeRowView(Iterator ivalue, Tab* tab, RevBuffer& rbuf) {
@@ -335,6 +335,26 @@ void SimpleMakeRowView(Iterator ivalue, Tab* tab, RevBuffer& rbuf) {
       FieldsCellRevPrint(tab->Fields_, SimpleRawRd{*ivalue}, rbuf, GridViewResult::kCellSplitter);
    RevPrint(rbuf, ivalue->first);
 }
+
+/// \ingroup seed
+/// 將欄位名稱輸出到 rbuf, 每個欄位前都會加上 chSplitter 字元.
+/// 如果 layout != nullptr 則會輸出 layout->KeyField_->Name_;
+fon9_API void FieldsNameRevPrint(const Layout* layout, const Tab& tab, RevBuffer& rbuf, char chSplitter = GridViewResult::kRowSplitter);
+
+/// \ingroup seed
+/// 將 container 的內容, 使用 SimpleMakeRowView() 輸出到 rbuf;
+/// - 每筆資料之間使用 GridViewResult::kRowSplitter 分隔
+/// - 尾端沒有分隔, 頭端固定有一個分隔.
+template <class Container>
+void SimpleMakeFullGridView(const Container& container, Tab& tab, RevBuffer& rbuf) {
+   typename Container::const_iterator iend = container.end();
+   typename Container::const_iterator ibeg = container.begin();
+   while (ibeg != iend) {
+      SimpleMakeRowView(--iend, &tab, rbuf);
+      RevPrint(rbuf, GridViewResult::kRowSplitter);
+   }
+}
+
 
 template <class Iterator>
 inline auto IteratorForwardDistance(Iterator icur, Iterator ifrom) -> decltype(static_cast<size_t>(icur - ifrom)) {

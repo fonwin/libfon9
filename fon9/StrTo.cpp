@@ -34,7 +34,7 @@ fon9_API uintmax_t HIntStrTo(StrView str, const char** endptr, uintmax_t null) {
    auto        res = NaiveStrToUInt(str, &pend);
    if (endptr)
       *endptr = pend;
-   return pbeg == str.begin() ? null : res;
+   return pbeg == pend ? null : res;
 }
 
 fon9_API intmax_t NaiveStrToSInt(const char *pbeg, const char* pend, const char** endptr) {

@@ -127,6 +127,16 @@ public:
       Locker subrs(this->Subrs_);
       return subrs->emplace_back(std::forward<ArgsT>(args)...);
    }
+   /// 訂閱時, 在返回前就先設定好 conn, 避免底下情況:
+   /// - conn = subj.Subscribe(...); 在返回後, 設定 conn 之前,
+   ///   就在其他 thread 觸發了 subj.Publish();
+   ///   而在訂閱者處理時用到了 conn, 此時的 conn 不正確.
+   template <class... ArgsT>
+   void Subscribe(SubConn* conn, ArgsT&&... args) {
+      Locker  subrs(this->Subrs_);
+      *conn = subrs->emplace_back(std::forward<ArgsT>(args)...);
+   }
+
    /// 取消訂閱.
    /// - 若 MutexT = std::recursive_mutex 則: 可以在收到訊息的時候, 在同一個 thread 之中取消訂閱!
    /// - 若 MutexT = std::mutex 則: 在收到訊息的時候, 在同一個 thread 之中取消訂閱: 會死結!

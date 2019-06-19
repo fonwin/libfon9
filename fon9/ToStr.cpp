@@ -16,6 +16,25 @@ fon9_API char* HexToStrRev(char* pout, uintmax_t value) {
 fon9_API char* HEXToStrRev(char* pout, uintmax_t value) {
    return HexToStrRev(pout, value, "0123456789ABCDEF");
 }
+fon9_API char* HexLeadRev(char* pout, const char* pend, char chX) {
+   if (pout >= pend)
+      return pout;
+   switch (pout[0]) {
+   case 'x': case 'X':        // "x..."
+      return pout;
+   case '0':
+      if (pout + 1 == pend)   // "0"
+         return pout;
+      switch (pout[1]) {
+      case 'x': case 'X':     // "0x..."
+         return pout;
+      }
+      // 不用 break; 不是 "0" 也不是 "0x..." 則在前方加上 'x';
+   default:
+      *--pout = chX;
+      return pout;
+   }
+}
 
 fon9_API char* UIntToStrRev_IntSep(char* pout, uintmax_t value) {
    const unsigned char* pGrouping = NumPunct_Current.Grouping_;

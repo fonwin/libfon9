@@ -162,11 +162,11 @@ struct PutFieldSearcher : public fon9::seed::PutFieldSearcher {
 void TestPutPoAcl(fon9::seed::Tree& root) {
    StartSeedSearch(root, new PutFieldSearcher{"/MaAuth/PoAcl/admin", "HomePath", "/"});
    StartSeedSearch(root, new PutFieldSearcher{"/MaAuth/PoAcl/test",  "HomePath", "/home/{UserId}"});
-   StartSeedSearch(root, new PutFieldSearcher{"/MaAuth/PoAcl/test/'{UserId'",      "Rights", "x1"});
-   StartSeedSearch(root, new PutFieldSearcher{"/MaAuth/PoAcl/test/'{UserIdx'",     "Rights", "x2"});
-   StartSeedSearch(root, new PutFieldSearcher{"/MaAuth/PoAcl/test/'{UserId}'",     "Rights", "x3"});
-   StartSeedSearch(root, new PutFieldSearcher{"/MaAuth/PoAcl/test/'{UserId}/'",    "Rights", "x4"});
-   StartSeedSearch(root, new PutFieldSearcher{"/MaAuth/PoAcl/test/'{UserId}/*'",   "Rights", "x5"});
+   StartSeedSearch(root, new PutFieldSearcher{"/MaAuth/PoAcl/test/'{UserId'",      "Rights", "1"});
+   StartSeedSearch(root, new PutFieldSearcher{"/MaAuth/PoAcl/test/'{UserIdx'",     "Rights", "2"});
+   StartSeedSearch(root, new PutFieldSearcher{"/MaAuth/PoAcl/test/'{UserId}'",     "Rights", "3"});
+   StartSeedSearch(root, new PutFieldSearcher{"/MaAuth/PoAcl/test/'{UserId}/'",    "Rights", "4"});
+   StartSeedSearch(root, new PutFieldSearcher{"/MaAuth/PoAcl/test/'{UserId}/*'",   "Rights", "5"});
    StartSeedSearch(root, new PutFieldSearcher{"/MaAuth/PoAcl/test/'/{UserId}'",    "Rights", "xa1"});
    StartSeedSearch(root, new PutFieldSearcher{"/MaAuth/PoAcl/test/'/{UserId}/'",   "Rights", "xb2"});
    StartSeedSearch(root, new PutFieldSearcher{"/MaAuth/PoAcl/test/'/{UserId}/*'",  "Rights", "xc3"});
@@ -203,8 +203,8 @@ void CheckGridView(fon9::seed::Tree& root, const char* path, const char* gvExpec
 
 void CheckPoAcl(fon9::seed::Tree& root) {
    CheckGridView(root, "/MaAuth/PoAcl",
-                 "admin" kSPL "/" kROWSPL
-                 "test" kSPL "/home/{UserId}" kROWSPL
+                 "admin"         kSPL "/"              kROWSPL
+                 "test"          kSPL "/home/{UserId}" kROWSPL
                  "test-sync-end" kSPL "/home/{UserId}"
                   );
    CheckGridView(root, "/MaAuth/PoAcl/test",
@@ -214,11 +214,11 @@ void CheckPoAcl(fon9::seed::Tree& root) {
                  "/{UserId}"    kSPL "xa1" kROWSPL
                  "/{UserId}/"   kSPL "xb2" kROWSPL
                  "/{UserId}/*"  kSPL "xc3" kROWSPL
-                 "{UserId"      kSPL "x1"  kROWSPL
-                 "{UserIdx"     kSPL "x2"  kROWSPL
-                 "{UserId}"     kSPL "x3"  kROWSPL
-                 "{UserId}/"    kSPL "x4"  kROWSPL
-                 "{UserId}/*"   kSPL "x5");
+                 "{UserId"      kSPL "1"   kROWSPL
+                 "{UserIdx"     kSPL "2"   kROWSPL
+                 "{UserId}"     kSPL "3"   kROWSPL
+                 "{UserId}/"    kSPL "4"   kROWSPL
+                 "{UserId}/*"   kSPL "5");
 }
 
 void CheckInitGridViewAll(fon9::seed::Tree& root) {
@@ -243,7 +243,7 @@ void TestInit() {
    StartSeedSearch(*fon9sys.Root_, new SetRole);
    std::cout << "\r[OK   ]" << std::endl;
 
-   PutSyncDoneChecker(*fon9sys.Root_, "x0");
+   PutSyncDoneChecker(*fon9sys.Root_, "0");
    CheckInitGridViewAll(*fon9sys.Root_);
    fon9sys.Dispose();
 }
@@ -359,7 +359,7 @@ int main(int argc, char** argv) {
    //--------------------------------------------------------------------------//
    TestInit();
    TestReload(&CheckInitGridViewAll);
-   TestSync(&CheckInitGridViewAll, "x0");
+   TestSync(&CheckInitGridViewAll, "0");
 
    TestRemove();
    TestReload(&CheckRemovedGridViewAll);

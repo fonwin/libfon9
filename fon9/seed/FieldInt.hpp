@@ -149,11 +149,7 @@ public:
    }
 
    virtual void CellRevPrint(const RawRd& rd, StrView fmt, RevBuffer& out) const override {
-      RevPrint(out, ToHex{this->GetValue(rd)}, fmt);
-      const unsigned char* pcur = reinterpret_cast<const unsigned char*>(out.GetCurrent());
-      char ch = static_cast<char>(toupper(pcur[0]));
-      if ((ch != 'X') && (ch != '0' || toupper(pcur[1]) != 'X'))
-         RevPutChar(out, 'x');
+      FmtRevPrint(fmt, out, ToxHex{this->GetValue(rd)});
    }
    virtual OpResult StrToCell(const RawWr& wr, StrView value) const override {
       this->PutValue(wr, static_cast<IntT>(HIntStrTo(value)));
@@ -231,7 +227,7 @@ public:
    }
 
    virtual void CellRevPrint(const RawRd& rd, StrView fmt, RevBuffer& out) const override {
-      RevPrint(out, ToHex{this->GetValue(rd)}, fmt);
+      FmtRevPrint(fmt, out, ToHex{this->GetValue(rd)});
    }
    virtual OpResult StrToCell(const RawWr& wr, StrView value) const override {
       this->PutValue(wr, static_cast<IntT>(HexStrTo(value)));
