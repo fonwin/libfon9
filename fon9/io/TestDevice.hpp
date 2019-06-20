@@ -20,16 +20,17 @@ protected:
       Device::OpThr_SetLinkReady(*this, devid);
    }
    void OpImpl_Open(std::string cfgstr) override {
-      fon9_LOG_DEBUG("Device.Open|cfg=", cfgstr);
+      fon9_LOG_DEBUG("Device.Open|dev=", ToPtr(this), "|cfg=", cfgstr);
       this->SetLinkReady(cfgstr);
    }
    void OpImpl_Reopen() override {
       std::string devid = this->OpImpl_GetDeviceId();
-      fon9_LOG_DEBUG("Device.Reopen|devid=", devid);
+      fon9_LOG_DEBUG("Device.Reopen|dev=", ToPtr(this), "|devid=", devid);
       this->SetLinkReady(devid);
    }
    void OpImpl_Close(std::string cause) override {
-      fon9_LOG_DEBUG("Device.Close|devid=", this->OpImpl_GetDeviceId(), "|cause=", cause);
+      fon9_LOG_DEBUG("Device.Close|dev=", ToPtr(this), "|devid=", this->OpImpl_GetDeviceId(),
+                     "|cause=", cause);
       this->OpImpl_SetState(State::Closed, &cause);
    }
 
@@ -42,12 +43,12 @@ public:
    }
    SendResult SendASAP(const void* src, size_t size) override {
       if (this->IsLogEnabled_)
-         fon9_LOG_DEBUG("Send:", StrView{reinterpret_cast<const char*>(src), size});
+         fon9_LOG_DEBUG("Send|dev=", ToPtr(this), "|", StrView{reinterpret_cast<const char*>(src), size});
       return SendResult{};
    }
    SendResult SendASAP(BufferList&& src) override {
       if (this->IsLogEnabled_)
-         fon9_LOG_DEBUG("Send:", src);
+         fon9_LOG_DEBUG("Send|dev=", ToPtr(this), "|", src);
       size_t srcsz = CalcDataSize(src.cfront());
       DcQueueList{std::move(src)}.PopConsumed(srcsz);
       return SendResult{};
@@ -59,11 +60,10 @@ public:
       return this->SendASAP(std::move(src));
    }
    void OnReceive(const fon9::StrView& str) {
-      this->OpQueue_.InplaceOrWait(fon9::AQueueTaskKind::Recv,
-                                   DeviceAsyncOp(str.ToString(), [](Device& dev, std::string rxstr) {
+      this->OpQueue_.AddTask(DeviceAsyncOp(str.ToString(), [](Device& dev, std::string rxstr) {
          static_cast<TestDevice*>(&dev)->RxBuffer_.Append(rxstr.c_str(), rxstr.size());
          if (dev.Session_->OnDevice_Recv(dev, static_cast<TestDevice*>(&dev)->RxBuffer_) == RecvBufferSize::NoRecvEvent)
-            fon9_LOG_DEBUG("OnReceive.NoRecvEvent");
+            fon9_LOG_DEBUG("OnReceive.NoRecvEvent|dev=", ToPtr(&dev));
       }));
    }
 };

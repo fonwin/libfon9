@@ -1,4 +1,4 @@
-﻿/// \file fon9/io/SimpleManager.cpp
+﻿/// \file fon9/io/SimpleManager.hpp
 /// \author fonwinz@gmail.com
 #ifndef __fon9_io_SimpleManager_hpp__
 #define __fon9_io_SimpleManager_hpp__
