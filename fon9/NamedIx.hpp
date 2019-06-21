@@ -113,6 +113,12 @@ public:
       return this->Ary_.size();
    }
 
+   /// 雖然禁止移除其中一個元素, 但允許全部清除.
+   void clear() {
+      this->Map_.clear();
+      this->Ary_.clear();
+   }
+
    /// 依照 index 順序, 取出全部的 NamedIxSP::pointer.
    /// \retval this->size()
    size_t GetAll (std::vector<NamedIxPtr>& ptrs) const {

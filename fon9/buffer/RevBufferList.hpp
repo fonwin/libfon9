@@ -37,6 +37,11 @@ public:
    static RevBufferNode* CastFrom(BufferNode* node) {
       return(node && node->GetNodeType() == BufferNodeType::Data) ? static_cast<RevBufferNode*>(node) : nullptr;
    }
+   void RemoveBackData(size_t sz) {
+      assert(this->GetDataSize() >= sz);
+      if (this->GetDataSize() >= sz)
+         this->DataEndOffset_ -= static_cast<BufferNodeSize>(sz);
+   }
 };
 
 class RevBufferListBuilder : public BufferListBuilder {
@@ -90,6 +95,13 @@ public:
             FreeNode(this->List_.pop_front());
       }
       return base::MoveOut();
+   }
+
+   void RemoveBackData(size_t sz) {
+      RevBufferNode* back = RevBufferNode::CastFrom(this->List_.back());
+      assert(back != nullptr);
+      if (back != nullptr)
+         back->RemoveBackData(sz);
    }
 };
 
@@ -151,6 +163,13 @@ public:
       this->SetFrontNodeUsed();
       this->Builder_.PushFront(node);
       this->ResetMemPtr(RevBufferNode::CastFrom(this->Builder_.GetFront()));
+   }
+
+   /// 移除尾端 sz chars;
+   /// 例如: 一開始尾端有 '\n', 但最後決定該 '\n' 不要了, 就可呼叫 RemoveBackData(1); 移除尾端的 '\n';
+   void RemoveBackData(size_t sz) {
+      this->SetFrontNodeUsed();
+      this->Builder_.RemoveBackData(sz);
    }
 };
 
