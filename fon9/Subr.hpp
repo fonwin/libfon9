@@ -231,6 +231,11 @@ public:
       Locker  subrs(this->Subrs_);
       return subrs->clear();
    }
+
+   /// 鎖定後就暫時不會發行訊息.
+   ConstLocker Lock() const {
+      return ConstLocker{this->Subrs_};
+   }
 };
 
 /// 不支援 thread safe 的 Subject: 使用 fon9::DummyMutex.
