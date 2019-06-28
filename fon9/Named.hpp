@@ -94,7 +94,9 @@ protected:
 /// - 如果 retval.Name_.empty() 則: cfg.begin() = 錯誤位置.
 ///   - retval.Name_ 必須符合 Named::ValidateName() 的檢查.
 /// - 返回時, cfg.begin() 移動到 (chTail位置 + 1) 或 cfg.end().
-fon9_API Named DeserializeNamed(StrView& cfg, char chSpl, int chTail);
+/// - 若有提供 exNameParam, 則在 name 部分, 遇到的第1個「非命名字元」之後, 會放到 *exNameParam 裡面.
+///   例如: cfg "Name : ExParam, Title, Desc"; 則 *exNameParam = " : ExParam";
+fon9_API Named DeserializeNamed(StrView& cfg, char chSpl, int chTail, StrView* exNameParam = nullptr);
 
 /// 輸出名稱設定, 若 chSpl = '|'; chTail = '\n'; 可能的輸出:
 /// - `Name\n`
@@ -110,6 +112,8 @@ class RevBuffer;
 /// - 若 named.Description 有特殊字元, 則使用 StrView_ToEscapeStr() 之後, 加上引號.
 /// - 若 named.Title 有特殊字元或 chSpl, 則使用 StrView_ToEscapeStr() 之後, 加上引號.
 fon9_API void RevPrintNamed(RevBuffer& rbuf, const Named& named, char chSpl);
+/// 輸出 named 的 Title 及 Description; 請參考 RevPrintNamed(); 的說明.
+fon9_API void RevPrintNamedDesc(RevBuffer& rbuf, const Named& named, char chSpl);
 
 } // namespaces
 #endif//__fon9_Named_hpp__

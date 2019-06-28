@@ -18,15 +18,19 @@ fon9_API const char* FindInvalidNameChar(StrView str) {
    return nullptr;
 }
 
-fon9_API Named DeserializeNamed(StrView& cfg, char chSpl, int chTail) {
+fon9_API Named DeserializeNamed(StrView& cfg, char chSpl, int chTail, StrView* exNameParam) {
    StrView  descr = chTail == -1 ? cfg : SbrFetchNoTrim(cfg, static_cast<char>(chTail));
    StrView  name  = SbrFetchNoTrim(descr, chSpl);
    StrView  title = SbrFetchNoTrim(descr, chSpl);
    
    StrTrim(&name);
    if (const char* pInvalid = FindInvalidNameChar(name)) {
-      cfg.SetBegin(pInvalid);
-      return Named{};
+      if (exNameParam == nullptr || pInvalid == name.begin()) {
+         cfg.SetBegin(pInvalid);
+         return Named{};
+      }
+      exNameParam->Reset(pInvalid, name.end());
+      name.SetEnd(pInvalid);
    }
    if (!cfg.empty())
       cfg.SetBegin(descr.end() + (chTail != -1));
@@ -68,12 +72,15 @@ static bool RevPrintEscapeStr(RevBuffer& rbuf, fon9::StrView str, char chSpl) {
    return true;
 }
 
-fon9_API void RevPrintNamed(RevBuffer& rbuf, const Named& named, char chSpl) {
+fon9_API void RevPrintNamedDesc(RevBuffer& rbuf, const Named& named, char chSpl) {
    const bool hasDesc = RevPrintEscapeStr(rbuf, &named.GetDescription(), '\0');
    if (hasDesc)
       RevPrint(rbuf, chSpl);
    if (RevPrintEscapeStr(rbuf, &named.GetTitle(), chSpl) || hasDesc)
       RevPrint(rbuf, chSpl);
+}
+fon9_API void RevPrintNamed(RevBuffer& rbuf, const Named& named, char chSpl) {
+   RevPrintNamedDesc(rbuf, named, chSpl);
    RevPrint(rbuf, named.Name_);
 }
 
