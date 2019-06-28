@@ -15,7 +15,7 @@ class TestDevice : public Device {
 protected:
    DcQueueList RxBuffer_;
    bool        IsLogEnabled_{true};
-   void SetLinkReady(std::string devid) {
+   virtual void SetLinkReady(std::string devid) {
       Device::OpThr_SetDeviceId(*this, devid);
       Device::OpThr_SetLinkReady(*this, devid);
    }
@@ -73,6 +73,18 @@ using TestDeviceSP = fon9::intrusive_ptr<TestDevice>;
 class TestDevice2 : public TestDevice {
    fon9_NON_COPY_NON_MOVE(TestDevice2);
    using base = TestDevice;
+protected:
+   void SetLinkReady(std::string devid) override {
+      if (this->Peer_)
+         base::SetLinkReady(devid);
+      else
+         Device::OpThr_SetDeviceId(*this, devid);
+   }
+   static void OnSetLinkReady(Device& dev) {
+      if (dev.OpImpl_GetState() != fon9::io::State::LinkReady)
+         static_cast<TestDevice2*>(&dev)->SetLinkReady(static_cast<TestDevice2*>(&dev)->OpImpl_GetDeviceId());
+   }
+
 public:
    using PeerSP = fon9::intrusive_ptr<TestDevice2>;
    using base::base;
@@ -82,6 +94,8 @@ public:
       assert(this->Peer_.get() == nullptr && peer->Peer_.get() == nullptr);
       peer->Peer_ = this;
       this->Peer_ = std::move(peer);
+      this->OpQueue_.AddTask(&TestDevice2::OnSetLinkReady);
+      this->Peer_->OpQueue_.AddTask(&TestDevice2::OnSetLinkReady);
    }
    void ResetPeer() {
       if (this->Peer_) {
@@ -99,11 +113,10 @@ public:
       if (!this->Peer_)
          return base::SendASAP(std::move(src));
       DcQueueList dcq{std::move(src)};
-      while (!dcq.empty()) {
-         auto blk = dcq.PeekCurrBlock();
-         this->Peer_->OnReceive(fon9::StrView(reinterpret_cast<const char*>(blk.first), blk.second));
-         dcq.PopConsumed(blk.second);
-      }
+      CharVector  buf;
+      size_t      sz = dcq.CalcSize();
+      dcq.Read(buf.alloc(sz), sz);
+      this->Peer_->OnReceive(ToStrView(buf));
       return SendResult{};
    }
 
