@@ -197,6 +197,10 @@ public:
       }
       return st;
    }
+
+   ThreadState GetThreadState() {
+      return this->QueueController_.GetState(this->Lock());
+   }
 };
 
 } // namespace

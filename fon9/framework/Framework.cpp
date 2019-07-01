@@ -9,7 +9,6 @@
 #include "fon9/Log.hpp"
 #include "fon9/HostId.hpp"
 #include "fon9/DefaultThreadPool.hpp"
-#include "fon9/CountDownLatch.hpp"
 
 #if !defined(fon9_WINDOWS)
 #include <sys/mman.h> // mlockall()
@@ -186,26 +185,8 @@ void Framework::Dispose() {
 
 void Framework::DisposeForAppQuit() {
    this->Dispose();
-
-   // 讓等候中的工作有機會全部做完.
-   // 等候每個 DefaultThreadPool 的每個 thread 執行 n 次,
-   for (unsigned count = 3; count > 0; --count) {
-      unsigned       L = static_cast<unsigned>(GetDefaultThreadPool().GetThreadCount());
-      CountDownLatch waiter{L};
-      for (; L > 0; --L) {
-         GetDefaultThreadPool().EmplaceMessage([&waiter]() {
-            // TODO: 如何確定每次執行都是在不同的 thread?
-            waiter.CountDown();
-         });
-      }
-      waiter.Wait();
-      // 有些 thread 會花比較久的時間結束(e.g. IoService),
-      // 要如何等候這些 thread 呢? 用 global CountDownLatch 嗎?
-      std::this_thread::sleep_for(std::chrono::milliseconds{50});
-   }
-
-   // 結束 DefaultThreadPool, 不會再處理後續加入的工作!!
-   GetDefaultThreadPool().WaitForEndAfterWorkDone();
+   WaitDefaultThreadPoolQuit(GetDefaultThreadPool());
+   // TODO: GetDefaultTimerThread(); 如何結束?
 }
 
 } // namespaces

@@ -2,6 +2,7 @@
 // \author fonwinz@gmail.com
 #include "fon9/DefaultThreadPool.hpp"
 #include "fon9/sys/OnWindowsMainExit.hpp"
+#include "fon9/CyclicBarrier.hpp"
 
 namespace fon9 {
 
@@ -45,6 +46,27 @@ fon9_API DefaultThreadPool& GetDefaultThreadPool() {
    };
    static DefaultThreadPoolImpl ThreadPool_;
    return ThreadPool_;
+}
+
+fon9_API void WaitDefaultThreadPoolQuit(DefaultThreadPool& thrPool, unsigned waitTimes, TimeInterval tiSleep) {
+   if (thrPool.GetThreadState() < ThreadState::EndAfterWorkDone) {
+      for (; waitTimes > 0; --waitTimes) {
+         unsigned       L = static_cast<unsigned>(thrPool.GetThreadCount());
+         CyclicBarrier  waiter{L + 1};
+         for (; L > 0; --L) {
+            thrPool.EmplaceMessage([&waiter]() {
+               waiter.Wait();
+            });
+         }
+         waiter.Wait();
+         std::this_thread::sleep_for(tiSleep.ToDuration());
+      }
+   }
+   thrPool.WaitForEndAfterWorkDone();
+
+   // 把剩餘工作做完, 避免 memory leak.
+   DefaultThreadTaskHandler handler(thrPool);
+   thrPool.WaitForEndNow(handler);
 }
 
 } // namespaces
