@@ -25,6 +25,8 @@ bool IocpTcpClientImpl::OpImpl_ConnectTo(const SocketAddress& addr, SocketResult
    // !AddrBind_.IsEmpty() 在 SocketClientDevice::OpImpl_ConnectToNext() 已經 bind 過了!
    // 所以這裡只有在 AddrBind_.IsEmpty() 時需要 bind.
    if (this->Owner_->Config_.AddrBind_.IsEmpty()) {
+      if (this->Owner_->Config_.AddrBind_.IsUnspec())
+         this->Owner_->Config_.AddrBind_.SetAddrAny(addr.GetAF(), 0);
       if (!this->Socket_.Bind(this->Owner_->Config_.AddrBind_, soRes))
          return false;
    }
