@@ -15,9 +15,14 @@ class TestDevice : public Device {
 protected:
    DcQueueList RxBuffer_;
    bool        IsLogEnabled_{true};
+   void OnProcessRxBuffer() {
+      if (this->Session_->OnDevice_Recv(*this, this->RxBuffer_) == RecvBufferSize::NoRecvEvent)
+         fon9_LOG_DEBUG("OnReceive.NoRecvEvent|dev=", ToPtr(this));
+   }
    virtual void SetLinkReady(std::string devid) {
       Device::OpThr_SetDeviceId(*this, devid);
       Device::OpThr_SetLinkReady(*this, devid);
+      this->OnProcessRxBuffer();
    }
    void OpImpl_Open(std::string cfgstr) override {
       fon9_LOG_DEBUG("Device.Open|dev=", ToPtr(this), "|cfg=", cfgstr);
@@ -62,8 +67,11 @@ public:
    void OnReceive(const fon9::StrView& str) {
       this->OpQueue_.AddTask(DeviceAsyncOp(str.ToString(), [](Device& dev, std::string rxstr) {
          static_cast<TestDevice*>(&dev)->RxBuffer_.Append(rxstr.c_str(), rxstr.size());
-         if (dev.Session_->OnDevice_Recv(dev, static_cast<TestDevice*>(&dev)->RxBuffer_) == RecvBufferSize::NoRecvEvent)
-            fon9_LOG_DEBUG("OnReceive.NoRecvEvent|dev=", ToPtr(&dev));
+         if (dev.OpImpl_GetState() != fon9::io::State::LinkReady) {
+            fon9_LOG_DEBUG("Device.Recv|dev=", ToPtr(&dev), "|SetLinkReady on Recv.");
+            static_cast<TestDevice*>(&dev)->SetLinkReady(static_cast<TestDevice*>(&dev)->OpImpl_GetDeviceId());
+         }
+         static_cast<TestDevice*>(&dev)->OnProcessRxBuffer();
       }));
    }
 };
@@ -94,6 +102,10 @@ public:
       assert(this->Peer_.get() == nullptr && peer->Peer_.get() == nullptr);
       peer->Peer_ = this;
       this->Peer_ = std::move(peer);
+      // 等候 this & peer 尚未完成的操作.
+      this->WaitGetDeviceId();
+      this->Peer_->WaitGetDeviceId();
+      // 然後設定 LinkReady 狀態.
       this->OpQueue_.AddTask(&TestDevice2::OnSetLinkReady);
       this->Peer_->OpQueue_.AddTask(&TestDevice2::OnSetLinkReady);
    }

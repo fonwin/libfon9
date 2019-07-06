@@ -142,7 +142,8 @@ void RcSession::OnLogoutReceived(std::string reason) {
 void RcSession::SetApReady(StrView info) {
    this->SetSessionSt(RcSessionSt::ApReady);
    if (!this->Dev_->Manager_) // 無 manager(client 端), 直接記錄登入結果.
-      fon9_LOG_INFO("RcSession.ApReady|RemoteAp=", this->RemoteParam_.ApVer_,
+      fon9_LOG_INFO("RcSession.ApReady|dev=", ToPtr(this->Dev_),
+                    "|RemoteAp=", this->RemoteParam_.ApVer_,
                     "|user=", this->UserId_,
                     "|info=", info);
    else { // 有 manager(server 端), 記錄登入結果 & 其他資訊.
@@ -165,7 +166,8 @@ void RcSession::OnSaslDone(auth::AuthR rcode, StrView userid) {
    if (rcode.RCode_ == fon9_Auth_Success)
       this->SetApReady(ToStrView(rcode.Info_));
    else {
-      fon9_LOG_WARN("RcSession.OnSaslDone|user=", userid, "|rcode=", rcode.RCode_, "|err=", rcode.Info_);
+      fon9_LOG_WARN("RcSession.OnSaslDone|dev=", ToPtr(this->Dev_),
+                    "|user=", userid, "|rcode=", rcode.RCode_, "|err=", rcode.Info_);
       this->ForceLogout(std::move(rcode.Info_));
    }
 }
@@ -251,7 +253,7 @@ io::RecvBufferSize RcSession::OnDevice_Recv_CheckProtocolVersion(io::Device& dev
       if (blk.second < (sizeof(cstrProtocolHeadMax) - 1))
          return kRcSession_RecvBufferSize;
    __UNKNOWN_PROTOCOL:;
-      fon9_LOG_WARN("RcSession.CheckProtocolVersion|err=Unknown protocol.");
+      fon9_LOG_WARN("RcSession.CheckProtocolVersion|dev=", ToPtr(&dev), "|err=Unknown protocol.");
       dev.AsyncLingerClose("Unknown protocol.");
       return io::RecvBufferSize::NoRecvEvent;
    }
