@@ -21,6 +21,9 @@ ObjArrayMem::~ObjArrayMem() {
 
 
 ObjSupplierBase::~ObjSupplierBase() {
+   this->OnBeforeDestroy();
+}
+void ObjSupplierBase::OnBeforeDestroy() {
    this->FillTimer_.StopAndWait();
 }
 void ObjSupplierBase::Timer::EmitOnTimer(TimeStamp now) {

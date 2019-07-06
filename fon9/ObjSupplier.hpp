@@ -250,6 +250,10 @@ protected:
       }
       return this->AllocFormNewPool(tlsTape);
    }
+   /// 停止 FillTimer_; 應由衍生者解構時呼叫.
+   /// 因為在 FillPool() 時, 會呼叫 this->MakeCarrierTape();
+   /// 若衍生者已死, 則會 "pure virtual method called".
+   void OnBeforeDestroy();
 
 public:
    ObjSupplierBase(uint32_t extPoolCount)
@@ -274,6 +278,9 @@ class ObjSupplier : public ObjSupplierBase {
    /// 僅能使用 Make() 建立一個 singleton;
    ObjSupplier() : base{kExtPoolCount} {
       this->FillPool();
+   }
+   ~ObjSupplier() {
+      this->OnBeforeDestroy();
    }
 
    using CarrierTape = ObjCarrierTape<ObjectT, kObjectCount>;
