@@ -81,6 +81,13 @@ void RcFunctionMgr::OnSessionLinkBroken(RcSession& ses) {
    }
 }
 //--------------------------------------------------------------------------//
+unsigned RcFunctionMgrRefCounter::AddRef() {
+   return intrusive_ptr_add_ref(static_cast<intrusive_ref_counter<RcFunctionMgrRefCounter>*>(this));
+}
+unsigned RcFunctionMgrRefCounter::Release() {
+   return intrusive_ptr_release(static_cast<intrusive_ref_counter<RcFunctionMgrRefCounter>*>(this));
+}
+//--------------------------------------------------------------------------//
 RcFunctionAgent::~RcFunctionAgent() {
 }
 void RcFunctionAgent::OnSessionApReady(RcSession&) {

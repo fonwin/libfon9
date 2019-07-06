@@ -31,7 +31,7 @@ public:
    }
 };
 //--------------------------------------------------------------------------//
-const fon9::rc::RcFunctionCode   RcFuncCode_Test = static_cast<fon9::rc::RcFunctionCode>(0x10);
+const fon9::rc::RcFunctionCode   RcFuncCode_Test = fon9::rc::RcFunctionCode::Max;
 
 class RcFuncTest : public fon9::rc::RcFunctionAgent {
    fon9_NON_COPY_NON_MOVE(RcFuncTest);
@@ -157,22 +157,14 @@ struct ClientTester {
       }
    };
 
-   fon9_WARN_DISABLE_PADDING;
-   struct RcFuncClientMgr : public fon9::intrusive_ref_counter<RcFuncClientMgr>, public fon9::rc::RcFunctionMgr {
+   struct RcFuncClientMgr : public fon9::rc::RcFunctionMgrRefCounter {
       fon9_NON_COPY_NON_MOVE(RcFuncClientMgr);
       RcFuncClientMgr() {
          this->Add(fon9::rc::RcFunctionAgentSP{new fon9::rc::RcFuncConnClient("f9rcCli.0", "fon9 RcClient Tester")});
          this->Add(fon9::rc::RcFunctionAgentSP{new fon9::rc::RcFuncSaslClient{}});
          this->Reset(fon9::rc::RcFunctionAgentSP{new RcFuncHeartbeatRTT{}});
       }
-      unsigned AddRef() override {
-         return intrusive_ptr_add_ref(static_cast<fon9::intrusive_ref_counter<RcFuncClientMgr>*>(this));
-      }
-      unsigned Release() override {
-         return intrusive_ptr_release(static_cast<fon9::intrusive_ref_counter<RcFuncClientMgr>*>(this));
-      }
    };
-   fon9_WARN_POP;
 
    /// 如果有多個 RcCli_, 可以共用 IoSv_ 、 FuncClientMgr_;
    IoServiceSP                IoSv_;

@@ -136,7 +136,9 @@ public:
    }
    template <class T>
    intrusive_ptr<T> GetSapling(StrView name) const {
-      return dynamic_pointer_cast<T>(this->Get(name)->GetSapling());
+      if (auto node = this->Get(name))
+         return dynamic_pointer_cast<T>(node->GetSapling());
+      return nullptr;
    }
 
    std::vector<NamedSeedSP> GetList(StrView nameHead) const;

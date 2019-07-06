@@ -48,6 +48,7 @@ extern "C" {
 
       #define fon9_BEFORE_INCLUDE_STD  \
                fon9_MSC_WARN_DISABLE(\
+                  4255 /* no function prototype given: converting '()' to '(void)' */ \
                   4820 /* 'name' : '4' bytes padding added after data member 'name' */ \
                   4668 /* 'NTDDI_WIN7SP1' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif' */ \
                   4571 /* Informational : catch (...) semantics changed since Visual C++ 7.1; structured exceptions(SEH) are no longer caught */ \
@@ -107,9 +108,9 @@ extern "C" {
    #endif
 
    #ifdef __cplusplus
-      #define fon9_ENUM_underlying(type)   :type
+   #  define fon9_ENUM(EnumName, Underlying)    enum EnumName : Underlying
    #else
-      #define fon9_ENUM_underlying(type)
+   #  define fon9_ENUM(EnumName, Underlying)    typedef Underlying   EnumName;   enum
    #endif
 
    /// \ingroup AlNum

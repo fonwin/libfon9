@@ -29,7 +29,7 @@ extern "C" {
 ///      - (sssss=00000)+1 = 小數 1 位. 最多可表示32位小數。
 ///      - 總共使用 4 bytes: `1011 0001` + `00000 1 01` + `0x81` + `0xcc`
 ///      - 0x181cc = ~(-98765 = 0xfffe7e33)
-enum fon9_BitvT fon9_ENUM_underlying(uint8_t) {
+fon9_ENUM(fon9_BitvT, uint8_t) {
    fon9_BitvT_Mask = 0xf8,
 
    /// 儲存 char[] 或 byte[] 或 int8_t[] 或 uint8_t[]... 之類
@@ -102,7 +102,7 @@ enum fon9_BitvT fon9_ENUM_underlying(uint8_t) {
 
 /// \ingroup AlNum
 /// 與「資料型別」放在同一個 byte 的資料值.
-enum fon9_BitvV fon9_ENUM_underlying(uint8_t) {
+fon9_ENUM(fon9_BitvV, uint8_t) {
    /// fon9_BitvT_Zero: v = `1111 0001` = Number 0.
    fon9_BitvV_Number0 = fon9_BitvT_Zero + 0,
    /// one char = '\0';

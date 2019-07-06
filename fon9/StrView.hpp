@@ -4,6 +4,7 @@
 #define __fon9_StrView_hpp__
 #include "fon9/sys/Config.hpp"
 #include "fon9/Comparable.hpp"
+#include "fon9/CStrView.h"
 
 fon9_BEFORE_INCLUDE_STD;
 #include <string>
@@ -16,7 +17,8 @@ namespace fon9 {
 /// - 僅考慮 UTF-8 字串.
 /// - 參數傳遞建議直接使用傳值方式: `void foo(StrView arg);`
 ///   除非只是單純轉發, 則使用 `inline void foo(const StrView& arg) { bar(arg); }`
-class StrView : public Comparable<StrView> {
+class StrView : private fon9_CStrView, public Comparable<StrView> {
+   using base = fon9_CStrView;
 
    /// 禁止使用 char strbuf[128]; 來建構 StrView.
    /// - 應該在 strbuf 填妥內容後, 使用 `StrView_cstr(strbuf);` 或 `StrView_eos_or_all(strbuf);` 或 `StrView_all(strbuf);`
@@ -33,25 +35,25 @@ class StrView : public Comparable<StrView> {
    StrView(std::nullptr_t, size_t sz) = delete;
    StrView(std::nullptr_t, const char*) = delete;
 
-   const char* Begin_;
-   const char* End_;
 public:
    using traits_type = std::char_traits<char>;
 
    /// 預設建構 nullptr.
    constexpr StrView() : StrView{nullptr} {
    }
-   constexpr StrView(std::nullptr_t) : Begin_{nullptr}, End_{nullptr} {
+   constexpr StrView(std::nullptr_t) : base{nullptr, nullptr} {
+   }
+   constexpr StrView(const fon9_CStrView& src) : base(src) {
    }
 
    /// \param ibegin 字串開頭, 不可使用 nullptr!
    /// \param sz     字串長度.
-   constexpr StrView(const char* ibegin, size_t sz) : Begin_{ibegin}, End_{ibegin + sz} {
+   constexpr StrView(const char* ibegin, size_t sz) : base{ibegin, ibegin + sz} {
    }
    /// 使用 [ibegin..iend) 方式建構.
    /// \param ibegin 字串開頭.
    /// \param iend   字串結尾.
-   StrView(const char* ibegin, const char* iend) : Begin_{ibegin}, End_{iend} {
+   StrView(const char* ibegin, const char* iend) : base{ibegin, iend} {
       assert((ibegin == nullptr && iend == nullptr) || (ibegin != nullptr));
       assert(ibegin <= iend);
    }
@@ -217,6 +219,10 @@ public:
    }
    inline friend bool operator<(const StrView& lhs, const StrView& rhs) {
       return lhs.Compare(rhs) < 0;
+   }
+
+   constexpr const fon9_CStrView& ToCStrView() const {
+      return *static_cast<const fon9_CStrView*>(this);
    }
 };
 

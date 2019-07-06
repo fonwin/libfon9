@@ -4,7 +4,7 @@
 #define __fon9_rc_Rc_hpp__
 #include "fon9/buffer/DcQueue.hpp"
 #include "fon9/BitvArchive.hpp"
-#include "fon9/intrusive_ptr.hpp"
+#include "fon9/intrusive_ref_counter.hpp"
 #include "fon9/TimeStamp.hpp"
 #include <array>
 #include <memory>
@@ -22,14 +22,13 @@ enum class RcFunctionCode : uint8_t {
    Logout = 2,
    Heartbeat = 3,
 
-   SeedTree = 7,
-
-   OmsApi = 8,
+   SeedVisitor = 6,
+   OmsApi = 7,
 
    /// 這裡提供一個暫時的最大值, 可減少一些記憶體用量.
    /// 目前規劃:
    /// - admin 功能(登入、Heartbeat...)
-   /// - seed/tree
+   /// - seed visitor
    /// - f9oms
    /// - 其他請參考 fon9/rc/README.md
    Max = 8,
@@ -92,6 +91,17 @@ public:
 using RcFunctionMgrSP = intrusive_ptr<RcFunctionMgr>;
 
 fon9_WARN_DISABLE_PADDING;
+/// \ingroup rc
+/// 有 ref_counter 的 RcFunctionMgr.
+class fon9_API RcFunctionMgrRefCounter : public intrusive_ref_counter<RcFunctionMgrRefCounter>
+   , public RcFunctionMgr {
+   fon9_NON_COPY_NON_MOVE(RcFunctionMgrRefCounter);
+   unsigned AddRef() override;
+   unsigned Release() override;
+public:
+   RcFunctionMgrRefCounter() = default;
+};
+
 /// \ingroup rc
 /// 當 RcSession 收到一個封包後,
 /// 呼叫 RcFunctionAgent::OnRecvFunctionCall() 時, 提供此參數.

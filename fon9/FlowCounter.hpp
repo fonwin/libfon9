@@ -3,6 +3,7 @@
 #ifndef __fon9_FlowCounter_hpp__
 #define __fon9_FlowCounter_hpp__
 #include "fon9/TimeStamp.hpp"
+#include "fon9/MustLock.hpp"
 #include <vector>
 
 namespace fon9 {
@@ -30,12 +31,16 @@ public:
       this->Resize(count, timeUnit);
    }
    /// 設定單位時間內可用筆數.
-   void Resize(unsigned count, TimeInterval timeUnit) {
+   /// \retval true  需要流量管制.
+   /// \retval false 不需流量管制.
+   bool Resize(unsigned count, TimeInterval timeUnit) {
       this->SentTimes_.clear();
       if (count > 0 && timeUnit.GetOrigValue() > 0) {
          this->SentTimes_.resize(count);
          this->TimeUnit_ = timeUnit;
+         return true;
       }
+      return false;
    }
    /// 檢查現在是否需要管制.
    /// 還要等 retval 才解除管制.
@@ -55,6 +60,26 @@ public:
          this->SentTimes_[this->NextIndex_++] = now;
       }
       return TimeInterval{};
+   }
+};
+
+class FlowCounterThreadSafe : public MustLock<FlowCounter> {
+   fon9_NON_COPY_NON_MOVE(FlowCounterThreadSafe);
+   using base = MustLock<FlowCounter>;
+   bool  IsNeedsLock_{false};
+public:
+   using base::base;
+   FlowCounterThreadSafe() = default;
+
+   bool Resize(unsigned count, TimeInterval timeUnit) {
+      Locker lk{*this};
+      return this->IsNeedsLock_ = lk->Resize(count, timeUnit);
+   }
+   TimeInterval Check() {
+      return (this->IsNeedsLock_ ? Locker{*this}->Check() : TimeInterval{});
+   }
+   TimeInterval Fetch() {
+      return (this->IsNeedsLock_ ? Locker{*this}->Fetch() : TimeInterval{});
    }
 };
 fon9_WARN_POP;

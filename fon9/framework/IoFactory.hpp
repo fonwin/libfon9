@@ -100,6 +100,8 @@ struct fon9_API DeviceFactoryConfigParser : public IoFactoryConfigParser {
 
 fon9_API DeviceFactorySP MakeIoFactoryTcpClient(std::string name = "TcpClient");
 fon9_API DeviceFactorySP MakeIoFactoryTcpServer(std::string name = "TcpServer");
+fon9_API DeviceFactorySP MakeIoFactoryDgram(std::string name = "Dgram");
+fon9_API DeviceFactorySP MakeIoFactoryFileIO(std::string name = "FileIO");
 
 } // namespaces
 #endif//__fon9_framework_IoFactory_hpp__

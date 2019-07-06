@@ -12,7 +12,7 @@ extern "C" {
 /// \ingroup fmkt
 /// 回報項目種類(下單要求種類).
 /// 用來標註 TradingRxItem 的種類.
-enum f9fmkt_RxKind   fon9_ENUM_underlying(char) {
+fon9_ENUM(f9fmkt_RxKind, char) {
    f9fmkt_RxKind_Unknown = 0,
    f9fmkt_RxKind_RequestNew    = 'N',
    f9fmkt_RxKind_RequestDelete = 'D',
@@ -40,7 +40,7 @@ enum f9fmkt_RxKind   fon9_ENUM_underlying(char) {
 ///     `constexpr fon9::fmkt::TradingMarket  f9fmkt_TradingMarket_SGX = static_cast<fon9::fmkt::TradingMarket>('g');`
 ///   - 台灣大部分券商的對外(國外)期權, 可視為「一個」市場:
 ///     `constexpr fon9::fmkt::TradingMarket  f9fmkt_TradingMarket_FF = static_cast<fon9::fmkt::TradingMarket>('f');`
-enum f9fmkt_TradingMarket   fon9_ENUM_underlying(char) {
+fon9_ENUM(f9fmkt_TradingMarket, char) {
    f9fmkt_TradingMarket_Unknown = '\0',
    /// 台灣上市(集中交易市場)
    f9fmkt_TradingMarket_TwSEC = 'T',
@@ -75,7 +75,7 @@ inline f9fmkt_TradingMarket IndexTo_f9fmkt_TradingMarket(unsigned idx) {
 ///   但要求提供 TargetSubID(#57)=[TMP協定的 AP-CODE]:
 ///   Trading session: Required for New / Replace / Cancel / Query / Execution
 ///   '0'=Regular Trading; '7'=FixedPrice; '2'=OddLot.
-enum f9fmkt_TradingSessionId   fon9_ENUM_underlying(char) {
+fon9_ENUM(f9fmkt_TradingSessionId, char) {
    f9fmkt_TradingSessionId_Unknown = 0,
    /// 一般(日盤).
    f9fmkt_TradingSessionId_Normal = 'N',
@@ -100,7 +100,7 @@ inline f9fmkt_TradingSessionId IndexTo_f9fmkt_TradingSessionId(unsigned idx) {
       ? f9fmkt_TradingSessionId_Unknown : (f9fmkt_TradingSessionId)(idx);
 }
 
-enum f9fmkt_PriType fon9_ENUM_underlying(char) {
+fon9_ENUM(f9fmkt_PriType, char) {
    f9fmkt_PriType_Unknown = 0,
    /// 限價.
    f9fmkt_PriType_Limit = 'L',
@@ -112,7 +112,7 @@ enum f9fmkt_PriType fon9_ENUM_underlying(char) {
 
 /// \ingroup fmkt
 /// 時間限制.
-enum f9fmkt_TimeInForce fon9_ENUM_underlying(char) {
+fon9_ENUM(f9fmkt_TimeInForce, char) {
    /// 當日有效. ROD, GFD.
    f9fmkt_TimeInForce_ROD = 0,
    /// 立即成交否則取消.
@@ -125,7 +125,7 @@ enum f9fmkt_TimeInForce fon9_ENUM_underlying(char) {
 
 /// \ingroup fmkt
 /// 買賣別.
-enum f9fmkt_Side fon9_ENUM_underlying(char) {
+fon9_ENUM(f9fmkt_Side, char) {
    f9fmkt_Side_Unknown = 0,
    f9fmkt_Side_Buy = 'B',
    f9fmkt_Side_Sell = 'S',
@@ -133,7 +133,7 @@ enum f9fmkt_Side fon9_ENUM_underlying(char) {
 
 /// \ingroup fmkt
 /// 下單要求狀態.
-enum f9fmkt_TradingRequestSt   fon9_ENUM_underlying(uint8_t) {
+fon9_ENUM(f9fmkt_TradingRequestSt, uint8_t) {
    /// 建構時的初始值.
    f9fmkt_TradingRequestSt_Initialing = 0,
    /// 下單要求已填妥.
@@ -244,7 +244,7 @@ inline bool f9fmkt_TradingRequestSt_IsRejected(f9fmkt_TradingRequestSt st) {
 ///     - ExchangeCanceled: 交易所刪單(IOC、FOK...).
 ///   - FullFilled: 全部成交.
 ///   - DoneForDay: 已收盤.
-enum f9fmkt_OrderSt   fon9_ENUM_underlying(uint8_t) {
+fon9_ENUM(f9fmkt_OrderSt, uint8_t) {
    f9fmkt_OrderSt_Initialing = 0,
    f9fmkt_OrderSt_NewChecking             = f9fmkt_TradingRequestSt_Checking,
    f9fmkt_OrderSt_NewQueuing              = f9fmkt_TradingRequestSt_Queuing,

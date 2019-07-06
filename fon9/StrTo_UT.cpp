@@ -10,7 +10,7 @@
 
 template <class I, fon9::DecScaleT S>
 std::ostream& operator<<(std::ostream& os, const fon9::Decimal<I,S>& v) {
-   return(os << fon9::To<double>(v));
+   return os << v.template To<double>();
 }
 
 using AuxToInt64 = fon9::StrToIntAux<int64_t>;

@@ -49,6 +49,15 @@ public:
    constexpr DecimalBase ToDecimal() const {
       return *this;
    }
+
+   /// Second:      N = 0
+   /// Millisecond: N = 3
+   /// Microsecond: N = 6
+   /// Nanosecond:  N = 9
+   template <DecScaleT N, class AdjustDecScaleEx = AdjustDecScaleExDefault>
+   constexpr OrigType ShiftUnit(AdjustDecScaleEx ex = AdjustDecScaleEx{}) const {
+      return Decimal<OrigType, N>{this->GetOrigValue(), this->Scale, ex}.GetOrigValue();
+   }
 };
 
 constexpr TimeInterval TimeInterval_Microsecond(TimeInterval::OrigType us) { return TimeInterval::Make<6>(us); }

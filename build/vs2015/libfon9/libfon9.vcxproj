@@ -193,6 +193,7 @@
     <ClInclude Include="..\..\..\fon9\io\DeviceRecvEvent.hpp" />
     <ClInclude Include="..\..\..\fon9\io\DeviceStartSend.hpp" />
     <ClInclude Include="..\..\..\fon9\io\IoServiceArgs.hpp" />
+    <ClInclude Include="..\..\..\fon9\io\IoState.h" />
     <ClInclude Include="..\..\..\fon9\io\Manager.hpp" />
     <ClInclude Include="..\..\..\fon9\io\RecvBuffer.hpp" />
     <ClInclude Include="..\..\..\fon9\io\SendBuffer.hpp" />
@@ -288,6 +289,7 @@
     <ClInclude Include="..\..\..\fon9\StaticPtr.hpp" />
     <ClInclude Include="..\..\..\fon9\StrTo.hpp" />
     <ClInclude Include="..\..\..\fon9\StrTools.hpp" />
+    <ClInclude Include="..\..\..\fon9\CStrView.h" />
     <ClInclude Include="..\..\..\fon9\StrView.hpp" />
     <ClInclude Include="..\..\..\fon9\StrVref.hpp" />
     <ClInclude Include="..\..\..\fon9\Subr.hpp" />

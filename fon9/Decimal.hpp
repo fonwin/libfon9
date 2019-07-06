@@ -253,13 +253,6 @@ public:
 //--------------------------------------------------------------------------//
 
 /// \ingroup AlNum
-/// Decimal數字轉成浮點數.
-template <typename F, typename IntTypeT, DecScaleT ScaleN>
-constexpr F To(const Decimal<IntTypeT, ScaleN>& value) {
-   return value.To<double>();
-}
-
-/// \ingroup AlNum
 /// Decimal數字轉成字串.
 template <typename IntTypeT, DecScaleT ScaleN>
 inline char* ToStrRev(char* pout, const Decimal<IntTypeT, ScaleN>& value) {

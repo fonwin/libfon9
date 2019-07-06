@@ -926,6 +926,12 @@
     <ClInclude Include="..\..\..\fon9\io\TestDevice.hpp">
       <Filter>Header Files\io\more devs</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\io\IoState.h">
+      <Filter>Header Files\io\_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\CStrView.h">
+      <Filter>Header Files\_base\_AlNum / StrTools</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />

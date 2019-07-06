@@ -3,6 +3,7 @@
 /// \defgroup io  IO通訊
 #ifndef __fon9_io_IoBase_hpp__
 #define __fon9_io_IoBase_hpp__
+#include "fon9/io/IoState.h"
 #include "fon9/intrusive_ref_counter.hpp"
 #include "fon9/Utility.hpp"
 #include "fon9/ConfigParser.hpp"
@@ -52,57 +53,34 @@ enum class Style {
 };
 
 /// \ingroup io
-/// Device 的狀態變化: 這裡的狀態變化順序與 enum 的數值有關, 不可隨意調整順序.
+/// \copydoc enum f9io_State_t;
 enum class State {
-   /// 初始化尚未完成: Device 建構之後的初始狀態.
-   Initializing,
-   /// 建構 Device 的人必須主動呼叫 Device::Initialize() 才會進入此狀態.
-   Initialized,
+   Initializing = f9io_State_Initializing,
+   Initialized = f9io_State_Initialized,
+   ConfigError = f9io_State_ConfigError,
+   Opening = f9io_State_Opening,
 
-   /// Device::OpImpl_Open() 因設定錯誤的開啟失敗。
-   /// 無法使用相同 cfgstr 再次開啟.
-   ConfigError,
-   /// 開啟中: 開啟尚未完成.
-   /// 若開啟完成, 則進入底下3種可能的狀態, 視不同的 Device Style 而定:
-   /// - WaitingLinkIn
-   /// - Linking
-   /// - Listening
-   Opening,
+   WaitingLinkIn = f9io_State_WaitingLinkIn,
+   Linking = f9io_State_Linking,
+   LinkError = f9io_State_LinkError,
+   LinkReady = f9io_State_LinkReady,
+   LinkBroken = f9io_State_LinkBroken,
 
-   /// 連入等候中: 例如一個 USB port, 正在等候 USB 設備的插入.
-   WaitingLinkIn,
-   /// 連線建立中: 例如 TcpClient 呼叫了 connect().
-   Linking,
-   /// 連線建立失敗: 例如 TcpClient 呼叫 connect() 之後沒有連線成功.
-   LinkError,
-   /// 連線成功: 可以開始收送資料.
-   /// - WaitingLinkIn, Linking 之後, 連線成功的狀態.
-   LinkReady,
-   /// 連線中斷.
-   /// - **LinkReady 之後** , 連線中斷了!
-   LinkBroken,
+   Listening = f9io_State_Listening,
+   ListenBroken = f9io_State_ListenBroken,
 
-   /// Listening(例如: TcpServer)
-   Listening,
-   /// Listening之後被中斷: reset 網卡/IP?
-   ListenBroken,
+   Lingering = f9io_State_Lingering,
+   Closing = f9io_State_Closing,
+   Closed = f9io_State_Closed,
 
-   /// 逗留中, 等資料送完後關閉.
-   Lingering,
-   /// 關閉中.
-   Closing,
-   /// 已關閉.
-   Closed,
-
-   /// 即將解構, Device 已不可再使用!
-   /// 當收到此狀態, 您應該盡快將 Device 釋放.
-   Disposing,
-   /// 在 Device::~Device() 最後的解構狀態.
-   Destructing,
+   Disposing = f9io_State_Disposing,
+   Destructing = f9io_State_Destructing,
 };
 /// \ingroup io
 /// 取得 st 的顯示字串.
-fon9_API StrView GetStateStr(State st);
+inline StrView GetStateStr(State st) {
+   return f9io_GetStateStr(static_cast<f9io_State>(st));
+}
 
 inline bool IsAllowContinueSend(State st) {
    return st == State::LinkReady || st == State::Lingering;

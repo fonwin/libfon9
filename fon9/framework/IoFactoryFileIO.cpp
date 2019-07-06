@@ -18,7 +18,7 @@
 
 namespace fon9 {
 
-static DeviceFactorySP MakeIoFactoryFileIO(std::string name) {
+fon9_API DeviceFactorySP MakeIoFactoryFileIO(std::string name) {
    struct Factory : public DeviceFactory {
       fon9_NON_COPY_NON_MOVE(Factory);
       Factory(std::string name) : DeviceFactory(std::move(name)) {

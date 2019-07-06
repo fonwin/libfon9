@@ -31,6 +31,10 @@ public:
    NamedIx(Named&& named) : Named(std::move(named)) {
    }
 
+   StrView GetNameStr() const {
+      return &this->Name_;
+   }
+
    /// 命名物件的索引位置.
    /// 要加入 NamedMap 之後, 此索引才會正確: >=0
    int GetIndex() const {
@@ -68,11 +72,11 @@ public:
    using value_type = typename NamedIxSP::element_type;
 
    /// \retval true  成功將 aobj 加入
-   /// \retval false 加入失敗: !aobj 或 aobj->Name_ 重複, 或 (aobj->GetIndex() >= 0)
+   /// \retval false 加入失敗: !aobj 或 aobj->GetNameStr() 重複, 或 (aobj->GetIndex() >= 0)
    bool Add(NamedIxSP aobj) {
       if (!aobj)
          return false;
-      typename Map::value_type   aval(&aobj->Name_, this->Ary_.size());
+      typename Map::value_type   aval(aobj->GetNameStr(), this->Ary_.size());
       auto insr = this->Map_.insert(aval);
       if (!insr.second)
          return false;
@@ -120,13 +124,20 @@ public:
    }
 
    /// 依照 index 順序, 取出全部的 NamedIxSP::pointer.
+   /// ResultVector = std::vector<NamedIxPtr>;
    /// \retval this->size()
-   size_t GetAll (std::vector<NamedIxPtr>& ptrs) const {
+   template <class ResultVector>
+   size_t GetAll (ResultVector& ptrs) const {
       const size_t count = this->size();
       ptrs.resize(count);
       for (size_t L = 0; L < count; ++L)
          ptrs[L] = this->Get(L);
       return count;
+   }
+
+   /// 取得依照加入順序, 的陣列開始位置.
+   const NamedIxSPT* GetVector() const {
+      return this->Ary_.empty() ? nullptr : &this->Ary_[0];
    }
 };
 
@@ -158,7 +169,7 @@ public:
    bool Remove(size_t index) {
       if (index >= this->Ary_.size())
          return false;
-      return Remove(&this->Ary_[index]->Name_);
+      return Remove(this->Ary_[index]->GetNameStr());
    }
 
    /// 移除指定的物件.
@@ -169,7 +180,7 @@ public:
       if (index >= this->Ary_.size())
          return false;
       if (this->Ary_[index].get() == aobj)
-         return Remove(&aobj->Name_);
+         return Remove(aobj->GetNameStr());
       return false;
    }
 

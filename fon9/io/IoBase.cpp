@@ -30,12 +30,31 @@ static const StrView iostStrMap[]{
    fon9_MAKE_ENUM_CLASS_StrView(15, State, Destructing),
    {"?"}
 };
-fon9_API StrView GetStateStr(State st) {
-   size_t ust = static_cast<size_t>(static_cast<std::underlying_type<State>::type>(st));
+
+extern "C" fon9_API fon9_CStrView f9io_GetStateStr(f9io_State st) {
+   size_t ust = static_cast<size_t>(st);
    if (ust >= numofele(iostStrMap))
       ust = numofele(iostStrMap) - 1;
-   return iostStrMap[ust];
+   return iostStrMap[ust].ToCStrView();
 }
+#define CHK_F9IO_STATE(st) (f9io_State_##st == fon9::cast_to_underlying(fon9::io::State::st))
+static_assert(CHK_F9IO_STATE(Initializing) &&
+              CHK_F9IO_STATE(Initialized) &&
+              CHK_F9IO_STATE(ConfigError) &&
+              CHK_F9IO_STATE(Opening) &&
+              CHK_F9IO_STATE(WaitingLinkIn) &&
+              CHK_F9IO_STATE(Linking) &&
+              CHK_F9IO_STATE(LinkError) &&
+              CHK_F9IO_STATE(LinkReady) &&
+              CHK_F9IO_STATE(LinkBroken) &&
+              CHK_F9IO_STATE(Listening) &&
+              CHK_F9IO_STATE(ListenBroken) &&
+              CHK_F9IO_STATE(Lingering) &&
+              CHK_F9IO_STATE(Closing) &&
+              CHK_F9IO_STATE(Closed) &&
+              CHK_F9IO_STATE(Disposing) &&
+              CHK_F9IO_STATE(Destructing),
+              "fon9::io::State != f9io_State");
 
 //--------------------------------------------------------------------------//
 
