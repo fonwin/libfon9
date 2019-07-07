@@ -62,9 +62,10 @@ static ChecksumT FuncParam_CalcRcChecksum(DcQueueList& buf, RcFunctionCode funcC
    return cksum;
 }
 //--------------------------------------------------------------------------//
-RcSession::RcSession(RcFunctionMgrSP mgr, RcSessionRole role)
+RcSession::RcSession(RcFunctionMgrSP mgr, RcSessionRole role, RcFlag flags)
    : FunctionMgr_(std::move(mgr))
    , Role_(role) {
+   this->LocalParam_.Flags_ = flags;
 }
 RcSession::~RcSession() {
 }

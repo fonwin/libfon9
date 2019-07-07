@@ -2,6 +2,7 @@
 // \author fonwinz@gmail.com
 #ifndef __fon9_rc_RcSession_hpp__
 #define __fon9_rc_RcSession_hpp__
+#include "fon9/rc/Rc.h"
 #include "fon9/rc/Rc.hpp"
 #include "fon9/io/Session.hpp"
 #include "fon9/auth/AuthBase.hpp"
@@ -9,7 +10,7 @@
 namespace fon9 { namespace rc {
 
 enum class RcFlag {
-   NoChecksum = 0x01,
+   NoChecksum = f9rc_RcFlag_NoChecksum,
 };
 fon9_ENABLE_ENUM_BITWISE_OP(RcFlag);
 
@@ -40,7 +41,7 @@ public:
    const RcFunctionMgrSP   FunctionMgr_;
    const RcSessionRole     Role_;
 
-   RcSession(RcFunctionMgrSP mgr, RcSessionRole role);
+   RcSession(RcFunctionMgrSP mgr, RcSessionRole role, RcFlag flags = RcFlag{});
    ~RcSession();
 
    /// rbuf 必須已儲存了符合規則的 Function param.
@@ -141,9 +142,6 @@ public:
    }
 
 protected:
-   void SetLocalRcFlag(RcFlag flags) {
-      this->LocalParam_.Flags_ = flags;
-   }
    void OnDevice_Initialized(io::Device& dev) override;
    void OnDevice_Destructing(io::Device& dev) override;
    void OnDevice_StateChanged(io::Device& dev, const io::StateChangedArgs& e) override;

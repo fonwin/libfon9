@@ -932,6 +932,9 @@
     <ClInclude Include="..\..\..\fon9\CStrView.h">
       <Filter>Header Files\_base\_AlNum / StrTools</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\rc\Rc.h">
+      <Filter>Header Files\rc</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />

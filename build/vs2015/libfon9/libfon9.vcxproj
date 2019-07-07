@@ -229,6 +229,7 @@
     <ClInclude Include="..\..\..\fon9\PackBcd.hpp" />
     <ClInclude Include="..\..\..\fon9\PkCont.hpp" />
     <ClInclude Include="..\..\..\fon9\Random.hpp" />
+    <ClInclude Include="..\..\..\fon9\rc\Rc.h" />
     <ClInclude Include="..\..\..\fon9\rc\Rc.hpp" />
     <ClInclude Include="..\..\..\fon9\rc\RcFuncConn.hpp" />
     <ClInclude Include="..\..\..\fon9\rc\RcSession.hpp" />
