@@ -278,6 +278,15 @@ protected:
    void SetNoRecvEvent() {
       this->Options_.Flags_ |= DeviceFlag::NoRecvEvent;
    }
+
+   /// 預設 CommonTimer_.StopAndWait(); 然後 delete this;
+   /// 在解構時才 StopAndWait(); 就太晚了, 因為有些資源已經刪除,
+   /// 甚至有可能呼叫到 Device's pure virtual function.
+   /// 所以應在 ~Device() 之前, 就先停止 CommonTimer_.
+   virtual void FreeDevice();
+   friend inline void intrusive_ptr_deleter(const Device* p) BOOST_NOEXCEPT {
+      const_cast<Device*>(p)->FreeDevice();
+   }
 };
 
 //--------------------------------------------------------------------------//

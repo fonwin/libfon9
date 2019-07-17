@@ -61,8 +61,8 @@ void SocketClientDevice::OpImpl_ConnectToNext(StrView lastError) {
          }
          lastError.AppendTo(strmsg);
       }
-      this->StartConnectTimer();
       this->OpImpl_SetState(State::Linking, &strmsg);
+      this->StartConnectTimer();
       strmsg.clear();
       this->RemoteAddress_ = addr;
       if (this->OpImpl_SocketConnect(std::move(soCli), soRes))

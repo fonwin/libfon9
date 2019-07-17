@@ -8,10 +8,14 @@ namespace fon9 { namespace io {
 
 Device::~Device() {
    this->State_ = State::Destructing;
-   this->CommonTimer_.StopAndWait();
+   this->CommonTimer_.StopAndWait(); // 如果沒使用 DeviceSP, 可能沒執行到 FreeDevice()? 以防萬一, 再呼叫一次停止.
    this->Session_->OnDevice_Destructing(*this);
    if (this->Manager_)
       this->Manager_->OnDevice_Destructing(*this);
+}
+void Device::FreeDevice() {
+   this->CommonTimer_.StopAndWait();
+   delete this;
 }
 
 void Device::Initialize() {
