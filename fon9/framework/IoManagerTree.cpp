@@ -149,14 +149,21 @@ void IoManagerTree::NotifyChanged(DeviceRun& item) {
    if (item.IsDeviceItem())
       this->NotifyChanged(*static_cast<DeviceItem*>(&item));
 }
+
+void IoManagerTree::DisposeAndReopen(std::string cause, TimeInterval afterReopen) {
+   this->DisposeDevices(std::move(cause));
+   this->Timer_.RunAfter(afterReopen);
+   this->TimerFor_ = TimerFor::Open;
+}
+void IoManagerTree::DisposeDevices(std::string cause) {
+   DeviceMap::Locker map{this->DeviceMap_};
+   for (auto& i : *map) {
+      if (io::Device* dev = i->Device_.get())
+         dev->AsyncDispose(cause);
+   }
+}
 void IoManagerTree::OnParentSeedClear() {
-   {  // dispose all devices.
-      DeviceMap::Locker map{this->DeviceMap_};
-      for (auto& i : *map) {
-         if (io::Device* dev = i->Device_.get())
-            dev->AsyncDispose("Parent clear");
-      }
-   }  // unlock map;
+   this->DisposeDevices("Parent clear");
    SeedSubj_ParentSeedClear(this->StatusSubj_, *this);
 }
 //--------------------------------------------------------------------------//

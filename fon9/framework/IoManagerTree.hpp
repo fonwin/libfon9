@@ -16,13 +16,6 @@ class fon9_API IoManagerTree : public seed::Tree, public IoManager {
 public:
    IoManagerTree(const IoManagerArgs& args);
    ~IoManagerTree();
-   void OnTreeOp(seed::FnTreeOp fnCallback) override;
-   void OnTabTreeOp(seed::FnTreeOp fnCallback) override;
-   void OnParentSeedClear() override;
-
-   /// 直接載入設定字串, 字串格式 = 設定檔內容.
-   /// retval.empty() 表示成功, 否則傳回錯誤訊息.
-   std::string LoadConfigStr(StrView cfgstr);
 
    template <class IoTree = IoManagerTree, class... ArgsT>
    static intrusive_ptr<IoTree> Plant(seed::MaTree& maTree, const IoManagerArgs& ioargs, ArgsT&&... args) {
@@ -33,6 +26,20 @@ public:
       seed->SetDescription(ioargs.Result_);
       return retval;
    }
+
+   void OnTreeOp(seed::FnTreeOp fnCallback) override;
+   void OnTabTreeOp(seed::FnTreeOp fnCallback) override;
+   void OnParentSeedClear() override;
+
+   /// 直接載入設定字串, 字串格式 = 設定檔內容.
+   /// retval.empty() 表示成功, 否則傳回錯誤訊息.
+   std::string LoadConfigStr(StrView cfgstr);
+
+   /// 銷毀全部的 devices.
+   void DisposeDevices(std::string cause);
+   /// 銷毀全部的 devices 之後, 重新開啟.
+   void DisposeAndReopen(std::string cause, TimeInterval afterReopen = TimeInterval_Second(3));
+
 private:
    struct TreeOp;
    struct PodOp;

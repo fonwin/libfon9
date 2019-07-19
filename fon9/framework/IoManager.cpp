@@ -118,8 +118,17 @@ IoManager::DeviceOpenResult IoManager::CheckOpenDevice(DeviceItem& item) {
    }
    else {
       res = this->CreateDevice(item);
-      if (!item.Device_)
+      if (!item.Device_) {
+         fon9_LOG_WARN("IoManager.", this->Name_, ".CheckOpenDevice"
+                       "|cfgid=",    item.Id_,
+                       "|ses=",      item.Config_.SessionName_,
+                       "|sesArgs={", item.Config_.SessionArgs_, "}"
+                       "|dev=",      item.Config_.DeviceName_,
+                       "|devArgs={", item.Config_.DeviceArgs_, "}"
+                       "|res=",      res,
+                       "|err=",      item.SessionSt_, '|', item.DeviceSt_);
          return res;
+      }
    }
    if (item.Config_.DeviceArgs_.empty())
       // 沒提供 DeviceArgs_, 則由使用者 or Session 手動開啟.
