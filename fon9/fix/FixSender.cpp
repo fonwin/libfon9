@@ -34,20 +34,25 @@ void FixSender::Send(Locker&&       locker,
    // 產出 FIX Message.
    BufferList  fixmsg{fixmsgBuilder.Final(ToStrView(this->BeginHeader_))};
    const auto  fixmsgSize = CalcDataSize(fixmsg.cfront());
-   if (fixmsgDupOut)
-      RevPrint(*fixmsgDupOut, fixmsg);
    // 建立要寫入 FixRecorder 的訊息.
    RevBufferList rlog{static_cast<BufferNodeSize>(64 + fixmsgSize)};
    if (fon9_LIKELY(nextSeqNum == 0))
       nextSeqNum = msgSeqNum + 1;
    else
       RevPrint(rlog, f9fix_kCSTR_HdrRst f9fix_kCSTR_HdrNextSendSeq, nextSeqNum, '\n');
-   RevPrint(rlog, f9fix_kCSTR_HdrSend, now, ' ', fixmsg, '\n');
+   char* pFixMsgLog = rlog.AllocPrefix(fixmsgSize + 2);
+   *--pFixMsgLog = '\n';
+   CopyNodeList(pFixMsgLog -= fixmsgSize, fixmsg.cfront());
+   *(pFixMsgLog - 1) = ' ';
+   rlog.SetPrefixUsed(pFixMsgLog - 1);
+   RevPrint(rlog, f9fix_kCSTR_HdrSend, now);
    // 送出訊息.
    if (fon9_LIKELY(!this->IsReplayingAll_))
       this->OnSendFixMessage(locker, std::move(fixmsg));
    else
       DcQueueList{std::move(fixmsg)}.PopConsumed(fixmsgSize);
+   if (fixmsgDupOut)
+      RevPutMem(*fixmsgDupOut, pFixMsgLog, fixmsgSize + 1); // 尾端加上 '\n';
    this->WriteAfterSend(std::move(locker), std::move(rlog), nextSeqNum);
 }
 

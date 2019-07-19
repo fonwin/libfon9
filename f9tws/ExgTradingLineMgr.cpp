@@ -4,6 +4,10 @@
 
 namespace f9tws {
 
+void ExgTradingLineMgr::OnParentSeedClear() {
+   this->OnBeforeDestroy();
+   baseIo::OnParentSeedClear();
+}
 void ExgTradingLineMgr::OnFixSessionApReady(f9fix::IoFixSession& fixses) {
    if (auto line = dynamic_cast<ExgTradingLineFix*>(&fixses)) {
       baseFix::OnFixSessionApReady(fixses);

@@ -1,94 +1,14 @@
-﻿/// \file fon9/fmkt/Trading.hpp
+﻿/// \file fon9/fmkt/TradingLine.hpp
 /// \author fonwinz@gmail.com
-#ifndef __fon9_fmkt_Trading_hpp__
-#define __fon9_fmkt_Trading_hpp__
-#include "fon9/fmkt/FmktTypes.hpp"
-#include "fon9/buffer/RevBuffer.hpp"
+#ifndef __fon9_fmkt_TradingLine_hpp__
+#define __fon9_fmkt_TradingLine_hpp__
+#include "fon9/fmkt/TradingRequest.hpp"
 #include "fon9/Timer.hpp"
 #include <deque>
 
 namespace fon9 { namespace fmkt {
 
 class fon9_API TradingLineManager;
-
-/// \ingroup fmkt
-/// 回報序號, 每台主機自行依序編號.
-/// 也就是 HostA.RxSNO=1, 與 HostB.RxSNO=1, 可能是不同的 TradingRxItem.
-using TradingRxSNO = uint64_t;
-
-/// \ingroup fmkt
-/// 回報項目: 可能為「下單要求(新、刪、改、查...)」、「成交回報」、「委託異動」、「交易系統事件」...
-class fon9_API TradingRxItem : public intrusive_ref_counter<TradingRxItem> {
-   fon9_NON_COPY_NON_MOVE(TradingRxItem);
-
-protected:
-   f9fmkt_RxKind           RxKind_{};
-   f9fmkt_TradingMarket    Market_{};
-   f9fmkt_TradingSessionId SessionId_{};
-   /// RxItemFlags_ 由衍生者自行決定如何使用.
-   uint8_t                 RxItemFlags_{};
-   TradingRxSNO            RxSNO_{0};
-
-   virtual ~TradingRxItem();
-
-public:
-   TradingRxItem() = default;
-   TradingRxItem(f9fmkt_RxKind rxKind) : RxKind_{rxKind} {
-   }
-
-   /// 必須透過 FreeThis() 來刪除, 預設 delete this;
-   /// 若有使用 ObjCarrierTape 則將 this 還給 ObjCarrierTape;
-   virtual void FreeThis();
-   inline friend void intrusive_ptr_deleter(const TradingRxItem* p) {
-      const_cast<TradingRxItem*>(p)->FreeThis();
-   }
-
-   f9fmkt_RxKind           RxKind() const { return this->RxKind_; }
-   f9fmkt_TradingMarket    Market() const { return this->Market_; }
-   f9fmkt_TradingSessionId SessionId() const { return this->SessionId_; }
-
-   TradingRxSNO RxSNO() const {
-      return this->RxSNO_;
-   }
-   /// 只能設定一次, 設定後不應該更改.
-   TradingRxSNO SetRxSNO(TradingRxSNO sno) {
-      assert(this->RxSNO_ == 0);
-      return this->RxSNO_ = sno;
-   }
-
-   /// 將內容依照 Fields 的順序輸出到 rbuf;
-   /// - 前方須包含 Name, 尾端 **不可加 '\n'**
-   /// - 使用 fon9_kCSTR_CELLSPL 分隔欄位;
-   /// - 不含 RxSNO();
-   /// - 預設: do nothing.
-   virtual void RevPrint(RevBuffer& rbuf) const;
-   /// 預設傳回 nullptr.
-   virtual const TradingRxItem* CastToRequest() const;
-   /// 預設傳回 nullptr.
-   virtual const TradingRxItem* CastToOrder() const;
-   /// 預設傳回 nullptr.
-   virtual const TradingRxItem* CastToEvent() const;
-};
-using TradingRxItemSP = intrusive_ptr<TradingRxItem>;
-
-/// \ingroup fmkt
-/// 下單要求基底.
-class fon9_API TradingRequest : public TradingRxItem {
-   fon9_NON_COPY_NON_MOVE(TradingRequest);
-   using base = TradingRxItem;
-
-protected:
-   virtual ~TradingRequest();
-
-public:
-   using base::base;
-   TradingRequest() = default;
-
-   /// - 無可用線路時的拒絕.
-   /// - TradingLineManager 解構時, 拒絕還在 Queue 裡面的要求.
-   virtual void NoReadyLineReject(StrView cause) = 0;
-};
-using TradingRequestSP = intrusive_ptr<TradingRequest>;
 
 /// \ingroup fmkt
 /// 交易連線基底.
@@ -129,7 +49,7 @@ inline TradingLine::SendResult ToFlowControlResult(TimeInterval ti) {
 /// \ingroup fmkt
 /// 下單要求傳送的結果.
 enum class SendRequestResult : int {
-   /// 返回此訊息前, 必定已經呼叫過 req.NoReadyLineReject();
+   /// 返回此訊息前, 必定已經呼叫過 TradingLineManager::NoReadyLineReject();
    NoReadyLine = -2,
    /// 拒絕送出 Request: 通常是 Request 的內容有誤.
    RejectRequest = -3,
@@ -148,6 +68,8 @@ fon9_WARN_DISABLE_PADDING;
 /// - 負責等候流量管制時間, 時間到解除管制時, 透過 OnNewTradingLineReady() 通知.
 class fon9_API TradingLineManager {
    fon9_NON_COPY_NON_MOVE(TradingLineManager);
+
+protected:
    /// 可送出下單要求的連線. 流量管制時不移除.
    struct TradingSvrImpl {
       using Lines = std::vector<TradingLine*>;
@@ -174,21 +96,43 @@ public:
    /// 不包含: 流量管制, 線路忙碌.
    void OnTradingLineBroken(TradingLine& src);
 
-   SendRequestResult SendRequest(TradingRequest& req, const Locker* tsvr = nullptr) {
-      if (tsvr)
-         return this->SendRequest(req, *tsvr);
+   SendRequestResult SendRequest(TradingRequest& req) {
       return this->SendRequest(req, Locker{this->TradingSvr_});
+   }
+   SendRequestResult SendRequest(TradingRequest& req, const Locker& tsvr) {
+      if (fon9_LIKELY(tsvr->ReqQueue_.empty())) {
+         SendRequestResult resSend = this->SendRequestImpl(req, tsvr);
+         if (fon9_LIKELY(resSend != SendRequestResult::Queuing))
+            return resSend;
+      }
+      tsvr->ReqQueue_.push_back(&req);
+      return SendRequestResult::Queuing;
    }
 
 protected:
+   /// 衍生者在解構時, 應先呼叫此處,
+   /// 如此在 Queue 之中的 req 才會通過 this->NoReadyLineReject(req) 通知衍生者.
+   virtual void OnBeforeDestroy();
+
+   /// 清除全部的「排隊中下單要求」.
+   virtual void ClearReqQueue(Locker&& tsvr, StrView cause);
+
+   /// - 無可用線路時的拒絕.
+   /// - TradingLineManager 解構時, 拒絕還在 Queue 裡面的要求.
+   /// - 預設 do nothing, 直接返回 SendRequestResult::NoReadyLine;
+   virtual SendRequestResult NoReadyLineReject(TradingRequest& req, StrView cause);
+
    /// 當有新的可交易線路時的通知, 預設: 送出 queue 的 req.
-   /// 若 src == nullptr 表示流量管制解除.
-   virtual void OnNewTradingLineReady(TradingLine* src, const Locker& tsvr);
+   /// - src == nullptr 表示從計時器來的: 流量管制解除.
+   /// - 如果是從 OnTradingLineReady() 來的, 則 tsvr->Lines_[tsvr->LineIndex_] == src.
+   virtual void OnNewTradingLineReady(TradingLine* src, Locker&& tsvr);
+
+   /// 嘗試送出 Queue 裡面的下單要求.
+   void SendReqQueue(const Locker& tsvr);
+
+   SendRequestResult SendRequestImpl(TradingRequest& req, const Locker& tsvr);
 
 private:
-   SendRequestResult SendRequest(TradingRequest& req, const Locker& tsvr);
-   void ClearReqQueue(Locker&& tsvr, StrView cause);
-
    struct FlowControlTimer : public DataMemberTimer {
       fon9_NON_COPY_NON_MOVE(FlowControlTimer);
       FlowControlTimer() = default;
@@ -199,4 +143,4 @@ private:
 fon9_WARN_POP;
 
 } } // namespaces
-#endif//__fon9_fmkt_Trading_hpp__
+#endif//__fon9_fmkt_TradingLine_hpp__

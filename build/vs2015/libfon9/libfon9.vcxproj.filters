@@ -881,9 +881,6 @@
     <ClInclude Include="..\..\..\fon9\PkCont.hpp">
       <Filter>Header Files\_base\_Tools / Utility</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\fon9\fmkt\Trading.hpp">
-      <Filter>Header Files\fmkt</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\fon9\Assert.h">
       <Filter>Header Files\_base\_Tools / Utility</Filter>
     </ClInclude>
@@ -934,6 +931,12 @@
     </ClInclude>
     <ClInclude Include="..\..\..\fon9\rc\Rc.h">
       <Filter>Header Files\rc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\TradingRequest.hpp">
+      <Filter>Header Files\fmkt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\TradingLine.hpp">
+      <Filter>Header Files\fmkt</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1456,9 +1459,6 @@
     <ClCompile Include="..\..\..\fon9\PkCont.cpp">
       <Filter>Source Files\_base\_Tools / Utility</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\fon9\fmkt\Trading.cpp">
-      <Filter>Source Files\fmkt</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\fon9\Assert.c">
       <Filter>Source Files\_base\_Tools / Utility</Filter>
     </ClCompile>
@@ -1494,6 +1494,12 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\seed\FieldCharsL.cpp">
       <Filter>Source Files\seed\_fields</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\TradingRequest.cpp">
+      <Filter>Source Files\fmkt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\TradingLine.cpp">
+      <Filter>Source Files\fmkt</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

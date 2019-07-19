@@ -8,7 +8,7 @@
 #include "f9tws/ExgTypes.hpp"
 #include "fon9/fix/IoFixSession.hpp"
 #include "fon9/fix/IoFixSender.hpp"
-#include "fon9/fmkt/Trading.hpp"
+#include "fon9/fmkt/TradingLine.hpp"
 #include "fon9/CharAry.hpp"
 #include "fon9/FlowCounter.hpp"
 

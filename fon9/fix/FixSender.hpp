@@ -67,7 +67,7 @@ public:
    ///   - MsgType
    ///   - MsgSeqNum
    ///   - SendingTime
-   /// \param fixmsgDupOut 如果 != nullptr, 則複製一份送出的 FIX Message.
+   /// \param fixmsgDupOut 如果 != nullptr, 則複製一份送出的 FIX Message 且尾端加上 '\n'.
    void Send(const StrView& fldMsgType,
              FixBuilder&&   fixmsgBuilder,
              RevBufferList* fixmsgDupOut = nullptr) {
