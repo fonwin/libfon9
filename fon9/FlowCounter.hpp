@@ -21,9 +21,9 @@ class FlowCounter {
       if (this->NextIndex_ >= maxc)
          this->NextIndex_ = 0;
       TimeInterval ti = this->TimeUnit_ - (now - this->SentTimes_[this->NextIndex_]);
-      if (fon9_UNLIKELY(ti.GetOrigValue() > 0))
-         return ti;
-      return TimeInterval{};
+      if (fon9_LIKELY(ti.GetOrigValue() <= 0))
+         return TimeInterval{};
+      return ti;
    }
 public:
    FlowCounter() = default;
@@ -47,7 +47,7 @@ public:
    /// retval.GetOrigValue() <= 0 表示不用管制.
    TimeInterval Check(TimeStamp now = UtcNow()) {
       if (const auto maxc = this->SentTimes_.size())
-         this->InternalCheck(now, maxc);
+         return this->InternalCheck(now, maxc);
       return TimeInterval{};
    }
    /// - 若現在不用管制, 則 retval.GetOrigValue() <= 0; 並設定使用一筆.
@@ -60,6 +60,14 @@ public:
          this->SentTimes_[this->NextIndex_++] = now;
       }
       return TimeInterval{};
+   }
+   /// 配合 Check().GetOrigValue() <= 0 使用.
+   /// 強制使用一筆流量.
+   void ForceUsed(TimeStamp now) {
+      if (this->SentTimes_.empty())
+         return;
+      assert(this->InternalCheck(now, this->SentTimes_.size()).GetOrigValue() <= 0);
+      this->SentTimes_[this->NextIndex_++] = now;
    }
 };
 
