@@ -15,6 +15,8 @@ protected:
    f9fix::FixConfig  FixConfig_;
    std::string       FixLogPathFmt_;
 
+   /// 預設 = 本地時間 = UtcNow() + GetLocalTimeZoneOffset();
+   virtual fon9::TimeStamp GetTDay();
    virtual fon9::io::SessionSP CreateTradingLine(ExgTradingLineMgr&           lineMgr,
                                                  const ExgTradingLineFixArgs& args,
                                                  f9fix::IoFixSenderSP         fixSender) = 0;
@@ -28,7 +30,7 @@ public:
 
    /// mgr 必須是 f9tws::ExgTradingLineMgr
    fon9::io::SessionSP CreateSession(fon9::IoManager& mgr, const fon9::IoConfigItem& cfg, std::string& errReason) override;
-   /// 不支援.
+   /// 券商端 FIX, 不支援 SessionServer.
    fon9::io::SessionServerSP CreateSessionServer(fon9::IoManager& mgr, const fon9::IoConfigItem& cfg, std::string& errReason) override;
 };
 

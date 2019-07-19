@@ -12,6 +12,9 @@ ExgTradingLineFixFactory::ExgTradingLineFixFactory(std::string fixLogPathFmt, Na
    f9fix::InitRecvRejectMessage(this->FixConfig_);
 }
 
+fon9::TimeStamp ExgTradingLineFixFactory::GetTDay() {
+   return fon9::UtcNow() + fon9::GetLocalTimeZoneOffset();
+}
 fon9::io::SessionSP ExgTradingLineFixFactory::CreateSession(fon9::IoManager& mgr, const fon9::IoConfigItem& cfg, std::string& errReason) {
    f9tws::ExgTradingLineMgr* twsLineMgr = dynamic_cast<f9tws::ExgTradingLineMgr*>(&mgr);
    if (twsLineMgr == nullptr) {
@@ -25,7 +28,14 @@ fon9::io::SessionSP ExgTradingLineFixFactory::CreateSession(fon9::IoManager& mgr
       return fon9::io::SessionSP{};
 
    fon9::TimedFileName  fixLogPath(this->FixLogPathFmt_, fon9::TimedFileName::TimeScale::Day);
-   fixLogPath.RebuildFileName(fon9::UtcNow());
+   fon9::TimeStamp      tday = this->GetTDay();
+   if (tday.GetOrigValue() == 0) {
+      errReason = "f9tws::ExgTradingLineFixFactory|err=Unknown TDay.";
+      return fon9::io::SessionSP{};
+   }
+   // FIX log 檔名與 TDay 相關, 與 TimeZone 無關,
+   // 所以要扣除 fixLogPath.GetTimeChecker().GetTimeZoneOffset();
+   fixLogPath.RebuildFileName(tday - fixLogPath.GetTimeChecker().GetTimeZoneOffset());
 
    fon9::fix::IoFixSenderSP fixSender;
    errReason = f9tws::MakeExgTradingLineFixSender(args, &fixLogPath.GetFileName(), fixSender);
