@@ -216,7 +216,7 @@ void FileIO::OpImpl_StartRecv(RecvBufferSize preallocSize) {
 }
 void FileIO::OpImpl_StopRunning() {
    if (auto impl = this->ImplSP_.get()) {
-      impl->StopAndWait();
+      impl->DisposeAndWait();
       this->ImplSP_.reset();
    }
 }

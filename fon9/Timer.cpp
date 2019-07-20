@@ -23,7 +23,7 @@ TimerThread& GetDefaultTimerThread() {
 TimerEntry::~TimerEntry() {
 }
 void TimerEntry::DisposeAndWait() {
-   for (;;) {
+   while(!this->TimerThread_.TimerController_.IsThreadEnding()) {
       TimerThread::Locker   timerThread{this->TimerThread_.TimerController_};
       if (IsTimerWaitInLine(this->Key_.SeqNo_)) {
          timerThread->Erase(this->Key_);
@@ -35,7 +35,7 @@ void TimerEntry::DisposeAndWait() {
    }
 }
 void TimerEntry::StopAndWait() {
-   for (;;) {
+   while (!this->TimerThread_.TimerController_.IsThreadEnding()) {
       TimerThread::Locker   timerThread{this->TimerThread_.TimerController_};
       if (this->Key_.SeqNo_ == TimerSeqNo::Disposed)
          break;
@@ -48,12 +48,16 @@ void TimerEntry::StopAndWait() {
 }
 void TimerEntry::DisposeNoWait() {
    TimerThread::Locker   timerThread{this->TimerThread_.TimerController_};
+   if (this->TimerThread_.TimerController_.IsThreadEnding())
+      return;
    if (IsTimerWaitInLine(this->Key_.SeqNo_))
       timerThread->Erase(this->Key_);
    this->Key_.SeqNo_ = TimerSeqNo::Disposed;
 }
 void TimerEntry::StopNoWait() {
    TimerThread::Locker   timerThread{this->TimerThread_.TimerController_};
+   if (this->TimerThread_.TimerController_.IsThreadEnding())
+      return;
    if (IsTimerWaitInLine(this->Key_.SeqNo_)) {
       timerThread->Erase(this->Key_);
       this->Key_.SeqNo_ = TimerSeqNo::NoWaiting;
@@ -61,6 +65,8 @@ void TimerEntry::StopNoWait() {
 }
 void TimerEntry::SetupRun(TimeStamp atTimePoint, const TimeInterval* after) {
    TimerThread::Locker   timerThread{this->TimerThread_.TimerController_};
+   if (this->TimerThread_.TimerController_.IsThreadEnding())
+      return;
    if (this->Key_.SeqNo_ == TimerSeqNo::Disposed)
       return;
    if (IsTimerWaitInLine(this->Key_.SeqNo_))

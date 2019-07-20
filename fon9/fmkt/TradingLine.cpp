@@ -11,7 +11,7 @@ TradingLineManager::~TradingLineManager() {
    this->OnBeforeDestroy();
 }
 void TradingLineManager::OnBeforeDestroy() {
-   this->FlowControlTimer_.StopAndWait();
+   this->FlowControlTimer_.DisposeAndWait();
    this->ClearReqQueue(TradingSvr::Locker{this->TradingSvr_}, "TradingLineManager dtor.");
 }
 void TradingLineManager::OnTradingLineBroken(TradingLine& src) {

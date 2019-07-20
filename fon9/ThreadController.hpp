@@ -45,6 +45,7 @@ public:
 
    ThreadState GetState(const Locker&) const { return this->State_; }
    uint32_t    GetRunningCount(const Locker&) const { return this->RunningCount_; }
+   bool        IsThreadEnding() const { return this->State_ > ThreadState::ExecutingOrWaiting; }
 
    void OnBeforeThreadStart(uint32_t threadCount) {
       assert(this->State_ == ThreadState::Idle && this->RunningCount_ == 0);

@@ -279,8 +279,8 @@ protected:
       this->Options_.Flags_ |= DeviceFlag::NoRecvEvent;
    }
 
-   /// 預設 CommonTimer_.StopAndWait(); 然後 delete this;
-   /// 在解構時才 StopAndWait(); 就太晚了, 因為有些資源已經刪除,
+   /// 預設 CommonTimer_.DisposeAndWait(); 然後 delete this;
+   /// 在解構時才 DisposeAndWait(); 就太晚了, 因為有些 device 的資源已經刪除,
    /// 甚至有可能呼叫到 Device's pure virtual function.
    /// 所以應在 ~Device() 之前, 就先停止 CommonTimer_.
    virtual void FreeDevice();

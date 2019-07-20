@@ -24,7 +24,7 @@ ObjSupplierBase::~ObjSupplierBase() {
    this->OnBeforeDestroy();
 }
 void ObjSupplierBase::OnBeforeDestroy() {
-   this->FillTimer_.StopAndWait();
+   this->FillTimer_.DisposeAndWait();
 }
 void ObjSupplierBase::Timer::EmitOnTimer(TimeStamp now) {
    (void)now;

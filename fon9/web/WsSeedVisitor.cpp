@@ -232,7 +232,7 @@ WsSeedVisitor::WsSeedVisitor(io::DeviceSP dev, seed::MaTreeSP root, const auth::
 }
 WsSeedVisitor::~WsSeedVisitor() {
    this->Visitor_->Unsubscribe();
-   this->HbTimer_.StopAndWait();
+   this->HbTimer_.DisposeAndWait();
 }
 void WsSeedVisitor::EmitOnTimer(TimerEntry* timer, TimeStamp now) {
    (void)now;

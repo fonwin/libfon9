@@ -7,7 +7,7 @@ namespace fon9 {
 PkContFeeder::PkContFeeder() {
 }
 PkContFeeder::~PkContFeeder() {
-   this->Timer_.StopAndWait();
+   this->Timer_.DisposeAndWait();
 }
 void PkContFeeder::Clear() {
    this->Timer_.StopAndWait();

@@ -11,7 +11,7 @@ LogFileAppender::~LogFileAppender() {
 }
 void LogFileAppender::DisposeAsync() {
    base::DisposeAsync();
-   this->Timer_.StopAndWait();
+   this->Timer_.DisposeAndWait();
 }
 void LogFileAppender::MakeCallForWork(WorkContentLocker&& lk) {
    // Queue 多少資料時才需要 base::MakeCallForWork()?

@@ -58,7 +58,7 @@ IoManagerTree::IoManagerTree(const IoManagerArgs& args)
 IoManagerTree::~IoManagerTree() {
    this->DeviceFactoryPark_->Unsubscribe(this->SubConnDev_);
    this->SessionFactoryPark_->Unsubscribe(this->SubConnSes_);
-   this->Timer_.StopAndWait();
+   this->Timer_.DisposeAndWait();
 }
 unsigned IoManagerTree::IoManagerAddRef() {
    return intrusive_ptr_add_ref(static_cast<baseTree*>(this));
