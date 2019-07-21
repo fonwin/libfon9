@@ -45,11 +45,12 @@ struct TimerEntryKey {
 ///   - 所以如果使用「間隔時間」啟動 timer, 當系統時間有變動時, 則無法在正確的「時間間隔」觸發事件!
 /// - thread 的睡眠時間: 最接近的 timer.TimeStamp_ - now;
 class fon9_API TimerThread;
+using TimerThreadSP = intrusive_ptr<TimerThread>;
 
 /// \ingroup Thrs
 /// 這裡提供一個 fon9 預設的 TimerThread.
 /// 第一次呼叫時才會啟動. 啟動後, 程式結束時才會解構.
-fon9_API TimerThread& GetDefaultTimerThread();
+fon9_API TimerThreadSP GetDefaultTimerThread();
 
 fon9_WARN_DISABLE_PADDING;
 /// \ingroup Thrs
@@ -98,8 +99,9 @@ class fon9_API TimerEntry : public intrusive_ref_counter<TimerEntry> {
 
    void SetupRun(TimeStamp atTimePoint, const TimeInterval* after);
 public:
-   TimerThread& TimerThread_;
-   TimerEntry(TimerThread& timerThread) : TimerThread_(timerThread) {
+   const TimerThreadSP  TimerThread_;
+
+   TimerEntry(TimerThreadSP timerThread) : TimerThread_(std::move(timerThread)) {
    }
    virtual ~TimerEntry();
 
@@ -148,7 +150,7 @@ class fon9_API DataMemberTimer : public TimerEntry {
 public:
    /// 使用 GetDefaultTimerThread() 當作 timer thread.
    DataMemberTimer();
-   DataMemberTimer(TimerThread& timerThread);
+   DataMemberTimer(TimerThreadSP timerThread);
 };
 
 /// \ingroup Thrs
@@ -199,10 +201,10 @@ using TimerEntrySP = intrusive_ptr<TimerEntry>;
 ///       // - 進入解構程序時, FlowTimer_->Owner_ (weak_ptr) lock 會失敗, 所以不可能進入 MySession::OnTimer()
 ///       // - 當最後一個 EntrySP 死亡時, FlowTimer_ 就會自然死亡了!
 ///    }
-///    static std::shared_ptr<MySession> Make(fon9::TimerThread& timerThread) {
+///    static std::shared_ptr<MySession> Make(fon9::TimerThreadSP timerThread) {
 ///       std::shared_ptr<MySession> res{new MySession{}};
-///       res->FlowTimer_.reset(new FlowTimer{timerThread,res}); // 建立計時器.
-///       res->FlowTimer_->RunAfter(fon9::TimeInterval_Second(1)); // 啟動計時器.
+///       res->FlowTimer_.reset(new FlowTimer{std::move(timerThread),res}); // 建立計時器.
+///       res->FlowTimer_->RunAfter(fon9::TimeInterval_Second(1));          // 啟動計時器.
 ///       return res;
 ///    }
 /// };
@@ -217,8 +219,8 @@ protected:
          (owner.get()->*pOnTimer)(this, now);
    }
 public:
-   TimerEntry_OwnerWP(TimerThread& timerThread, std::weak_ptr<OwnerT> owner)
-      : TimerEntry{timerThread}
+   TimerEntry_OwnerWP(TimerThreadSP timerThread, std::weak_ptr<OwnerT> owner)
+      : TimerEntry{std::move(timerThread)}
       , Owner_{std::move(owner)} {
    }
 };
@@ -226,7 +228,7 @@ public:
 fon9_WARN_DISABLE_PADDING;
 /// \ingroup Thrs
 /// 實際的 TimerEntry 放在 TimerThread 裡面執行.
-class fon9_API TimerThread {
+class fon9_API TimerThread : public intrusive_ref_counter<TimerThread> {
    fon9_NON_COPY_NON_MOVE(TimerThread);
    friend class TimerEntry;
 
@@ -254,16 +256,18 @@ class fon9_API TimerThread {
 
    bool CheckCurrEmit(Locker& timerThread, TimerEntry& timer);
    bool RunTimer(Locker&);
+
 protected:
    void ThrRun(std::string timerName);
-   void WaitForEndNow();
    void NotifyForEndNow() {
       this->TimerController_.NotifyForEndNow();
    }
 
 public:
    TimerThread(std::string timerName);
-   ~TimerThread();
+   virtual ~TimerThread();
+
+   void WaitForEndNow();
 
    bool InThisThread() const {
       return (this->Thread_.get_id() == std::this_thread::get_id());

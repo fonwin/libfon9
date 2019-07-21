@@ -7,14 +7,18 @@
 
 namespace fon9 {
 
-TimerThread& GetDefaultTimerThread() {
+TimerThreadSP GetDefaultTimerThread() {
    struct DefaultTimerThread : public TimerThread, sys::OnWindowsMainExitHandle {
       fon9_NON_COPY_NON_MOVE(DefaultTimerThread);
       DefaultTimerThread() : TimerThread{"Default.TimerThread"} {}
       void OnWindowsMainExit_Notify() { this->NotifyForEndNow(); }
       void OnWindowsMainExit_ThreadJoin() { this->WaitForEndNow(); }
    };
-   static DefaultTimerThread TimerThread_;
+   struct DefaultTimerThreadSP : public TimerThreadSP {
+      DefaultTimerThreadSP() : TimerThreadSP{new DefaultTimerThread} {}
+      ~DefaultTimerThreadSP() { this->get()->WaitForEndNow(); }
+   };
+   static DefaultTimerThreadSP   TimerThread_;
    return TimerThread_;
 }
 
@@ -23,40 +27,40 @@ TimerThread& GetDefaultTimerThread() {
 TimerEntry::~TimerEntry() {
 }
 void TimerEntry::DisposeAndWait() {
-   while(!this->TimerThread_.TimerController_.IsThreadEnding()) {
-      TimerThread::Locker   timerThread{this->TimerThread_.TimerController_};
+   while(!this->TimerThread_->TimerController_.IsThreadEnding()) {
+      TimerThread::Locker   timerThread{this->TimerThread_->TimerController_};
       if (IsTimerWaitInLine(this->Key_.SeqNo_)) {
          timerThread->Erase(this->Key_);
          this->Key_.SeqNo_ = TimerSeqNo::Disposed;
          this->Key_.EmitTime_.AssignNull();
       }
-      if (!this->TimerThread_.CheckCurrEmit(timerThread, *this))
+      if (!this->TimerThread_->CheckCurrEmit(timerThread, *this))
          break;
    }
 }
 void TimerEntry::StopAndWait() {
-   while (!this->TimerThread_.TimerController_.IsThreadEnding()) {
-      TimerThread::Locker   timerThread{this->TimerThread_.TimerController_};
+   while (!this->TimerThread_->TimerController_.IsThreadEnding()) {
+      TimerThread::Locker   timerThread{this->TimerThread_->TimerController_};
       if (this->Key_.SeqNo_ == TimerSeqNo::Disposed)
          break;
       timerThread->Erase(this->Key_);
       this->Key_.SeqNo_ = TimerSeqNo::NoWaiting;
       this->Key_.EmitTime_.AssignNull();
-      if (!this->TimerThread_.CheckCurrEmit(timerThread, *this))
+      if (!this->TimerThread_->CheckCurrEmit(timerThread, *this))
          break;
    }
 }
 void TimerEntry::DisposeNoWait() {
-   TimerThread::Locker   timerThread{this->TimerThread_.TimerController_};
-   if (this->TimerThread_.TimerController_.IsThreadEnding())
+   TimerThread::Locker   timerThread{this->TimerThread_->TimerController_};
+   if (this->TimerThread_->TimerController_.IsThreadEnding())
       return;
    if (IsTimerWaitInLine(this->Key_.SeqNo_))
       timerThread->Erase(this->Key_);
    this->Key_.SeqNo_ = TimerSeqNo::Disposed;
 }
 void TimerEntry::StopNoWait() {
-   TimerThread::Locker   timerThread{this->TimerThread_.TimerController_};
-   if (this->TimerThread_.TimerController_.IsThreadEnding())
+   TimerThread::Locker   timerThread{this->TimerThread_->TimerController_};
+   if (this->TimerThread_->TimerController_.IsThreadEnding())
       return;
    if (IsTimerWaitInLine(this->Key_.SeqNo_)) {
       timerThread->Erase(this->Key_);
@@ -64,8 +68,8 @@ void TimerEntry::StopNoWait() {
    }
 }
 void TimerEntry::SetupRun(TimeStamp atTimePoint, const TimeInterval* after) {
-   TimerThread::Locker   timerThread{this->TimerThread_.TimerController_};
-   if (this->TimerThread_.TimerController_.IsThreadEnding())
+   TimerThread::Locker   timerThread{this->TimerThread_->TimerController_};
+   if (this->TimerThread_->TimerController_.IsThreadEnding())
       return;
    if (this->Key_.SeqNo_ == TimerSeqNo::Disposed)
       return;
@@ -85,7 +89,7 @@ void TimerEntry::SetupRun(TimeStamp atTimePoint, const TimeInterval* after) {
    if (fon9_UNLIKELY(timerThread->CvWaitSecs_ == wsecs))
       return;
    timerThread->CvWaitSecs_ = wsecs;
-   this->TimerThread_.TimerController_.NotifyOne(timerThread);
+   this->TimerThread_->TimerController_.NotifyOne(timerThread);
 }
 void TimerEntry::OnTimer(TimeStamp /*now*/) {
 }
@@ -101,7 +105,7 @@ void TimerEntry::OnTimerEntryReleased() {
 
 DataMemberTimer::DataMemberTimer() : DataMemberTimer(GetDefaultTimerThread()) {
 }
-DataMemberTimer::DataMemberTimer(TimerThread& timerThread) : TimerEntry(timerThread) {
+DataMemberTimer::DataMemberTimer(TimerThreadSP timerThread) : TimerEntry(std::move(timerThread)) {
    intrusive_ptr_add_ref(this);
 }
 void DataMemberTimer::OnTimerEntryReleased() {

@@ -80,11 +80,11 @@ class MySession : public std::enable_shared_from_this<MySession>
 
    MySession() = default;
 public:
-   static std::shared_ptr<MySession> Make(fon9::TimerThread& timerThread) {
+   static std::shared_ptr<MySession> Make(fon9::TimerThreadSP timerThread) {
       std::shared_ptr<MySession> res{new MySession{}};
       res->ThisSP_ = res;
-      res->FlowTimer_.reset(new FlowTimer(timerThread,res));// 建立計時器.
-      res->FlowTimer_->RunAfter(kFlowInterval);             // 啟動計時器.
+      res->FlowTimer_.reset(new FlowTimer(std::move(timerThread),res)); // 建立計時器.
+      res->FlowTimer_->RunAfter(kFlowInterval);                         // 啟動計時器.
       return res;
    }
 };
@@ -101,14 +101,14 @@ class SessionContainTimer : public fon9::intrusive_ref_counter<SessionContainTim
    }
    fon9::DataMemberEmitOnTimer<&SessionContainTimer::EmitOnTimer> Timer_;
 
-   SessionContainTimer(fon9::TimerThread& timerThread) : Timer_(timerThread) {
+   SessionContainTimer(fon9::TimerThreadSP timerThread) : Timer_(std::move(timerThread)) {
    }
 public:
    ~SessionContainTimer() {
       this->Timer_.DisposeAndWait();
    }
-   static fon9::intrusive_ptr<SessionContainTimer> Make(fon9::TimerThread& timerThread) {
-      fon9::intrusive_ptr<SessionContainTimer> res{new SessionContainTimer{timerThread}};
+   static fon9::intrusive_ptr<SessionContainTimer> Make(fon9::TimerThreadSP timerThread) {
+      fon9::intrusive_ptr<SessionContainTimer> res{new SessionContainTimer{std::move(timerThread)}};
       res->ThisSP_ = res;
       res->Timer_.RunAfter(kFlowInterval);  // 啟動計時器.
       return res;
@@ -119,8 +119,8 @@ fon9_WARN_POP;
 //--------------------------------------------------------------------------//
 
 void TestTimerThread() {
-   fon9::TimerThread timerThread{"TestTimerThread"};
-   gTimerThread = &timerThread;
+   fon9::TimerThreadSP timerThread{new fon9::TimerThread{"TestTimerThread"}};
+   gTimerThread = timerThread.get();
 
    std::thread thrs[4];
    size_t      thrL = 0;
