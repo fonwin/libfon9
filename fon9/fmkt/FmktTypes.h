@@ -21,8 +21,6 @@ fon9_ENUM(f9fmkt_RxKind, char) {
    f9fmkt_RxKind_RequestQuery  = 'Q',
    /// 成交回報.
    f9fmkt_RxKind_Filled = 'f',
-   /// 委託回報: 外部委託回報進入系統時使用.
-   f9fmkt_RxKind_ImportReport = 'r',
    /// 委託異動.
    f9fmkt_RxKind_Order = 'o',
    /// 系統事件.
@@ -47,9 +45,9 @@ fon9_ENUM(f9fmkt_TradingMarket, char) {
    /// 台灣上櫃(櫃檯買賣中心)
    f9fmkt_TradingMarket_TwOTC = 'O',
    /// 台灣興櫃.
-   f9fmkt_TradingMarket_TwEmg = 'E',
+   f9fmkt_TradingMarket_TwEMG = 'E',
    /// 台灣期交所.
-   f9fmkt_TradingMarket_TwFex = 'F',
+   f9fmkt_TradingMarket_TwFEX = 'F',
 
    /// 提供給陣列使用, 例如:
    /// using MarketAry = std::array<MarketRec, f9fmkt_TradingMarket_MaxIndex + 1u>;
@@ -133,6 +131,7 @@ fon9_ENUM(f9fmkt_Side, char) {
 
 /// \ingroup fmkt
 /// 下單要求狀態.
+/// 這裡的值有順序性, Request 的狀態值只會往後增加.
 fon9_ENUM(f9fmkt_TradingRequestSt, uint8_t) {
    /// 建構時的初始值.
    f9fmkt_TradingRequestSt_Initialing = 0,
@@ -144,6 +143,8 @@ fon9_ENUM(f9fmkt_TradingRequestSt, uint8_t) {
    f9fmkt_TradingRequestSt_Checking = 0x1c,
    /// 下單要求排隊中.
    f9fmkt_TradingRequestSt_Queuing = 0x20,
+   /// 下單要求在另一台主機排隊.
+   f9fmkt_TradingRequestSt_QueuingAtOther = 0x21,
 
    /// 在呼叫 io.Send() 之前設定的狀態.
    /// 您可以自行決定要在 io.Send() 之前 or 之後 or both, 設定送出狀態.
@@ -151,6 +152,9 @@ fon9_ENUM(f9fmkt_TradingRequestSt, uint8_t) {
    /// 在呼叫 io.Send() 之後設定的狀態.
    /// 如果要在送出後設定狀態: 則要小心考慮在 io.Send() 之後, 設定 Sent 之前, 就已收到送出的結果.
    f9fmkt_TradingRequestSt_Sent = 0x38,
+
+   /// 小於等於此值表示: 內部處理過程的狀態變化, 表示仍在內部處理.
+   f9fmkt_TradingRequestSt_LastRunStep = 0x9f,
 
    /// 交易所部分回報: 有些下單要求交易所會有多次回報.
    /// 針對「某筆下單要求」交易所「最後一次回報」前的狀態.
@@ -163,13 +167,17 @@ fon9_ENUM(f9fmkt_TradingRequestSt, uint8_t) {
 
    /// 下單要求流程已結束.
    f9fmkt_TradingRequestSt_Done = 0xda,
-   /// 不明原因結束, 無法確定此要求是否成功.
-   /// 例如: 要求送出後斷線.
-   f9fmkt_TradingRequestSt_Broken = 0xdb,
-   /// 排隊中的要求被取消, 此筆要求沒送出.
-   /// 可能因程式結束, 或新單排隊中但收到刪單要求.
-   f9fmkt_TradingRequestSt_QueuingCanceled = 0xdc,
 
+   // 不明原因結束, 無法確定此要求是否成功.
+   // 例如: 要求送出後斷線.
+   // ** 移除此狀態 **
+   // ** 若送出後沒收到回報, 不論重啟或斷線, 都不改變最後狀態.
+   // ** 保留最後狀態, 維運人員較容易研判問題.
+   //f9fmkt_TradingRequestSt_Broken = 0xdb,
+
+   /// 排隊中的要求被取消, 此筆要求沒送出.
+   /// 可能因程式結束後重啟, 或新單排隊中但收到刪單要求.
+   f9fmkt_TradingRequestSt_QueuingCanceled = 0xe2,
    /// 下單要求因「線路狀況」拒絕. 尚未送給交易所.
    /// 例如: 無可用線路.
    f9fmkt_TradingRequestSt_LineRejected = 0xe3,
@@ -186,9 +194,14 @@ fon9_ENUM(f9fmkt_TradingRequestSt, uint8_t) {
    /// 請檢查: 是否已全部成交? 或是否已經被刪(交易所刪單、其他系統刪減...)?
    f9fmkt_TradingRequestSt_ExchangeNoLeavesQty  = 0xef,
 
-   /// 新單要求: 尚未收到新單回報, 但先收到成交回報.
-   /// 如果有自動 Qu 回報機制, 則無此狀態.
-   f9fmkt_TradingRequestSt_FilledBeforeNew = 0xf1,
+   // 新單要求: 尚未收到新單回報, 但先收到成交回報.
+   // 如果有「新單未成功」時「暫時保留成交」則無此狀態.
+   // ** 移除此狀態 **
+   // ** 如果可以用「收到的回報(成交、刪、改、查)」確認新單成功數量,
+   // ** 則直接在該回報更新前, 更新「新單要求」的最後狀態=f9fmkt_TradingRequestSt_ExchangeAccepted
+   // ** 然後再更新「收到的回報(成交、刪、改、查)」.
+   //f9fmkt_TradingRequestSt_FilledBeforeNew = 0xf1,
+
    /// 已收到交易所的確認回報: 包含新單回報、刪改回報、查詢回報...
    f9fmkt_TradingRequestSt_ExchangeAccepted = 0xf2,
    /// 成交回報要求, 直接使用此狀態.
@@ -246,6 +259,27 @@ inline bool f9fmkt_TradingRequestSt_IsRejected(f9fmkt_TradingRequestSt st) {
 ///   - DoneForDay: 已收盤.
 fon9_ENUM(f9fmkt_OrderSt, uint8_t) {
    f9fmkt_OrderSt_Initialing = 0,
+
+   /// 此次委託異動的原因是為了記錄: 被保留的亂序回報.
+   /// - 委託異動 = 被保留的回報, 例: BeforeQty, AfterQty, ExgTime, ErrCode... 都會寫到「委託異動」.
+   /// - 等適當時機再繼續處理, 例:
+   ///   - 收到新單回報.
+   ///   - Order.LeavesQty==保留的.BeforeQty.
+   f9fmkt_OrderSt_ReportPending = 1,
+   /// 收到交易所的回報, 但此回報已經臭酸了.
+   /// - 可能的情況, 例:
+   ///   - 查單 => 刪單 => 刪單回報成功 => 查單回報剩餘量3(Stale)
+   ///   - 改價A => 改價B => 改價B成功 => 改價A成功(Stale);
+   /// - 若無法用數量來判斷, 則使用交易所時間來判斷.
+   /// - 若連交易所時間都相同, 則使用收到的先後順序來處理, 所以仍有誤判的可能.
+   /// - 此時「委託異動」內容只有底下欄位會變動, 只是為了記錄該筆要求已處理完畢:
+   ///   - OrderSt   = f9fmkt_OrderSt_ReportStale
+   ///   - RequestSt = report st.
+   ///   - ErrCode   = report err code.
+   ///   - 其他委託內容(例: ExgTime, Qty, Pri...)都不會變動.
+   f9fmkt_OrderSt_ReportStale = 2,
+
+   f9fmkt_OrderSt_NewStarting             = 0x10,
    f9fmkt_OrderSt_NewChecking             = f9fmkt_TradingRequestSt_Checking,
    f9fmkt_OrderSt_NewQueuing              = f9fmkt_TradingRequestSt_Queuing,
    f9fmkt_OrderSt_NewSending              = f9fmkt_TradingRequestSt_Sending,
@@ -254,9 +288,9 @@ fon9_ENUM(f9fmkt_OrderSt, uint8_t) {
    f9fmkt_OrderSt_NewPartExchangeRejected = f9fmkt_TradingRequestSt_PartExchangeRejected,
 
    f9fmkt_OrderSt_NewDone                 = f9fmkt_TradingRequestSt_Done,
-   f9fmkt_OrderSt_NewBroken               = f9fmkt_TradingRequestSt_Broken,
-   f9fmkt_OrderSt_NewQueuingCanceled      = f9fmkt_TradingRequestSt_QueuingCanceled,
+ //f9fmkt_OrderSt_NewBroken               = f9fmkt_TradingRequestSt_Broken,
 
+   f9fmkt_OrderSt_NewQueuingCanceled      = f9fmkt_TradingRequestSt_QueuingCanceled,
    f9fmkt_OrderSt_NewLineRejected         = f9fmkt_TradingRequestSt_LineRejected,
    f9fmkt_OrderSt_NewOrdNoRejected        = f9fmkt_TradingRequestSt_OrdNoRejected,
    f9fmkt_OrderSt_NewInternalRejected     = f9fmkt_TradingRequestSt_InternalRejected,
@@ -275,11 +309,6 @@ fon9_ENUM(f9fmkt_OrderSt, uint8_t) {
 };
 inline bool f9fmkt_OrderSt_IsRejected(f9fmkt_OrderSt st) {
    return f9fmkt_TradingRequestSt_IsRejected((f9fmkt_TradingRequestSt)st);
-}
-inline bool f9fmkt_OrderSt_IsDone(f9fmkt_OrderSt st) {
-   return f9fmkt_OrderSt_IsRejected(st)
-      || st == f9fmkt_OrderSt_NewQueuingCanceled
-      || st >= f9fmkt_OrderSt_FullFilled;
 }
 
 #ifdef __cplusplus
