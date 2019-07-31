@@ -23,7 +23,7 @@ fon9_API void SendUnsupportedMsgType(FixSender& fixout, FixSeqNum refSeqNum, Str
 /// \ingroup fix
 /// 處理: SessionReject, BusinessReject.
 /// - 透過 rxargs.Msg_.GetField(f9fix_kTAG_RefSeqNum); 取回原本送出的 orig 訊息.
-/// - 然後透過 cfg->FixRejectHandler_(rxargs, orig) 處理.
+/// - 然後 cfg = orig.MsgType 的設定, 再透過 cfg->FixRejectHandler_(rxargs, orig) 處理.
 fon9_API void OnRecvRejectMessage(const FixRecvEvArgs& rxargs);
 
 /// \ingroup fix

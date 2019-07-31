@@ -10,13 +10,41 @@ namespace fon { namespace fix {
 #define f9fix_kTAG_Symbol                     55
 #define f9fix_kTAG_TransactTime               60
 #define f9fix_kTAG_OrderQty                   38
-#define f9fix_kTAG_OrdType                    40 // Price Type.
-#define f9fix_kTAG_TimeInForce                59
 #define f9fix_kTAG_Price                      44
 #define f9fix_kTAG_HandlInst                  21
 #define f9fix_kTAG_OrderID                    37
 #define f9fix_kTAG_ClOrdID                    11
 #define f9fix_kTAG_OrigClOrdID                41
+
+#define f9fix_kTAG_OrdType                         40 // Price Type.
+#define f9fix_kVAL_OrdType_Market                  "1"
+#define f9fix_kVAL_OrdType_Limit                   "2"
+#define f9fix_kVAL_OrdType_Stop                    "3"
+#define f9fix_kVAL_OrdType_StopLimit               "4"
+#define f9fix_kVAL_OrdType_MarketOnClose           "5"
+#define f9fix_kVAL_OrdType_WithOrWithout           "6"
+#define f9fix_kVAL_OrdType_LimitOrBetter           "7"
+#define f9fix_kVAL_OrdType_LimitWithOrWithout      "8"
+#define f9fix_kVAL_OrdType_OnBasis                 "9"
+#define f9fix_kVAL_OrdType_OnBlose                 "A"
+#define f9fix_kVAL_OrdType_LimitOnClose            "B"
+#define f9fix_kVAL_OrdType_Forex                   "C"
+#define f9fix_kVAL_OrdType_PreviouslyQuoted        "D"
+#define f9fix_kVAL_OrdType_PreviouslyIndicated     "E"
+
+#define f9fix_kTAG_TimeInForce                     59
+#define f9fix_kVAL_TimeInForce_Day                 "0"
+#define f9fix_kVAL_TimeInForce_GoodTillCancel      "1"
+#define f9fix_kVAL_TimeInForce_GTC                 "1"
+#define f9fix_kVAL_TimeInForce_AtTheOpening        "2"
+#define f9fix_kVAL_TimeInForce_OPG                 "2"
+#define f9fix_kVAL_TimeInForce_ImmediateOrCancel   "3"
+#define f9fix_kVAL_TimeInForce_IOC                 "3"
+#define f9fix_kVAL_TimeInForce_FillOrKill          "4"
+#define f9fix_kVAL_TimeInForce_FOK                 "4"
+#define f9fix_kVAL_TimeInForce_GoodTillCrossing    "5"
+#define f9fix_kVAL_TimeInForce_GTX                 "5"
+#define f9fix_kVAL_TimeInForce_GoodTillDate        "6"
 
 #define f9fix_kTAG_ExecID                     17
 #define f9fix_kTAG_LastPx                     31

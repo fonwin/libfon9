@@ -22,10 +22,12 @@ protected:
                                                  f9fix::IoFixSenderSP         fixSender) = 0;
 public:
    /// 衍生者必須自行處理相關訊息:
-   /// this->FixConfig_.Fetch(f9fix_kMSGTYPE_SessionReject).FixRejectHandler_ = &OnFixReject;
-   /// this->FixConfig_.Fetch(f9fix_kMSGTYPE_BusinessReject).FixRejectHandler_ = &OnFixReject;
    /// this->FixConfig_.Fetch(f9fix_kMSGTYPE_ExecutionReport).FixMsgHandler_ = &OnFixExecutionReport;
    /// this->FixConfig_.Fetch(f9fix_kMSGTYPE_OrderCancelReject).FixMsgHandler_ = &OnFixCancelReject;
+   /// this->FixConfig_.Fetch(f9fix_kMSGTYPE_NewOrderSingle).FixRejectHandler_ = &OnFixReject;
+   /// this->FixConfig_.Fetch(f9fix_kMSGTYPE_OrderReplaceRequest).FixRejectHandler_ = &OnFixReject;
+   /// this->FixConfig_.Fetch(f9fix_kMSGTYPE_OrderCancelRequest).FixRejectHandler_ = &OnFixReject;
+   /// this->FixConfig_.Fetch(f9fix_kMSGTYPE_OrderStatusRequest).FixRejectHandler_ = &OnFixReject;
    ExgTradingLineFixFactory(std::string fixLogPathFmt, Named&& name);
 
    /// mgr 必須是 f9tws::ExgTradingLineMgr
