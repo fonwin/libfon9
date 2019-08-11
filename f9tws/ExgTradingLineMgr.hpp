@@ -20,8 +20,8 @@ class f9tws_API ExgTradingLineMgr
 public:
    const f9fmkt_TradingMarket Market_;
 
-   ExgTradingLineMgr(const fon9::IoManagerArgs& ioargs, f9fmkt_TradingMarket mkt)
-      : baseIo(ioargs)
+   ExgTradingLineMgr(const fon9::IoManagerArgs& ioargs, fon9::TimeInterval afterOpen, f9fmkt_TradingMarket mkt)
+      : baseIo(ioargs, afterOpen)
       , Market_(mkt) {
    }
    void OnFixSessionApReady(f9fix::IoFixSession& fixses) override;

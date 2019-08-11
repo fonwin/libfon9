@@ -37,7 +37,7 @@ seed::LayoutSP IoManagerTree::GetLayout() {
 //--------------------------------------------------------------------------//
 fon9_WARN_DISABLE_PADDING;
 fon9_MSC_WARN_DISABLE_NO_PUSH(4355 /* 'this' : used in base member initializer list*/);
-IoManagerTree::IoManagerTree(const IoManagerArgs& args)
+IoManagerTree::IoManagerTree(const IoManagerArgs& args, TimeInterval afterOpen)
    : baseTree{IoManagerTree::GetLayout()}
    , IoManager(args)
    , TabTreeOp_{new seed::TabTreeOp(*this->LayoutSP_->GetTab(kTabConfigIndex))} {
@@ -47,13 +47,10 @@ IoManagerTree::IoManagerTree(const IoManagerArgs& args)
    this->SubConnSes_ = this->SessionFactoryPark_->Subscribe([this](SessionFactory*, seed::ParkTree::EventType) {
       this->OnFactoryParkChanged();
    });
-   args.Result_.clear();
    if (args.CfgFileName_.empty())
-      return;
-   std::string logHeader = "IoManager." + args.Name_;
-   args.Result_ = this->ConfigFileBinder_.OpenRead(&logHeader, args.CfgFileName_);
-   if (args.Result_.empty())
-      this->LoadConfigStr(&this->ConfigFileBinder_.GetConfigStr());
+      args.Result_.clear();
+   else
+      args.Result_ = this->BindConfigFile(args.CfgFileName_, afterOpen);
 }
 IoManagerTree::~IoManagerTree() {
    this->DeviceFactoryPark_->Unsubscribe(this->SubConnDev_);
@@ -70,7 +67,14 @@ void IoManagerTree::OnFactoryParkChanged() {
    this->Timer_.RunAfter(TimeInterval_Second(1));
 }
 
-std::string IoManagerTree::LoadConfigStr(StrView cfgstr) {
+std::string IoManagerTree::BindConfigFile(std::string cfgfn, TimeInterval afterOpen) {
+   std::string logHeader = "IoManager." + this->Name_;
+   std::string retval = this->ConfigFileBinder_.OpenRead(&logHeader, cfgfn);
+   if (retval.empty())
+      this->LoadConfigStr(&this->ConfigFileBinder_.GetConfigStr(), afterOpen);
+   return retval;
+}
+std::string IoManagerTree::LoadConfigStr(StrView cfgstr, TimeInterval afterOpen) {
    struct ToContainer : public seed::GridViewToContainer {
       DeviceMapImpl* Container_;
       ToContainer(DeviceMapImpl* container) : Container_{container} {
@@ -84,11 +88,12 @@ std::string IoManagerTree::LoadConfigStr(StrView cfgstr) {
    DeviceMap::Locker curmap{this->DeviceMap_};
    ToContainer       toContainer{curmap.get()};
    toContainer.ParseConfigStr(this->LayoutSP_->GetTab(kTabConfigIndex)->Fields_, cfgstr);
-   this->StartTimerForOpen();
+   if (!afterOpen.IsNull())
+      this->StartTimerForOpen(afterOpen);
    return std::string{};
 }
-void IoManagerTree::StartTimerForOpen() {
-   this->Timer_.RunAfter(TimeInterval_Second(1));
+void IoManagerTree::StartTimerForOpen(TimeInterval afterOpen) {
+   this->Timer_.RunAfter(afterOpen);
    this->TimerFor_ = TimerFor::Open;
 }
 void IoManagerTree::EmitOnTimer(TimerEntry* timer, TimeStamp now) {
@@ -112,12 +117,15 @@ void IoManagerTree::EmitOnTimer(TimerEntry* timer, TimeStamp now) {
          auto res = item->Sch_.Check(now);
          if (nextCheckTime == TimeStamp{} || nextCheckTime > res.NextCheckTime_)
             nextCheckTime = res.NextCheckTime_;
-         if (item->SchSt_ == res.SchSt_) {
-            if (res.SchSt_ != SchSt::In && rthis.TimerFor_ == TimerFor::Open)
-               goto __SET_ST_OUT_SCH;
-            break;
+         if (item->SchSt_ != res.SchSt_)
+            item->SchSt_ = res.SchSt_;
+         else {
+            // 在 TimerFor::CheckSch 且 SchSt 相同 => 不考慮 item 是否需要關閉或啟動.
+            if (rthis.TimerFor_ == TimerFor::CheckSch)
+               break;
+            // 如果是 TimerFor::Open, 即使 SchSt 相同 => 也要依照 SchSt 決定關閉或啟動 item.
          }
-         item->SchSt_ = res.SchSt_;
+
          if (res.SchSt_ == SchSt::In) {
             rthis.CheckOpenDevice(*item);
             if (!item->Device_) {
@@ -128,7 +136,6 @@ void IoManagerTree::EmitOnTimer(TimerEntry* timer, TimeStamp now) {
             isChanged = true;
          }
          else {
-         __SET_ST_OUT_SCH:
             isChanged = item->DisposeDevice(now, "Out of schedule");
          }
          break;
@@ -139,8 +146,10 @@ void IoManagerTree::EmitOnTimer(TimerEntry* timer, TimeStamp now) {
    // 必須在 locked 狀態下啟動 timer,
    // 因為如果此時其他 thread 設定 TimerFor::Open; timer->RunAfter();
    // 然後才執行下面這行, 那時間就錯了!
-   if (nextCheckTime != TimeStamp{})
+   if (nextCheckTime != TimeStamp{}) {
+      rthis.TimerFor_ = TimerFor::CheckSch;
       timer->RunAt(nextCheckTime);
+   }
 }
 void IoManagerTree::NotifyChanged(DeviceItem& item) {
    seed::SeedSubj_Notify(this->StatusSubj_, *this, *this->LayoutSP_->GetTab(kTabStatusIndex), ToStrView(item.Id_), item);
@@ -284,7 +293,7 @@ struct IoManagerTree::TreeOp : public seed::TreeOp {
             ToStrView("IoManager." + static_cast<IoManagerTree*>(&this->Tree_)->Name_),
             BufferTo<std::string>(rbuf.MoveOut()) + req.EditingGrid_.ToString());
       }
-      static_cast<IoManagerTree*>(&this->Tree_)->StartTimerForOpen();
+      static_cast<IoManagerTree*>(&this->Tree_)->StartTimerForOpen(TimeInterval_Second(1));
 
    __UNLOCK_AND_CALLBACK:
       fnCallback(res, resmsg);
