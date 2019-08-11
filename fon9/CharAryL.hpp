@@ -41,7 +41,7 @@ public:
       this->CopyFrom(src, srcsz);
    }
    CharAryL(const StrView& str) {
-      this->CopyFrom(str.begin(), str.size());
+      this->CopyFrom(str);
    }
    template <size_t srcsz>
    CharAryL(const CharT(&src)[srcsz]) {
@@ -53,6 +53,9 @@ public:
    void CopyFrom(const CharT* src, size_t srcsz) {
       this->Len_ = static_cast<LenT>(srcsz < arysz ? srcsz : arysz);
       memcpy(this->Ary_.Chars_, src, this->Len_ * sizeof(CharT));
+   }
+   void CopyFrom(const StrView& str) {
+      this->CopyFrom(str.begin(), str.size());
    }
 
    CharAryL(CharT chFiller) : Len_{0} {

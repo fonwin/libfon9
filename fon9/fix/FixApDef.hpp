@@ -57,9 +57,12 @@ namespace fon { namespace fix {
 #define f9fix_kVAL_Side_Buy                  "1"
 #define f9fix_kVAL_Side_Sell                 "2"
 
-#define f9fix_kTAG_CxlRejResponseTo          434
 #define f9fix_kTAG_CxlRejReason              102
 #define f9fix_kTAG_OrdRejReason              103
+
+#define f9fix_kTAG_CxlRejResponseTo          434
+#define f9fix_kVAL_CxlRejResponseTo_Cancel   "1" // Order Cancel Request
+#define f9fix_kVAL_CxlRejResponseTo_Replace  "2" // Order Cancel / Replace Request
 
 #define f9fix_kTAG_ExecTransType             20 // FIX.4.2
 #define f9fix_kVAL_ExecTransType_New         "0"

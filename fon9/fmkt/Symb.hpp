@@ -55,6 +55,13 @@ public:
 };
 using SymbSP = intrusive_ptr<Symb>;
 
+/// 取得台灣證券的整股交易單位, 若沒設定, 則 1張 = 1000股.
+inline uint32_t GetTwsSymbShUnit(const Symb* symb) {
+   if (symb && 0 < symb->ShUnit_)
+      return symb->ShUnit_;
+   return 1000;
+}
+
 //--------------------------------------------------------------------------//
 
 using SymbHashMap = std::unordered_map<StrView, SymbSP>;

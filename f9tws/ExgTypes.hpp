@@ -51,5 +51,12 @@ enum class TwsOType : char {
    DayTradeCD = 'A',
 };
 
+enum class TwsApCode : char {
+   Regular = '0',
+   FixedPrice = '7',
+   OddLot = '2',
+};
+
+
 } // namespaces
 #endif//__f9tws_ExgTypes_hpp__

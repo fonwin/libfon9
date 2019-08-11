@@ -45,9 +45,15 @@ public:
    f9fmkt_RxKind           RxKind() const { return this->RxKind_; }
    f9fmkt_TradingMarket    Market() const { return this->Market_; }
    f9fmkt_TradingSessionId SessionId() const { return this->SessionId_; }
+   TradingRxSNO            RxSNO() const { return this->RxSNO_; }
 
-   TradingRxSNO RxSNO() const {
-      return this->RxSNO_;
+   void SetMarket(f9fmkt_TradingMarket v) {
+      assert(this->Market_ == f9fmkt_TradingMarket{});
+      this->Market_ = v;
+   }
+   void SetSessionId(f9fmkt_TradingSessionId v) {
+      assert(this->SessionId_ == f9fmkt_TradingSessionId{});
+      this->SessionId_ = v;
    }
    /// 只能設定一次, 設定後不應該更改.
    TradingRxSNO SetRxSNO(TradingRxSNO sno) {
