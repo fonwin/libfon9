@@ -647,9 +647,6 @@
     <ClInclude Include="..\..\..\fon9\auth\SaslScramServer.hpp">
       <Filter>Header Files\auth</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\fon9\ConsoleIO.hpp">
-      <Filter>Header Files\_base\_Tools / Utility</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\fon9\seed\SeedAcl.hpp">
       <Filter>Header Files\seed\_tools</Filter>
     </ClInclude>
@@ -937,6 +934,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\fon9\fmkt\TradingLine.hpp">
       <Filter>Header Files\fmkt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\ConsoleIO.h">
+      <Filter>Header Files\_base\_Tools / Utility</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

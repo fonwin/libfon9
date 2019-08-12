@@ -6,7 +6,7 @@
 #include "fon9/auth/SaslScramSha256Server.hpp"
 #include "fon9/auth/SaslClient.hpp"
 #include "fon9/auth/PolicyAcl.hpp"
-#include "fon9/ConsoleIO.hpp"
+#include "fon9/ConsoleIO.h"
 #include "fon9/CountDownLatch.hpp"
 #include "fon9/CmdArgs.hpp"
 #include "fon9/Log.hpp"
@@ -144,8 +144,8 @@ class ConsoleSeedSession : public fon9::SeedSession {
    }
 
    uint16_t GetDefaultGridViewRowCount() override {
-      fon9::winsize wsz;
-      fon9::GetConsoleSize(wsz);
+      fon9_winsize wsz;
+      fon9_GetConsoleSize(&wsz);
       return static_cast<uint16_t>(wsz.ws_row);
    }
 
@@ -201,7 +201,7 @@ public:
          return State::UserExit;
 
       char     passbuf[1024];
-      size_t   passlen = fon9::getpass("Password: ", passbuf, sizeof(passbuf));
+      size_t   passlen = fon9_getpass(stdout, "Password: ", passbuf, sizeof(passbuf));
       this->PutNewLineConsole();
       fon9::StrView  authz{};
       return this->AuthUser(fon9::StrTrim(&authz), authc, fon9::StrView{passbuf, passlen}, fon9::ToStrView(this->ConsoleId_));

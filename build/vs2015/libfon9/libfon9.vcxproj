@@ -121,7 +121,7 @@
     <ClInclude Include="..\..\..\fon9\ConfigLoader.hpp" />
     <ClInclude Include="..\..\..\fon9\ConfigParser.hpp" />
     <ClInclude Include="..\..\..\fon9\ConfigUtils.hpp" />
-    <ClInclude Include="..\..\..\fon9\ConsoleIO.hpp" />
+    <ClInclude Include="..\..\..\fon9\ConsoleIO.h" />
     <ClInclude Include="..\..\..\fon9\crypto\CryptoTools.hpp" />
     <ClInclude Include="..\..\..\fon9\crypto\Sha1.hpp" />
     <ClInclude Include="..\..\..\fon9\crypto\Sha256.hpp" />
