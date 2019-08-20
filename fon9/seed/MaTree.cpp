@@ -25,8 +25,10 @@ Fields NamedSeed::MakeDefaultFields() {
 
 //--------------------------------------------------------------------------//
 
-void NamedSeed::OnSeedCommand(SeedOpResult& res, StrView cmdln, FnCommandResultHandler resHandler) {
-   (void)cmdln;
+void NamedSeed::OnSeedCommand(SeedOpResult& res, StrView cmdln,
+                              FnCommandResultHandler resHandler,
+                              MaTreeBase::Locker&& ulk) {
+   (void)cmdln; (void)ulk;
    res.OpResult_ = OpResult::not_supported_cmd;
    resHandler(res, nullptr);
 }
@@ -115,9 +117,9 @@ struct MaTree::PodOp : public PodOpLocker<PodOp, Locker> {
    TreeSP HandleGetSapling(Tab&) {
       return this->Seed_->GetSapling();
    }
-   void HandleSeedCommand(Locker&, SeedOpResult& res, StrView cmdln, FnCommandResultHandler&& resHandler) {
+   void HandleSeedCommand(Locker& ulk, SeedOpResult& res, StrView cmdln, FnCommandResultHandler&& resHandler) {
       this->Unlock();
-      this->Seed_->OnSeedCommand(res, cmdln, std::move(resHandler));
+      this->Seed_->OnSeedCommand(res, cmdln, std::move(resHandler), std::move(ulk));
    }
 };
 

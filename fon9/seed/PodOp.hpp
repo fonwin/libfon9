@@ -51,6 +51,10 @@ public:
       this->OpResult_ = OpResult::no_error;
       fnCallback(*this, &op);
    }
+
+   void OnSeedCommand_NotSupported(Tab* tab, StrView cmdln, FnCommandResultHandler&& resHandler);
+   void BeginRead_NotSupported(Tab& tab, FnReadOp&& fnCallback);
+   void BeginWrite_NotSupported(Tab& tab, FnWriteOp&& fnCallback);
 };
 
 template <class Pod>

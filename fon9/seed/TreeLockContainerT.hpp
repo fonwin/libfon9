@@ -102,14 +102,12 @@ class TreeLockContainerT : public Tree {
    fon9_NON_COPY_NON_MOVE(TreeLockContainerT);
    using base = Tree;
 
-protected:
+public:
    using ContainerImpl = ContainerImplT;
    using Container = MustLock<ContainerImpl>;
    using Locker = typename Container::Locker;
    using ConstLocker = typename Container::ConstLocker;
-   Container   Container_;
 
-public:
    template <class... ArgsT>
    TreeLockContainerT(LayoutSP layout, ArgsT&&... args)
       : base{std::move(layout)}
@@ -132,6 +130,12 @@ public:
       }
       OnTreeClearSeeds(*this, temp);
    }
+
+   Locker      Lock()       { return Locker{this->Container_}; }
+   ConstLocker Lock() const { return ConstLocker{this->Container_}; }
+
+protected:
+   Container   Container_;
 };
 
 } } // namespaces

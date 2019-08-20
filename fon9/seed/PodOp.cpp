@@ -17,17 +17,29 @@ TreeSP PodOp::GetSapling(Tab& /*tab*/) {
 
 //--------------------------------------------------------------------------//
 
-void PodOpDefault::OnSeedCommand(Tab* tab, StrView /*cmd*/, FnCommandResultHandler resHandler) {
+void PodOpDefault::OnSeedCommand(Tab* tab, StrView cmdln, FnCommandResultHandler resHandler) {
+   this->OnSeedCommand_NotSupported(tab, cmdln, std::move(resHandler));
+}
+void PodOpDefault::OnSeedCommand_NotSupported(Tab* tab, StrView cmdln, FnCommandResultHandler&& resHandler) {
+   (void)cmdln;
    this->OpResult_ = OpResult::not_supported_cmd;
    this->Tab_ = tab;
    resHandler(*this, nullptr);
 }
+
 void PodOpDefault::BeginRead(Tab& tab, FnReadOp fnCallback) {
+   this->BeginRead_NotSupported(tab, std::move(fnCallback));
+}
+void PodOpDefault::BeginRead_NotSupported(Tab& tab, FnReadOp&& fnCallback) {
    this->OpResult_ = OpResult::not_supported_read;
    this->Tab_ = &tab;
    fnCallback(*this, nullptr);
 }
+
 void PodOpDefault::BeginWrite(Tab& tab, FnWriteOp fnCallback) {
+   this->BeginWrite_NotSupported(tab, std::move(fnCallback));
+}
+void PodOpDefault::BeginWrite_NotSupported(Tab& tab, FnWriteOp&& fnCallback) {
    this->OpResult_ = OpResult::not_supported_write;
    this->Tab_ = &tab;
    fnCallback(*this, nullptr);

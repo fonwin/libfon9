@@ -11,6 +11,19 @@ namespace fon9 { namespace seed {
 class fon9_API MaTree;
 using MaTreeSP = TreeSPT<MaTree>;
 
+class fon9_API NamedSeed;
+template <class NamedSeedBaseT>
+using NamedSeedSPT = intrusive_ptr<NamedSeedBaseT>;
+using NamedSeedSP = NamedSeedSPT<NamedSeed>;
+
+struct CmpNamedSeedSP {
+   bool operator()(const NamedSeedSP& lhs, const NamedSeedSP& rhs) const;
+   bool operator()(const NamedSeedSP& lhs, const StrView& rhs) const;
+   bool operator()(const StrView& lhs, const NamedSeedSP& rhs) const;
+};
+using NamedSeedContainerImpl = SortedVectorSet<NamedSeedSP, CmpNamedSeedSP>;
+using MaTreeBase = TreeLockContainerT<NamedSeedContainerImpl>;
+
 /// \ingroup seed
 /// 在 fon9 裡面, 通常會將一組相關物件集中, 然後用 **物件名字** 來管理, 例:
 /// - 系統最底層用一個 MaTree Root_; 來管理整個應用系統.
@@ -39,12 +52,25 @@ public:
    static Fields MakeDefaultFields();
 
    virtual TreeSP GetSapling();
-   virtual void OnSeedCommand(SeedOpResult& res, StrView cmdln, FnCommandResultHandler resHandler);
+
+   /// 呼叫 OnSeedCommand() 時, ulk 在解鎖狀態.
+   virtual void OnSeedCommand(SeedOpResult& res, StrView cmdln, FnCommandResultHandler resHandler,
+                              MaTreeBase::Locker&& ulk);
 
    /// 應在 Parent Tree 收到 OnParentSeedClear() 時呼叫.
    /// 預設: sapling->OnParentSeedClear();
    virtual void OnParentTreeClear(Tree&);
 };
+
+inline bool CmpNamedSeedSP::operator()(const NamedSeedSP& lhs, const NamedSeedSP& rhs) const {
+   return lhs->Name_ < rhs->Name_;
+}
+inline bool CmpNamedSeedSP::operator()(const NamedSeedSP& lhs, const StrView& rhs) const {
+   return ToStrView(lhs->Name_) < rhs;
+}
+inline bool CmpNamedSeedSP::operator()(const StrView& lhs, const NamedSeedSP& rhs) const {
+   return lhs < ToStrView(rhs->Name_);
+}
 
 /// \ingroup seed
 /// 在建構時就確定是否有 Sapling 的 NamedSeed.
@@ -63,28 +89,11 @@ public:
    virtual TreeSP GetSapling() override;
 };
 
-template <class NamedSeedBaseT>
-using NamedSeedSPT = intrusive_ptr<NamedSeedBaseT>;
-using NamedSeedSP = NamedSeedSPT<NamedSeed>;
-
-struct CmpNamedSeedSP {
-   bool operator()(const NamedSeedSP& lhs, const NamedSeedSP& rhs) const {
-      return lhs->Name_ < rhs->Name_;
-   }
-   bool operator()(const NamedSeedSP& lhs, const StrView& rhs) const {
-      return ToStrView(lhs->Name_) < rhs;
-   }
-   bool operator()(const StrView& lhs, const NamedSeedSP& rhs) const {
-      return lhs < ToStrView(rhs->Name_);
-   }
-};
-using NamedSeedContainerImpl = SortedVectorSet<NamedSeedSP, CmpNamedSeedSP>;
-
 /// \ingroup seed
 /// Container of NamedSeedSP.
-class fon9_API MaTree : public TreeLockContainerT<NamedSeedContainerImpl> {
+class fon9_API MaTree : public MaTreeBase {
    fon9_NON_COPY_NON_MOVE(MaTree);
-   using base = TreeLockContainerT<NamedSeedContainerImpl>;
+   using base = MaTreeBase;
    struct TreeOp;
    struct PodOp;
 protected:
