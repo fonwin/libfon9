@@ -203,6 +203,7 @@ struct ConfigLoader::Appender {
    ConfigLoader&  Loader_;
    LineFromSP     From_;
    StrView        CfgRemain_;
+   const char*    CfgStartPos_;
    LineInfos&     LineInfos_;
    LineCount      LineNo_{1};
    ColCount       ColNo_{1};
@@ -210,6 +211,7 @@ struct ConfigLoader::Appender {
       : Loader_(loader)
       , From_{std::move(from)}
       , CfgRemain_{cfgstr}
+      , CfgStartPos_{cfgstr.begin()}
       , LineInfos_(linfos) {
    }
    virtual ~Appender() {
@@ -236,7 +238,7 @@ struct ConfigLoader::Appender {
          case BeforeAppend_ContinueSameLine:
             continue;
          case BeforeAppend_NormalLine:
-            this->ExpandLine(lnpr);
+            this->ExpandLine(lnpr, plnEnd);
             // 不用 break, 檢查是否需要 push_back('\n');
          case BeforeAppend_ToNextLineNormal:
             if (plnEnd)
@@ -255,7 +257,7 @@ struct ConfigLoader::Appender {
       }
       return this->LineNo_;
    }
-   void ExpandLine(StrView lnpr) {
+   void ExpandLine(StrView lnpr, const char* plnEnd) {
       StrView     inVar;
       const char* prvBeg;
       // lnpr 還原到尚未 StrTrimHead() 之前的位置 = 此行原本開始位置, 因為: 展開時,保留原本空白.
@@ -319,7 +321,8 @@ struct ConfigLoader::Appender {
          }
          prvBeg = lnpr.begin();
       }
-      if (prvBeg != this->CfgRemain_.begin())
+      if (prvBeg != this->CfgRemain_.begin()
+          || (this->CfgStartPos_ == prvBeg && (plnEnd != nullptr || prvBeg != lnpr.end())))
          this->LineInfos_.push_back(this->From_, this->LineNo_, this->ColNo_);
       if (prvBeg != lnpr.end())
          this->LineInfos_.Str_.append(prvBeg, lnpr.end());
