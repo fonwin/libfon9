@@ -42,10 +42,11 @@ public:
       const_cast<TradingRxItem*>(p)->FreeThis();
    }
 
-   f9fmkt_RxKind           RxKind() const { return this->RxKind_; }
-   f9fmkt_TradingMarket    Market() const { return this->Market_; }
-   f9fmkt_TradingSessionId SessionId() const { return this->SessionId_; }
-   TradingRxSNO            RxSNO() const { return this->RxSNO_; }
+   f9fmkt_RxKind           RxKind()      const { return this->RxKind_; }
+   f9fmkt_TradingMarket    Market()      const { return this->Market_; }
+   f9fmkt_TradingSessionId SessionId()   const { return this->SessionId_; }
+   TradingRxSNO            RxSNO()       const { return this->RxSNO_; }
+   uint8_t                 RxItemFlags() const { return this->RxItemFlags_; }
 
    void SetMarket(f9fmkt_TradingMarket v) {
       assert(this->Market_ == f9fmkt_TradingMarket{});

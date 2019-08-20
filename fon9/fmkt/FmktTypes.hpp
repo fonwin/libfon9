@@ -5,7 +5,7 @@
 #include "fon9/fmkt/FmktTypes.h"
 #include "fon9/Decimal.hpp"
 
-namespace fon9 { namespace fmkt {
+namespace fon9 {
 
 inline f9fmkt_TradingRequestSt StrTo(StrView s, f9fmkt_TradingRequestSt null, const char** endptr = nullptr) {
    return static_cast<f9fmkt_TradingRequestSt>(HexStrTo(s, endptr, null));
@@ -21,6 +21,7 @@ inline char* ToStrRev(char* pout, f9fmkt_OrderSt v) {
    return HexToStrRev(pout, cast_to_underlying(v));
 }
 
+namespace fmkt {
 /// \ingroup fmkt
 /// 一般價格型別, 最大/最小值: +- 92,233,720,368.54775807
 using Pri = Decimal<int64_t, 8>;
