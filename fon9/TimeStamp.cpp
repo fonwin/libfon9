@@ -175,12 +175,13 @@ fon9_API char* ToStrRev_FIXMS(char* pout, TimeStamp ts) {
 
 FmtTS::FmtTS(StrView fmtstr) {
    TsFmtItem item;
-   for (const char& chItem : fmtstr) {
+   for (const char* pchItem = fmtstr.begin(); pchItem < fmtstr.end();) {
       fon9_WARN_DISABLE_SWITCH;
       fon9_MSC_WARN_DISABLE_NO_PUSH(4063);//C4063: case '43' is not a valid value for switch of enum 'fon9::TsFmtItemChar'
-      switch (static_cast<TsFmtItemChar>(chItem)) {
+      switch (static_cast<TsFmtItemChar>(*pchItem)) {
       #define case_FmtChar_FmtFlag(itemName) \
          case TsFmtItemChar::itemName: item = TsFmtItem::itemName; break;
+      //-----------------------------------
       case_FmtChar_FmtFlag(YYYYMMDDHHMMSS);
       case_FmtChar_FmtFlag(YYYYMMDD);
       case_FmtChar_FmtFlag(YYYY_MM_DD);
@@ -194,22 +195,21 @@ FmtTS::FmtTS(StrView fmtstr) {
       case_FmtChar_FmtFlag(Minute02);
       case_FmtChar_FmtFlag(Second02);
       default:
-         if (static_cast<char>(chItem) == '.' || isdigit(static_cast<unsigned char>(chItem))) {
-            this->ParseWidth(&chItem, fmtstr.end());
-            return;
+         if (static_cast<char>(*pchItem) == '.' || isdigit(static_cast<unsigned char>(*pchItem))) {
+            pchItem = this->ParseWidth(pchItem, fmtstr.end());
+            continue;
          }
-         item = static_cast<TsFmtItem>(chItem);
+         item = static_cast<TsFmtItem>(*pchItem);
          break;
       case static_cast<TsFmtItemChar>('+') :
       case static_cast<TsFmtItemChar>('-') :
-         const char* pcur = &chItem + 1;
+         const char* pcur = pchItem + 1;
          if (pcur != fmtstr.end() && (*pcur=='\'' || isdigit(static_cast<unsigned char>(*pcur)))) {
-            this->TimeZoneOffset_ = StrTo(StrView{&chItem, fmtstr.end()}, this->TimeZoneOffset_, &pcur);
-            if ((pcur = StrFindIf(pcur, fmtstr.end(), isnotspace)) != nullptr)
-               this->ParseWidth(pcur, fmtstr.end());
-            return;
+            this->TimeZoneOffset_ = StrTo(StrView{pchItem, fmtstr.end()}, this->TimeZoneOffset_, &pchItem);
+            pchItem = StrFindTrimHead(pchItem, fmtstr.end());
+            continue;
          }
-         item = static_cast<TsFmtItem>(chItem);
+         item = static_cast<TsFmtItem>(*pchItem);
          break;
       }
       fon9_WARN_POP;
@@ -217,6 +217,7 @@ FmtTS::FmtTS(StrView fmtstr) {
       if (this->ItemsCount_ >= numofele(this->FmtItems_))
          return;
       this->FmtItems_[this->ItemsCount_++] = item;
+      ++pchItem;
    }
 }
 

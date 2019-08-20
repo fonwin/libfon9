@@ -125,7 +125,16 @@ struct fon9_API FmtDef {
    }
 
    /// 解析 width[.precision]
-   void ParseWidth(const char* pcur, const char* pend);
+   /// - 傳回解析後的尾端位置.
+   /// - 解析 this->Width_ 之後, 判斷接著 width 的字元:
+   ///   - '_': FmtFlag::NoDecimalPoint;
+   ///   - '.': FmtFlag::HasPrecision;
+   ///   - 'p': pointer = 使用16進位輸出.
+   ///   - 'x': FmtFlag::BaseHex;
+   ///   - 'X': FmtFlag::BaseHEX;
+   ///   - 'o': FmtFlag::BaseOct;
+   ///   - 'b': FmtFlag::BaseBin;
+   const char* ParseWidth(const char* pcur, const char* pend);
 };
 
 template <typename ValueT>

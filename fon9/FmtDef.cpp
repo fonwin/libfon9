@@ -24,10 +24,10 @@ FmtDef::FmtDef(StrView fmtstr) {
       }
    }
 }
-void FmtDef::ParseWidth(const char* pcur, const char* pend) {
+const char* FmtDef::ParseWidth(const char* pcur, const char* pend) {
    this->Width_ = static_cast<WidthType>(NaiveStrToUInt(pcur, pend, &pcur));
    if (pcur == pend)
-      return;
+      return pcur;
    switch (*pcur) {
    case '_':
       this->Flags_ |= FmtFlag::NoDecimalPoint;
@@ -37,14 +37,17 @@ void FmtDef::ParseWidth(const char* pcur, const char* pend) {
       if (++pcur == pend)
          this->Precision_ = 0;
       else
-         this->Precision_ = static_cast<WidthType>(NaiveStrToUInt(pcur, pend));
-      break;
+         this->Precision_ = static_cast<WidthType>(NaiveStrToUInt(pcur, pend, &pcur));
+      return pcur;
    case 'p': // pointer = 使用16進位輸出.
    case 'x': this->Flags_ |= FmtFlag::BaseHex; break;
    case 'X': this->Flags_ |= FmtFlag::BaseHEX; break;
    case 'o': this->Flags_ |= FmtFlag::BaseOct; break;
    case 'b': this->Flags_ |= FmtFlag::BaseBin; break;
+   default:
+      return pcur;
    }
+   return pcur + 1;
 }
 
 } // namespace

@@ -97,6 +97,12 @@ inline TimeStamp::TimeStamp(const struct tm& tm)
    : base{TimeInterval_Second(stdtm_ToEpochSeconds(tm))} {
 }
 
+inline DayTime GetDayTime(TimeStamp now) {
+   const struct tm&  tm = GetDateTimeInfo(now);
+   return DayTime::Make<DayTime::Scale>(
+      static_cast<uint32_t>((tm.tm_hour * 60 + tm.tm_min) * 60 + tm.tm_sec) * DayTime::Divisor
+      + now.GetDecPart());
+}
 
 /// \ingroup AlNum
 /// 星期日=0, 星期一=1...
@@ -296,6 +302,12 @@ inline TimeStamp& operator-=(TimeStamp& ts, TimeZoneOffset tz) {
 /// 取得系統目前本地時區調整.
 /// 在初次使用時設定, 在程式結束前都會取相同的值.
 fon9_API TimeZoneOffset GetLocalTimeZoneOffset();
+
+/// \ingroup AlNum
+/// 取得 本地 現在時間.
+inline TimeStamp LocalNow() {
+   return UtcNow() + GetLocalTimeZoneOffset();
+};
 
 /// \ingroup AlNum
 /// 使用 tzName 取得當地時區調整.
