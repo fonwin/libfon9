@@ -53,6 +53,8 @@ void MaTree::OnMaTree_AfterRemove(Locker&, NamedSeed&) {
 }
 void MaTree::OnMaTree_AfterClear() {
 }
+void MaTree::OnMaTree_AfterUpdated(Locker&, NamedSeed&) {
+}
 
 bool MaTree::Add(NamedSeedSP seed, StrView logErrHeader) {
    {
@@ -101,55 +103,37 @@ void MaTree::OnParentSeedClear() {
 
 //--------------------------------------------------------------------------//
 
-fon9_WARN_DISABLE_PADDING;
-fon9_MSC_WARN_DISABLE_NO_PUSH(4355 /* 'this' : used in base member initializer list*/);
-struct MaTree::PodOp : public PodOpLocker<PodOp, Locker> {
-   fon9_NON_COPY_NON_MOVE(PodOp);
-   using base = PodOpLocker<PodOp, Locker>;
-   NamedSeedSP  Seed_;
-   PodOp(ContainerImpl::value_type& v, Tree& sender, OpResult res, const StrView& key, Locker& locker)
-      : base{*this, sender, res, key, locker}
-      , Seed_{v} {
+fon9_MSC_WARN_DISABLE(4355);/* 'this' : used in base member initializer list*/
+MaTree::PodOp::PodOp(ContainerImpl::value_type& v, Tree& sender, OpResult res, const StrView& key, Locker& locker)
+   : base{*this, sender, res, key, locker}
+   , Seed_{v} {
+}
+MaTree::PodOp::~PodOp() {
+   if (this->IsWrote_) {
+      this->Lock();
+      static_cast<MaTree*>(this->Sender_)->OnMaTree_AfterUpdated(this->Locker_, *this->Seed_);
    }
-   NamedSeed& GetSeedRW(Tab&) {
-      return *this->Seed_;
-   }
-   TreeSP HandleGetSapling(Tab&) {
-      return this->Seed_->GetSapling();
-   }
-   void HandleSeedCommand(Locker& ulk, SeedOpResult& res, StrView cmdln, FnCommandResultHandler&& resHandler) {
-      this->Unlock();
-      this->Seed_->OnSeedCommand(res, cmdln, std::move(resHandler), std::move(ulk));
-   }
-};
-
-struct MaTree::TreeOp : public fon9::seed::TreeOp {
-   fon9_NON_COPY_NON_MOVE(TreeOp);
-   using base = fon9::seed::TreeOp;
-   using base::base;
-   TreeOp(MaTree& tree) : base(tree) {
-   }
-
-   static void MakeNamedSeedView(NamedSeedContainerImpl::iterator ivalue, Tab* tab, RevBuffer& rbuf) {
-      if (tab)
-         FieldsCellRevPrint(tab->Fields_, SimpleRawRd{**ivalue}, rbuf, GridViewResult::kCellSplitter);
-      RevPrint(rbuf, (**ivalue).Name_);
-   }
-   void GridView(const GridViewRequest& req, FnGridViewOp fnCallback) override {
-      TreeOp_GridView_MustLock(*this, static_cast<MaTree*>(&this->Tree_)->Container_,
-                               req, std::move(fnCallback), &MakeNamedSeedView);
-   }
-
-   void Get(StrView strKeyText, FnPodOp fnCallback) override {
-      TreeOp_Get_MustLock<PodOp>(*this, static_cast<MaTree*>(&this->Tree_)->Container_, strKeyText, std::move(fnCallback));
-   }
-
-   // MaTree 不支援透過 Op 來 Add(), Remove();
-   // void Add(StrView strKeyText, FnPodOp fnCallback) override;
-   // void Remove(StrView strKeyText, Tab* tab, FnPodRemoved fnCallback) override;
-};
+}
+void MaTree::PodOp::BeginWrite(Tab& tab, FnWriteOp fnCallback) {
+   base::BeginWrite(tab, std::move(fnCallback));
+   this->IsWrote_ = true;
+}
+// -----------------------------------
+static void MakeNamedSeedView(NamedSeedContainerImpl::iterator ivalue, Tab* tab, RevBuffer& rbuf) {
+   if (tab)
+      FieldsCellRevPrint(tab->Fields_, SimpleRawRd{**ivalue}, rbuf, GridViewResult::kCellSplitter);
+   RevPrint(rbuf, (**ivalue).Name_);
+}
+void MaTree::TreeOp::GridView(const GridViewRequest& req, FnGridViewOp fnCallback) {
+   TreeOp_GridView_MustLock(*this, static_cast<MaTree*>(&this->Tree_)->Container_,
+                              req, std::move(fnCallback), &MakeNamedSeedView);
+}
+void MaTree::TreeOp::Get(StrView strKeyText, FnPodOp fnCallback) {
+   TreeOp_Get_MustLock<PodOp>(*this, static_cast<MaTree*>(&this->Tree_)->Container_,
+                              strKeyText, std::move(fnCallback));
+}
 fon9_WARN_POP;
-
+// -----------------------------------
 void MaTree::OnTreeOp(FnTreeOp fnCallback) {
    TreeOp op{*this};
    fnCallback(TreeOpResult{this, OpResult::no_error}, &op);

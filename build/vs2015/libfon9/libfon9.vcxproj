@@ -252,6 +252,7 @@
     <ClInclude Include="..\..\..\fon9\seed\ConfigGridView.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\FieldCharsL.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\FieldSchCfgStr.hpp" />
+    <ClInclude Include="..\..\..\fon9\seed\MaTreeConfig.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\NamedPark.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\Plugins.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\PluginsMgr.hpp" />
@@ -476,6 +477,7 @@
     <ClCompile Include="..\..\..\fon9\seed\ConfigGridView.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\FieldCharsL.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\FieldSchCfgStr.cpp" />
+    <ClCompile Include="..\..\..\fon9\seed\MaTreeConfig.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\NamedPark.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\Plugins.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\PluginsMgr.cpp" />

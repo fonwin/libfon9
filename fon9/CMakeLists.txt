@@ -106,6 +106,7 @@ set(fon9src
  seed/TreeOp.cpp
  seed/PodOp.cpp
  seed/MaTree.cpp
+ seed/MaTreeConfig.cpp
  seed/NamedPark.cpp
  seed/Field.cpp
  seed/FieldMaker.cpp

@@ -94,15 +94,53 @@ public:
 class fon9_API MaTree : public MaTreeBase {
    fon9_NON_COPY_NON_MOVE(MaTree);
    using base = MaTreeBase;
-   struct TreeOp;
-   struct PodOp;
 protected:
+   fon9_WARN_DISABLE_PADDING;
+   class PodOp : public PodOpLocker<PodOp, Locker> {
+      fon9_NON_COPY_NON_MOVE(PodOp);
+      using base = PodOpLocker<PodOp, Locker>;
+   public:
+      const NamedSeedSP Seed_;
+      bool              IsWrote_{false};
+      PodOp(ContainerImpl::value_type& v, Tree& sender, OpResult res, const StrView& key, Locker& locker);
+      ~PodOp();
+      void BeginWrite(Tab& tab, FnWriteOp fnCallback) override;
+
+      NamedSeed& GetSeedRW(Tab&) {
+         return *this->Seed_;
+      }
+      TreeSP HandleGetSapling(Tab&) {
+         return this->Seed_->GetSapling();
+      }
+      void HandleSeedCommand(Locker& ulk, SeedOpResult& res, StrView cmdln, FnCommandResultHandler&& resHandler) {
+         this->Unlock();
+         this->Seed_->OnSeedCommand(res, cmdln, std::move(resHandler), std::move(ulk));
+      }
+   };
+
+   class TreeOp : public fon9::seed::TreeOp {
+      fon9_NON_COPY_NON_MOVE(TreeOp);
+      using base = fon9::seed::TreeOp;
+   public:
+      using base::base;
+      TreeOp(MaTree& tree) : base(tree) {
+      }
+      void GridView(const GridViewRequest& req, FnGridViewOp fnCallback) override;
+      void Get(StrView strKeyText, FnPodOp fnCallback) override;
+      // MaTree 不支援透過 Op 來 Add(), Remove();
+      // void Add(StrView strKeyText, FnPodOp fnCallback) override;
+      // void Remove(StrView strKeyText, Tab* tab, FnPodRemoved fnCallback) override;
+   };
+   fon9_WARN_POP;
+
    /// 在 Add() 成功返回前(尚未解鎖) 的事件通知.
    virtual void OnMaTree_AfterAdd(Locker&, NamedSeed& seed);
    /// 在 Remove() 成功返回前(尚未解鎖) 的事件通知.
    virtual void OnMaTree_AfterRemove(Locker&, NamedSeed& seed);
    /// 在 OnParentSeedClear() 成功返回前(已解鎖) 的事件通知.
    virtual void OnMaTree_AfterClear();
+   /// 當 seed 有異動時通知.
+   virtual void OnMaTree_AfterUpdated(Locker&, NamedSeed& seed);
 
 public:
    /// 預設建構, 預設的Layout = Layout1: 包含一個 Tab: 內含3個欄位: Name, Title, Description;

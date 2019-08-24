@@ -1,4 +1,4 @@
-﻿// \file fon9/ConfigFileBinder.cpp
+﻿// \file fon9/ConfigFileBinder.hpp
 // \author fonwinz@gmail.com
 #ifndef __fon9_ConfigFileBinder_hpp__
 #define __fon9_ConfigFileBinder_hpp__
