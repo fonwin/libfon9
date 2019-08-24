@@ -23,8 +23,9 @@ TimerThreadSP GetDefaultTimerThread() {
 }
 
 //--------------------------------------------------------------------------//
-
 TimerEntry::~TimerEntry() {
+   if (this->TimerThread_->TimerController_.IsThreadEnding())
+      TimerThread::Locker{this->TimerThread_->TimerController_}->Erase(this->Key_);
 }
 void TimerEntry::DisposeAndWait() {
    while(!this->TimerThread_->TimerController_.IsThreadEnding()) {
@@ -119,6 +120,7 @@ TimerThread::TimerThread(std::string timerName) {
 }
 TimerThread::~TimerThread() {
    this->WaitForEndNow();
+   assert(Locker{this->TimerController_}->Timers_.empty());
 }
 void TimerThread::WaitForEndNow() {
    this->TimerController_.WaitForEndNow();
