@@ -55,6 +55,7 @@ const size_t         kFlushNodeCount = 20 * 1000; // 如果1個 node 256B, 則�
 File                 slistfd;
 
 void AppendLogLF(BufferList&& buf) {
+   // lock-free test.
    // 這裡不是很嚴謹，但只是先做測試。
    size_t c = buf.size();
    slist.push_back(reinterpret_cast<SListMPSC::Node*>(buf.front()), reinterpret_cast<SListMPSC::Node*>(buf.back()));
@@ -83,11 +84,11 @@ void AppendLogLF(BufferList&& buf) {
 
 class App : public Appender {
    using base = Appender;
-   virtual void MakeCallForWork(WorkContentLocker& lk) override {
+   virtual void MakeCallForWork(WorkContentLocker&& lk) override {
       if (kFlushNodeCount > 0 && lk->GetQueuingNodeCount() > kFlushNodeCount)
-         base::MakeCallForWork(lk);
+         base::MakeCallForWork(std::move(lk));
    }
-   virtual bool MakeCallNow(WorkContentLocker& lk) override {
+   virtual bool MakeCallNow(WorkContentLocker&& lk) override {
       lk.unlock();
       GetDefaultThreadPool().EmplaceMessage([this]() {
          this->Worker_.TakeCall();
@@ -197,6 +198,7 @@ void print_usage() {
     printf("Usage: logvs logName iCOUNT sSLEEP t1 t2 t3...\n"
            "    logName     fon9     use fon9_LOG_INFO(test_values)\n"
            "                fon9fmt  use fon9_LOG_INFO(fon9::Fmt{}, test_values)\n"
+         //"                fon9lf   lock-free test\n"
            "                spdlog\n"
            "                nanolog\n"
            "                mal\n"
