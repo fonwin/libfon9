@@ -37,11 +37,11 @@ template <
    class MessageHandlerT,
    class MessageT = typename MessageHandlerT::MessageType,
    class MessageContainerT = std::deque<MessageT>,
-   class WaitPolicy = WaitPolicy_CV
+   class WaitPolicyT = WaitPolicy_CV
 >
 class MessageQueue {
    fon9_NON_COPY_NON_MOVE(MessageQueue);
-   using QueueController = ThreadController<MessageContainerT, WaitPolicy>;
+   using QueueController = ThreadController<MessageContainerT, WaitPolicyT>;
    using LockerT = typename QueueController::Locker;
    using ThreadPool = std::vector<std::thread>;
    QueueController   QueueController_;
@@ -123,6 +123,7 @@ public:
    using MessageType = MessageT;
    using MessageContainer = MessageContainerT;
    using Locker = LockerT;
+   using WaitPolicyType = WaitPolicyT;
 
    MessageQueue() {
    }
@@ -137,7 +138,7 @@ public:
       RevBufferFixedSize<1024> rbuf;
       for (unsigned id = 0; id < threadCount;) {
          rbuf.Rewind();
-         RevPrint(rbuf, thrName, '.', ++id);
+         RevPrint(rbuf, thrName, "|indexInPool=", ++id);
          this->ThreadPool_.emplace_back(&ThrRun, rbuf.ToStrT<std::string>(), this);
       }
       this->ThreadPool_.shrink_to_fit();

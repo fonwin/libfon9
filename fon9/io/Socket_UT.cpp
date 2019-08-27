@@ -139,7 +139,7 @@ __ERROR_cstrErrFieldName:
    fon9::io::IoServiceArgs::CpuAffinity   cpus{1,2,3};
    CHECK_VALUE(sercfg, ServiceArgs_.CpuAffinity_, cpus);
    CHECK_VALUE(sercfg, ServiceArgs_.ThreadCount_, 99);
-   CHECK_VALUE(sercfg, ServiceArgs_.HowWait_,     fon9::io::HowWait::Busy);
+   CHECK_VALUE(sercfg, ServiceArgs_.HowWait_,     fon9::HowWait::Busy);
    CHECK_VALUE(sercfg, ServiceArgs_.Capacity_,    10240);
    CHECK_VALUE(sercfg, ListenBacklog_, 100);
 

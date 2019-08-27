@@ -3,34 +3,8 @@
 #include "fon9/io/IoServiceArgs.hpp"
 #include "fon9/StrTo.hpp"
 #include "fon9/Log.hpp"
-#include "fon9/Outcome.hpp"
 
 namespace fon9 { namespace io {
-
-static const StrView howWaitStrMap[]{
-   fon9_MAKE_ENUM_CLASS_StrView_NoSeq(1, HowWait, Block),
-   fon9_MAKE_ENUM_CLASS_StrView_NoSeq(2, HowWait, Yield),
-   fon9_MAKE_ENUM_CLASS_StrView_NoSeq(3, HowWait, Busy),
-};
-
-fon9_API HowWait StrToHowWait(StrView value) {
-   int idx = 0;
-   for (const StrView& v : howWaitStrMap) {
-      ++idx;
-      if (v == value)
-         return static_cast<HowWait>(idx);
-   }
-   return HowWait::Unknown;
-}
-
-fon9_API StrView HowWaitToStr(HowWait value) {
-   size_t idx = static_cast<size_t>(value) - 1;
-   if (idx >= numofele(howWaitStrMap))
-      return StrView("Unknown");
-   return howWaitStrMap[idx];
-}
-
-//--------------------------------------------------------------------------//
 
 ConfigParser::Result IoServiceArgs::OnTagValue(StrView tag, StrView& value) {
    const char* pvalbeg = value.begin();
@@ -75,28 +49,12 @@ ConfigParser::Result IoServiceArgs::OnTagValue(StrView tag, StrView& value) {
 //--------------------------------------------------------------------------//
 
 void ServiceThreadArgs::OnThrRunBegin(StrView msgHead) const {
-   Result3  cpuAffinityResult{Result3::kNoResult()};
-   if (this->CpuAffinity_ >= 0) {
-      #if defined(fon9_WINDOWS)
-      if (SetThreadAffinityMask(GetCurrentThread(), (static_cast<DWORD_PTR>(1) << this->CpuAffinity_)) == 0) {
-         cpuAffinityResult = GetSysErrC();
-      #else
-      cpu_set_t cpuset;
-      CPU_ZERO(&cpuset);
-      CPU_SET(this->CpuAffinity_, &cpuset);
-      if (int iErr = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset)) {
-         cpuAffinityResult = GetSysErrC(iErr);
-      #endif
-      }
-      else
-         cpuAffinityResult.SetSuccess();
-   }
+   Result3  cpuAffinityResult = SetCpuAffinity(this->CpuAffinity_);
    fon9_LOG_ThrRun(msgHead, ".ThrRun|name=", this->Name_,
                    "|index=", this->ThreadPoolIndex_ + 1,
                    "|Cpu=", this->CpuAffinity_, ':', cpuAffinityResult,
                    "|Wait=", HowWaitToStr(this->HowWait_),
                    "|Capacity=", this->Capacity_);
-
 }
 
 } } // namespaces

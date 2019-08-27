@@ -23,6 +23,7 @@ set(fon9src
  Log.cpp
  ErrC.cpp
  Outcome.cpp
+ Tools.cpp
  Named.cpp
  Blob.c
  ByteVector.cpp

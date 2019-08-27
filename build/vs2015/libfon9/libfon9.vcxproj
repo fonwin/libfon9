@@ -311,6 +311,7 @@
     <ClInclude Include="..\..\..\fon9\TimeInterval.hpp" />
     <ClInclude Include="..\..\..\fon9\Timer.hpp" />
     <ClInclude Include="..\..\..\fon9\TimeStamp.hpp" />
+    <ClInclude Include="..\..\..\fon9\Tools.hpp" />
     <ClInclude Include="..\..\..\fon9\ToStr.hpp" />
     <ClInclude Include="..\..\..\fon9\ToStrFmt.hpp" />
     <ClInclude Include="..\..\..\fon9\Trie.hpp" />
@@ -511,6 +512,7 @@
     <ClCompile Include="..\..\..\fon9\TimeInterval.cpp" />
     <ClCompile Include="..\..\..\fon9\Timer.cpp" />
     <ClCompile Include="..\..\..\fon9\TimeStamp.cpp" />
+    <ClCompile Include="..\..\..\fon9\Tools.cpp" />
     <ClCompile Include="..\..\..\fon9\ToStr.cpp" />
     <ClCompile Include="..\..\..\fon9\ToStrFmt.cpp" />
     <ClCompile Include="..\..\..\fon9\web\HttpDate.cpp" />

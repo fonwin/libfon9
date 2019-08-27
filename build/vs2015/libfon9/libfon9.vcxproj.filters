@@ -941,6 +941,9 @@
     <ClInclude Include="..\..\..\fon9\seed\MaTreeConfig.hpp">
       <Filter>Header Files\seed\_trees</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\Tools.hpp">
+      <Filter>Header Files\_base\_Tools / Utility</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -1506,6 +1509,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\seed\MaTreeConfig.cpp">
       <Filter>Source Files\seed\_trees</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\Tools.cpp">
+      <Filter>Source Files\_base\_Tools / Utility</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

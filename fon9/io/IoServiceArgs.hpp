@@ -3,6 +3,7 @@
 #ifndef __fon9_io_IoServiceArgs_hpp__
 #define __fon9_io_IoServiceArgs_hpp__
 #include "fon9/ConfigParser.hpp"
+#include "fon9/Tools.hpp"
 
 fon9_BEFORE_INCLUDE_STD;
 #include <thread>
@@ -10,18 +11,6 @@ fon9_BEFORE_INCLUDE_STD;
 fon9_AFTER_INCLUDE_STD;
 
 namespace fon9 { namespace io {
-
-enum class HowWait {
-   Unknown,
-   Block,
-   Yield,
-   Busy,
-};
-inline bool IsBlockWait(HowWait value) {
-   return value <= HowWait::Block;
-}
-fon9_API HowWait StrToHowWait(StrView value);
-fon9_API StrView HowWaitToStr(HowWait value);
 
 /// \ingroup io
 /// args: "ThreadCount=n|Wait=Policy|Cpus=List|Capacity=0"
