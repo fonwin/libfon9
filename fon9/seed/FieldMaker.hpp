@@ -40,28 +40,43 @@ namespace fon9 { namespace seed {
 ///   fon9_MakeField(Quote, Bid_.Pri_, "BidPri");
 /// \endcode
 #define fon9_MakeField(DerivedRaw, Member_, ...) \
+   fon9_MakeField_OfsAdj(0, DerivedRaw, Member_, __VA_ARGS__)
+
+/// \ingroup seed
+/// 類似 fon9_MakeField(DerivedRaw, Member_, ...); 但額外增加一個 ofsadj
+#define fon9_MakeField_OfsAdj(ofsadj, DerivedRaw, Member_, ...) \
    fon9::seed::MakeField(fon9::Named(__VA_ARGS__), \
-                        fon9_OffsetOfRawPointer(DerivedRaw, Member_), \
+                        fon9_OffsetOfRawPointer(DerivedRaw, Member_) + ofsadj, \
                         reinterpret_cast<DerivedRaw*>(0x1000)->Member_)
 
 /// \ingroup seed
 /// fon9_MakeField2(Request, Pri); 等同於 fon9_MakeField(Request, Pri_, "Pri"); 
 /// 若 Member 為複合式資料(例如: Bid_.Pri_), 則不適用.
-#define fon9_MakeField2(DerivedRaw, Member)  fon9_MakeField(DerivedRaw, Member##_, #Member)
+#define fon9_MakeField2(DerivedRaw, Member)  fon9_MakeField2_OfsAdj(0, DerivedRaw, Member)
+
+/// \ingroup seed
+/// 類似 fon9_MakeField2(DerivedRaw, Member_); 但額外增加一個 ofsadj
+#define fon9_MakeField2_OfsAdj(ofsadj, DerivedRaw, Member)  fon9_MakeField_OfsAdj(ofsadj, DerivedRaw, Member##_, #Member)
 
 /// \ingroup seed
 /// 不論 DerivedRaw::Member_ 是否為 const,
 /// 建立出來的欄位一律不提供修改(StrToCell,PutNumber,SetNull,Copy)功能.
 /// 只能取的欄位內容.
 #define fon9_MakeField_const(DerivedRaw, Member_, ...) \
+   fon9_MakeField_OfsAdj_const(0, DerivedRaw, Member_, __VA_ARGS__)
+
+#define fon9_MakeField_OfsAdj_const(ofsadj, DerivedRaw, Member_, ...) \
    fon9::seed::MakeField(fon9::Named(__VA_ARGS__), \
-                        fon9_OffsetOfRawPointer(DerivedRaw, Member_), \
+                        fon9_OffsetOfRawPointer(DerivedRaw, Member_) + ofsadj, \
                         reinterpret_cast<const DerivedRaw*>(0x1000)->Member_)
 
 /// \ingroup seed
 /// fon9_MakeField2_const(Request, Pri); 等同於 fon9_MakeField_const(Request, Pri_, "Pri"); 
 /// 若 Member 為複合式資料, 則不適用.
-#define fon9_MakeField2_const(DerivedRaw, Member)  fon9_MakeField_const(DerivedRaw, Member##_, #Member)
+#define fon9_MakeField2_const(DerivedRaw, Member)  fon9_MakeField2_OfsAdj_const(0, DerivedRaw, Member)
+
+#define fon9_MakeField2_OfsAdj_const(ofsadj, DerivedRaw, Member) \
+   fon9_MakeField_OfsAdj_const(0, DerivedRaw, Member##_, #Member)
 
 /// 透過註冊擴充自訂型別的 Field.
 typedef FieldSP (*FnFieldMaker) (StrView& fldcfg, char chSpl, char chTail);

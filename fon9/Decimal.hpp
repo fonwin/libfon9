@@ -116,6 +116,9 @@ public:
       return Decimal{static_cast<OrigType>(OrigNull)};
    }
 
+   constexpr bool IsNullOrZero() const {
+      return this->Value_ == OrigNull || this->Value_ == 0;
+   }
    constexpr bool IsNull() const {
       return this->Value_ == OrigNull;
    }
