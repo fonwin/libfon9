@@ -60,6 +60,17 @@ fon9_API void RevPrint(RevBuffer& rbuf, const SchConfig& schcfg) {
 
 //--------------------------------------------------------------------------//
 
+TimeStamp SchConfig::GetNextSchIn(TimeStamp now) const {
+   CheckResult res = this->Check(now);
+   if (res.SchSt_ == SchSt::OutSch) // 如果現在是 SchOut.
+      return res.NextCheckTime_;    // 則 NextCheckTime_ 就是 SchIn 的時間.
+   // 如果現在是 SchIn, 則 NextCheckTime_ 是 SchOut 的時間.
+   if (res.NextCheckTime_.GetOrigValue() == 0)
+      return res.NextCheckTime_;
+   now.SetOrigValue(res.NextCheckTime_.GetOrigValue() + 1);
+   res = this->Check(now);
+   return(res.SchSt_ == SchSt::InSch ? now : res.NextCheckTime_);
+}
 SchConfig::CheckResult SchConfig::Check(TimeStamp now) const {
    now += this->TimeZoneAdj_;
    CheckResult       res;
@@ -69,8 +80,8 @@ SchConfig::CheckResult SchConfig::Check(TimeStamp now) const {
    size_t            wday = static_cast<size_t>(tm.tm_wday);
    if (this->StartTime_ < this->EndTime_) { // 開始-結束: 在同一天.
       res.SchSt_ = (this->Weekdays_.test(wday) && (this->StartTime_ <= dnow && dnow <= this->EndTime_))
-                  ? SchSt::In : SchSt::Out;
-      if (res.SchSt_ == SchSt::In) // 排程時間內, 下次計時器=結束時間.
+                  ? SchSt::InSch : SchSt::OutSch;
+      if (res.SchSt_ == SchSt::InSch) // 排程時間內, 下次計時器=結束時間.
          next.Seconds_ = this->EndTime_.Seconds_ + 1;
       else if (this->Weekdays_.any()) { // 排程時間外, 今日尚未啟動: 下次計時器=(今日or次日)的開始時間.
          if (this->EndTime_ < dnow) // 排程時間外, 今日已結束: 下次計時器=次日開始時間.
@@ -85,22 +96,22 @@ __CHECK_TOMORROW:
       }
    } else { // 結束日 = 隔日.
       if (this->StartTime_ <= dnow) { // 起始時間已到, 尚未到達隔日.
-         res.SchSt_ = this->Weekdays_.test(wday) ? SchSt::In : SchSt::Out;
-         if (res.SchSt_ == SchSt::In) {
+         res.SchSt_ = this->Weekdays_.test(wday) ? SchSt::InSch : SchSt::OutSch;
+         if (res.SchSt_ == SchSt::InSch) {
             now += TimeInterval_Day(1);
             next.Seconds_ = this->EndTime_.Seconds_ + 1;
          } else if (this->Weekdays_.any())
             goto __CHECK_TOMORROW;
       }
       else { // 起始時間已到, 且已到達隔日.
-         res.SchSt_ = (dnow <= this->EndTime_) ? SchSt::In : SchSt::Out;
-         if (res.SchSt_ == SchSt::In) { // 尚未超過隔日結束時間.
+         res.SchSt_ = (dnow <= this->EndTime_) ? SchSt::InSch : SchSt::OutSch;
+         if (res.SchSt_ == SchSt::InSch) { // 尚未超過隔日結束時間.
             res.SchSt_ = this->Weekdays_.test(wday ? (wday - 1) : 6) // 看看昨日是否需要啟動.
-                         ? SchSt::In : SchSt::Out;
-            if (res.SchSt_ == SchSt::In)
+                         ? SchSt::InSch : SchSt::OutSch;
+            if (res.SchSt_ == SchSt::InSch)
                next.Seconds_ = this->EndTime_.Seconds_ + 1;
          }
-         if (res.SchSt_ != SchSt::In && this->Weekdays_.any())
+         if (res.SchSt_ != SchSt::InSch && this->Weekdays_.any())
             goto __CHECK_TODAY;
       }
    }
@@ -114,25 +125,31 @@ __CHECK_TOMORROW:
 //--------------------------------------------------------------------------//
 
 void SchTask::Timer::EmitOnTimer(TimeStamp now) {
-   SchTask&     sch = ContainerOf(*this, &SchTask::Timer_);
-   Impl::Locker impl{sch.Impl_};
-   bool         isCurInSch = (impl->SchState_ == SchState_InSch);
-   switch (impl->SchState_) {
-   case SchState_Restart:
-   case SchState_InSch:
-   case SchState_Stopped:
-   case SchState_OutSch:    break;
-   case SchState_Stopping:
-   case SchState_Disposing: return;
+   SchTask&        sch = ContainerOf(*this, &SchTask::Timer_);
+   SchImpl::Locker impl{sch.SchImpl_};
+   const SchSt     bfSt = impl->SchSt_;
+   switch (bfSt) {
+   case SchSt::Unknown:
+   case SchSt::Restart:
+   case SchSt::InSch:
+   case SchSt::Stopped:
+   case SchSt::OutSch:
+      break;
+   case SchSt::Stopping:
+   case SchSt::Disposing:
+      return;
    }
    auto res = impl->Config_.Check(now);
    if (res.NextCheckTime_.GetOrigValue() != 0)
       sch.Timer_.RunAt(res.NextCheckTime_);
-   if (isCurInSch != (res.SchSt_ == SchSt::In) || impl->SchState_ == SchState_Restart) {
-      impl->SchState_ = (res.SchSt_ == SchSt::In) ? SchState_InSch : SchState_OutSch;
+   if ((bfSt == SchSt::InSch) != (res.SchSt_ == SchSt::InSch) || bfSt == SchSt::Restart) {
+      impl->SchSt_ = res.SchSt_;
       impl.unlock();
-      sch.OnSchTask_StateChanged(res.SchSt_ == SchSt::In);
+      sch.OnSchTask_StateChanged(res.SchSt_ == SchSt::InSch);
    }
+   else
+      impl.unlock();
+   sch.OnSchTask_NextCheckTime(res);
 }
 
 //--------------------------------------------------------------------------//
@@ -140,58 +157,72 @@ void SchTask::Timer::EmitOnTimer(TimeStamp now) {
 SchTask::~SchTask() {
    this->Timer_.DisposeAndWait();
 }
-bool SchTask::SetSchState(SchState st) {
-   Impl::Locker   impl{this->Impl_};
-   if (impl->SchState_ >= SchState_Disposing)
+void SchTask::OnSchTask_NextCheckTime(const SchConfig::CheckResult&) {
+}
+bool SchTask::SetSchState(SchSt st) {
+   SchImpl::Locker impl{this->SchImpl_};
+   if (impl->SchSt_ >= SchSt::Disposing)
       return false;
-   impl->SchState_ = st;
+   impl->SchSt_ = st;
    return true;
 }
 bool SchTask::Restart(TimeInterval ti) {
-   Impl::Locker impl{this->Impl_};
-   switch (impl->SchState_) {
-   case SchState_Restart:
-   case SchState_InSch:
-   case SchState_Stopped:
-   case SchState_OutSch:    break;
-   case SchState_Stopping:
-   case SchState_Disposing: return false;
+   SchImpl::Locker impl{this->SchImpl_};
+   switch (impl->SchSt_) {
+   case SchSt::Unknown:
+   case SchSt::Restart:
+   case SchSt::InSch:
+   case SchSt::Stopped:
+   case SchSt::OutSch:
+      break;
+   case SchSt::Stopping:
+   case SchSt::Disposing:
+      return false;
    }
-   impl->SchState_ = SchState_Restart;
+   impl->SchSt_ = SchSt::Restart;
    this->Timer_.RunAfter(ti);
    return true;
 }
-bool SchTask::Start(const StrView& cfgstr) {
-   TimeStamp    now = UtcNow();
-   Impl::Locker impl{this->Impl_};
-   bool         isCurInSch = (impl->SchState_ == SchState_InSch);
+SchSt SchTask::Start(const StrView& cfgstr) {
+   TimeStamp       now = UtcNow();
+   SchImpl::Locker impl{this->SchImpl_};
+   const SchSt     retval = impl->SchSt_;
    impl->Config_.Parse(cfgstr);
-   switch (impl->SchState_) {
-   case SchState_InSch:
-   case SchState_Stopped:
-   case SchState_OutSch:    break;
-   case SchState_Stopping:
-   case SchState_Disposing: return false;
-   case SchState_Restart:   return true;
+   switch (retval) {
+   case SchSt::Unknown:
+      impl->SchSt_ = SchSt::Stopped;
+      break;
+   case SchSt::InSch:
+   case SchSt::Stopped:
+   case SchSt::OutSch:
+      break;
+   case SchSt::Stopping:
+   case SchSt::Disposing:
+   case SchSt::Restart:
+      return retval;
    }
    auto  res = impl->Config_.Check(now);
-   if (isCurInSch != (res.SchSt_ == SchSt::In))
-      res.NextCheckTime_ = now + TimeInterval_Second(1);
-   else if (res.NextCheckTime_.GetOrigValue() == 0) {//sch狀態正確 && 沒有結束時間: 不用啟動計時器.
+   if ((retval == SchSt::InSch) != (res.SchSt_ == SchSt::InSch)) {
+      this->Timer_.RunAt(now + TimeInterval_Second(1));
+      return(retval == SchSt::Unknown ? SchSt::Stopped : retval);
+   }
+   if (res.NextCheckTime_.GetOrigValue() == 0) {//sch狀態正確 && 沒有結束時間: 不用啟動計時器.
       this->Timer_.StopNoWait();
-      return true;
+      return retval;
    }
    this->Timer_.RunAt(res.NextCheckTime_);
-   return true;
+   impl.unlock();
+   this->OnSchTask_NextCheckTime(res);
+   return retval;
 }
 void SchTask::StopAndWait() {
-   if (!this->SetSchState(SchState_Stopping))
+   if (!this->SetSchState(SchSt::Stopping))
       return;
    this->Timer_.StopAndWait();
-   this->SetSchState(SchState_Stopped);
+   this->SetSchState(SchSt::Stopped);
 }
 void SchTask::DisposeAndWait() {
-   this->SetSchState(SchState_Disposing);
+   this->SetSchState(SchSt::Disposing);
    this->Timer_.DisposeAndWait();
 }
 

@@ -41,162 +41,162 @@ void TestSchConfigCheck_InDay() {
    PrintSchConfig(cfg);
    // 現在時間在 StartTime 之前:
    fon9::TimeStamp localNow = fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161225000000);// Sunday.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161226084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161226084500), fon9::SchSt::OutSch});
    localNow += fon9::TimeInterval_Day(1);//20161226: Mon.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161226084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161226084500), fon9::SchSt::OutSch});
    localNow += fon9::TimeInterval_Day(1);//20161227: Tue.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161227084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161227084500), fon9::SchSt::OutSch});
    localNow += fon9::TimeInterval_Day(1);//20161228: Wed.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161228084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161228084500), fon9::SchSt::OutSch});
    localNow += fon9::TimeInterval_Day(1);//20161229: Thr.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161229084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161229084500), fon9::SchSt::OutSch});
    localNow += fon9::TimeInterval_Day(1);//20161230: Fri.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161230084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161230084500), fon9::SchSt::OutSch});
    localNow += fon9::TimeInterval_Day(1);//20161231: Sat.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20170102084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20170102084500), fon9::SchSt::OutSch});
    // 現在時間==StartTime:
    localNow = fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161225084500);
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161226084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161226084500), fon9::SchSt::OutSch});
    localNow += fon9::TimeInterval_Day(1);//20161226: Mon.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161226135001), fon9::SchSt::In});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161226135001), fon9::SchSt::InSch});
    localNow += fon9::TimeInterval_Day(1);//20161227: Tue.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161227135001), fon9::SchSt::In});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161227135001), fon9::SchSt::InSch});
    localNow += fon9::TimeInterval_Day(1);//20161228: Wed.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161228135001), fon9::SchSt::In});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161228135001), fon9::SchSt::InSch});
    localNow += fon9::TimeInterval_Day(1);//20161229: Thr.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161229135001), fon9::SchSt::In});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161229135001), fon9::SchSt::InSch});
    localNow += fon9::TimeInterval_Day(1);//20161230: Fri.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161230135001), fon9::SchSt::In});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161230135001), fon9::SchSt::InSch});
    localNow += fon9::TimeInterval_Day(1);//20161231: Sat.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20170102084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20170102084500), fon9::SchSt::OutSch});
    // 現在時間==EndTime:
    localNow = fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161225135000);
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161226084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161226084500), fon9::SchSt::OutSch});
    localNow += fon9::TimeInterval_Day(1);//20161226: Mon.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161226135001), fon9::SchSt::In});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161226135001), fon9::SchSt::InSch});
    localNow += fon9::TimeInterval_Day(1);//20161227: Tue.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161227135001), fon9::SchSt::In});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161227135001), fon9::SchSt::InSch});
    localNow += fon9::TimeInterval_Day(1);//20161228: Wed.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161228135001), fon9::SchSt::In});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161228135001), fon9::SchSt::InSch});
    localNow += fon9::TimeInterval_Day(1);//20161229: Thr.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161229135001), fon9::SchSt::In});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161229135001), fon9::SchSt::InSch});
    localNow += fon9::TimeInterval_Day(1);//20161230: Fri.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161230135001), fon9::SchSt::In});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161230135001), fon9::SchSt::InSch});
    localNow += fon9::TimeInterval_Day(1);//20161231: Sat.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20170102084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20170102084500), fon9::SchSt::OutSch});
    // 現在時間已超過EndTime:
    localNow = fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161225135001);
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161226084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161226084500), fon9::SchSt::OutSch});
    localNow += fon9::TimeInterval_Day(1);//20161226: Mon.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161227084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161227084500), fon9::SchSt::OutSch});
    localNow += fon9::TimeInterval_Day(1);//20161227: Tue.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161228084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161228084500), fon9::SchSt::OutSch});
    localNow += fon9::TimeInterval_Day(1);//20161228: Wed.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161229084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161229084500), fon9::SchSt::OutSch});
    localNow += fon9::TimeInterval_Day(1);//20161229: Thr.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161230084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161230084500), fon9::SchSt::OutSch});
    localNow += fon9::TimeInterval_Day(1);//20161230: Fri.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20170102084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20170102084500), fon9::SchSt::OutSch});
    localNow += fon9::TimeInterval_Day(1);//20161231: Sat.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20170102084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20170102084500), fon9::SchSt::OutSch});
 }
 void TestSchConfigCheck_NoEnd() {
    fon9::SchConfig cfg{"Weekdays=12345|Start=084500"};
    PrintSchConfig(cfg);
    // 現在時間在 StartTime 之前:
    fon9::TimeStamp localNow = fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161225000000);// Sunday.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161226084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161226084500), fon9::SchSt::OutSch});
    localNow += fon9::TimeInterval_Day(1);//20161226: Mon.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161226084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161226084500), fon9::SchSt::OutSch});
    localNow += fon9::TimeInterval_Day(1);//20161227: Tue.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161227084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161227084500), fon9::SchSt::OutSch});
    localNow += fon9::TimeInterval_Day(1);//20161228: Wed.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161228084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161228084500), fon9::SchSt::OutSch});
    localNow += fon9::TimeInterval_Day(1);//20161229: Thr.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161229084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161229084500), fon9::SchSt::OutSch});
    localNow += fon9::TimeInterval_Day(1);//20161230: Fri.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161230084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161230084500), fon9::SchSt::OutSch});
    localNow += fon9::TimeInterval_Day(1);//20161231: Sat.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20170102084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20170102084500), fon9::SchSt::OutSch});
    // 現在時間==StartTime:
    localNow = fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161225084500);
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161226084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161226084500), fon9::SchSt::OutSch});
    localNow += fon9::TimeInterval_Day(1);//20161226: Mon.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::TimeStamp{}, fon9::SchSt::In});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::TimeStamp{}, fon9::SchSt::InSch});
    localNow += fon9::TimeInterval_Day(1);//20161227: Tue.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::TimeStamp{}, fon9::SchSt::In});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::TimeStamp{}, fon9::SchSt::InSch});
    localNow += fon9::TimeInterval_Day(1);//20161228: Wed.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::TimeStamp{}, fon9::SchSt::In});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::TimeStamp{}, fon9::SchSt::InSch});
    localNow += fon9::TimeInterval_Day(1);//20161229: Thr.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::TimeStamp{}, fon9::SchSt::In});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::TimeStamp{}, fon9::SchSt::InSch});
    localNow += fon9::TimeInterval_Day(1);//20161230: Fri.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::TimeStamp{}, fon9::SchSt::In});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::TimeStamp{}, fon9::SchSt::InSch});
    localNow += fon9::TimeInterval_Day(1);//20161231: Sat.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20170102084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20170102084500), fon9::SchSt::OutSch});
 }
 void TestSchConfigCheck_CrossDay() {
    fon9::SchConfig cfg{"Weekdays=12345|Start=08:45:00|End=05:30:00"};
    PrintSchConfig(cfg);
    // 現在時間在次日結束之前.
    fon9::TimeStamp localNow = fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161225000000);// Sunday.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161226084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161226084500), fon9::SchSt::OutSch});
    localNow += fon9::TimeInterval_Day(1);//20161226: Mon.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161226084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161226084500), fon9::SchSt::OutSch});
    localNow += fon9::TimeInterval_Day(1);//20161227: Tue.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161227053001), fon9::SchSt::In});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161227053001), fon9::SchSt::InSch});
    localNow += fon9::TimeInterval_Day(1);//20161228: Wed.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161228053001), fon9::SchSt::In});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161228053001), fon9::SchSt::InSch});
    localNow += fon9::TimeInterval_Day(1);//20161229: Thr.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161229053001), fon9::SchSt::In});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161229053001), fon9::SchSt::InSch});
    localNow += fon9::TimeInterval_Day(1);//20161230: Fri.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161230053001), fon9::SchSt::In});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161230053001), fon9::SchSt::InSch});
    localNow += fon9::TimeInterval_Day(1);//20161231: Sat.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161231053001), fon9::SchSt::In});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161231053001), fon9::SchSt::InSch});
    // 現在時間==StartTime:
    localNow = fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161225084500);
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161226084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161226084500), fon9::SchSt::OutSch});
    localNow += fon9::TimeInterval_Day(1);//20161226: Mon.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161227053001), fon9::SchSt::In});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161227053001), fon9::SchSt::InSch});
    localNow += fon9::TimeInterval_Day(1);//20161227: Tue.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161228053001), fon9::SchSt::In});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161228053001), fon9::SchSt::InSch});
    localNow += fon9::TimeInterval_Day(1);//20161228: Wed.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161229053001), fon9::SchSt::In});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161229053001), fon9::SchSt::InSch});
    localNow += fon9::TimeInterval_Day(1);//20161229: Thr.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161230053001), fon9::SchSt::In});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161230053001), fon9::SchSt::InSch});
    localNow += fon9::TimeInterval_Day(1);//20161230: Fri.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161231053001), fon9::SchSt::In});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161231053001), fon9::SchSt::InSch});
    localNow += fon9::TimeInterval_Day(1);//20161231: Sat.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20170102084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20170102084500), fon9::SchSt::OutSch});
    // 現在時間==EndTime:
    localNow = fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161225053000);
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161226084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161226084500), fon9::SchSt::OutSch});
    localNow += fon9::TimeInterval_Day(1);//20161226: Mon.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161226084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161226084500), fon9::SchSt::OutSch});
    localNow += fon9::TimeInterval_Day(1);//20161227: Tue.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161227053001), fon9::SchSt::In});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161227053001), fon9::SchSt::InSch});
    localNow += fon9::TimeInterval_Day(1);//20161228: Wed.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161228053001), fon9::SchSt::In});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161228053001), fon9::SchSt::InSch});
    localNow += fon9::TimeInterval_Day(1);//20161229: Thr.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161229053001), fon9::SchSt::In});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161229053001), fon9::SchSt::InSch});
    localNow += fon9::TimeInterval_Day(1);//20161230: Fri.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161230053001), fon9::SchSt::In});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161230053001), fon9::SchSt::InSch});
    localNow += fon9::TimeInterval_Day(1);//20161231: Sat.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161231053001), fon9::SchSt::In});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161231053001), fon9::SchSt::InSch});
    // 現在時間已超過EndTime,尚未到達 StartTime:
    localNow = fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161225060000);
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161226084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161226084500), fon9::SchSt::OutSch});
    localNow += fon9::TimeInterval_Day(1);//20161226: Mon.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161226084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161226084500), fon9::SchSt::OutSch});
    localNow += fon9::TimeInterval_Day(1);//20161227: Tue.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161227084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161227084500), fon9::SchSt::OutSch});
    localNow += fon9::TimeInterval_Day(1);//20161228: Wed.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161228084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161228084500), fon9::SchSt::OutSch});
    localNow += fon9::TimeInterval_Day(1);//20161229: Thr.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161229084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161229084500), fon9::SchSt::OutSch});
    localNow += fon9::TimeInterval_Day(1);//20161230: Fri.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161230084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20161230084500), fon9::SchSt::OutSch});
    localNow += fon9::TimeInterval_Day(1);//20161231: Sat.
-   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20170102084500), fon9::SchSt::Out});
+   TestSchConfigCheck(cfg, localNow, fon9::SchConfig::CheckResult{fon9::YYYYMMDDHHMMSS_ToTimeStamp(20170102084500), fon9::SchSt::OutSch});
 }
 
 void TestSchTask() {

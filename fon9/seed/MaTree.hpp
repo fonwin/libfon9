@@ -150,7 +150,7 @@ public:
 
    NamedSeedSP Remove(StrView name);
 
-   /// \retval false  seed->Name_ 已存在, 如果 !logErrHeader.empty() 則在帆回前會先記錄 log.
+   /// \retval false  seed->Name_ 已存在, 如果 !logErrHeader.empty() 則在返回前會先記錄 log.
    bool Add(NamedSeedSP seed, StrView logErrHeader = nullptr);
 
    /// Plant a NamedSeed.

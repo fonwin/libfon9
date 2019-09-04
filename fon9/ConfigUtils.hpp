@@ -27,5 +27,30 @@ inline EnabledYN NormalizeEnabledYN(EnabledYN v) {
    return toupper(static_cast<char>(v)) == static_cast<char>(EnabledYN::Yes) ? EnabledYN::Yes : EnabledYN{};
 }
 
+/// value == EnabledYN::Yes 輸出 *--pout = 'Y';
+/// 或不輸出(直接返回 pout);
+inline char* ToStrRev(char* pout, EnabledYN value) {
+   if (value == EnabledYN::Yes)
+      *--pout = 'Y';
+   return pout;
+}
+
+/// 移除 str 前端空白, 然後檢查第1碼:
+/// - str.empty()
+///   - 否則 *endptr = str.begin();
+///   - 返回 EnabledYN{};
+/// - toupper(str.Get1st())=='N';
+///   - 若 toupper(str)=="NO"; 則 *endptr = str.begin()+2;
+///   - 否則 *endptr = str.begin()+1;
+///   - 返回 EnabledYN{};
+/// - toupper(str.Get1st())=='Y';
+///   - 若 toupper(str)=="YES"; 則 *endptr = str.begin()+3;
+///   - 否則 *endptr = str.begin()+1;
+///   - 返回 EnabledYN::Yes;
+/// - 其餘:
+///   - 否則 *endptr = str.begin();
+///   - 返回 defaultValue;
+fon9_API EnabledYN StrTo(StrView str, EnabledYN defaultValue = EnabledYN{}, const char** endptr = nullptr);
+
 } // namespaces
 #endif//__fon9_ConfigUtils_hpp__

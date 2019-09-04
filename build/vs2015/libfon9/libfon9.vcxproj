@@ -252,7 +252,8 @@
     <ClInclude Include="..\..\..\fon9\seed\ConfigGridView.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\FieldCharsL.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\FieldSchCfgStr.hpp" />
-    <ClInclude Include="..\..\..\fon9\seed\MaTreeConfig.hpp" />
+    <ClInclude Include="..\..\..\fon9\seed\FileImpTree.hpp" />
+    <ClInclude Include="..\..\..\fon9\seed\MaConfigTree.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\NamedPark.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\Plugins.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\PluginsMgr.hpp" />
@@ -375,6 +376,7 @@
     <ClCompile Include="..\..\..\fon9\ConfigFileBinder.cpp" />
     <ClCompile Include="..\..\..\fon9\ConfigLoader.cpp" />
     <ClCompile Include="..\..\..\fon9\ConfigParser.cpp" />
+    <ClCompile Include="..\..\..\fon9\ConfigUtils.cpp" />
     <ClCompile Include="..\..\..\fon9\ConsoleIO.cpp" />
     <ClCompile Include="..\..\..\fon9\crypto\Sha1.cpp" />
     <ClCompile Include="..\..\..\fon9\crypto\Sha256.cpp" />
@@ -478,7 +480,8 @@
     <ClCompile Include="..\..\..\fon9\seed\ConfigGridView.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\FieldCharsL.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\FieldSchCfgStr.cpp" />
-    <ClCompile Include="..\..\..\fon9\seed\MaTreeConfig.cpp" />
+    <ClCompile Include="..\..\..\fon9\seed\FileImpTree.cpp" />
+    <ClCompile Include="..\..\..\fon9\seed\MaConfigTree.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\NamedPark.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\Plugins.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\PluginsMgr.cpp" />

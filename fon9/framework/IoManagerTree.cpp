@@ -126,7 +126,7 @@ void IoManagerTree::EmitOnTimer(TimerEntry* timer, TimeStamp now) {
             // 如果是 TimerFor::Open, 即使 SchSt 相同 => 也要依照 SchSt 決定關閉或啟動 item.
          }
 
-         if (res.SchSt_ == SchSt::In) {
+         if (res.SchSt_ == SchSt::InSch) {
             rthis.CheckOpenDevice(*item);
             if (!item->Device_) {
                // 開啟失敗: Factory 不正確? Factory.CreateDevice() 失敗?

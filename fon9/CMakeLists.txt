@@ -33,6 +33,7 @@ set(fon9src
  CmdArgs.cpp
  ConfigLoader.cpp
  ConfigParser.cpp
+ ConfigUtils.cpp
  DllHandle.cpp
  PkCont.cpp
  ObjSupplier.cpp
@@ -107,7 +108,8 @@ set(fon9src
  seed/TreeOp.cpp
  seed/PodOp.cpp
  seed/MaTree.cpp
- seed/MaTreeConfig.cpp
+ seed/MaConfigTree.cpp
+ seed/FileImpTree.cpp
  seed/NamedPark.cpp
  seed/Field.cpp
  seed/FieldMaker.cpp

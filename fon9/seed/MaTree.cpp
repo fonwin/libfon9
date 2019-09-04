@@ -59,7 +59,7 @@ void MaTree::OnMaTree_AfterUpdated(Locker&, NamedSeed&) {
 bool MaTree::Add(NamedSeedSP seed, StrView logErrHeader) {
    {
       Locker container{this->Container_};
-      auto   ires = container->insert(std::move(seed));
+      auto   ires = container->insert(seed);
       if (ires.second) {
          this->OnMaTree_AfterAdd(container, **ires.first);
          return true;

@@ -10,9 +10,13 @@ namespace fon9 {
 
 fon9_MSC_WARN_DISABLE(4820);
 enum class SchSt {
-   Out = 0,
-   In = 1,
-   Unknown = -1,
+   Unknown,
+   Restart,
+   Stopped,
+   Stopping,
+   InSch,
+   OutSch,
+   Disposing,
 };
 
 /// \ingroup Thrs
@@ -55,6 +59,9 @@ struct fon9_API SchConfig {
    /// 檢查 now 是否在排程時間內 & 計算下次檢查時間.
    CheckResult Check(TimeStamp now) const;
 
+   /// 取得下次 SchIn 的時間.
+   TimeStamp GetNextSchIn(TimeStamp now) const;
+
    /// 設定一直都在時間內 & 沒有結束時間.
    /// - "Weekdays=0123456|Start=00:00:00|End=|TZ=本機localtime offset(GetLocalTimeZoneOffset())"
    void SetAlwaysInSch();
@@ -66,7 +73,8 @@ struct fon9_API SchConfig {
 fon9_API void RevPrint(RevBuffer& rbuf, const SchConfig& schcfg);
 
 /// \ingroup Thrs
-/// 排程項目.
+/// 主動排程項目.
+/// 當 Start() 或 Restart() 之後, 會在 DefaultTimerThread 觸發排程事件.
 class fon9_API SchTask {
    fon9_NON_COPY_NON_MOVE(SchTask);
    struct Timer : public DataMemberTimer {
@@ -75,32 +83,29 @@ class fon9_API SchTask {
       virtual void EmitOnTimer(TimeStamp now) override;
    };
    Timer Timer_;
-   enum SchState {
-      SchState_Restart,
-      SchState_Stopped,
-      SchState_Stopping,
-      SchState_InSch,
-      SchState_OutSch,
-      SchState_Disposing,
-   };
-   struct ImplBase {
+
+protected:
+   struct SchImplBase {
       SchConfig   Config_;
-      SchState    SchState_{SchState_Stopped};
+      SchSt       SchSt_{SchSt::Unknown};
    };
-   using Impl = MustLock<ImplBase>;
-   Impl  Impl_;
-   bool SetSchState(SchState st);
+   using SchImpl = MustLock<SchImplBase>;
+   SchImpl  SchImpl_;
+   bool SetSchState(SchSt st);
    /// 當 [in sch => out sch] or [out sch => in sch] 時觸發事件.
    /// 在 Timer thread 觸發事件, 觸發時沒有鎖住任何東西.
    virtual void OnSchTask_StateChanged(bool isInSch) = 0;
+   /// 預設 do nothing, 僅用來通知下次檢查時間.
+   virtual void OnSchTask_NextCheckTime(const SchConfig::CheckResult&);
+
 public:
    SchTask() = default;
    virtual ~SchTask();
 
    /// 啟動 SchTask.
    /// 剛建立(或停止後)的 SchTask 一律在 SchOut 狀態, 所以剛建立(或停止後)的第一次觸發將會是 sch in 事件.
-   /// \retval false 已呼叫過 DisposeAndWait(), 或正在 StopAndWait();
-   bool Start(const StrView& cfgstr);
+   /// 返回啟動前的狀態.
+   SchSt Start(const StrView& cfgstr);
 
    /// 強迫在 ti 之後, 再次觸發 OnSchTask_StateChanged() 事件.
    /// \retval false 已呼叫過 DisposeAndWait(), 或正在 StopAndWait();
