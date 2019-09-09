@@ -92,10 +92,10 @@ fon9_WARN_POP;
 FileAppender::~FileAppender() {
    this->Worker_.TakeCall();
 }
-FileAppender::OpenResult FileAppender::Open(std::string fname, FileMode fmode) {
+FileAppender::OpenResult FileAppender::OpenAsync(std::string fname, FileMode fmode) {
    return NodeReopen::AddNode(*this, std::move(fname), fmode);
 }
-FileAppender::OpenResult FileAppender::Open(FileRotateSP&& frConfig, FileMode fmode) {
+FileAppender::OpenResult FileAppender::OpenAsync(FileRotateSP&& frConfig, FileMode fmode) {
    return NodeReopen::AddNode(*this, std::move(frConfig), fmode);
 }
 void FileAppender::CheckRotateTime(TimeStamp tm) {

@@ -11,42 +11,20 @@ constexpr uint32_t   kHeartBtInt = 10;
 
 //--------------------------------------------------------------------------//
 
-f9tws_API std::string TwsFixArgParser(ExgTradingLineFixArgs& args, fon9::StrView cfg) {
-   /// cfg = "BrkId=|SocketId=|Pass=|Fc=每秒最多筆數" 每個欄位都必須提供.
-   args.BrkId_.Clear(' ');
-   args.SocketId_.Clear(' ');
-   args.PassCode_ = static_cast<uint16_t>(-1);
-   args.FcCount_ = 0;
-   args.FcTimeMS_ = 1000;
-   fon9::StrView tag, value;
-   while (fon9::StrFetchTagValue(cfg, tag, value)) {
-      if (tag == "BrkId")
-         args.BrkId_.AssignFrom(value);
-      else if (tag == "SocketId" || tag == "PvcId")
-         args.SocketId_.AssignFrom(value);
-      else {
-         if (tag == "Pass")
-            args.PassCode_ = fon9::StrTo(&value, args.PassCode_);
-         else if (tag == "Fc") {
-            args.FcCount_ = fon9::StrTo(&value, args.FcCount_);
-            if (StrTrimHead(&value).Get1st() == '/') {
-               value.SetBegin(value.begin() + 1);
-               args.FcTimeMS_ = fon9::StrTo(&value, args.FcTimeMS_);
-            }
-         }
-         else
-            return tag.ToString("Unknown tag: ");
-         if (!StrTrim(&value).empty())
-            return tag.ToString() + value.ToString(" unknown value: ");
+bool ExgTradingLineFixArgs::Parse(fon9::StrView tag, fon9::StrView& value) {
+   if (tag == "Fc") {
+      this->FcCount_ = fon9::StrTo(&value, this->FcCount_);
+      if (StrTrimHead(&value).Get1st() == '/') {
+         value.SetBegin(value.begin() + 1);
+         this->FcTimeMS_ = fon9::StrTo(&value, this->FcTimeMS_);
       }
+      return value.empty();
    }
-   if (fon9::isspace(args.BrkId_.Chars_[0]))
-      return "Unknown BrkId";
-   if (fon9::isspace(args.SocketId_.Chars_[0]))
-      return "Unknown SocketId";
-   if (static_cast<int16_t>(args.PassCode_) < 0)
-      return "Unknown Pass";
-   return std::string{};
+   return base::Parse(tag, value);
+}
+
+f9tws_API std::string ExgTradingLineFixArgsParser(ExgTradingLineFixArgs& args, fon9::StrView cfg) {
+   return ExgLineArgsParser(args, cfg);
 }
 
 //--------------------------------------------------------------------------//

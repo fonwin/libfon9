@@ -17,7 +17,7 @@ FixRecorder::~FixRecorder() {
 File::Result FixRecorder::Initialize(std::string fileName) {
    if (this->GetStorage().IsOpened())
       return File::Result{std::errc::text_file_busy};
-   auto res = this->Open(std::move(fileName), FileMode::Append | FileMode::CreatePath | FileMode::Read | FileMode::DenyWrite).get();
+   auto res = this->OpenImmediately(std::move(fileName), FileMode::Append | FileMode::CreatePath | FileMode::Read | FileMode::DenyWrite);
    if (!res)
       return res;
    FixParser fixParser;

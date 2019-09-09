@@ -31,6 +31,8 @@ public:
       Broken = -2,
       /// 拒絕送出 Request: 通常是 Request 的內容有誤.
       RejectRequest = -3,
+      /// 例如: 零股線路, 不支援定價交易.
+      NotSupport = -4,
    };
    /// 設計衍生者請注意:
    /// 透過 TradingLineManager 來的下單要求, 必定已經鎖住「可用線路表」,
@@ -65,7 +67,9 @@ fon9_WARN_DISABLE_PADDING;
 /// \ingroup fmkt
 /// 交易連線管理員基底.
 /// - 負責尋找可下單的線路送出下單要求.
-/// - 負責等候流量管制時間, 時間到解除管制時, 透過 OnNewTradingLineReady() 通知.
+/// - 負責處理流量管制:
+///   - 有線路但暫時無法送單(例: FIX流量管制, TMP送單中), 將下單要求放到 Queue.
+///   - 等候流量管制時間, 時間到解除管制時, 透過 OnNewTradingLineReady() 通知.
 class fon9_API TradingLineManager {
    fon9_NON_COPY_NON_MOVE(TradingLineManager);
 

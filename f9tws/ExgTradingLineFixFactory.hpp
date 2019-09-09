@@ -3,23 +3,22 @@
 #ifndef __f9tws_ExgTradingLineFixFactory_hpp__
 #define __f9tws_ExgTradingLineFixFactory_hpp__
 #include "f9tws/ExgTradingLineFix.hpp"
-#include "f9tws/ExgTradingLineMgr.hpp"
-#include "fon9/framework/IoFactory.hpp"
+#include "f9tws/ExgLineFactory.hpp"
 
 namespace f9tws {
 
-class f9tws_API ExgTradingLineFixFactory : public fon9::SessionFactory {
+class f9tws_API ExgTradingLineFixFactory : public ExgLineFactory {
    fon9_NON_COPY_NON_MOVE(ExgTradingLineFixFactory);
-   using base = fon9::SessionFactory;
+   using base = ExgLineFactory;
 protected:
    f9fix::FixConfig  FixConfig_;
-   std::string       FixLogPathFmt_;
 
-   /// 預設 = 本地時間 = UtcNow() + GetLocalTimeZoneOffset();
-   virtual fon9::TimeStamp GetTDay();
-   virtual fon9::io::SessionSP CreateTradingLine(ExgTradingLineMgr&           lineMgr,
-                                                 const ExgTradingLineFixArgs& args,
-                                                 f9fix::IoFixSenderSP         fixSender) = 0;
+   fon9::io::SessionSP CreateTradingLine(ExgTradingLineMgr& lineMgr,
+                                         const fon9::IoConfigItem& cfg,
+                                         std::string& errReason) override;
+   virtual fon9::io::SessionSP CreateTradingLineFix(ExgTradingLineMgr&           lineMgr,
+                                                    const ExgTradingLineFixArgs& args,
+                                                    f9fix::IoFixSenderSP         fixSender) = 0;
 public:
    /// 衍生者必須自行處理相關訊息:
    /// this->FixConfig_.Fetch(f9fix_kMSGTYPE_ExecutionReport).FixMsgHandler_ = &OnFixExecutionReport;
@@ -29,11 +28,6 @@ public:
    /// this->FixConfig_.Fetch(f9fix_kMSGTYPE_OrderCancelRequest).FixRejectHandler_ = &OnFixReject;
    /// this->FixConfig_.Fetch(f9fix_kMSGTYPE_OrderStatusRequest).FixRejectHandler_ = &OnFixReject;
    ExgTradingLineFixFactory(std::string fixLogPathFmt, Named&& name);
-
-   /// mgr 必須是 f9tws::ExgTradingLineMgr
-   fon9::io::SessionSP CreateSession(fon9::IoManager& mgr, const fon9::IoConfigItem& cfg, std::string& errReason) override;
-   /// 券商端 FIX, 不支援 SessionServer.
-   fon9::io::SessionServerSP CreateSessionServer(fon9::IoManager& mgr, const fon9::IoConfigItem& cfg, std::string& errReason) override;
 };
 
 } // namespaces

@@ -12,7 +12,7 @@ TradingLineManager::~TradingLineManager() {
 }
 void TradingLineManager::OnBeforeDestroy() {
    this->FlowControlTimer_.DisposeAndWait();
-   this->ClearReqQueue(TradingSvr::Locker{this->TradingSvr_}, "TradingLineManager dtor.");
+   this->ClearReqQueue(TradingSvr::Locker{this->TradingSvr_}, "TradingLineManager.dtor");
 }
 void TradingLineManager::OnTradingLineBroken(TradingLine& src) {
    TradingSvr::Locker tsvr{this->TradingSvr_};
@@ -76,6 +76,7 @@ SendRequestResult TradingLineManager::SendRequestImpl(TradingRequest& req, const
    if (size_t lineCount = tsvr->Lines_.size()) {
       using LineSendResult = TradingLine::SendResult;
       LineSendResult resFlowControl{LineSendResult::Busy};
+      bool           hasBusyLine = false;
       for (size_t L = 0; L < lineCount; ++L) {
 
          // 若有多條線路, 目前使用輪流(均分)的方式送出要求.
@@ -98,7 +99,12 @@ SendRequestResult TradingLineManager::SendRequestImpl(TradingRequest& req, const
          }
          else if (fon9_LIKELY(resSend == LineSendResult::RejectRequest))
             return SendRequestResult::RejectRequest;
-         else if (fon9_LIKELY(resSend != LineSendResult::Busy)) {
+         else if (fon9_LIKELY(resSend == LineSendResult::NotSupport)) {
+            // 等迴圈結束, 再來判斷是否需要 Queue.
+         }
+         else if (fon9_LIKELY(resSend == LineSendResult::Busy))
+            hasBusyLine = true;
+         else {
             assert(resSend == LineSendResult::Broken);
             tsvr->Lines_.erase(tsvr->Lines_.begin() + tsvr->LineIndex_);
             if (L < --lineCount)
@@ -111,6 +117,9 @@ SendRequestResult TradingLineManager::SendRequestImpl(TradingRequest& req, const
       } // for(L < lineCount)
       if (resFlowControl >= LineSendResult::FlowControl)
          this->FlowControlTimer_.RunAfter(ToFlowControlInterval(resFlowControl));
+      else if (!hasBusyLine) { // All not support.
+         goto __SendRequestResult_NoReadyLine;
+      }
       return SendRequestResult::Queuing;
    }
 __SendRequestResult_NoReadyLine:

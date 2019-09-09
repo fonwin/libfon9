@@ -132,7 +132,7 @@ public:
          frConfig->CheckTime(UtcNow());
       gWaitLogSystemReady = &WaitLogSystemReady;
       static intrusive_ptr<LogFileImpl> LogFile_{new LogFileImpl{*frConfig}};
-      auto resfut = gLogFile->Open(std::move(frConfig), FileMode::CreatePath);
+      auto resfut = gLogFile->OpenAsync(std::move(frConfig), FileMode::CreatePath);
       LogSystemReadyLatch_.CountDown();
       gLogFile->SetHighWaterLevelNodeCount(highWaterLevelNodeCount);
       gLogFile->Worker_.TakeCall();//強制處理開檔要求.

@@ -91,8 +91,16 @@ public:
    ~FileAppender();
 
    using OpenResult = std::future<Result>;
-   OpenResult Open(std::string fname, FileMode fmode);
-   OpenResult Open(FileRotateSP&& frConfig, FileMode fmode);
+   OpenResult OpenAsync(std::string fname, FileMode fmode);
+   OpenResult OpenAsync(FileRotateSP&& frConfig, FileMode fmode);
+
+   template <class... ArgsT>
+   Result OpenImmediately(ArgsT&&... args) {
+      auto fres = this->OpenAsync(std::forward<ArgsT>(args)...);
+      this->Worker_.TakeCall(); //強制處理開檔要求.
+      return fres.get();
+   }
+
    void CheckRotateTime(TimeStamp tm);
 
    void Close() {

@@ -76,18 +76,26 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\f9tws\ExgMktFeeder.cpp" />
     <ClCompile Include="..\..\..\f9tws\ExgMktPlayer.cpp" />
+    <ClCompile Include="..\..\..\f9tws\ExgLineArgs.cpp" />
+    <ClCompile Include="..\..\..\f9tws\ExgLineFactory.cpp" />
     <ClCompile Include="..\..\..\f9tws\ExgTradingLineFix.cpp" />
     <ClCompile Include="..\..\..\f9tws\ExgTradingLineFixFactory.cpp" />
     <ClCompile Include="..\..\..\f9tws\ExgTradingLineMgr.cpp" />
+    <ClCompile Include="..\..\..\f9tws\ExgLineTmp.cpp" />
+    <ClCompile Include="..\..\..\f9tws\ExgLineTmpFactory.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\f9tws\ExgMktFeeder.hpp" />
     <ClInclude Include="..\..\..\f9tws\Config.h" />
     <ClInclude Include="..\..\..\f9tws\ExgMktFmt.hpp" />
     <ClInclude Include="..\..\..\f9tws\ExgMktFmt6.hpp" />
+    <ClInclude Include="..\..\..\f9tws\ExgLineArgs.hpp" />
+    <ClInclude Include="..\..\..\f9tws\ExgLineFactory.hpp" />
     <ClInclude Include="..\..\..\f9tws\ExgTradingLineFix.hpp" />
     <ClInclude Include="..\..\..\f9tws\ExgTradingLineFixFactory.hpp" />
     <ClInclude Include="..\..\..\f9tws\ExgTradingLineMgr.hpp" />
+    <ClInclude Include="..\..\..\f9tws\ExgLineTmp.hpp" />
+    <ClInclude Include="..\..\..\f9tws\ExgLineTmpFactory.hpp" />
     <ClInclude Include="..\..\..\f9tws\ExgTypes.hpp" />
   </ItemGroup>
   <ItemGroup>

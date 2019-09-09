@@ -45,7 +45,7 @@ void TestAppender(fon9::Appender& app) {
 void TestTimerFlush() {
    fon9::RevBufferFixedSize<1024> rbuf;
    fon9::AsyncFileAppenderSP      fapp{fon9::LogFileAppender::Make()};
-   auto oresfut = fapp->Open("./logs/fapp.log", fon9::FileMode::CreatePath);
+   auto oresfut = fapp->OpenAsync("./logs/fapp.log", fon9::FileMode::CreatePath);
    auto ores = oresfut.get();
    rbuf.RewindEOS();
    fon9::RevPrint(rbuf, "OpenResult|", ores);

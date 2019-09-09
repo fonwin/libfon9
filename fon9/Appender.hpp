@@ -47,7 +47,7 @@ protected:
    //using Mutex = SpinBusy;
    using Mutex = SpinMutex<YieldSleepPolicy>;
 
-   struct WorkContentController : public MustLock<WorkContent, Mutex> {
+   struct fon9_API WorkContentController : public MustLock<WorkContent, Mutex> {
       fon9_NON_COPY_NON_MOVE(WorkContentController);
       WorkContentController() = default;
 

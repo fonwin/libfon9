@@ -26,6 +26,9 @@ struct CharAry : public Comparable<CharAry<arysz, CharT, kChFiller>> {
    CharAry(const StrView& str) {
       this->CopyFrom(str.begin(), str.size());
    }
+   CharAry(const char* src, size_t srcsz) {
+      this->CopyFrom(src, srcsz);
+   }
 
    template <size_t srcsz>
    CharAry(const CharT(&src)[srcsz]) {
@@ -127,6 +130,20 @@ public:
    friend inline void RevPrint(RevBuffer& rbuf, const CharAryF& value) {
       RevPutMem(rbuf, value.Chars_, value.size());
    }
+
+   int Compare(const CharAryF& rhs) const {
+      return memcmp(this->Chars_, rhs.Chars_, this->size());
+   }
+   bool operator<(const CharAryF& rhs) const {
+      return this->Compare(rhs) < 0;
+   }
+   bool operator==(const CharAryF& rhs) const {
+      return this->Compare(rhs) == 0;
+   }
+   inline friend bool operator!=(const CharAryF& lhs, const CharAryF& rhs) { return !(lhs == rhs); }
+   inline friend bool operator> (const CharAryF& lhs, const CharAryF& rhs) { return (rhs < lhs);   }
+   inline friend bool operator<=(const CharAryF& lhs, const CharAryF& rhs) { return !(rhs < lhs);  }
+   inline friend bool operator>=(const CharAryF& lhs, const CharAryF& rhs) { return !(lhs < rhs);  }
 };
 
 } // namespace fon9
