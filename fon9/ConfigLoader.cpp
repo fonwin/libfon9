@@ -167,13 +167,8 @@ ConfigLoader::LineCount ConfigLoader::IncludeFile(LineFromSP includeFrom, const 
    CharVector cfgout;
    if (this->OpenRead(includeFrom, cfgfn, cfgout) <= 0)
       return 0;
-   // 移除 UTF-8-BOM: ef bb bf
    StrView cfgstr{ToStrView(cfgout)};
-   if (cfgstr.size() >= 3) {
-      const char* pbeg = cfgstr.begin();
-      if (pbeg[0] == '\xef' && pbeg[1] == '\xbb' && pbeg[2] == '\xbf')
-         cfgstr.SetBegin(pbeg + 3);
-   }
+   StrView_RemoveBOM(&cfgstr);
    return this->Append(includeFrom, cfgstr);
 }
 ConfigLoader::LineCount ConfigLoader::OnConfigInclude(LineFromSP includeFrom, const StrView& cfgfn) {

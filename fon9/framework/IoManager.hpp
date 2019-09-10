@@ -13,7 +13,7 @@
 namespace fon9 {
 
 fon9_WARN_DISABLE_PADDING;
-struct IoManagerArgs {
+struct fon9_API IoManagerArgs {
    std::string Name_;
    
    /// 設定檔, 如果為空, 表示不使用設定檔.
@@ -31,6 +31,22 @@ struct IoManagerArgs {
 
    /// 提供 IoManager 建構結果, 例如: 提供 ConfigFileBinder_.OpenRead(...args.CfgFileName_); 的錯誤訊息.
    mutable std::string Result_;
+
+   IoManagerArgs() = default;
+   IoManagerArgs(std::string name) : Name_{std::move(name)} {
+   }
+
+   /// - 移除 iosvCfg 的括號之後, 然後判斷首碼.
+   /// - 若 iosvCfg.Get1st()=='/'
+   ///   - 則從 holder.Root_ 尋找 IoManager 填入 this->IoServiceSrc_;
+   ///   - 例如: iosvCfg = "/MaIo";
+   ///   - 若沒找到 IoManager, 則:
+   ///     - holder.SetPluginsSt(LogLevel::Error, this->Name_, ".SetIoService|err=", ...);
+   ///     - 返回 false;
+   /// - 若 iosvCfg.Get1st()!='/'
+   ///   - this->IoServiceCfgstr_ = iosvCfg.ToString();
+   ///   - this->IoServiceSrc_.reset();
+   bool SetIoServiceCfg(seed::PluginsHolder& holder, StrView iosvCfg);
 };
 
 class fon9_API IoManager : public io::Manager {

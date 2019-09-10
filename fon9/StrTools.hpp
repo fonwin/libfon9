@@ -92,6 +92,7 @@ constexpr bool isupper(int ch) { return 'A' <= ch && ch <= 'Z'; }
 constexpr bool islower(int ch) { return 'a' <= ch && ch <= 'z'; }
 constexpr bool isalpha(int ch) { return (static_cast<unsigned>(ch | 32) - 97) < 26u; }
 constexpr bool isdigit(int ch) { return static_cast<unsigned>(ch - '0') <= 9; }
+constexpr bool iscrlf(int ch) { return ch == '\r' || ch == '\n'; }
 
 constexpr bool isnotcntrl(int ch) { return !iscntrl(ch); }
 constexpr bool isnotprint(int ch) { return !isprint(ch); }
@@ -103,6 +104,7 @@ constexpr bool isnotupper(int ch) { return !isupper(ch); }
 constexpr bool isnotlower(int ch) { return !islower(ch); }
 constexpr bool isnotalpha(int ch) { return !isalpha(ch); }
 constexpr bool isnotdigit(int ch) { return !isdigit(ch); }
+constexpr bool isnotcrlf(int ch) { return !iscrlf(ch); }
 
 fon9_API bool iequals(StrView a, StrView r);
 fon9_API int icompare(const char* a, const char* b, size_t sz);
@@ -204,6 +206,11 @@ inline const char* StrFindTrimTail(const char* pbeg, const char* pend) {
 /// - 傳回值: reference of `*str`
 inline StrView& StrTrimTail(StrView* str) {
    str->SetEnd(StrFindTrimTail(str->begin(), str->end()));
+   return *str;
+}
+inline StrView& StrRemoveTailCRLF(StrView* str) {
+   const char* p = StrRFindIf(str->begin(), str->end(), isnotcrlf);
+   str->SetEnd(p ? p + 1 : str->begin());
    return *str;
 }
 
@@ -492,6 +499,21 @@ inline std::string StrView_ToEscapeStr(StrView src, StrView chSpecials = StrView
 /// 如果切除的位置剛好是一個 [utf8字] 的一部份, 則長度會再縮減, 避免有被切斷的 [utf8字].
 /// \return 傳回切割後的字串, 不會變動 utf8str.
 fon9_API StrView StrView_TruncUTF8(StrView utf8str, size_t expectLen);
+
+/// \ingroup AlNum
+/// 移除 src 開頭的 UTF-8 BOM.
+inline const char* StrRemoveBOM(const char* src, size_t srcsz) {
+   if (srcsz >= 3 && src[0] == '\xef' && src[1] == '\xbb' && src[2] == '\xbf')
+      return src + 3;
+   return src;
+}
+inline bool StrView_RemoveBOM(StrView* src) {
+   const char* p = StrRemoveBOM(src->begin(), src->size());
+   if (p == src->begin())
+      return false;
+   src->SetBegin(p);
+   return true;
+}
 
 //--------------------------------------------------------------------------//
 

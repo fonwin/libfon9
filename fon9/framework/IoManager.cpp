@@ -4,6 +4,26 @@
 
 namespace fon9 {
 
+bool IoManagerArgs::SetIoServiceCfg(seed::PluginsHolder& holder, StrView iosvCfg) {
+   StrView inValue = SbrFetchInsideNoTrim(iosvCfg);
+   if (!inValue.IsNull())
+      iosvCfg = inValue;
+   iosvCfg = fon9::StrTrim(&iosvCfg);
+   if (iosvCfg.Get1st() != '/') {
+      this->IoServiceCfgstr_ = iosvCfg.ToString();
+      this->IoServiceSrc_.reset();
+      return true;
+   }
+   iosvCfg.SetBegin(iosvCfg.begin() + 1);
+   this->IoServiceSrc_ = holder.Root_->GetSapling<fon9::IoManager>(iosvCfg);
+   if (this->IoServiceSrc_)
+      return true;
+   iosvCfg.SetBegin(iosvCfg.begin() - 1);
+   holder.SetPluginsSt(fon9::LogLevel::Error, this->Name_, ".SetIoService"
+                       "|err=Unknown IoManager: ", iosvCfg);
+   return false;
+}
+//--------------------------------------------------------------------------//
 IoManager::IoManager(const IoManagerArgs& args)
    : Name_{args.Name_}
    , SessionFactoryPark_{args.SessionFactoryPark_ ? args.SessionFactoryPark_ : new SessionFactoryPark{"SessionFactoryPark"}}

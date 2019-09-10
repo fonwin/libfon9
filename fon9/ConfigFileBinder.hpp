@@ -23,8 +23,9 @@ public:
    }
 
    /// 開啟設定檔, 載入內容, 若有失敗則傳回錯誤訊息.
-   /// - retval.empty() 表示成功, 可透過 GetConfigStr() 取得載入的內容,
-   ///   若 isAutoBackup==true(預設為true) 則返回前會先 BackupConfig().
+   /// - retval.empty() 表示成功, 可透過 GetConfigStr() 取得載入的內容.
+   ///   - 若 isAutoBackup==true(預設為true) 則返回前會先 BackupConfig().
+   ///   - 移除檔頭的 BOM(ef bb bf);
    /// - 若有失敗, 除了傳回錯誤訊息外, 如果 logHeader != nullptr 則還會透過 log 記錄錯誤訊息.
    std::string OpenRead(StrView logErrHeader, std::string cfgfn, bool isAutoBackup = true);
 

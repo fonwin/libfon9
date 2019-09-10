@@ -31,7 +31,8 @@ void GridViewToContainer::ParseFieldNames(const Fields& tabflds, StrView& cfgstr
    this->Fields_.clear();
    this->Fields_.reserve(tabflds.size());
    StrView ln = StrFetchNoTrim(cfgstr, *fon9_kCSTR_ROWSPL);
-   StrFetchNoTrim(ln, *fon9_kCSTR_CELLSPL);// skip key field name.
+   // 為了讓有些使用 editor 工具修改, 造成尾端 "\n" 變成 "\r\n", 所以增加 StrRemoveTailCRLN();
+   StrFetchNoTrim(StrRemoveTailCRLF(&ln), *fon9_kCSTR_CELLSPL);// skip key field name.
    while (!ln.empty())
       this->Fields_.push_back(tabflds.Get(StrFetchNoTrim(ln, *fon9_kCSTR_CELLSPL)));
 }
@@ -40,7 +41,7 @@ void GridViewToContainer::ParseConfigStr(StrView cfgstr) {
    while (!cfgstr.empty()) {
       ++lineNo;
       StrView ln = StrFetchNoTrim(cfgstr, *fon9_kCSTR_ROWSPL);
-      if (ln.empty())
+      if (StrRemoveTailCRLF(&ln).empty())
          continue;
       StrView keyText = StrFetchNoTrim(ln, *fon9_kCSTR_CELLSPL);
       this->OnNewRow(keyText, ln);

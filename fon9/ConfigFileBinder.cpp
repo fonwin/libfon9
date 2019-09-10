@@ -46,6 +46,10 @@ std::string ConfigFileBinder::OpenRead(StrView logErrHeader, std::string cfgfn, 
    auto res = CheckRW(logErrHeader, "Read", fres, this->ConfigStr_.size(), fd);
    if (isAutoBackup && res.empty()) // 載入成功, 備份設定檔.
       BackupConfig(logErrHeader, *this);
+   const char* before = this->ConfigStr_.c_str();
+   const char* after = StrRemoveBOM(before, this->ConfigStr_.size());
+   if(after != before)
+      this->ConfigStr_.erase(0u, static_cast<size_t>(after - before));
    return res;
 }
 std::string ConfigFileBinder::WriteConfig(StrView logErrHeader, std::string cfgstr, bool isAutoBackup) {
