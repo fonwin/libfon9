@@ -146,7 +146,8 @@ inline void SerializeIn(Archive& ar, T&& v, ArgsT&&... args) {
 
 fon9_WARN_DISABLE_PADDING;
 /// 輔助儲存、取出有版本訊息的資料.
-/// 使用範例:
+/// - 若只是單純的在尾端增加欄位, 則可以使用 InArchiveClearBack<> 機制, 不用改變版本號.
+/// - 使用範例:
 /// \code
 ///   template <class Archive>
 ///   void SerializeVer(Archive& ar, ArchiveWorker<Archive, MyObject>& rec, unsigned ver);
@@ -180,6 +181,35 @@ public:
    }
 };
 fon9_WARN_POP;
+
+//--------------------------------------------------------------------------//
+
+/// 若只是再尾端新增欄位, 則可以不需要使用 ver 機制.
+/// - 載入時若 Buffer 已無資料, 則使用 v = T{}; 的方式清除後面欄位.
+/// - 只需要將原本的 fon9::BitvInArchive{buf};
+///   改成 fon9::InArchiveClearBack<fon9::BitvInArchive>{buf};
+template <class InArchiveBase>
+class InArchiveClearBack : public InArchiveBase {
+   fon9_NON_COPY_NON_MOVE(InArchiveClearBack);
+public:
+   using InArchiveBase::InArchiveBase;
+
+   template <class... ArgsT>
+   void operator()(ArgsT&&... args) const {
+      // 雖然底層也會有 operator()(ArgsT&&... args);
+      // 但那裡的 *this 不會用到 InArchiveClearBack<>::Load();
+      // 所以這裡需要再寫一遍, 讓 SerializeIn() 可以使用到正確的 Load();
+      SerializeIn(*this, std::forward<ArgsT>(args)...);
+   }
+
+   template <class T>
+   void Load(T&& v) const {
+      if (fon9_LIKELY(!this->Buffer_.empty()))
+         InArchiveBase::Load(std::forward<T>(v));
+      else
+         v = decay_t<T>{};
+   }
+};
 
 } // namespace
 #endif//__fon9_Archive_hpp__
