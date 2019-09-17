@@ -67,5 +67,15 @@ inline DerivedT* MakeDyMemRaw(const Tab& tab, ArgsT&&... args) {
    return derived;
 }
 
+/// \ingroup seed
+/// 單純使用「動態記憶體」儲存 seed 資料的類別。
+class DyRaw : public Raw {
+   fon9_NON_COPY_NON_MOVE(DyRaw);
+   DyRaw() = default;
+
+   template <class RawT, class... ArgsT>
+   friend RawT* MakeDyMemRaw(const Tab& tab, ArgsT&&... args);
+};
+
 } } // namespaces
 #endif//__fon9_seed_Raw_hpp__

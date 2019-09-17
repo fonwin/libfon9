@@ -110,6 +110,7 @@ public:
 ///    - Snx = Signed, n=bytes(1,2,4,8), CellRevPrint()使用Hex輸出
 ///    - Ti = TimeInterval
 ///    - Ts = TimeStamp
+///    - Td = DayTime
 ///    - fon9_kCSTR_UDFieldMaker_Head + "??" = 使用註冊機制的動態欄位. 參考 FieldMakerRegister; FieldSchCfgStr.cpp
 /// - 例:
 ///    - C4    BrkNo |券商代號

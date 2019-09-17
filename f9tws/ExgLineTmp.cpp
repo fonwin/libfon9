@@ -57,7 +57,7 @@ static ChAry6 GetApCfmLink(const ExgLineTmpArgs& lineargs) {
          "95----" // 3:Match3 => 由交易所送出("950005"), 券商端回覆.
          "900002" // 4:LeadingAuct 標借
          "------" // 5:Auction 拍賣: 20190906:OTC無此作業?
-         "96----" // 6:NegotiationOTC
+         "960013" // 6:NegotiationOTC
          "980002" // 7:FixedPrice
          "970002" // 8:TenderOfferOTC 標購
          "------";// 9:
