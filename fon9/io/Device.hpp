@@ -59,7 +59,7 @@ public:
    void SetManagerBookmark(Bookmark n) { this->ManagerBookmark_ = n; }
    Bookmark GetManagerBookmark() const { return this->ManagerBookmark_; }
 
-   /// - 如果 !cfgstr.empty() 則使用 OpImpl_Open(cfgstr) 來開啟.
+   /// - 如果 !cfgstr.empty() 或 (this->State_ <= State::Initialized) 則使用 OpImpl_Open(cfgstr) 來開啟.
    /// - 如果 cfgstr.empty()  會先檢查現在狀態是否允許 reopen, 如果可以, 則使用 OpImpl_Reopen() 來開啟.
    void AsyncOpen(std::string cfgstr) {
       this->OpQueue_.AddTask(DeviceAsyncOp(&Device::OpThr_Open, std::move(cfgstr)));

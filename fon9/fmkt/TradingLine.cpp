@@ -1,6 +1,8 @@
 ﻿/// \file fon9/fmkt/TradingLine.cpp
 /// \author fonwinz@gmail.com
 #include "fon9/fmkt/TradingLine.hpp"
+#include "fon9/TimedFileName.hpp"
+#include "fon9/FilePath.hpp"
 
 namespace fon9 { namespace fmkt {
 
@@ -128,6 +130,25 @@ __SendRequestResult_NoReadyLine:
 SendRequestResult TradingLineManager::NoReadyLineReject(TradingRequest& req, StrView cause) {
    (void)req; (void)cause;
    return SendRequestResult::NoReadyLine;
+}
+//--------------------------------------------------------------------------//
+TradingLineLogPathMaker::~TradingLineLogPathMaker() {
+}
+TimeStamp TradingLineLogPathMaker::GetTDay() {
+   return UtcNow() + GetLocalTimeZoneOffset();
+}
+std::string TradingLineLogPathMaker::MakeLogPath(std::string& res, TimeStamp* outTDay) {
+   TimeStamp tday = this->GetTDay();
+   if (outTDay)
+      *outTDay = tday;
+   if (tday.IsNullOrZero())
+      return "|err=Unknown TDay.";
+   TimedFileName  logPath(this->LogPathFmt_, TimedFileName::TimeScale::Day);
+   // log 檔名與 TDay 相關, 與 TimeZone 無關,
+   // 所以要扣除 logPath.GetTimeChecker().GetTimeZoneOffset();
+   logPath.RebuildFileName(tday - logPath.GetTimeChecker().GetTimeZoneOffset());
+   res = FilePath::AppendPathTail(&logPath.GetFileName());
+   return std::string{};
 }
 
 } } // namespaces

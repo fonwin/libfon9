@@ -37,6 +37,7 @@ set(fon9src
  DllHandle.cpp
  PkCont.cpp
  ObjSupplier.cpp
+ FlowCounter.cpp
 
  File.cpp
  FilePath.cpp

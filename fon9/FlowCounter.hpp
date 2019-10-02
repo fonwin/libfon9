@@ -4,11 +4,30 @@
 #define __fon9_FlowCounter_hpp__
 #include "fon9/TimeStamp.hpp"
 #include "fon9/MustLock.hpp"
+#include "fon9/ConfigParser.hpp"
 #include <vector>
 
 namespace fon9 {
 
 fon9_WARN_DISABLE_PADDING;
+/// \ingroup Misc.
+/// 流量管制參數.
+struct fon9_API FlowCounterArgs {
+   /// 流量管制: FcCount_(筆數) / FcTimeMS_(時間單位)
+   /// 流量管制筆數(0=不限制).
+   uint16_t FcCount_;
+   /// 流量管制, 時間單位, 1000=每秒.
+   uint16_t FcTimeMS_;
+
+   void Clear() {
+      this->FcCount_ = 0;
+      this->FcTimeMS_ = 1000;
+   }
+
+   /// tag = "Fc"; value = "count/ms"; 或 value = "count" (預設 1000 ms);
+   ConfigParser::Result OnTagValue(StrView tag, StrView& value);
+};
+
 /// \ingroup Misc.
 /// 流量管制: 最多筆數/單位時間.
 class FlowCounter {
@@ -30,6 +49,9 @@ public:
    FlowCounter(unsigned count, TimeInterval timeUnit) {
       this->Resize(count, timeUnit);
    }
+   FlowCounter(const FlowCounterArgs& args) {
+      this->Resize(args);
+   }
    /// 設定單位時間內可用筆數.
    /// \retval true  需要流量管制.
    /// \retval false 不需流量管制.
@@ -41,6 +63,9 @@ public:
          return true;
       }
       return false;
+   }
+   bool Resize(const FlowCounterArgs& args) {
+      return this->Resize(args.FcCount_, TimeInterval_Millisecond(args.FcTimeMS_));
    }
    /// 檢查現在是否需要管制.
    /// 還要等 retval 才解除管制.

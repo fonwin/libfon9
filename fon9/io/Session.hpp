@@ -78,6 +78,17 @@ public:
    /// - 收到此事件後, this session 可能也會被解構(在 dev.Session_ 解構時).
    virtual void OnDevice_Destructing(Device& dev);
 
+   /// - if (dev.OpImpl_GetState() <= State::Initialized) 首次開啟.
+   ///   cfgstr 有可能為 empty();
+   /// - if (dev.OpImpl_GetState() > State::Initialized)
+   ///   - cfgstr.empty():  使用上次參數重新開啟 dev;
+   ///   - !cfgstr.empty(): 使用 cfgstr 重新開啟 dev;
+   /// - Session 有權決定是否要開啟 dev;
+   ///   - 返回 false; 表示不開啟 dev, 所有狀態不變.
+   ///   - 返回 true; 表示需要開啟 dev, 返回前 Session 可以調整 cfgstr 的內容.
+   /// - 預設: cfgstr 不變, 返回 true;
+   virtual bool OnDevice_BeforeOpen(Device& dev, std::string& cfgstr);
+
    /// 當 Device 狀態改變時通知, 預設: do nothing.
    /// 相同事件不會重複觸發, 也就是 bfst 不可能與 afst 相同.
    /// 除了底下狀態, 其餘都會在 Device 的 thread 裡面通知:
@@ -114,7 +125,8 @@ public:
    /// \retval ==RecvBufferSize::CloseRecv   關閉接收端.
    virtual RecvBufferSize OnDevice_Recv(Device& dev, DcQueueList& rxbuf);
 
-   /// 在 LinkReady 之後, 若有啟動 dev CommonTimer: dev.CommonTimerRunAfter(ti),
+   /// 在 LinkReady 之後, 或 f9io_State_Initialized(在 OnDevice_BeforeOpen() 通知時),
+   /// 若有啟動 dev CommonTimer: dev.CommonTimerRunAfter(ti),
    /// 則透過此處通知 Session.
    /// 注意: 此時是在 timer thread, 並不是 op safe.
    /// 如果需要 op safe, 則必須自行使用 dev.OpQueue_ 來處理.

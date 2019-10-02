@@ -12,6 +12,10 @@ void Session::OnDevice_Initialized(Device& dev) {
 void Session::OnDevice_Destructing(Device& dev) {
    (void)dev;
 }
+bool Session::OnDevice_BeforeOpen(Device& dev, std::string& cfgstr) {
+   (void)dev; (void)cfgstr;
+   return true;
+}
 void Session::OnDevice_StateChanged(Device& dev, const StateChangedArgs& e) {
    (void)dev; (void)e;
 }

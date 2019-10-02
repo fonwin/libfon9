@@ -15,6 +15,7 @@ fon9_API void RevPrintConfigGridView(RevBuffer& rbuf, const Fields& flds,
 
 class fon9_API MaConfigSeed;
 class fon9_API MaConfigMgr;
+using MaConfigMgrSP = intrusive_ptr<MaConfigMgr>;
 
 fon9_WARN_DISABLE_PADDING;
 class fon9_API MaConfigTree : public MaTree {
@@ -119,6 +120,10 @@ public:
    /// - 將 cfgfn 置於 Title;
    /// - 必須在建構時呼叫, 或 Parent.lock 狀態,
    ///   否則 this->SetTitle(); this->SetDescription(); 不安全.
+   /// - isFireEvent 是否觸發 OnMaTree_AfterUpdated();
+   ///   在 OnMaTree_AfterUpdated() 裡面會:
+   ///   - 觸發 cfgitem->OnConfigValueChanged();
+   ///   - 處發 SeedSubj_Notify();
    void BindConfigFile(std::string cfgfn, bool isFireEvent);
 };
 

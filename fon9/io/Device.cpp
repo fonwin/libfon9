@@ -37,7 +37,9 @@ void Device::OpThr_Open(Device& dev, std::string cfgstr) {
    State st = dev.State_;
    if (st >= State::Disposing)
       return;
-   if (!cfgstr.empty()) // force reopen, use new config(cfgstr)
+   if (!dev.Session_->OnDevice_BeforeOpen(dev, cfgstr))
+      return;
+   if (st <= State::Initialized || !cfgstr.empty()) // first open || force reopen, use new config(cfgstr)
       return dev.OpImpl_Open(std::move(cfgstr));
    // 沒有 cfgstr, 檢查現在狀態是否允許 reopen.
    if (st == State::Listening ||
@@ -289,7 +291,6 @@ enum class StateTimerAct {
 static StateTimerAct GetStateTimerAct(const DeviceOptions& opts, State st) {
    switch (st) {
    case State::Initializing:
-   case State::Initialized:
    case State::ConfigError:
    case State::Disposing:
    case State::Destructing:
@@ -303,6 +304,7 @@ static StateTimerAct GetStateTimerAct(const DeviceOptions& opts, State st) {
    case State::Closed:
       return (opts.ClosedReopenInterval_ > 0 ? StateTimerAct::Reopen : StateTimerAct::Ignore);
 
+   case State::Initialized:
    case State::LinkReady:
       return StateTimerAct::ToSession;
 

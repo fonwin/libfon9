@@ -402,6 +402,7 @@
     <ClCompile Include="..\..\..\fon9\fix\FixSession.cpp" />
     <ClCompile Include="..\..\..\fon9\fix\IoFixSender.cpp" />
     <ClCompile Include="..\..\..\fon9\fix\IoFixSession.cpp" />
+    <ClCompile Include="..\..\..\fon9\FlowCounter.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\Symb.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\SymbBS.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\SymbDeal.cpp" />

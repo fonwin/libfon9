@@ -11,30 +11,23 @@ void ExgLineArgs::Clear() {
 }
 
 template <class CharAryT>
-static bool CopyToCharAry(CharAryT& dst, fon9::StrView& value) {
+static fon9::ConfigParser::Result CopyToCharAry(CharAryT& dst, fon9::StrView& value) {
    if (value.size() != sizeof(dst))
-      return false;
+      return fon9::ConfigParser::Result::EInvalidValue;
    memcpy(dst.Chars_, value.begin(), sizeof(dst));
-   return true;
+   return fon9::ConfigParser::Result::Success;
 }
 
-bool ExgLineArgs::Parse(fon9::StrView tag, fon9::StrView& value) {
+fon9::ConfigParser::Result ExgLineArgs::OnTagValue(fon9::StrView tag, fon9::StrView& value) {
    if (tag == "BrkId")
       return CopyToCharAry(this->BrkId_, value);
    if (tag == "SocketId" || tag == "PvcId")
       return CopyToCharAry(this->SocketId_, value);
    if (tag == "Pass") {
       this->PassCode_ = fon9::StrTo(&value, this->PassCode_);
-      return value.empty();
+      return value.empty() ? fon9::ConfigParser::Result::Success : fon9::ConfigParser::Result::EInvalidValue;
    }
-   value.Reset(nullptr);
-   return false;
-}
-
-std::string ExgLineArgs::MakeErrMsg(fon9::StrView tag, fon9::StrView value) {
-   if (value.IsNull())
-      return tag.ToString("Unknown tag: ");
-   return tag.ToString() + value.ToString(" unknown value: ");
+   return fon9::ConfigParser::Result::EUnknownTag;
 }
 
 std::string ExgLineArgs::Verify() const {

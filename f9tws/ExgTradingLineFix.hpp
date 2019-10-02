@@ -18,18 +18,12 @@ namespace f9fmkt = fon9::fmkt;
 class f9tws_API ExgTradingLineFixArgs : public ExgLineArgs {
    using base = ExgLineArgs;
 public:
-   /// 流量管制: FcCount_(筆數) / FcTimeMS_(時間單位)
-   /// 流量管制筆數(0=不限制).
-   uint16_t FcCount_;
-   /// 流量管制, 時間單位, 1000=每秒.
-   uint16_t FcTimeMS_;
-
+   fon9::FlowCounterArgs   FcArgs_;
    void Clear() {
       base::Clear();
-      this->FcCount_ = 0;
-      this->FcTimeMS_ = 1000;
+      this->FcArgs_.Clear();
    }
-   bool Parse(fon9::StrView tag, fon9::StrView& value);
+   fon9::ConfigParser::Result OnTagValue(fon9::StrView tag, fon9::StrView& value);
 };
 /// - 不改變 args.Market_ 您必須自行處理.
 /// - cfg = "BrkId=|SocketId=|Pass=|Fc=筆數/ms";

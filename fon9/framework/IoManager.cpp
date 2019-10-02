@@ -150,13 +150,8 @@ IoManager::DeviceOpenResult IoManager::CheckOpenDevice(DeviceItem& item) {
          return res;
       }
    }
-   if (item.Config_.DeviceArgs_.empty())
-      // 沒提供 DeviceArgs_, 則由使用者 or Session 手動開啟.
-      AssignStStr(item.DeviceSt_, UtcNow(), "Waiting for manual open");
-   else {
-      AssignStStr(item.DeviceSt_, UtcNow(), "Async opening");
-      item.Device_->AsyncOpen(item.Config_.DeviceArgs_.ToString());
-   }
+   AssignStStr(item.DeviceSt_, UtcNow(), "Async opening");
+   item.Device_->AsyncOpen(item.Config_.DeviceArgs_.ToString());
    return res;
 }
 //--------------------------------------------------------------------------//

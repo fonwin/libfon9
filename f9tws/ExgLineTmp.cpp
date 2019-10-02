@@ -6,24 +6,24 @@
 
 namespace f9tws {
 
-bool ExgLineTmpArgs::Parse(fon9::StrView tag, fon9::StrView& value) {
+fon9::ConfigParser::Result ExgLineTmpArgs::OnTagValue(fon9::StrView tag, fon9::StrView& value) {
    if (tag == "ApCode") {
       if (value.size() != 1)
-         return false;
+         return fon9::ConfigParser::Result::EInvalidValue;
       this->ApCode_ = static_cast<TwsApCode>(*value.begin());
-      return true;
+      return fon9::ConfigParser::Result::Success;
    }
    if (tag == "Log") {
       if (value.size() != 1)
-         return false;
+         return fon9::ConfigParser::Result::EInvalidValue;
       this->IsNeedsLog_ = (fon9::toupper(value.Get1st()) == 'Y');
-      return true;
+      return fon9::ConfigParser::Result::Success;
    }
-   return base::Parse(tag, value);
+   return base::OnTagValue(tag, value);
 }
 
 f9tws_API std::string ExgLineTmpArgsParser(ExgLineTmpArgs& args, fon9::StrView cfg) {
-   return ExgLineArgsParser(args, cfg);
+   return fon9::ParseFullConfig(args, cfg);
 }
 
 //--------------------------------------------------------------------------//
@@ -168,7 +168,7 @@ static_assert(sizeof(ExgSlmHead) == kSLM_HDR_SIZE, "struct ExgSlmHead; must pack
 fon9::io::RecvBufferSize ExgTmpIoSession::OnDevice_Recv(fon9::io::Device& dev, fon9::DcQueueList& rxbuf) {
    (void)dev;
    char  bufpk[64 * 1024 + kSLM_SIZE];
-   if (auto* pSlm = reinterpret_cast<const ExgSlmHead*>(rxbuf.Peek(bufpk, kSLM_HDR_SIZE))) {
+   while (auto* pSlm = reinterpret_cast<const ExgSlmHead*>(rxbuf.Peek(bufpk, kSLM_HDR_SIZE))) {
       if (fon9_LIKELY(pSlm->IsLeadOK())) {
          const auto     apMsgLen = pSlm->GetBodyLen();
          const unsigned pkLen = apMsgLen + kSLM_SIZE;

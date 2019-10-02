@@ -22,22 +22,34 @@ inline static File::Result PosWrite(FdrAuto& fd, DcQueueList& outbuf, File::PosT
       return res;
    });
 }
-inline static File::Result AppWrite(int fd, const void* buf, size_t count) {
-   return CheckRWResult(write(fd, buf, count));
-}
-inline static File::Result AppWrite(FdrAuto& fd, DcQueueList& outbuf) {
-   return DeviceOutputIovec(outbuf, [&fd](struct iovec* iov, size_t iovcnt)->File::Result {
-      return CheckRWResult(writev(fd.GetFD(), iov, static_cast<int>(iovcnt)));
-   });
-}
-inline static File::Result PosRead(int fd, void* buf, File::SizeType count, File::PosType offset) {
-   return CheckRWResult(pread(fd, buf, count, offset));
-}
+
 inline static File::Result SeekToEnd(int fd) {
    off_t fp = lseek(fd, 0, SEEK_END);
    if (fp < 0)
       return File::Result{GetSysErrC()};
    return File::Result{static_cast<File::PosType>(fp)};
+}
+inline static File::Result SeekForAppend(int fd, FileMode fmode) {
+   if ((fmode & (FileMode::Append | FileMode::UnsafeAppendWrite)) == FileMode::Append)
+      return File::Result{File::PosType{}};
+   return SeekToEnd(fd);
+}
+inline static File::Result AppWrite(int fd, const void* buf, size_t count, FileMode fmode) {
+   auto r = SeekForAppend(fd, fmode);
+   if (r.IsError())
+      return r;
+   return CheckRWResult(write(fd, buf, count));
+}
+inline static File::Result AppWrite(FdrAuto& fd, DcQueueList& outbuf, FileMode& fmode) {
+   return DeviceOutputIovec(outbuf, [&fd, &fmode](struct iovec* iov, size_t iovcnt)->File::Result {
+      auto r = SeekForAppend(fd.GetFD(), fmode);
+      if (r.IsError())
+         return r;
+      return CheckRWResult(writev(fd.GetFD(), iov, static_cast<int>(iovcnt)));
+   });
+}
+inline static File::Result PosRead(int fd, void* buf, File::SizeType count, File::PosType offset) {
+   return CheckRWResult(pread(fd, buf, count, offset));
 }
 inline static int DupHandle(int fd) {
    return dup(fd);
@@ -59,7 +71,7 @@ inline static void FlushFileBuffers(int fd) {
 //------------------------------------------------
 static File::Result OpenFileFD(FdrAuto& fd, const std::string& fname, FileMode fmode) {
    int oflag = IsEnumContainsAny(fmode, FileMode::Read | FileMode::DenyRead)
-      ? (IsEnumContainsAny(fmode, FileMode::Append | FileMode::Write | FileMode::DenyWrite)
+      ? (IsEnumContainsAny(fmode, FileMode::Append | FileMode::Write | FileMode::UnsafeAppendWrite | FileMode::DenyWrite)
          ? O_RDWR : O_RDONLY)
       : O_WRONLY;
    if (IsEnumContains(fmode, FileMode::Append))
@@ -73,6 +85,9 @@ static File::Result OpenFileFD(FdrAuto& fd, const std::string& fname, FileMode f
    else
       if (IsEnumContainsAny(fmode, FileMode::OpenAlways | FileMode::CreatePath))
          oflag |= O_CREAT;
+   if (IsEnumContains(fmode, FileMode::UnsafeAppendWrite))
+      oflag &= ~O_APPEND;
+
    FdrAuto  fdn{open(fname.c_str(), oflag, FilePath::DefaultFileAccessMode_)};
    while (fdn.IsReadyFD()) {
       if (IsEnumContainsAny(fmode, FileMode::DenyRead | FileMode::DenyWrite)) {

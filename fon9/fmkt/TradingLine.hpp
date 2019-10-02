@@ -146,5 +146,25 @@ private:
 };
 fon9_WARN_POP;
 
+class fon9_API TradingLineLogPathMaker {
+   fon9_NON_COPY_NON_MOVE(TradingLineLogPathMaker);
+
+public:
+   const std::string LogPathFmt_;
+
+   TradingLineLogPathMaker(std::string logPathFmt)
+      : LogPathFmt_{std::move(logPathFmt)} {
+   }
+   virtual ~TradingLineLogPathMaker();
+
+   /// 預設 = 本地時間 = UtcNow() + GetLocalTimeZoneOffset();
+   virtual TimeStamp GetTDay();
+
+   /// - *outTDay = this->GetTDay();
+   /// - 若 this->GetTDay() 無效時, 傳回失敗訊息(例如: "|err=Unknown TDay.");
+   /// - retval.empty() 表示結果存放在 res; 返回時 res 尾端會加上 '/';
+   std::string MakeLogPath(std::string& res, TimeStamp* outTDay = nullptr);
+};
+
 } } // namespaces
 #endif//__fon9_fmkt_TradingLine_hpp__

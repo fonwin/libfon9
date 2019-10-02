@@ -42,6 +42,22 @@ public:
    const char* GetCurrent() const {
       return this->MemCurrent_;
    }
+
+   /// - 分配一塊儲存空間.
+   /// - 返回前已呼叫過 SetPrefixUsed();
+   char* AllocBuffer(size_t sz) {
+      char* pout = this->AllocPrefix(sz) - sz;
+      this->SetPrefixUsed(pout);
+      return pout;
+   }
+   /// - 分配一個可儲存 T 的空間.
+   /// - 返回前已呼叫過 SetPrefixUsed();
+   /// - T 裡面不應使用需要對齊的資料型別(例如: int);
+   ///   因為如果直接使用這類型別, 在非 x86 的系統裡, 可能會有 "Bus error" 之類的 crash.
+   template <class T>
+   T* AllocPacket() {
+      return reinterpret_cast<T*>(this->AllocBuffer(sizeof(T)));
+   }
 };
 
 /// \ingroup Buffer

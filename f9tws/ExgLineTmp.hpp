@@ -26,7 +26,7 @@ public:
          return "Unknown ApCode";
       return base::Verify();
    }
-   bool Parse(fon9::StrView tag, fon9::StrView& value);
+   fon9::ConfigParser::Result OnTagValue(fon9::StrView tag, fon9::StrView& value);
 };
 /// - 不改變 args.Market_ 您必須自行處理.
 /// - cfg = "BrkId=|PvcId=|Pass=|ApCode=|Log=Y";

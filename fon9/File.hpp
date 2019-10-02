@@ -38,6 +38,11 @@ enum class FileMode {
    /// 開檔後禁止其他人用寫入模式開檔, 直到檔案關閉為止.
    /// 若已有其他人用寫入模式開檔, 則此次開檔會失敗.
    DenyWrite = 0x0200,
+
+   /// 使用 Append 開檔可能造成 Write(offset) 無法正確運作,
+   /// 若您確定要使用 Append() 及 Write(offset), 則加上此旗標,
+   /// 但此時, 若在 multi thread 情況下 Append() 可能會不正確!
+   UnsafeAppendWrite = 0x1000,
 };
 fon9_ENABLE_ENUM_BITWISE_OP(FileMode);
 

@@ -123,6 +123,16 @@ void PrintFileResult(const char* msg, const fon9::File& fd, fon9::File::Result f
    std::cout << "|***** not expect *****" << std::endl;
    abort();
 }
+void CheckReadData(char* res, const char* exp, size_t sz) {
+   if (memcmp(res, exp, sz) == 0)
+      return;
+   res[sz] = 0;
+   std::cout << "data not match"
+      "|expect=" << exp <<
+      "|result=" << res <<
+      "|" << std::endl;
+   abort();
+}
 
 //--------------------------------------------------------------------------//
 
@@ -168,7 +178,9 @@ int main() {
    std::cout << "mkdir 'TestDir/'\n";
    PrintFileResult("OpenDir:        ", fd, fd.Open("TestDir", FM::Read | FM::CreatePath), FR{std::errc::is_a_directory});
    // ERR: 檔案沒開啟, 讀取失敗.
-   char buf[128] = "aaa\n";
+   #define kCSTR_DEFAULT   "aaa\n"
+   #define kSIZE_DEFAULT   (sizeof(kCSTR_DEFAULT)-1)
+   char buf[128] = kCSTR_DEFAULT;
    PrintFileResult("Read EBADF:     ", fd, fd.Read(0, buf, 4), FR{std::errc::bad_file_descriptor});
    std::cout << std::endl;
 
@@ -189,6 +201,22 @@ int main() {
    PrintFileResult("Write 4 bytes:  ", fd, fd.Write(0, buf, 4),                        FR{4});
    // ERR: 直接移到很遠的地方寫入.
    PrintFileResult("Write BadPos:   ", fd, fd.Write(std::numeric_limits<fon9::File::PosType>::max() - 4, buf, 4), FR{std::errc::invalid_argument});
+   std::cout << std::endl;
+
+   // 開啟 Append 檔案.
+   PrintFileResult("Open Append:    ", fd, fd.Open("TestWr", FM::Append | FM::Read), FR{0});
+   PrintFileResult("Append 4 bytes: ", fd, fd.Append(buf, 4),                        FR{4});
+   PrintFileResult("Read:           ", fd, fd.Read(0, buf, 10),                      FR{8});
+   CheckReadData(buf, kCSTR_DEFAULT kCSTR_DEFAULT, 8);
+   std::cout << std::endl;
+
+   // 開啟 UnsafeAppendWrite 檔案.
+   PrintFileResult("OpenAppendWrite:", fd, fd.Open("TestWr", FM::UnsafeAppendWrite | FM::Read), FR{0});
+   PrintFileResult("Append 4 bytes: ", fd, fd.Append(buf, 4),      FR{4});
+   PrintFileResult("Overwrite:      ", fd, fd.Write(4, "xxx-", 4), FR{4});
+   PrintFileResult("Append 4 bytes: ", fd, fd.Append(buf, 4),      FR{4});
+   PrintFileResult("Read:           ", fd, fd.Read(0, buf, 50),    FR{16});
+   CheckReadData(buf, kCSTR_DEFAULT "xxx-" kCSTR_DEFAULT kCSTR_DEFAULT, 16);
    std::cout << std::endl;
 
 #if 0

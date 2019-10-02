@@ -22,6 +22,11 @@ struct CharAry : public Comparable<CharAry<arysz, CharT, kChFiller>> {
 
    /// 預設建構, Chars_ 全部為 **未定義** 的內容.
    CharAry() = default;
+   /// nullptr 建構, Chars_ 全部設為 kChFiller.
+   CharAry(std::nullptr_t) {
+      this->Clear();
+   }
+
    /// 建構時可設定內容.
    CharAry(const StrView& str) {
       this->CopyFrom(str.begin(), str.size());

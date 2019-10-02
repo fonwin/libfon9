@@ -3,7 +3,7 @@
 #ifndef __fon9_ConfigParser_hpp__
 #define __fon9_ConfigParser_hpp__
 #include "fon9/StrTools.hpp"
-#include "fon9/buffer/RevBuffer.hpp"
+#include "fon9/buffer/RevBufferList.hpp"
 
 namespace fon9 {
 
@@ -70,8 +70,8 @@ public:
 
 /// \ingroup Misc
 /// 使用 T::OnTagValue() 解析設定值, 若有錯誤訊息則填入 rbuf.
-/// \retval true  rbuf 為空, 解析沒有問題.
-/// \retval false rbuf 有錯誤訊息.
+/// \retval true  rbuf 不變, 解析沒有問題.
+/// \retval false rbuf 有新增錯誤訊息.
 template <class T>
 bool ParseConfig(T& dst, StrView cfgstr, RevBuffer& rbuf) {
    struct Parser : ConfigParserMsg {
@@ -86,6 +86,21 @@ bool ParseConfig(T& dst, StrView cfgstr, RevBuffer& rbuf) {
    const char* rbufprev = rbuf.GetCurrent();
    Parser{dst, rbuf}.Parse(cfgstr);
    return rbuf.GetCurrent() == rbufprev;
+}
+
+/// \ingroup Misc
+/// - 解析前呼叫 dst.Clear(); 清除設定.
+/// - 使用 dst.OnTagValue() 解析設定值.
+/// - 成功解析完畢後, 使用 return dst.Verify(); 檢查內容.
+/// - retval.empty()  表示成功, 解析沒有問題.
+/// - !retval.empty() 表示失敗訊息.
+template <class T>
+std::string ParseFullConfig(T& dst, StrView cfgstr) {
+   dst.Clear();
+   RevBufferList rbuf(128);
+   if (ParseConfig(dst, cfgstr, rbuf))
+      return dst.Verify();
+   return BufferTo<std::string>(rbuf.MoveOut());
 }
 
 } // namespace

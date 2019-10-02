@@ -68,14 +68,19 @@ inline static File::Result PosWrite(FdrAuto& fd, DcQueueList& outbuf, File::PosT
       return res;
    });
 }
-inline static File::Result AppWrite(HANDLE fd, const void* buf, size_t count) {
+inline static File::Result AppWrite(HANDLE fd, const void* buf, size_t count, FileMode) {
    return WindowsRW(fd, buf, count, [](HANDLE fd, const void* buf, DWORD reqsz, DWORD* rwsz) -> BOOL {
-      return ::WriteFile(fd, buf, reqsz, rwsz, nullptr);
+      // To write to the end of file,
+      // specify both the Offset and OffsetHigh members of the OVERLAPPED structure as 0xFFFFFFFF.
+      OVERLAPPED ovrlap;
+      ovrlap.Offset = ovrlap.OffsetHigh = 0xFFFFFFFF;
+      ovrlap.hEvent = 0;
+      return ::WriteFile(fd, buf, reqsz, rwsz, &ovrlap);
    });
 }
-inline static File::Result AppWrite(FdrAuto& fd, DcQueueList& outbuf) {
+inline static File::Result AppWrite(FdrAuto& fd, DcQueueList& outbuf, FileMode) {
    return DeviceOutputBlock(outbuf, [&fd](const void* buf, size_t count) -> File::Result {
-      return AppWrite(fd.GetFD(), buf, count);
+      return AppWrite(fd.GetFD(), buf, count, FileMode{});
    });
 }
 inline static File::Result PosRead(HANDLE fd, void* buf, File::SizeType count, File::PosType offset) {
@@ -136,8 +141,8 @@ static File::Result OpenFileFD(FdrAuto& fd, const std::string& fname, FileMode f
    DWORD desiredAccess = 0;
    if (IsEnumContains(fmode, FileMode::Read))
       desiredAccess |= GENERIC_READ;
-   if (IsEnumContains(fmode, FileMode::Append))
-      desiredAccess |= (fname == "CON" ? GENERIC_WRITE : FILE_APPEND_DATA);
+   if (IsEnumContainsAny(fmode, FileMode::Append | FileMode::UnsafeAppendWrite))
+      desiredAccess |= GENERIC_WRITE; // 改成在 AppWrite() 使用 OVERLAPPED; (fname == "CON" ? GENERIC_WRITE : FILE_APPEND_DATA);
    else
       if (IsEnumContains(fmode, FileMode::Write))
          desiredAccess |= GENERIC_WRITE;

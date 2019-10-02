@@ -30,6 +30,7 @@ static const FileModeDefine_impl FileModeDef_[]{
    DEF_FILEMODE(Trunc),
    DEF_FILEMODE(DenyRead),
    DEF_FILEMODE(DenyWrite),
+   DEF_FILEMODE(UnsafeAppendWrite),
 };
 
 FileMode StrToFileMode(StrView modes) {
@@ -159,22 +160,15 @@ File::Result File::Write(PosType offset, DcQueueList& outbuf) {
    return PosWrite(this->Fdr_, outbuf, offset);
 }
 //----------------------------------------------------------------------
-#define fon9_File_CheckAppend(file)\
-   if (!IsEnumContains(file->OpenMode_, FileMode::Append)) {\
-      Result rToEnd = SeekToEnd(file->Fdr_.GetFD());\
-      if (!rToEnd)\
-         return rToEnd;\
-   }
 File::Result File::Append(const void* buf, size_t count) {
    fon9_File_CheckArgs(this, buf);
-   fon9_File_CheckAppend(this);
-   return AppWrite(this->Fdr_.GetFD(), buf, count);
+   return AppWrite(this->Fdr_.GetFD(), buf, count, this->OpenMode_);
 }
 File::Result File::Append(DcQueueList& outbuf) {
    fon9_File_CheckIsOpened(this, outbuf);
    // 避免在處理 outbuf 的過程中重新開檔(例: LogFile 透過特殊 BufferNode 處理重新開檔),
    // 造成 fd 的改變, 所以這裡要傳遞 this->Fdr_
-   return AppWrite(this->Fdr_, outbuf);
+   return AppWrite(this->Fdr_, outbuf, this->OpenMode_);
 }
 
 } // namespaces

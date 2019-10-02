@@ -11,20 +11,15 @@ constexpr uint32_t   kHeartBtInt = 10;
 
 //--------------------------------------------------------------------------//
 
-bool ExgTradingLineFixArgs::Parse(fon9::StrView tag, fon9::StrView& value) {
-   if (tag == "Fc") {
-      this->FcCount_ = fon9::StrTo(&value, this->FcCount_);
-      if (StrTrimHead(&value).Get1st() == '/') {
-         value.SetBegin(value.begin() + 1);
-         this->FcTimeMS_ = fon9::StrTo(&value, this->FcTimeMS_);
-      }
-      return value.empty();
-   }
-   return base::Parse(tag, value);
+fon9::ConfigParser::Result ExgTradingLineFixArgs::OnTagValue(fon9::StrView tag, fon9::StrView& value) {
+   fon9::ConfigParser::Result r = this->FcArgs_.OnTagValue(tag, value);
+   if (r == fon9::ConfigParser::Result::EUnknownTag)
+      return base::OnTagValue(tag, value);
+   return r;
 }
 
 f9tws_API std::string ExgTradingLineFixArgsParser(ExgTradingLineFixArgs& args, fon9::StrView cfg) {
-   return ExgLineArgsParser(args, cfg);
+   return fon9::ParseFullConfig(args, cfg);
 }
 
 //--------------------------------------------------------------------------//
@@ -65,7 +60,7 @@ ExgTradingLineFix::ExgTradingLineFix(f9fix::IoFixManager&         mgr,
                                      f9fix::IoFixSenderSP&&       fixSender)
    : base(mgr, fixcfg)
    , RawAppendNo_{static_cast<unsigned>(fon9::UtcNow().GetDecPart() / 1000)}
-   , FlowCounter_{lineargs.FcCount_, fon9::TimeInterval_Millisecond(lineargs.FcTimeMS_)}
+   , FlowCounter_{lineargs.FcArgs_}
    , LineArgs_(lineargs)
    , FixSender_{std::move(fixSender)} {
 }

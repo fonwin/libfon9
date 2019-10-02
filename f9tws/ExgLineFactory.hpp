@@ -7,23 +7,15 @@
 
 namespace f9tws {
 
-class f9tws_API ExgLineFactory : public fon9::SessionFactory {
+class f9tws_API ExgLineFactory : public fon9::SessionFactory, public f9fmkt::TradingLineLogPathMaker {
    fon9_NON_COPY_NON_MOVE(ExgLineFactory);
-   using base = fon9::SessionFactory;
-protected:
-   const std::string LogPathFmt_;
+   using baseFactory = fon9::SessionFactory;
+   using basePathMaker = f9fmkt::TradingLineLogPathMaker;
 
+protected:
    virtual fon9::io::SessionSP CreateTradingLine(ExgTradingLineMgr& lineMgr,
                                                  const fon9::IoConfigItem& cfg,
                                                  std::string& errReason) = 0;
-
-   /// this->GetTDay() 無效時, 傳回失敗訊息;
-   /// retval.empty() 表示結果存放在 res;
-   /// 返回時 res 尾端會加上 '/';
-   std::string MakeLogPath(std::string& res);
-
-   /// 預設 = 本地時間 = UtcNow() + GetLocalTimeZoneOffset();
-   virtual fon9::TimeStamp GetTDay();
 
 public:
    ExgLineFactory(std::string logPathFmt, Named&& name);
