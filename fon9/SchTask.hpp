@@ -65,6 +65,8 @@ struct fon9_API SchConfig {
    /// 設定一直都在時間內 & 沒有結束時間.
    /// - "Weekdays=0123456|Start=00:00:00|End=|TZ=本機localtime offset(GetLocalTimeZoneOffset())"
    void SetAlwaysInSch();
+   /// 設定一直都在時間外: this->Weekdays_.reset();
+   void SetAlwaysOutSch();
 
    /// 先設定成預設值(永遠在時間內), 然後解析 cfgstr.
    void Parse(StrView cfgstr);

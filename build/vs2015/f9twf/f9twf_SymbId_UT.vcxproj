@@ -11,19 +11,20 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{4B0A42A4-1975-4AA2-97FC-096BE2F469AD}</ProjectGuid>
-    <RootNamespace>f9twf</RootNamespace>
+    <ProjectGuid>{EC8D85CC-6D66-4052-BC4D-EB982D384205}</ProjectGuid>
+    <RootNamespace>f9twf_SymbId_UT</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <ProjectName>f9twf_SymbId_UT</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -55,7 +56,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\..\..\..\fon9</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_DEBUG;f9twf_EXPORT</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -66,7 +67,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\..\..\..\fon9</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>NDEBUG;f9twf_EXPORT</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -74,39 +75,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Text Include="..\..\..\f9twf\CMakeLists.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\..\f9twf\Config.h" />
-    <ClInclude Include="..\..\..\f9twf\ExgLineTmpArgs.hpp" />
-    <ClInclude Include="..\..\..\f9twf\ExgLineTmpSession.hpp" />
-    <ClInclude Include="..\..\..\f9twf\ExgLineTmpFactory.hpp" />
-    <ClInclude Include="..\..\..\f9twf\ExgLineTmpLog.hpp" />
-    <ClInclude Include="..\..\..\f9twf\ExgMapFcmId.hpp" />
-    <ClInclude Include="..\..\..\f9twf\ExgMapMgr.hpp" />
-    <ClInclude Include="..\..\..\f9twf\ExgMapSessionDn.hpp" />
-    <ClInclude Include="..\..\..\f9twf\ExgTmpTradingR1.hpp" />
-    <ClInclude Include="..\..\..\f9twf\ExgTmpTradingR7.hpp" />
-    <ClInclude Include="..\..\..\f9twf\ExgTmpTradingR9.hpp" />
-    <ClInclude Include="..\..\..\f9twf\ExgTradingLineMgr.hpp" />
-    <ClInclude Include="..\..\..\f9twf\ExgTypes.hpp" />
-    <ClInclude Include="..\..\..\f9twf\ExgTmpLinkSys.hpp" />
-    <ClInclude Include="..\..\..\f9twf\ExgTmpTypes.hpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\..\f9twf\ExgLineTmpArgs.cpp" />
-    <ClCompile Include="..\..\..\f9twf\ExgLineTmpSession.cpp" />
-    <ClCompile Include="..\..\..\f9twf\ExgLineTmpFactory.cpp" />
-    <ClCompile Include="..\..\..\f9twf\ExgLineTmpLog.cpp" />
-    <ClCompile Include="..\..\..\f9twf\ExgMapFcmId.cpp" />
-    <ClCompile Include="..\..\..\f9twf\ExgMapMgr.cpp" />
-    <ClCompile Include="..\..\..\f9twf\ExgMapSessionDn.cpp" />
-    <ClCompile Include="..\..\..\f9twf\ExgTradingLineMgr.cpp" />
-    <ClCompile Include="..\..\..\f9twf\ExgTmpTypes.cpp" />
+    <ClCompile Include="..\..\..\f9twf\f9twf_SymbId_UT.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\libfon9\libfon9.vcxproj">
       <Project>{6b9031a7-02e1-4171-8ca5-9f780be21806}</Project>
+    </ProjectReference>
+    <ProjectReference Include="libf9twf.vcxproj">
+      <Project>{4b0a42a4-1975-4aa2-97fc-096be2f469ad}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

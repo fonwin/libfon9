@@ -48,8 +48,8 @@ bool ExgLineTmpSession::OnDevice_BeforeOpen(fon9::io::Device& dev, std::string& 
    else { // 保留參數, 提供 reopen 使用.
       this->DevOpenArgs_ = cfgstr;
    }
-   if (this->IoManager_.ExgMapMgr_->AppendDn(this->LineArgs_, cfgstr)) {
-      this->IoManager_.OnSession_StateUpdated(dev, &cfgstr, fon9::LogLevel::Info);
+   if (this->LineMgr_.AppendDn(this->LineArgs_, cfgstr)) {
+      this->LineMgr_.OnSession_StateUpdated(dev, &cfgstr, fon9::LogLevel::Info);
       return true;
    }
    fon9::StrView                 cfgs{&cfgstr};
@@ -67,7 +67,7 @@ bool ExgLineTmpSession::OnDevice_BeforeOpen(fon9::io::Device& dev, std::string& 
    Parser{clicfg}.Parse(cfgs);
    if (!clicfg.AddrRemote_.IsUnspec() || !clicfg.DomainNames_.empty())
       return true;
-   this->IoManager_.OnSession_StateUpdated(dev, "dn not found(P06 or P07 error)", fon9::LogLevel::Error);
+   this->LineMgr_.OnSession_StateUpdated(dev, "dn not found(P06 or P07 error)", fon9::LogLevel::Error);
    if (dev.OpImpl_GetState() == fon9::io::State::Initialized) {
       // 可能是 this->IoManager_.ExgMapMgr_ 的 P06、P07 尚未載入.
       // 所以稍等一會兒之後再試一次.
@@ -148,7 +148,7 @@ fon9::io::RecvBufferSize ExgLineTmpSession::OnDevice_Recv(fon9::io::Device& dev,
    return fon9::io::RecvBufferSize::Default;
 }
 bool ExgLineTmpSession::OnRecvTmpApPacket(const TmpHeader& pktmp) {
-   if (auto seqn = TmpGetValue<TmpMsgSeqNum_t>(pktmp.MsgSeqNum_)) {
+   if (auto seqn = TmpGetValueU(pktmp.MsgSeqNum_)) {
       if (fon9_UNLIKELY(!this->Log_.CheckSetRxSeqNum(seqn))) {
          // 序號不連續: 重新登入.
          this->AsyncClose("RxMsgSeqNum has gap");
@@ -179,7 +179,7 @@ void ExgLineTmpSession::OnRecvTmpLinkSys(const TmpHeaderSt& pktmp) {
       TmpL40& L40 = buf.Alloc<TmpL40>();
       L40.Initialize(*static_cast<const TmpL30*>(&pktmp), this->Log_.LastRxMsgSeqNum());
       // 計算 KEY-VALUE = (APPEND-NO * PASSWORD)取千與百二位數字。
-      L40.KeyValue_ = static_cast<uint8_t>(((TmpGetValue<uint16_t>(L40.AppendNo_)
+      L40.KeyValue_ = static_cast<uint8_t>(((TmpGetValueU(L40.AppendNo_)
                                              * static_cast<unsigned>(this->LineArgs_.Pass_))
                                             / 100) % 100);
       L40.ApCode_ = this->LineArgs_.ApCode_;
@@ -189,7 +189,7 @@ void ExgLineTmpSession::OnRecvTmpLinkSys(const TmpHeaderSt& pktmp) {
    case TmpMessageType_L(41):
    {  // 從 L41.Data_[] 取回 ApPacket(); 但是此時尚未 ApReady !!!!
       const uint8_t* rpk = static_cast<const TmpL41*>(&pktmp)->Data_;
-      size_t         rsz = TmpGetValue<TmpMsgLength_t>(static_cast<const TmpL41*>(&pktmp)->MsgLength_);
+      size_t         rsz = TmpGetValueU(static_cast<const TmpL41*>(&pktmp)->MsgLength_);
       rsz -= sizeof(TmpL41) - sizeof(TmpMsgLength) - sizeof(static_cast<const TmpL41*>(&pktmp)->Data_);
       for (;;) {
          auto pksz = reinterpret_cast<const TmpHeader*>(rpk)->GetPacketSize();
@@ -205,7 +205,7 @@ void ExgLineTmpSession::OnRecvTmpLinkSys(const TmpHeaderSt& pktmp) {
    }
    case TmpMessageType_L(50):
       this->ApHbInterval_ = fon9::TimeInterval_Second(static_cast<const TmpL50*>(&pktmp)->HeartBtInt_);
-      this->MaxFlowCtrlCnt_ = TmpGetValue<uint16_t>(static_cast<const TmpL50*>(&pktmp)->MaxFlowCtrlCnt_);
+      this->MaxFlowCtrlCnt_ = TmpGetValueU(static_cast<const TmpL50*>(&pktmp)->MaxFlowCtrlCnt_);
       buf.Alloc<TmpL60>().Initialize(TmpMessageType_L(60));
       break;
    default:
@@ -234,7 +234,7 @@ void ExgLineTmpSession::OnRecvTmpLinkSys(const TmpHeaderSt& pktmp) {
       ->Initialize(TmpLogPacketType::Info, fon9::CalcDataSize(rbuf.cfront()), this->LastRxTime_);
    this->Log_.Append(rbuf.MoveOut());
 
-   this->IoManager_.OnSession_StateUpdated(
+   this->LineMgr_.OnSession_StateUpdated(
       *this->Dev_,
       fon9::StrView{msgApReady + 1, sizeof(msgApReady) - 3}, // +1, -3: 移除頭尾的 '|' 及 EOS;
       fon9::LogLevel::Info);
@@ -283,7 +283,7 @@ void ExgLineTmpSession::SendTmpNoSeqNum(fon9::TimeStamp now, ExgLineTmpRevBuffer
    auto  pksz = fon9::CalcDataSize(buf.RBuf_.cfront());
    assert(buf.RBuf_.cfront()->GetNext() == nullptr); // RBuf 僅允許使用一個 Node;
    reinterpret_cast<TmpHeader*>(pkptr)->MsgTime_.AssignFrom(now);
-   reinterpret_cast<TmpHeader*>(pkptr)->FcmId_ = this->LineArgs_.FcmId_;
+   reinterpret_cast<TmpHeader*>(pkptr)->SessionFcmId_ = this->LineArgs_.SessionFcmId_;
    reinterpret_cast<TmpHeader*>(pkptr)->SessionId_ = this->LineArgs_.SessionId_;
    *reinterpret_cast<TmpCheckSum*>(pkptr + pksz - sizeof(TmpCheckSum))
       = TmpCalcCheckSum(*reinterpret_cast<TmpHeader*>(pkptr), pksz);

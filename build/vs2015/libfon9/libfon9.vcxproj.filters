@@ -947,6 +947,9 @@
     <ClInclude Include="..\..\..\fon9\seed\MaConfigTree.hpp">
       <Filter>Header Files\seed\_trees</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\IntSel.hpp">
+      <Filter>Header Files\_base\_Tools / Utility</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />

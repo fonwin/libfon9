@@ -11,6 +11,11 @@ struct SchCfgStr : public CharVector {
    using base = CharVector;
    using base::base;
    SchCfgStr() = default;
+
+   void AssignCfgStr(const StrView& value) {
+      SchConfig cfg{value};
+      this->assign(ToStrView(RevPrintTo<CharVector>(cfg)));
+   }
 };
 
 template <class BaseField>

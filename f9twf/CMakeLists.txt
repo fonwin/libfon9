@@ -16,5 +16,5 @@ add_library(f9twf SHARED ${f9twf_src})
 target_link_libraries(f9twf pthread rt dl)
 
 # unit tests
-#add_executable(f9twfExgMkt_UT ExgMkt_UT.cpp)
-#target_link_libraries(f9twfExgMkt_UT fon9_s f9twf_s f9extests_s)
+add_executable(f9twf_SymbId_UT f9twf_SymbId_UT.cpp)
+target_link_libraries(f9twf_SymbId_UT fon9_s f9twf_s)

@@ -179,6 +179,7 @@
     <ClInclude Include="..\..\..\fon9\InnSyncer.hpp" />
     <ClInclude Include="..\..\..\fon9\InnSyncerFile.hpp" />
     <ClInclude Include="..\..\..\fon9\InnSyncKey.hpp" />
+    <ClInclude Include="..\..\..\fon9\IntSel.hpp" />
     <ClInclude Include="..\..\..\fon9\io\Device.hpp" />
     <ClInclude Include="..\..\..\fon9\io\DeviceAsyncOp.hpp" />
     <ClInclude Include="..\..\..\fon9\io\DeviceParseConfig.hpp" />

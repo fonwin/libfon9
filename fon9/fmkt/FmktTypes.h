@@ -46,8 +46,10 @@ fon9_ENUM(f9fmkt_TradingMarket, char) {
    f9fmkt_TradingMarket_TwOTC = 'O',
    /// 台灣興櫃.
    f9fmkt_TradingMarket_TwEMG = 'E',
-   /// 台灣期交所.
-   f9fmkt_TradingMarket_TwFEX = 'F',
+   /// 台灣期交所-期貨市場.
+   f9fmkt_TradingMarket_TwFUT = 'f',
+   /// 台灣期交所-選擇權市場.
+   f9fmkt_TradingMarket_TwOPT = 'o',
 
    /// 提供給陣列使用, 例如:
    /// using MarketAry = std::array<MarketRec, f9fmkt_TradingMarket_MaxIndex + 1u>;
@@ -82,7 +84,7 @@ fon9_ENUM(f9fmkt_TradingSessionId, char) {
    /// 盤後定價.
    f9fmkt_TradingSessionId_FixedPrice = 'F',
    /// 盤後交易(夜盤).
-   f9fmkt_TradingSessionId_AfterHour = '6',
+   f9fmkt_TradingSessionId_AfterHour = 'A',
 
    /// 提供給陣列使用, 例如:
    /// using SessionAry = std::array<SessionRec, f9fmkt_TradingSessionId_MaxIndex + 1u>;
@@ -105,7 +107,7 @@ fon9_ENUM(f9fmkt_PriType, char) {
    /// 市價.
    f9fmkt_PriType_Market = 'M',
    /// 一定範圍內市價.
-   f9fmkt_PriType_MWP = 'm',
+   f9fmkt_PriType_Mwp = 'm',
 };
 
 /// \ingroup fmkt
@@ -118,7 +120,7 @@ fon9_ENUM(f9fmkt_TimeInForce, char) {
    /// 立即全部成交否則取消.
    f9fmkt_TimeInForce_FOK = 'F',
    /// 報價單,一定期間後交易所自動刪除.
-   f9fmkt_TimeInForce_QuotAutoCancel = '8',
+   f9fmkt_TimeInForce_QuoteAutoCancel = '8',
 };
 
 /// \ingroup fmkt

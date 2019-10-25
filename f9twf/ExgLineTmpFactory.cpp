@@ -14,9 +14,9 @@ fon9::io::SessionServerSP ExgLineTmpFactory::CreateSessionServer(fon9::IoManager
    return fon9::io::SessionServerSP{};
 }
 fon9::io::SessionSP ExgLineTmpFactory::CreateSession(fon9::IoManager& mgr, const fon9::IoConfigItem& cfg, std::string& errReason) {
-   ExgIoManager* ioMgr = dynamic_cast<ExgIoManager*>(&mgr);
-   if (ioMgr == nullptr) {
-      errReason = "IoManager must be f9twf::ExgIoManager";
+   ExgTradingLineMgr* lineMgr = dynamic_cast<ExgTradingLineMgr*>(&mgr);
+   if (lineMgr == nullptr) {
+      errReason = "IoManager must be f9twf::ExgTradingLineMgr";
       return fon9::io::SessionSP{};
    }
    ExgLineTmpArgs lineArgs;
@@ -31,15 +31,15 @@ fon9::io::SessionSP ExgLineTmpFactory::CreateSession(fon9::IoManager& mgr, const
       return fon9::io::SessionSP{};
    fon9::NumOutBuf nbuf;
    logFileName.append("TWF_");
-   logFileName.append(fon9::ToStrRev(nbuf.end(), TmpGetValue<TmpFcmId_t>(lineArgs.FcmId_)), nbuf.end());
+   logFileName.append(fon9::ToStrRev(nbuf.end(), TmpGetValueU(lineArgs.SessionFcmId_)), nbuf.end());
    logFileName.push_back('_');
    fon9::FmtDef fmt{3, fon9::FmtFlag::IntPad0};
-   logFileName.append(fon9::ToStrRev(nbuf.end(), TmpGetValue<TmpSessionId_t>(lineArgs.SessionId_), fmt), nbuf.end());
+   logFileName.append(fon9::ToStrRev(nbuf.end(), TmpGetValueU(lineArgs.SessionId_), fmt), nbuf.end());
    logFileName.append(".bin");
    ExgLineTmpLog log;
    errReason = log.Open(lineArgs, std::move(logFileName), tday);
    if (errReason.empty())
-      return this->CreateLineTmp(*ioMgr, lineArgs, std::move(log), errReason);
+      return this->CreateLineTmp(*lineMgr, lineArgs, std::move(log), errReason);
    return fon9::io::SessionSP{};
 }
 

@@ -3,33 +3,19 @@
 #ifndef __fon9_CharAryL_hpp__
 #define __fon9_CharAryL_hpp__
 #include "fon9/CharAry.hpp"
+#include "fon9/IntSel.hpp"
 
 namespace fon9 {
-
-template <size_t sz, size_t bytes> struct LenTypeSelector;
-template <> struct LenTypeSelector<0, 1> { using type = uint8_t; };
-template <> struct LenTypeSelector<0, 2> { using type = uint16_t; };
-template <> struct LenTypeSelector<0, 3> { using type = uint32_t; };
-template <> struct LenTypeSelector<0, 4> { using type = uint32_t; };
-template <size_t sz, size_t bytes = 0>
-struct LenTypeSelector : public LenTypeSelector<sz / 0x100, bytes + 1> {
-};
-
-static_assert(sizeof(LenTypeSelector<1>::type) == 1, "");
-static_assert(sizeof(LenTypeSelector<255>::type) == 1, "");
-static_assert(sizeof(LenTypeSelector<256>::type) == 2, "");
-static_assert(sizeof(LenTypeSelector<65535>::type) == 2, "");
-static_assert(sizeof(LenTypeSelector<65536>::type) == 4, "");
 
 /// \ingroup AlNum
 /// 提供固定大小, 且攜帶一個「長度」欄位的字串。
 template <size_t arysz, typename CharT = char>
 class CharAryL : public Comparable<CharAryL<arysz, CharT>> {
    using Ary = CharAry<arysz, CharT>;
-   using LenT = typename LenTypeSelector<arysz>::type;
+   using LenT = LenTypeSelector_t<arysz>;
 protected:
-   Ary   Ary_;
    LenT  Len_;
+   Ary   Ary_;
 
 public:
    using value_type = CharT;
@@ -50,12 +36,19 @@ public:
    template <size_t srcsz>
    CharAryL(CharT(&src)[srcsz]) = delete;
 
+   /// 強制設定 len, 不改變其他內容.
+   void ForceLen(size_t len) {
+      this->Len_ = static_cast<LenT>(len < arysz ? len : arysz);
+   }
    void CopyFrom(const CharT* src, size_t srcsz) {
       this->Len_ = static_cast<LenT>(srcsz < arysz ? srcsz : arysz);
       memcpy(this->Ary_.Chars_, src, this->Len_ * sizeof(CharT));
    }
-   void CopyFrom(const StrView& str) {
-      this->CopyFrom(str.begin(), str.size());
+   template <class StrT>
+   auto CopyFrom(const StrT& str) -> decltype(str.begin(), str.size(), str.empty(), void()) {
+      // 若 StrT = std::string; 且 str.empty(); 則 &*str.begin() 可能會引發 exception!
+      if (str.empty()) this->clear();
+      else this->CopyFrom(&*str.begin(), str.size());
    }
 
    CharAryL(CharT chFiller) : Len_{0} {
@@ -125,12 +118,20 @@ public:
    void         pop_back()   { assert(this->Len_ > 0); --this->Len_; }
    void         push_back(CharT ch) { assert(this->Len_ < arysz); this->Ary_.Chars_[this->Len_++] = ch; }
 
+          constexpr size_type length() const { return this->Len_; }
           constexpr size_type size() const { return this->Len_; }
    static constexpr size_type max_size()   { return arysz; }
    static constexpr size_t    capacity()   { return arysz; }
 
    friend StrView ToStrView(const CharAryL& pthis) {
       return StrView{pthis.begin(), pthis.end()};
+   }
+
+   /// - retval = 返回 Len 位置.
+   /// - retval + 1 = 字串開始位置.
+   const size_type* LenChars() const {
+      static_assert(sizeof(*this) == sizeof(this->Len_) + sizeof(this->Ary_), "CharAryL<> must pack?");
+      return &this->Len_;
    }
 };
 

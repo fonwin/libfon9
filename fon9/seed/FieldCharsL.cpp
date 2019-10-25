@@ -10,7 +10,7 @@ StrView FieldCharsL::GetTypeId(NumOutBuf& nbuf) const {
    nbuf.SetEOS();
    char* pbeg = nbuf.end();
    *--pbeg = 'L';
-   pbeg = UIntToStrRev(pbeg, this->Size_ - 1);
+   pbeg = UIntToStrRev(pbeg, this->MaxSize());
    *--pbeg = 'C';
    return StrView{pbeg, nbuf.end()};
 }
@@ -18,18 +18,18 @@ void FieldCharsL::CellRevPrint(const RawRd& rd, StrView fmt, RevBuffer& out) con
    FmtRevPrint(fmt, out, this->GetValue(rd));
 }
 OpResult FieldCharsL::StrToCell(const RawWr& wr, StrView value) const {
-   char* ptr = wr.GetCellPtr<char>(*this);
-   size_t sz = std::min(value.size(), static_cast<size_t>(this->Size_ - 1));
-   memcpy(ptr, value.begin(), sz);
-   *(ptr + this->Size_ - 1) = static_cast<char>(sz);
+   char*  ptr = wr.GetCellPtr<char>(*this);
+   size_t sz = std::min(value.size(), static_cast<size_t>(this->MaxSize()));
+   memcpy(ptr + 1, value.begin(), sz);
+   *ptr = static_cast<char>(sz);
    return OpResult::no_error;
 }
 OpResult FieldCharsL::SetNull(const RawWr& wr) const {
-   *(wr.GetCellPtr<char>(*this) + this->Size_ - 1) = '\0';
+   *wr.GetCellPtr<char>(*this) = '\0';
    return OpResult::no_error;
 }
 bool FieldCharsL::IsNull(const RawRd& rd) const {
-   return *(rd.GetCellPtr<char>(*this) + this->Size_ - 1) == '\0';
+   return *rd.GetCellPtr<char>(*this) == '\0';
 }
 FieldNumberT FieldCharsL::GetNumber(const RawRd& rd, DecScaleT outDecScale, FieldNumberT nullValue) const {
    return StrToDec(this->GetValue(rd), outDecScale, nullValue);
@@ -38,11 +38,11 @@ OpResult FieldCharsL::PutNumber(const RawWr& wr, FieldNumberT num, DecScaleT dec
    NumOutBuf      nbuf;
    char*          pbeg = DecToStrRev(nbuf.end(), num, decScale);
    const size_t   sz = nbuf.GetLength(pbeg);
-   if (sz > this->Size_ - 1)
+   if (sz > this->MaxSize())
       return OpResult::value_overflow;
-   char* ptr = wr.GetCellPtr<char>(*this);
-   memcpy(ptr, pbeg, sz);
-   *(ptr + this->Size_ - 1) = static_cast<char>(sz);
+   char*  ptr = wr.GetCellPtr<char>(*this);
+   memcpy(ptr + 1, pbeg, sz);
+   *ptr = static_cast<char>(sz);
    return OpResult::no_error;
 }
 OpResult FieldCharsL::Copy(const RawWr& wr, const RawRd& rd) const {

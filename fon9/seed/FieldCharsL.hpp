@@ -18,22 +18,25 @@ public:
    /// 建構:
    /// - 固定為 FieldType::Chars; FieldSource::DataMember;
    /// - size 必須 1..255, 若有動態調整大小的需求, 應使用 FieldStdString 或 FieldCharVector.
-   /// - this->Size_ = size + 1; 因為最後一個 byte 儲存字串長度.
+   /// - this->Size_ = size + 1; 因為需要一個 byte 儲存字串長度.
    FieldCharsL(Named&& named, int32_t ofs, size_t size)
       : base(std::move(named), FieldType::Chars, FieldSource::DataMember, ofs, size+1, 0) {
       assert(1 <= size && size <= 255);
    }
    /// DyMem 建構, 所以不用提供 ofs:
    /// - 固定為 FieldType::Chars; FieldSource::DyMem;
-   /// - this->Size_ = size + 1; 因為最後一個 byte 儲存字串長度.
+   /// - this->Size_ = size + 1; 因為需要一個 byte 儲存字串長度.
    FieldCharsL(Named&& named, size_t size)
       : base(std::move(named), FieldType::Chars, FieldSource::DyMem, 0, size+1, 0) {
       assert(1 <= size && size <= 255);
    }
 
+   uint32_t MaxSize() const {
+      return this->Size_ - 1;
+   }
    StrView GetValue(const RawRd& rd) const {
       const char* ptr = rd.GetCellPtr<char>(*this);
-      return StrView{ptr, static_cast<uint8_t>(ptr[this->Size_ - 1])};
+      return StrView{ptr+1, static_cast<uint8_t>(*ptr)};
    }
    StrView GetStrView(const RawRd& rd) const {
       return this->GetValue(rd);

@@ -37,7 +37,7 @@ static bool NamedIoManager_Start(seed::PluginsHolder& holder, StrView args) {
 } // namespaces
 
 extern "C" fon9_API fon9::seed::PluginsDesc f9p_NamedIoManager;
-static fon9::seed::PluginsPark f9p_NamedIoManager_reg{"NamedIoManager", &f9p_NamedIoManager};
+static fon9::seed::PluginsPark f9pAutoPluginsReg{"NamedIoManager", &f9p_NamedIoManager};
 
 fon9::seed::PluginsDesc f9p_NamedIoManager{
    "",

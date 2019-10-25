@@ -155,6 +155,10 @@ public:
    static constexpr fon9::TimeInterval GetHbIntervalSLM() {
       return fon9::TimeInterval_Second(25);
    }
+   /// 包含 TMP,SLM 的接收都算.
+   fon9::TimeStamp LastRxTime() const {
+      return this->LastRxTime_;
+   }
 
    void SendTmp(fon9::TimeStamp now, ExgTmpIoRevBuffer&&);
 };

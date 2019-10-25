@@ -60,7 +60,7 @@ struct TmpL40 : public TmpHeaderSt {
    void Initialize(const TmpL30& src, TmpMsgSeqNum_t requestStartSeq) {
       TmpInitializeWithSeqNum(*this, TmpMessageType_L(40));
       this->AppendNo_ = src.AppendNo_;
-      this->FcmId_ = src.FcmId_;
+      this->FcmId_ = src.SessionFcmId_;
       this->SessionId_ = src.SessionId_;
       this->SystemType_ = src.SystemType_;
       this->CancelOrderSec_ = 0;

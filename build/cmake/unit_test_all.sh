@@ -18,6 +18,7 @@ set -e
 
 OUTPUT_DIR=${OUTPUT_DIR:-${BUILD_DIR}/${BUILD_TYPE}/fon9}
 
+# ---------------------------------
 # unit tests: Container / Algorithm
 $OUTPUT_DIR/Trie_UT
 
@@ -80,6 +81,12 @@ $OUTPUT_DIR/FixFeeder_UT
 $OUTPUT_DIR/FixSender_UT
 ./t_FixReceiver.sh
 
+# ---------------------------------
+# f9twf
+TWFOUT_DIR=${TWFOUT_DIR:-${BUILD_DIR}/${BUILD_TYPE}/f9twf}
+$TWFOUT_DIR/f9twf_SymbId_UT
+
+# ---------------------------------
 { set +x; } 2>/dev/null
 echo '#####################################################'
 echo '#                 All tests passed!                 #'

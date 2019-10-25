@@ -4,10 +4,9 @@
 
 namespace f9twf {
 
-void ExgIoManager::OnParentSeedClear() {
-   this->RegularLineMgr_.OnBeforeDestroy();
-   this->AfterHourLineMgr_.OnBeforeDestroy();
-   base::OnParentSeedClear();
+void ExgTradingLineMgr::OnParentSeedClear() {
+   this->OnBeforeDestroy();
+   baseIo::OnParentSeedClear();
 }
 
 } // namespaces

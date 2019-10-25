@@ -7,8 +7,8 @@
 namespace fon9 {
 
 static constexpr DayTimeSec   kNoEndTime{25 * 60 * 60};
-static constexpr char         kSplitField = '|';
-static constexpr char         kSplitTagValue = '=';
+#define kCSTR_SplitField          "|"
+#define kCSTR_SplitTagValue       "="
 
 //--------------------------------------------------------------------------//
 
@@ -19,12 +19,15 @@ void SchConfig::SetAlwaysInSch() {
    this->StartTime_.Seconds_ = 0;
    this->EndTime_ = kNoEndTime;
 }
+void SchConfig::SetAlwaysOutSch() {
+   this->Weekdays_.reset();
+}
 
 void SchConfig::Parse(StrView cfgstr) {
    this->SetAlwaysInSch();
    StrView tag, value;
    while (!cfgstr.empty()) {
-      StrFetchTagValue(cfgstr, tag, value, kSplitField, kSplitTagValue);
+      StrFetchTagValue(cfgstr, tag, value, *kCSTR_SplitField, *kCSTR_SplitTagValue);
       if (tag == "Weekdays") {
          this->Weekdays_.reset();
          for (char ch : value) {
@@ -47,15 +50,19 @@ void SchConfig::Parse(StrView cfgstr) {
 }
 
 fon9_API void RevPrint(RevBuffer& rbuf, const SchConfig& schcfg) {
-   RevPrint(rbuf, kSplitField, "TZ", kSplitTagValue, schcfg.TimeZoneName_);
+   RevPrint(rbuf, kCSTR_SplitField "TZ" kCSTR_SplitTagValue, schcfg.TimeZoneName_);
    if (schcfg.EndTime_ < kNoEndTime)
-      RevPrint(rbuf, kSplitField, "End", kSplitTagValue, schcfg.EndTime_);
-   RevPrint(rbuf, kSplitField, "Start", kSplitTagValue, schcfg.StartTime_);
-   for (size_t L = kWeekdayCount; L > 0; ) {
-      if (schcfg.Weekdays_.test(--L))
-         RevPutChar(rbuf, static_cast<char>(L + '0'));
+      RevPrint(rbuf, kCSTR_SplitField "End" kCSTR_SplitTagValue, schcfg.EndTime_);
+   RevPrint(rbuf, kCSTR_SplitField "Start" kCSTR_SplitTagValue, schcfg.StartTime_);
+   if (schcfg.Weekdays_.any()) {
+      for (size_t L = kWeekdayCount; L > 0; ) {
+         if (schcfg.Weekdays_.test(--L))
+            RevPutChar(rbuf, static_cast<char>(L + '0'));
+      }
+      RevPrint(rbuf, "Weekdays" kCSTR_SplitTagValue);
    }
-   RevPrint(rbuf, "Weekdays", kSplitTagValue);
+   else
+      RevPrint(rbuf, "Weekdays" kCSTR_SplitTagValue "OUT");
 }
 
 //--------------------------------------------------------------------------//

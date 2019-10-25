@@ -13,7 +13,7 @@
   border-collapse: collapse;
   width: 100%;
   line-height: 1.5em;
-  white-space: nowrap;
+  white-space: pre;
 }
 .gvTable thead th {
   position: sticky;

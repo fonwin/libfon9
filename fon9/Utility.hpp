@@ -145,6 +145,8 @@ struct IsTrivialByte {
    enum { value = (sizeof(decay_t<T>) == 1 && std::is_trivial<decay_t<T>>::value) };
 };
 
+//--------------------------------------------------------------------------//
+
 /// \ingroup Misc
 /// 取得包含此 data member 的物件.
 /// \code
@@ -191,6 +193,8 @@ inline int32_t DataMemberOffset(MemberT Derived::*pDataMember) {
    static_cast<size_t>(reinterpret_cast<intptr_t>(&(reinterpret_cast<Type*>(0x10000)->Member_)) \
                       - static_cast<intptr_t>(0x10000))
 
+//--------------------------------------------------------------------------//
+
 /// \ingroup Misc
 /// 直接就地建構. 避免 DBG_NEW 的影響.
 template<class T, class... ArgsT>
@@ -214,6 +218,8 @@ inline void destroy_at(T* p) {
    (void)p;
    p->~T();
 }
+
+//--------------------------------------------------------------------------//
 
 /// \ingroup fon9_MACRO
 /// - 讓 enum_t 可以使用 (a | b) 等同 static_cast<enum_t>(a | b)
@@ -250,6 +256,8 @@ constexpr bool IsEnumContainsAny(enum_t a, enum_t b) { \
 
 #define fon9_kCSTR_CELLSPL "\x01"
 #define fon9_kCSTR_ROWSPL  "\n"
+
+//--------------------------------------------------------------------------//
 
 /// \ingroup Misc
 /// 從 src 複製 sz bytes 到 dst, 並返回 dst + sz; 方便接續複製其他內容.

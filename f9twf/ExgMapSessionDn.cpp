@@ -41,9 +41,8 @@ void ExgMapSessionDn::LoadP07(const ExgMapBrkFcmId& mapFcmId, fon9::StrView fctx
 }
 
 bool ExgMapSessionDn::AppendDn(const ExgLineTmpArgs& lineArgs, std::string& devcfg) const {
-   ExgSessionKey seskey = TmpGetValue<TmpFcmId_t>(lineArgs.FcmId_);
-   seskey = (seskey << (sizeof(SessionId) * 8))
-          + TmpGetValue<TmpSessionId_t>(lineArgs.SessionId_);
+   ExgSessionKey seskey = TmpGetValueU(lineArgs.SessionFcmId_);
+   seskey = (seskey << (sizeof(SessionId) * 8)) + TmpGetValueU(lineArgs.SessionId_);
    auto ifind = this->SesToDn_.find(seskey);
    if (ifind == this->SesToDn_.end())
       return false;

@@ -2,7 +2,7 @@
 /// \author fonwinz@gmail.com
 #ifndef __fon9_StrTo_hpp__
 #define __fon9_StrTo_hpp__
-#include "fon9/StrView.hpp"
+#include "fon9/CharAry.hpp"
 #include "fon9/StrTools.hpp"
 #include "fon9/DecBase.hpp"
 
@@ -500,6 +500,10 @@ inline IntT Pic9StrTo(const char* str) {
    static_assert(Width > 0, "Pic9StrTo() Width must > 0.");
    return impl::AuxPic9StrTo<IntT, Width>::RStrTo(str + Width - 1);
 }
+template <typename IntT, size_t arysz, typename CharT = char, CharT kChFiller = 0>
+inline IntT Pic9StrTo(const CharAry<arysz, CharT, kChFiller>& str) {
+   return Pic9StrTo<arysz, IntT>(str.Chars_);
+}
 
 /// \ingroup AlNum
 /// 固定寬度的數字字串轉有號整數輸出.
@@ -513,6 +517,10 @@ inline IntT SPic9StrTo(const char* str) {
    static_assert(std::is_signed<IntT>::value, "SPic9StrTo(), IntT 必須是有正負的整數型別");
    auto res = Pic9StrTo<Width - 1, IntT>(str + 1);
    return (*str == '-' ? static_cast<IntT>(-res) : res);
+}
+template <typename IntT, size_t arysz, typename CharT = char, CharT kChFiller = 0>
+inline IntT SPic9StrTo(const CharAry<arysz, CharT, kChFiller>& str) {
+   return SPic9StrTo<arysz, IntT>(str.Chars_);
 }
 
 } // namespace fon9

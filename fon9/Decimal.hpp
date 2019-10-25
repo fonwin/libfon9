@@ -122,6 +122,9 @@ public:
    constexpr bool IsNull() const {
       return this->Value_ == OrigNull;
    }
+   constexpr bool IsZero() const {
+      return this->Value_ == 0;
+   }
    void AssignNull() {
       this->Value_ = OrigNull;
    }

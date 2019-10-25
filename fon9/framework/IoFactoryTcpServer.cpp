@@ -42,7 +42,7 @@ static bool TcpServer_Start(seed::PluginsHolder& holder, StrView args) {
 } // namespaces
 
 extern "C" fon9_API fon9::seed::PluginsDesc f9p_TcpServer;
-static fon9::seed::PluginsPark f9p_NamedIoManager_reg{"TcpServer", &f9p_TcpServer};
+static fon9::seed::PluginsPark f9pAutoPluginsReg{"TcpServer", &f9p_TcpServer};
 
 fon9::seed::PluginsDesc f9p_TcpServer{
    "",

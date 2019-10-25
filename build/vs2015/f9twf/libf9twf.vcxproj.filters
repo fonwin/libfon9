@@ -50,6 +50,15 @@
     <ClInclude Include="..\..\..\f9twf\ExgMapMgr.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\f9twf\ExgTmpTradingR1.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\f9twf\ExgTmpTradingR7.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\f9twf\ExgTmpTradingR9.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\f9twf\ExgLineTmpFactory.cpp">

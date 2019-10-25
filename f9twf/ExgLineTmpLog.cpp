@@ -43,8 +43,8 @@ std::string ExgLineTmpLog::Open(const ExgLineTmpArgs& lineArgs,
       fon9::RevBufferFixedMem rbuf{hdrbuf, kRevBufSize};
       fon9::RevPrint(rbuf, kCSTR_Header,
                      "TDay=", tdayYYYYMMDD,
-                     "|FcmId=", TmpGetValue<TmpFcmId_t>(lineArgs.FcmId_),
-                     "|SessionId=", TmpGetValue<TmpSessionId_t>(lineArgs.SessionId_),
+                     "|FcmId=", TmpGetValueU(lineArgs.SessionFcmId_),
+                     "|SessionId=", TmpGetValueU(lineArgs.SessionId_),
                      "|HeaderSize=" fon9_CTXTOCSTR(kHeaderSize) "\n\n");
       assert(rbuf.GetUsedSize() + sizeof(FHeader) <= kHeaderSize);
       this->Appender_->Append(rbuf.GetCurrent(), kHeaderSize);
@@ -87,8 +87,8 @@ std::string ExgLineTmpLog::Open(const ExgLineTmpArgs& lineArgs,
       else if_TagValue(HeaderSize);
    }
    if (cTDay != tdayYYYYMMDD
-       || cFcmId != TmpGetValue<TmpFcmId_t>(lineArgs.FcmId_)
-       || cSessionId != TmpGetValue<TmpSessionId_t>(lineArgs.SessionId_)
+       || cFcmId != TmpGetValueU(lineArgs.SessionFcmId_)
+       || cSessionId != TmpGetValueU(lineArgs.SessionId_)
        || cHeaderSize != kHeaderSize) {
       res = std::errc::bad_message;
       errfn = "FileHeader.Info";
@@ -124,7 +124,7 @@ std::string ExgLineTmpLog::Open(const ExgLineTmpArgs& lineArgs,
          goto __OPEN_ERR;
       }
       /// Size_ = 實際占用的資料量 = pksz + sizeof(LogHeader);
-      auto logsz = TmpGetValue<uint32_t>(loghdr.Size4_);
+      auto logsz = TmpGetValueU(loghdr.Size4_);
       switch (loghdr.LogType_) {
       case TmpLogPacketType::Send:
       case TmpLogPacketType::Recv:
@@ -138,7 +138,7 @@ std::string ExgLineTmpLog::Open(const ExgLineTmpArgs& lineArgs,
             errfn = "Read.TmpPkHdr";
             goto __OPEN_ERR;
          }
-         if (auto seqn = TmpGetValue<TmpMsgSeqNum_t>(tmphdr.MsgSeqNum_)) {
+         if (auto seqn = TmpGetValueU(tmphdr.MsgSeqNum_)) {
             if (loghdr.LogType_ == TmpLogPacketType::Send)
                this->Curr_.LastTxMsgSeqNum_ = seqn;
             else

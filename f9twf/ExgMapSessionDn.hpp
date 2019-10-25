@@ -19,6 +19,9 @@ public:
    void reserve(size_t sz) {
       this->SesToDn_.reserve(sz);
    }
+   void shrink_to_fit() {
+      this->SesToDn_.shrink_to_fit();
+   }
    void swap(ExgMapSessionDn& rhs) {
       this->SesToDn_.swap(rhs.SesToDn_);
    }

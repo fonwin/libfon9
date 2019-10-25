@@ -169,6 +169,21 @@ constexpr TimeStamp EpochSecondsToTimeStamp(TimeStamp::OrigType epochSeconds) {
    return TimeStamp{TimeStamp::Make<0>(epochSeconds)};
 }
 
+#ifdef fon9_WINDOWS
+constexpr TimeStamp ToTimeStamp(FILETIME wtime) {
+   // The windows epoch starts 1601-01-01T00:00:00Z.
+   // It's 11644473600 seconds before the UNIX/Linux epoch (1970-01-01T00:00:00Z).
+   // The Windows ticks are in 100 nanoseconds.
+   return TimeStamp{TimeInterval::Make<7>(
+      (static_cast<uint64_t>(wtime.dwHighDateTime) << 32 | wtime.dwLowDateTime)
+      - 116444736000000000ULL)};
+}
+#else
+constexpr TimeStamp ToTimeStamp(const struct timespec& mtime) {
+   return TimeStamp{TimeInterval::Make<0>(mtime.tv_sec) + TimeInterval::Make<9>(mtime.tv_nsec)};
+}
+#endif
+
 //--------------------------------------------------------------------------//
 
 /// \ingroup AlNum

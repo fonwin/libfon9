@@ -7,7 +7,7 @@
 
 namespace f9twf {
 
-class f9twf_API ExgIoManager;
+class f9twf_API ExgTradingLineMgr;
 class f9twf_API ExgLineTmpSession;
 
 class f9twf_API ExgLineTmpRevBuffer {
@@ -82,15 +82,15 @@ protected:
    virtual void OnExgTmp_ApPacket(const TmpHeader& pktmp) = 0;
 
 public:
-   ExgIoManager&        IoManager_;
+   ExgTradingLineMgr&   LineMgr_;
    const ExgLineTmpArgs LineArgs_;
 
    /// log 必須已開啟成功, 否則會直接 crash!
-   ExgLineTmpSession(ExgIoManager&         ioMgr,
+   ExgLineTmpSession(ExgTradingLineMgr&    lineMgr,
                      const ExgLineTmpArgs& lineArgs,
                      ExgLineTmpLog&&       log)
       : Log_(std::move(log))
-      , IoManager_(ioMgr)
+      , LineMgr_(lineMgr)
       , LineArgs_(lineArgs) {
       assert(this->Log_.IsReady());
    }
@@ -102,8 +102,10 @@ public:
    /// 來自期交所的 L30;
    ExgSystemType SystemType() const { return this->SystemType_; }
 
+   fon9::TimeStamp LastRxTime() const { return this->LastRxTime_; }
+
    /// - 您必須自行先填妥的欄位: TmpHeader::MsgLength_、MsgSeqNum_、MessageType_;
-   /// - 傳送前自動填入的欄位: TmpHeader::MsgTime_、FcmId_、SessionId_、CheckSum;
+   /// - 傳送前自動填入的欄位: TmpHeader::MsgTime_、SessionFcmId_、SessionId_、CheckSum;
    void SendTmpNoSeqNum(fon9::TimeStamp now, ExgLineTmpRevBuffer&& buf);
 
    /// - 您必須自行先填妥的欄位: TmpHeader::MsgLength_、MessageType_;

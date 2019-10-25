@@ -3,6 +3,7 @@
 #include "fon9/seed/MaConfigTree.hpp"
 #include "fon9/seed/ConfigGridView.hpp"
 #include "fon9/seed/FieldMaker.hpp"
+#include "fon9/Log.hpp"
 
 namespace fon9 { namespace seed {
 
@@ -31,7 +32,7 @@ void MaConfigSeed::OnConfigValueChanged(ConfigLocker&& lk, StrView val) {
    if (!lk.owns_lock())
       lk.lock();
    this->SetConfigValueImpl(val);
-   this->ConfigTree_.WriteConfig(lk, this);
+   this->OwnerTree_.WriteConfig(lk, this);
 }
 
 //--------------------------------------------------------------------------//
@@ -124,11 +125,61 @@ void MaConfigTree::LoadConfigStr(StrView cfgstr, bool isFireEvent) {
 
 //--------------------------------------------------------------------------//
 
+MaConfigMgrBase::~MaConfigMgrBase() {
+}
+void MaConfigMgrBase::BindConfigFile(MaConfigMgrBase& rthis, NamedSeed& named, std::string cfgfn, bool isFireEvent) {
+   named.SetDescription(rthis.GetConfigSapling().BindConfigFile(cfgfn, isFireEvent));
+   named.SetTitle(std::move(cfgfn));
+}
+
 MaConfigMgr::~MaConfigMgr() {
 }
-void MaConfigMgr::BindConfigFile(std::string cfgfn, bool isFireEvent) {
-   this->SetDescription(this->GetConfigTree().BindConfigFile(cfgfn, isFireEvent));
-   this->SetTitle(std::move(cfgfn));
+TreeSP MaConfigMgr::GetSapling() {
+   return this->Sapling_;
+}
+StrView MaConfigMgr::Name() const {
+   return &this->Name_;
+}
+
+//--------------------------------------------------------------------------//
+
+MaConfigSeed_SchTask::~MaConfigSeed_SchTask() {
+}
+void MaConfigSeed_SchTask::OnParentTreeClear(Tree& tree) {
+   this->DisposeAndWait();
+   base::OnParentTreeClear(tree);
+}
+void MaConfigSeed_SchTask::OnConfigValueChanged(MaConfigTree::Locker&& lk, StrView val) {
+   CharVector cfgstr{val};
+   lk.unlock();
+   this->OnSchCfgChanged(ToStrView(cfgstr));
+   // ----- 取得 Sch設定 的正規化字串.
+   {
+      SchImpl::Locker schImpl{this->SchImpl_};
+      cfgstr = RevPrintTo<CharVector>(schImpl->Config_);
+   }
+   // -----
+   base::OnConfigValueChanged(std::move(lk), ToStrView(cfgstr));
+}
+TimeStamp MaConfigSeed_SchTask::GetNextSchInTime() {
+   SchImpl::Locker schImpl{this->SchImpl_};
+   return schImpl->Config_.GetNextSchIn(UtcNow());
+}
+void MaConfigSeed_SchTask::SetNextTimeInfo(TimeStamp tmNext, StrView exInfo) {
+   RevBufferFixedSize<sizeof(NumOutBuf) * 2>  strNextTime;
+   if (!tmNext.IsNullOrZero())
+      RevPrint(strNextTime, "|Next=", tmNext, FmtTS{"f-T+'L'"});
+
+   std::string desc = RevPrintTo<std::string>(LocalNow(), FmtTS{"f-T.6"}, '|', exInfo, strNextTime);
+   auto locker{this->OwnerTree_.Lock()};
+   fon9_LOG_INFO("FileImpMgr|Info=", exInfo,
+                 "|Name=", this->OwnerTree_.ConfigMgr_.Name(), '/', this->Name_,
+                 strNextTime,
+                 "|SchCfg={", this->GetConfigValue(locker), '}');
+   this->OwnerTree_.UpdateConfigSeed(locker, *this, nullptr, &desc);
+}
+void MaConfigSeed_SchTask::OnSchTask_NextCheckTime(const SchConfig::CheckResult&) {
+   this->SetNextTimeInfo(this->GetNextSchInTime(), "NextCheckTime");
 }
 
 } } // namespaces

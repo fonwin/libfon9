@@ -24,6 +24,9 @@ public:
    virtual ~SymbData();
 };
 
+using SymbFlowGroup_t = uint8_t;
+using SymbSeqNo_t = uint16_t;
+
 /// \ingroup fmkt
 /// 可擴充的商品資料.
 /// - 配合 seed::LayoutDy 或 LayoutN 機制擴充, 例如:
@@ -33,13 +36,34 @@ public:
 class fon9_API Symb : public SymbData, public intrusive_ref_counter<Symb> {
    fon9_NON_COPY_NON_MOVE(Symb);
 public:
-   /// 一張的單位數(股數)
+   /// 台灣證券「一張」的單位數(股數)
    uint32_t ShUnit_{0};
-   /// 台灣期交所的流程群組代碼.
-   uint16_t FlowGroup_{0};
+
    /// 交易市場.
-   f9fmkt_TradingMarket TradingMarket_{f9fmkt_TradingMarket_Unknown};
-   char                 Filler5_____[5];
+   f9fmkt_TradingMarket    TradingMarket_{f9fmkt_TradingMarket_Unknown};
+   /// 交易時段.
+   /// - 台灣證券: 不提供.
+   /// - 台灣期權: 在載入 P08.{SystemType} 時, 根據 SystemType 填入此值.
+   f9fmkt_TradingSessionId TradingSessionId_{f9fmkt_TradingSessionId_Unknown};
+
+   char  Filler_____[1];
+
+   /// 台灣期交所的流程群組代碼.
+   SymbFlowGroup_t   FlowGroup_{0};
+   /// 交易所的價格欄位, 若沒有定義小數位, 則使用 PriceOrigDiv_ 來處理;
+   /// - 例如: 期交所Tmp格式的下單、回報, 都需要用 PriceOrigDiv_ 來決定小數位:
+   ///   - 若 TaiFexPri = Decimal<int64_t,9>;
+   ///   - 期交所 P08 的 decimal_locator = 2;
+   ///   - 則 PriceOrigDiv_ = 10^7;
+   uint32_t PriceOrigDiv_{0};
+   /// 選擇權商品代碼, 履約價格部份之小數調整.
+   /// - 例如: "TEO03200L9" 電子 320.0 買權;
+   ///   此時商品Id的履約價:小數1位; 則 StrikePriceDiv_ = 10;
+   uint32_t StrikePriceDiv_{0};
+
+   /// 期交所定義的商品序號.
+   SymbSeqNo_t ExgSymbSeq_{0};
+   char        Filler2_____[2];
 
    /// 系統自訂的商品Id, 不一定等於交易所的商品Id.
    /// 交易送出、行情解析時, 再依自訂規則轉換.
@@ -68,6 +92,9 @@ using SymbHashMap = std::unordered_map<StrView, SymbSP>;
 inline Symb& GetSymbValue(const std::pair<StrView, SymbSP>& v) {
    return *v.second;
 }
+inline StrView GetSymbKey(const std::pair<StrView, SymbSP>& v) {
+   return v.first;
+}
 
 template <class Symbs>
 inline SymbSP InsertSymb(Symbs& symbs, SymbSP v) {
@@ -90,6 +117,9 @@ struct SymbSP_Comparer {
 using SymbSortedVector = SortedVectorSet<SymbSP, SymbSP_Comparer>;
 inline Symb& GetSymbValue(const SymbSP& v) {
    return *v;
+}
+inline StrView GetSymbKey(const SymbSP& v) {
+   return ToStrView(v->SymbId_);
 }
 inline SymbSP InsertSymb(SymbSortedVector& symbs, SymbSP&& v) {
    return *symbs.insert(std::move(v)).first;
@@ -120,6 +150,9 @@ struct TrieSymbKey {
 using SymbTrieMap = Trie<TrieSymbKey, SymbSP>;
 inline Symb& GetSymbValue(const SymbTrieMap::value_type& v) {
    return *v.value();
+}
+inline std::string GetSymbKey(const SymbTrieMap::value_type& v) {
+   return v.key();
 }
 inline SymbSP InsertSymb(SymbTrieMap& symbs, SymbSP v) {
    return symbs.emplace(ToStrView(v->SymbId_), v).first->value();

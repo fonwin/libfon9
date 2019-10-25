@@ -10,49 +10,35 @@
 namespace f9twf {
 namespace f9fmkt = fon9::fmkt;
 
-class f9twf_API ExgIoManager;
-
 fon9_WARN_DISABLE_PADDING;
 /// 負責管理: 可用線路、下單時尋找適當線路.
 /// - 管理一組相同 ExgSystemType 的「交易線路」
-/// - ExgSystemType 在線路申請時就決定, 然後在 L30(通知登錄訊息) 提供.
+/// - 日盤、夜盤時間會有重疊, 使用各自的 TradingLineMgr;
+///   - 收到下單要求時, 根據商品的 FlowGroup 判斷交易時段.
+///   - 每個 FlowGroup 有自己的交易時段.
 /// - 當連線成功後, 訊息補完後.
 ///   - 若是「交易線路」ApCode = Trading(4) 或 TradingShortFormat(6)
 ///   - 則進入可送單狀態, 此時會到 OnTradingLineReady() 註冊.
-class f9twf_API ExgTradingLineMgr : public f9fmkt::TradingLineManager {
+class f9twf_API ExgTradingLineMgr : public f9fmkt::TradingLineManager
+                                  , public fon9::IoManagerTree {
    fon9_NON_COPY_NON_MOVE(ExgTradingLineMgr);
-   using base = f9fmkt::TradingLineManager;
-   friend class f9twf_API ExgIoManager; // this->OnBeforeDestroy();
+   using baseTrading = f9fmkt::TradingLineManager;
+   using baseIo = fon9::IoManagerTree;
 
 public:
-   ExgIoManager& IoManager_;
-   ExgTradingLineMgr(ExgIoManager& ioMgr) : IoManager_(ioMgr) {
-   }
-};
+   const ExgMapMgrSP    ExgMapMgr_;
+   const ExgSystemType  ExgSystemType_;
 
-/// - 線路申請時就已決定好線路的 SystemType;
-/// - 日盤、夜盤時間會有重疊: 所以使用各自的 TradingLineMgr;
-///   - 收到下單要求時, 根據商品的 FlowGroup 判斷交易時段.
-///   - 每個 FlowGroup 有自己的交易時段.
-class f9twf_API ExgIoManager : public fon9::IoManagerTree {
-   fon9_NON_COPY_NON_MOVE(ExgIoManager);
-   using base = fon9::IoManagerTree;
-
-public:
-   const ExgMapMgrSP ExgMapMgr_;
-   /// 日盤線路管理.
-   ExgTradingLineMgr RegularLineMgr_;
-   /// 夜盤線路管理.
-   ExgTradingLineMgr AfterHourLineMgr_;
-
-   fon9_MSC_WARN_DISABLE(4355); // 'this': used in base member initializer list.
-   ExgIoManager(ExgMapMgrSP exgMapMgr, const fon9::IoManagerArgs& ioargs, fon9::TimeInterval afterOpen)
-      : base(ioargs, afterOpen)
+   ExgTradingLineMgr(const fon9::IoManagerArgs& ioargs, fon9::TimeInterval afterOpen,
+                     ExgMapMgrSP exgMapMgr, ExgSystemType systemType)
+      : baseIo(ioargs, afterOpen)
       , ExgMapMgr_{std::move(exgMapMgr)}
-      , RegularLineMgr_(*this)
-      , AfterHourLineMgr_(*this) {
+      , ExgSystemType_{systemType} {
    }
-   fon9_MSC_WARN_POP;
+
+   bool AppendDn(const ExgLineTmpArgs& lineArgs, std::string& devcfg) const {
+      return this->ExgMapMgr_->AppendDn(this->ExgSystemType_, lineArgs, devcfg);
+   }
 
    /// 清除排隊中的下單要求.
    /// - this->RegularLineMgr_.OnBeforeDestroy();

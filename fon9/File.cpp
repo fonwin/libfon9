@@ -114,20 +114,13 @@ File::Result File::SetFileSize(PosType newFileSize) {
 
 TimeStamp File::GetLastModifyTime() const {
 #ifdef fon9_WINDOWS
-   FILETIME   wtime;
-   if (GetFileTime(this->Fdr_.GetFD(), 0, 0, &wtime)) {
-      // The windows epoch starts 1601-01-01T00:00:00Z.
-      // It's 11644473600 seconds before the UNIX/Linux epoch (1970-01-01T00:00:00Z).
-      // The Windows ticks are in 100 nanoseconds.
-      const uint64_t winTick = static_cast<uint64_t>(wtime.dwHighDateTime) << 32 | wtime.dwLowDateTime;
-      return TimeStamp{TimeInterval::Make<7>(winTick - 116444736000000000ULL)};
-   }
+   FILETIME wtime;
+   if (GetFileTime(this->Fdr_.GetFD(), 0, 0, &wtime))
+      return ToTimeStamp(wtime);
 #else
    struct stat st;
-   if (fstat(this->Fdr_.GetFD(), &st) == 0) {
-      TimeInterval ti = TimeInterval::Make<0>(st.st_mtime) + TimeInterval::Make<9>(st.st_mtim.tv_nsec);
-      return TimeStamp{ti};
-   }
+   if (fstat(this->Fdr_.GetFD(), &st) == 0)
+      return ToTimeStamp(st.st_mtim);
 #endif
    return TimeStamp{};
 }

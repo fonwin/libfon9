@@ -6,6 +6,7 @@
 #include "fon9/seed/SeedSubr.hpp"
 #include "fon9/ConfigFileBinder.hpp"
 #include "fon9/ConfigUtils.hpp"
+#include "fon9/SchTask.hpp"
 
 namespace fon9 { namespace seed {
 
@@ -15,6 +16,7 @@ fon9_API void RevPrintConfigGridView(RevBuffer& rbuf, const Fields& flds,
 
 class fon9_API MaConfigSeed;
 class fon9_API MaConfigMgr;
+class fon9_API MaConfigMgrBase;
 using MaConfigMgrSP = intrusive_ptr<MaConfigMgr>;
 
 fon9_WARN_DISABLE_PADDING;
@@ -33,10 +35,10 @@ protected:
    void OnParentSeedClear() override;
 
 public:
-   MaConfigMgr& ConfigMgr_;
+   MaConfigMgrBase&  ConfigMgr_;
 
    template <class... ArgsT>
-   MaConfigTree(MaConfigMgr& configMgr, ArgsT&&... args)
+   MaConfigTree(MaConfigMgrBase& configMgr, ArgsT&&... args)
       : base(std::forward<ArgsT>(args)...)
       , ConfigMgr_(configMgr) {
    }
@@ -57,33 +59,35 @@ public:
 
    void WriteConfig(const Locker& container, const MaConfigSeed* item);
 };
+using MaConfigTreeSP = intrusive_ptr<MaConfigTree>;
 fon9_WARN_POP;
 
 class fon9_API MaConfigSeed : public NamedSeed {
    fon9_NON_COPY_NON_MOVE(MaConfigSeed);
    using base = NamedSeed;
 
+protected:
    CharVector  Value_;
    void SetConfigValueImpl(const StrView& val) {
       this->Value_.assign(val);
    }
 
-protected:
-   /// 預設呼叫 this->SetConfigValueImpl(); 及 this->ConfigTree_.WriteConfig();
+   /// 預設呼叫 this->SetConfigValueImpl(); 及 this->OwnerTree_.WriteConfig();
    virtual void OnConfigValueChanged(MaConfigTree::Locker&& lk, StrView val);
 
    friend class MaConfigTree; // 在 OnMaTree_AfterUpdated() 呼叫 OnConfigValueChanged();
 
 public:
-   MaConfigTree& ConfigTree_;
+   MaConfigTree& OwnerTree_;
 
    using ConfigLocker = MaConfigTree::Locker;
 
    template <class... NamedArgsT>
    MaConfigSeed(MaConfigTree& configTree, NamedArgsT&&... namedargs)
       : base(std::forward<NamedArgsT>(namedargs)...)
-      , ConfigTree_(configTree) {
+      , OwnerTree_(configTree) {
    }
+
    ~MaConfigSeed();
 
    static LayoutSP MakeLayout(std::string tabName, TabFlag tabFlag = TabFlag::NoSapling_NoSeedCommand_Writable);
@@ -98,22 +102,49 @@ public:
    }
 };
 
-class fon9_API MaConfigMgr : public NamedSapling {
+class fon9_API MaConfigMgrBase {
+   fon9_NON_COPY_NON_MOVE(MaConfigMgrBase);
+
+public:
+   const MaConfigTreeSP Sapling_;
+
+   MaConfigMgrBase(MaConfigTreeSP sapling) : Sapling_(std::move(sapling)) {
+   }
+
+   virtual ~MaConfigMgrBase();
+
+   MaConfigTree& GetConfigSapling() const {
+      assert(this->Sapling_.get() != nullptr);
+      return *this->Sapling_;
+   }
+   virtual StrView Name() const = 0;
+
+   static void BindConfigFile(MaConfigMgrBase& rthis, NamedSeed& named, std::string cfgfn, bool isFireEvent);
+};
+
+class fon9_API MaConfigMgr : public NamedSeed, public MaConfigMgrBase {
    fon9_NON_COPY_NON_MOVE(MaConfigMgr);
-   using base = NamedSapling;
+   using SeedBase = NamedSeed;
 
 public:
    template <class... NamedArgsT>
-   MaConfigMgr(intrusive_ptr<MaConfigTree> sapling, NamedArgsT&&... namedargs)
-      : base(std::move(sapling), std::forward<NamedArgsT>(namedargs)...) {
+   MaConfigMgr(MaConfigTreeSP sapling, NamedArgsT&&... namedargs)
+      : SeedBase(std::forward<NamedArgsT>(namedargs)...)
+      , MaConfigMgrBase(std::move(sapling)) {
    }
+
+   fon9_MSC_WARN_DISABLE(4355); // 'this': used in base member initializer list.
+   template <class... NamedArgsT>
+   MaConfigMgr(LayoutSP layout, NamedArgsT&&... namedargs)
+      : MaConfigMgr(new MaConfigTree(*this, std::move(layout)), std::forward<NamedArgsT>(namedargs)...) {
+   }
+   fon9_MSC_WARN_POP;
+
 
    ~MaConfigMgr();
 
-   MaConfigTree& GetConfigTree() const {
-      assert(dynamic_cast<MaConfigTree*>(this->Sapling_.get()) != nullptr);
-      return *static_cast<MaConfigTree*>(this->Sapling_.get());
-   }
+   TreeSP GetSapling() override;
+   StrView Name() const override;
 
    /// MaConfigTree(Sapling_) 必須已包含所需的 MaConfigSeed;
    /// - 將載入結果置於 Description;
@@ -124,7 +155,9 @@ public:
    ///   在 OnMaTree_AfterUpdated() 裡面會:
    ///   - 觸發 cfgitem->OnConfigValueChanged();
    ///   - 處發 SeedSubj_Notify();
-   void BindConfigFile(std::string cfgfn, bool isFireEvent);
+   void BindConfigFile(std::string cfgfn, bool isFireEvent) {
+      MaConfigMgrBase::BindConfigFile(*this, *this, std::move(cfgfn), isFireEvent);
+   }
 };
 
 //--------------------------------------------------------------------------//
@@ -154,6 +187,29 @@ public:
 };
 
 using MaConfigSeed_YN = MaConfigSeed_ExValue<EnabledYN>;
+
+//--------------------------------------------------------------------------//
+
+/// 包含一個「主動排程器」的設定項目.
+/// 處理 Sch 事件, 複寫: void OnSchTask_StateChanged(bool isInSch) override;
+class fon9_API MaConfigSeed_SchTask : public MaConfigSeed, protected SchTask {
+   fon9_NON_COPY_NON_MOVE(MaConfigSeed_SchTask);
+   using base = MaConfigSeed;
+
+protected:
+   void OnParentTreeClear(Tree&) override;
+   void OnConfigValueChanged(MaConfigTree::Locker&& lk, StrView val) override;
+   virtual void OnSchCfgChanged(StrView cfgstr) = 0;
+
+   void OnSchTask_NextCheckTime(const SchConfig::CheckResult&) override;
+   void SetNextTimeInfo(TimeStamp tmNext, StrView exInfo);
+
+public:
+   using base::base;
+   ~MaConfigSeed_SchTask();
+
+   TimeStamp GetNextSchInTime();
+};
 
 } } // namespaces
 #endif//__fon9_seed_MaConfigTree_hpp__

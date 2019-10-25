@@ -37,7 +37,7 @@ public:
          if (auto dat = GetSymbValue(*ivalue).GetSymbData(tab->GetIndex()))
             FieldsCellRevPrint(tab->Fields_, seed::SimpleRawRd{*dat}, rbuf, seed::GridViewResult::kCellSplitter);
       }
-      RevPrint(rbuf, GetSymbValue(*ivalue).SymbId_);
+      RevPrint(rbuf, GetSymbKey(*ivalue));
       return true;
    }
    /// 如果不是 unordered_map, 則可以使用一般的 GridView.

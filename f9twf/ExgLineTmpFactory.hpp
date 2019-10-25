@@ -14,7 +14,7 @@ class f9twf_API ExgLineTmpFactory : public fon9::SessionFactory, public f9fmkt::
 
 protected:
    /// 由衍生者根據 args.ApCode_ 決定要建立哪種 Session.
-   virtual fon9::io::SessionSP CreateLineTmp(ExgIoManager&         ioMgr,
+   virtual fon9::io::SessionSP CreateLineTmp(ExgTradingLineMgr&    lineMgr,
                                              const ExgLineTmpArgs& lineArgs,
                                              ExgLineTmpLog&&       log,
                                              std::string&          errReason) = 0;
@@ -22,7 +22,7 @@ protected:
 public:
    ExgLineTmpFactory(std::string logPathFmt, Named&& name);
 
-   /// mgr 必須是 f9twf::ExgIoManager
+   /// mgr 必須是 f9twf::ExgTradingLineMgr
    fon9::io::SessionSP CreateSession(fon9::IoManager& mgr, const fon9::IoConfigItem& cfg, std::string& errReason) override;
 
    /// 券商端, 不支援 SessionServer.

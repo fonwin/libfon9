@@ -151,5 +151,5 @@ static bool RcSessionServer_Start(fon9::seed::PluginsHolder& holder, fon9::StrVi
 }
 
 extern "C" fon9_API fon9::seed::PluginsDesc f9p_RcSessionServer;
-static fon9::seed::PluginsPark f9p_NamedIoManager_reg{"RcSessionServer", &f9p_RcSessionServer};
+static fon9::seed::PluginsPark f9pAutoPluginsReg{"RcSessionServer", &f9p_RcSessionServer};
 fon9::seed::PluginsDesc f9p_RcSessionServer{"", &RcSessionServer_Start, nullptr, nullptr, };
