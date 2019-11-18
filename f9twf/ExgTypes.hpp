@@ -41,10 +41,10 @@ constexpr bool ExgSystemTypeIsAfterHour(ExgSystemType val) {
    return (fon9::cast_to_underlying(val) % 10) == 1;
 }
 inline f9fmkt_TradingMarket ExgSystemTypeToMarket(ExgSystemType val) {
-   switch (fon9::cast_to_underlying(val) / 10) {
-   case 1: return f9fmkt_TradingMarket_TwOPT;
-   case 2: return f9fmkt_TradingMarket_TwFUT;
-   }
+   if (fon9::cast_to_underlying(val) <= 19)
+      return f9fmkt_TradingMarket_TwOPT;
+   if (fon9::cast_to_underlying(val) <= 29)
+      return f9fmkt_TradingMarket_TwFUT;
    return f9fmkt_TradingMarket_Unknown;
 }
 inline f9fmkt_TradingSessionId ExgSystemTypeToSessionId(ExgSystemType val) {

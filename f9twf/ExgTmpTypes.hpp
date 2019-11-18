@@ -165,11 +165,29 @@ enum class TmpPriType : uint8_t {
    /// 一定範圍市價.
    Mwp = 3,
 };
+inline f9fmkt_PriType TmpPriTypeTo(f9twf::TmpPriType priType) {
+   switch (priType) {
+   case f9twf::TmpPriType::Market:  return f9fmkt_PriType_Market;
+   case f9twf::TmpPriType::Limit:   return f9fmkt_PriType_Limit;
+   case f9twf::TmpPriType::Mwp:     return f9fmkt_PriType_Mwp;
+   }
+   return f9fmkt_PriType_Unknown;
+}
 
 enum class TmpSide : uint8_t {
+   Single = 0,
    Buy = 1,
    Sell = 2,
 };
+inline f9fmkt_Side TmpSideTo(f9twf::TmpSide side) {
+   switch (side) {
+   case f9twf::TmpSide::Buy:  return f9fmkt_Side_Buy;
+   case f9twf::TmpSide::Sell: return f9fmkt_Side_Sell;
+   default:
+   case f9twf::TmpSide::Single:
+      return f9fmkt_Side_Unknown;
+   }
+}
 
 enum class TmpTimeInForce : uint8_t {
    ROD = 0,
@@ -178,6 +196,15 @@ enum class TmpTimeInForce : uint8_t {
    /// 一定期間後系統自動刪除(報價).
    QuoteAutoCancel = 8,
 };
+inline f9fmkt_TimeInForce TmpTimeInForceTo(TmpTimeInForce tif) {
+   switch (tif) {
+   case TmpTimeInForce::ROD:  return f9fmkt_TimeInForce_ROD;
+   case TmpTimeInForce::IOC:  return f9fmkt_TimeInForce_IOC;
+   case TmpTimeInForce::FOK:  return f9fmkt_TimeInForce_FOK;
+   case TmpTimeInForce::QuoteAutoCancel:  return f9fmkt_TimeInForce_QuoteAutoCancel;
+   }
+   return f9fmkt_TimeInForce{};
+}
 
 enum class TmpExecType : char {
    New = '0',

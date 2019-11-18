@@ -164,6 +164,11 @@ fon9_ENUM(f9fmkt_TradingRequestSt, uint8_t) {
    /// 針對「某筆下單要求」交易所「最後一次回報」前的狀態.
    /// 此部分回報為失敗.
    f9fmkt_TradingRequestSt_PartExchangeRejected = 0xae,
+   /// 如果確定交易所刪單會分成多次傳送,
+   /// 則首次收到的交易所刪單回報, 使用此狀態.
+   /// - 例: 報價單 Bid/Offer 分2筆回報, 首次的 Bid 回報使用此狀態;
+   ///       Offer 使用 f9fmkt_TradingRequestSt_ExchangeCanceled.
+   f9fmkt_TradingRequestSt_PartExchangeCancel  = 0xa7,
 
    /// 下單要求流程已結束.
    f9fmkt_TradingRequestSt_Done = 0xda,
@@ -209,26 +214,22 @@ fon9_ENUM(f9fmkt_TradingRequestSt, uint8_t) {
 
    // 保留:
    // f9fmkt_OrderSt_FullFilled = 0xf4,
-   // f9fmkt_OrderSt_PartCanceled = 0xf5,
+   // f9fmkt_OrderSt_AsCanceled = 0xf5,
    // = f6,
 
-   /// 如果確定交易所刪單會分成多次傳送,
+   /// 如果確定「交易所主動」刪單會分成多次傳送,
    /// 則首次收到的交易所刪單回報, 使用此狀態.
-   /// - 例: 報價單 Bid/Offer 分2筆回報, 首次的 Bid 回報使用此狀態;
-   ///       Offer 使用 f9fmkt_TradingRequestSt_ExchangeCanceled.
    /// - 例: 期交所狀態 47 => 48;
-   ///       則首次的 47(因價格穩定措施刪單) 刪單回報使用此狀態;
+   ///       則首次的 47(因價格穩定措施刪單) 「交易所主動刪單」回報使用此狀態;
    ///       48(退單時之上限或下限價格) 使用 f9fmkt_TradingRequestSt_ExchangeCanceled.
-   f9fmkt_TradingRequestSt_BeforeExchangeCancel = 0xf7,
-   f9fmkt_TradingRequestSt_BeforeExchangeCancel2 = 0xf8,
-   f9fmkt_TradingRequestSt_BeforeExchangeCancel3 = 0xf9,
+   f9fmkt_TradingRequestSt_ExchangeCanceling = 0xf7,
    /// 交易所刪單 IOC, FOK... 若有多次回覆, 則最後一次刪單回覆, 使用此狀態.
-   f9fmkt_TradingRequestSt_ExchangeCanceled = 0xfa,
+   f9fmkt_TradingRequestSt_ExchangeCanceled  = 0xfa,
    /// f9fmkt_TradingRequestSt_ExchangeCanceled 之後, 又收到必須處理的交易所刪單.
    f9fmkt_TradingRequestSt_ExchangeCanceled2 = 0xfb,
    f9fmkt_TradingRequestSt_ExchangeCanceled3 = 0xfc,
 
-   // 保留: f9fmkt_OrderSt_UserCanceled = 0xfd,
+   // 保留: f9fmkt_OrderSt_Canceled = 0xfd,
 
    /// 下單要求流程已結束, 但後續又有變動.
    /// 類似 FIX 的 ExecType=D(Restated).
@@ -238,8 +239,15 @@ fon9_ENUM(f9fmkt_TradingRequestSt, uint8_t) {
    // 這裡的狀態碼, 必須與 f9fmkt_OrderSt 一起考慮.
    // 因為新單的 RequestSt 改變時, 通常會拿新單的 RequestSt 直接更新 OrderSt.
 };
-inline bool f9fmkt_TradingRequestSt_IsRejected(f9fmkt_TradingRequestSt st) {
+inline bool f9fmkt_TradingRequestSt_IsFinishedRejected(f9fmkt_TradingRequestSt st) {
    return (unsigned char)(st & 0xf0) == (unsigned char)(0xe0);
+}
+inline bool f9fmkt_TradingRequestSt_IsAnyRejected(f9fmkt_TradingRequestSt st) {
+   return f9fmkt_TradingRequestSt_IsFinishedRejected(st)
+      || st == f9fmkt_TradingRequestSt_PartExchangeRejected;
+}
+inline bool f9fmkt_TradingRequestSt_IsPart(f9fmkt_TradingRequestSt st) {
+   return (unsigned char)(st & 0xf0) == (unsigned char)(0xa0);
 }
 
 /// \ingroup fmkt
@@ -302,8 +310,10 @@ fon9_ENUM(f9fmkt_OrderSt, uint8_t) {
    f9fmkt_OrderSt_NewQueuing              = f9fmkt_TradingRequestSt_Queuing,
    f9fmkt_OrderSt_NewSending              = f9fmkt_TradingRequestSt_Sending,
    f9fmkt_OrderSt_NewSent                 = f9fmkt_TradingRequestSt_Sent,
+
    f9fmkt_OrderSt_NewPartExchangeAccepted = f9fmkt_TradingRequestSt_PartExchangeAccepted,
    f9fmkt_OrderSt_NewPartExchangeRejected = f9fmkt_TradingRequestSt_PartExchangeRejected,
+   // = f9fmkt_TradingRequestSt_PartExchangeCancel  = 0xa7,
 
    f9fmkt_OrderSt_NewDone                 = f9fmkt_TradingRequestSt_Done,
  //f9fmkt_OrderSt_NewBroken               = f9fmkt_TradingRequestSt_Broken,
@@ -319,18 +329,20 @@ fon9_ENUM(f9fmkt_OrderSt, uint8_t) {
    f9fmkt_OrderSt_PartFilled       = f9fmkt_TradingRequestSt_Filled,
    f9fmkt_OrderSt_FullFilled       = 0xf4,
    /// 部分成交之後(其實是全部成交), 才收到成交前的減量回報.
-   /// - 例: 新單10:Accepted, 成交3:PartFilled, 減量7(Bf=10,Af=3):PartCanceled
-   f9fmkt_OrderSt_PartCanceled     = 0xf5,
+   /// - 例: 新單10:Accepted, 成交3:PartFilled, 減量7(Bf=10,Af=3):AsCanceled
+   f9fmkt_OrderSt_AsCanceled = 0xf5,
    // 保留: = 0xf6,
-   // = f9fmkt_TradingRequestSt_BeforeExchangeCancel = 0xf7,
-   // = f9fmkt_TradingRequestSt_BeforeExchangeCancel2 = 0xf8,
-   // = f9fmkt_TradingRequestSt_BeforeExchangeCancel3 = 0xf9,
 
-   f9fmkt_OrderSt_ExchangeCanceled = f9fmkt_TradingRequestSt_ExchangeCanceled,
+   f9fmkt_OrderSt_Canceling = f9fmkt_TradingRequestSt_ExchangeCanceling,
+   // = f9fmkt_TradingRequestSt_ExchangeCanceled  = 0xfa,
    // = f9fmkt_TradingRequestSt_ExchangeCanceled2 = 0xfb,
    // = f9fmkt_TradingRequestSt_ExchangeCanceled3 = 0xfc,
       
-   f9fmkt_OrderSt_UserCanceled     = 0xfd,
+   /// 不須區分 UserCanceled / ExchangeCanceled;
+   /// 只需要一個完全刪單 Canceled:
+   /// - 若委託異動對應的是「新單要求 or 成交回報」則為交易所刪單.
+   /// - 否則(委託異動對應的是刪改要求)就是使用者刪單.
+   f9fmkt_OrderSt_Canceled = 0xfd,
 
    // 保留: = f9fmkt_TradingRequestSt_Restated = 0xfe,
 
@@ -338,8 +350,14 @@ fon9_ENUM(f9fmkt_OrderSt, uint8_t) {
    // 這裡的狀態碼, 必須與 f9fmkt_TradingRequestSt 一起考慮.
    // 因為新單的 RequestSt 改變時, 通常會拿新單的 RequestSt 直接更新 OrderSt.
 };
-inline bool f9fmkt_OrderSt_IsRejected(f9fmkt_OrderSt st) {
-   return f9fmkt_TradingRequestSt_IsRejected((f9fmkt_TradingRequestSt)st);
+inline bool f9fmkt_OrderSt_IsFinishedRejected(f9fmkt_OrderSt st) {
+   return f9fmkt_TradingRequestSt_IsFinishedRejected((f9fmkt_TradingRequestSt)st);
+}
+inline bool f9fmkt_OrderSt_IsAnyRejected(f9fmkt_OrderSt st) {
+   return f9fmkt_TradingRequestSt_IsAnyRejected((f9fmkt_TradingRequestSt)st);
+}
+inline bool f9fmkt_OrderSt_IsCanceled(f9fmkt_OrderSt st) {
+   return f9fmkt_OrderSt_AsCanceled <= st && st <= f9fmkt_OrderSt_Canceled;
 }
 
 #ifdef __cplusplus
