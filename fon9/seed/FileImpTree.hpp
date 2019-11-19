@@ -44,7 +44,7 @@ fon9_WARN_DISABLE_PADDING;
 ///   - Result(Description) = Import result;
 /// - SeedCommand: "reload" 可手動載入.
 /// - 衍生者須完成:
-///   - `FileImpLoaderSP OnBeforeLoad(uint64_t fileSize) override;`
+///   - `FileImpLoaderSP OnBeforeLoad(uint64_t fileSize, FileImpMonitorFlag& monFlag) override;`
 ///   - `void OnAfterLoad(RevBuffer& rbuf, FileImpLoaderSP loader) override;`
 class fon9_API FileImpSeed : public MaConfigSeed {
    fon9_NON_COPY_NON_MOVE(FileImpSeed);
@@ -67,8 +67,9 @@ class fon9_API FileImpSeed : public MaConfigSeed {
 
    /// 如果不支援 FileImpMonitorFlag::AddTail;
    /// - 傳回 nullptr;
-   /// - 或呼叫 this->ClearAddTailRemain(); 之後返回「支援重新載入」的處理程序.
-   ///   返回前必要時, 可修改 monFlag;
+   /// - 或:
+   ///   - 呼叫 this->SetAddTailToReload(); 
+   ///   - 返回「重新載入」的處理程序.
    virtual FileImpLoaderSP OnBeforeLoad(uint64_t fileSize, FileImpMonitorFlag& monFlag) = 0;
    virtual void OnAfterLoad(RevBuffer& rbuf, FileImpLoaderSP loader) = 0;
 
@@ -83,6 +84,12 @@ protected:
    void ClearAddTailRemain() {
       this->LastPos_ = 0;
       this->LastRemain_.clear();
+   }
+   void SetAddTailToReload(FileImpMonitorFlag& monFlag) {
+      if (monFlag == FileImpMonitorFlag::AddTail) {
+         this->ClearAddTailRemain();
+         monFlag = FileImpMonitorFlag::Reload;
+      }
    }
 
    /// 通常在衍生者建構時提供預設值.
