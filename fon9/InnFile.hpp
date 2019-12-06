@@ -23,15 +23,15 @@ enum : InnRoomType {
 
    /// 加上此旗標, 表示 exRoomHeader 的第一個欄位是 NextRoomPos.
    kInnRoomType_HasNextRoomPos_Flag = 0x80,
+   /// 使用串列方式管理 Free rooms.
+   kInnRoomType_FreeList = kInnRoomType_Free | kInnRoomType_HasNextRoomPos_Flag,
 
    /// 通常放在第1間房, 記錄此 InnFile 額外的訊息.
    /// e.g. InnDbf 用第1間房紀錄 TableName list.
    kInnRoomType_ExFileHeader = kInnRoomType_HasNextRoomPos_Flag | 0x01,
 };
 
-fon9_WARN_DISABLE_PADDING;
-fon9_MSC_WARN_DISABLE_NO_PUSH(4623 /* default constructor was implicitly defined as deleted */);
-
+fon9_MSC_WARN_DISABLE(4623 /* default constructor was implicitly defined as deleted */);
 fon9_DEFINE_EXCEPTION(InnRoomPosError, std::runtime_error);
 fon9_DEFINE_EXCEPTION(InnRoomSizeError, std::runtime_error);
 class InnFileError : public std::runtime_error {
@@ -41,6 +41,7 @@ public:
    InnFileError(ErrC e, const char* what) : base{what}, ErrCode_{e} {
    }
 };
+fon9_WARN_POP;
 
 /// \ingroup Inn
 /// 檔案空間, 採用類似 memory alloc 的管理方式, 分配空間 & 釋放空間.
@@ -131,6 +132,7 @@ public:
       fon9_NON_COPYABLE(RoomKey);
    public:
       using NoteT = uint16_t;
+      using Note4T = uint32_t;
 
       RoomKey() {
          ZeroStruct(this->Info_);
@@ -165,11 +167,18 @@ public:
 
       /// 設定使用者自訂的額外註記.
       /// e.g. InnDbf 用來記錄: 寫入此房的資料, 是否需要同時寫入同步?
+      /// Note, Note4 各自獨立, 不會相互影響, 不會存入 RoomExHeader.
       void SetNote(NoteT value) {
          this->Info_.Note_ = value;
       }
       NoteT GetNote() const {
          return this->Info_.Note_;
+      }
+      void SetNote4(Note4T value) {
+         this->Info_.Note4_ = value;
+      }
+      Note4T GetNote4() const {
+         return this->Info_.Note4_;
       }
 
       SizeT GetDataSize() const {
@@ -198,7 +207,8 @@ public:
          SizeT       DataSize_;
          InnRoomType CurrentRoomType_;
          InnRoomType PendingRoomType_;
-         uint16_t    Note_;
+         NoteT       Note_;
+         Note4T      Note4_;
       };
       Info  Info_;
       friend class InnFile;
@@ -236,7 +246,7 @@ public:
 
    //--------------------------------------------------------------------------//
 
-   /// 重新分配一個 room (e.g. free room => 分配使用).
+   /// 重新分配一個 room (e.g. free room => 重新分配使用).
    /// - 若 room 的空間 < requiredSize, 則會拋出 InnRoomSizeError 異常!
    /// - requiredSize=需要的大小, room 的實際可用大小必定 >= requiredSize.
    /// - requiredSize 在此僅作為檢查 RoomSize 使用.
@@ -264,7 +274,10 @@ public:
    SizeT Read(const RoomKey& roomKey, SizeT offset, SizeT size, BufferList& buf);
    /// buf 大小最少需要 `size` bytes.
    /// 實際取出的資料量, 必定 <= size.
-   SizeT Read(const RoomKey& roomKey, SizeT offset, SizeT size, void* buf);
+   SizeT Read(const RoomKey& roomKey, SizeT offset, SizeT size, void* buf) {
+      return this->Read(roomKey, offset, buf, size);
+   }
+   SizeT Read(const RoomKey& roomKey, SizeT offset, void* buf, SizeT size);
 
    /// 將 room 儲存的全部內容取出, 放入 buf 尾端.
    /// 傳回取出的資料量, 必定等於 roomKey.GetDataSize();
@@ -326,7 +339,6 @@ private:
    SizeT HeaderSize_;
    File::SizeType FileSize_;
 };
-fon9_WARN_POP;
 
 } // namespaces
 #endif//__fon9_InnFile_hpp__

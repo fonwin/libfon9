@@ -55,6 +55,7 @@ $OUTPUT_DIR/File_UT
 $OUTPUT_DIR/TimedFileName_UT
 $OUTPUT_DIR/InnFile_UT
 $OUTPUT_DIR/InnDbf_UT
+$OUTPUT_DIR/InnApf_UT
 ./t_FileRevRead.sh  t_FileRevRead.sh
 
 rm -rf ./logs

@@ -70,11 +70,17 @@ public:
    }
 
    template <class Period = std::ratio<1>>
-   double StopTimer() {
+   double CurrSpan() {
       using Span = std::chrono::duration<double, Period>;
       Span  span = std::chrono::duration_cast<Span>(Clock::now() - this->StartTime_);
-      this->ResetTimer();
       return span.count();
+   }
+
+   template <class Period = std::ratio<1>>
+   double StopTimer() {
+      auto span = this->CurrSpan();
+      this->ResetTimer();
+      return span;
    }
 
    static std::ostream& PrintResultNoEOL(double span, const char* msg, uint64_t timesRun) {

@@ -53,6 +53,8 @@ set(fon9src
  InnSyncer.cpp
  InnSyncerFile.cpp
  InnDbf.cpp
+ InnStream.cpp
+ InnApf.cpp
  
  buffer/MemBlock.cpp
  buffer/BufferNode.cpp
@@ -283,6 +285,9 @@ target_link_libraries(InnFile_UT fon9_s)
 
 add_executable(InnDbf_UT InnDbf_UT.cpp)
 target_link_libraries(InnDbf_UT fon9_s)
+
+add_executable(InnApf_UT InnApf_UT.cpp)
+target_link_libraries(InnApf_UT fon9_s)
 
 add_executable(FileRevRead_UT FileRevRead_UT.cpp)
 target_link_libraries(FileRevRead_UT fon9_s)

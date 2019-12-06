@@ -11,10 +11,10 @@ fon9_API void BufferAppendTo(const BufferNode* front, std::string& str) {
    BufferAppendTo<std::string>(front, str);
 }
 
-fon9_API void AppendToBuffer(BufferList& dst, const void* src, size_t size) {
+fon9_API void AppendToBuffer(BufferList& dst, const void* src, size_t size, size_t sizeReserved) {
    FwdBufferNode* node = FwdBufferNode::CastFrom(dst.back());
    if (node == nullptr || node->GetRemainSize() < size) {
-      node = FwdBufferNode::Alloc(size);
+      node = FwdBufferNode::Alloc(size + sizeReserved);
       dst.push_back(node);
    }
    byte*  ptrdst = node->GetDataEnd();

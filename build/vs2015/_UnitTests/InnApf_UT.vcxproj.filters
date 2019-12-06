@@ -11,24 +11,15 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\fon9\Bitv_UT.cpp">
+    <ClCompile Include="..\..\..\fon9\InnApf_UT.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\fon9\Bitv.h">
+    <ClInclude Include="..\..\..\fon9\InnApf.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\fon9\BitvArchive.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\fon9\BitvDecode.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\fon9\BitvEncode.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\fon9\BitvFixedInt.hpp">
+    <ClInclude Include="..\..\..\fon9\InnStream.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

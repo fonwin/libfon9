@@ -950,6 +950,15 @@
     <ClInclude Include="..\..\..\fon9\IntSel.hpp">
       <Filter>Header Files\_base\_Tools / Utility</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\InnApf.hpp">
+      <Filter>Header Files\_base\_Inn</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\InnStream.hpp">
+      <Filter>Header Files\_base\_Inn</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\BitvFixedInt.hpp">
+      <Filter>Header Files\_base\_Bitv / Serialize</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -1527,6 +1536,12 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\FlowCounter.cpp">
       <Filter>Source Files\_base\_Tools / Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\InnStream.cpp">
+      <Filter>Source Files\_base\_Inn</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\InnApf.cpp">
+      <Filter>Source Files\_base\_Inn</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -1,6 +1,8 @@
 ﻿// \file fon9/TimeStamp.cpp
 // \author fonwinz@gmail.com
 #include "fon9/TimeStamp.hpp"
+#include "fon9/BitvDecode.hpp"
+#include "fon9/BitvFixedInt.hpp"
 
 #ifdef fon9_WINDOWS
 inline struct tm* gmtime_r(time_t* secs, struct tm* tm) {
@@ -634,6 +636,38 @@ TimeZoneOffset::StrToAux::ResultT TimeZoneOffset::StrToAux::MakeResult(TempResul
 
 fon9_API TimeZoneOffset StrTo(StrView str, TimeZoneOffset value, const char** endptr) {
    return StrTo<TimeZoneOffset, TimeZoneOffset::StrToAux>(str, value, endptr);
+}
+
+//--------------------------------------------------------------------------//
+
+const size_t kBitvTimeStampOrigSize = 7;
+
+size_t ToBitv(RevBuffer& rbuf, TimeStamp src) {
+   if (src.IsNull())
+      return RevPutBitv(rbuf, fon9_BitvV_NumberNull);
+   // 檢查最高的 2 bytes, 如果為 0x00NN (NN==非00), 則使用 fon9_BitvT_TimeStamp_Orig7;
+   uint16_t hi2 = static_cast<uint16_t>((src.GetOrigValue() >> ((kBitvTimeStampOrigSize - 1) * 8)) & 0xffff);
+   if(hi2 == 0 || (hi2 & 0xff00) != 0)
+      return DecToBitv(rbuf, static_cast<ToImax_t<TsOrigType>>(src.GetOrigValue()), src.Scale);
+   char* pout = rbuf.AllocPrefix(kBitvTimeStampOrigSize + 1);
+   rbuf.SetPrefixUsed(pout - (kBitvTimeStampOrigSize + 1));
+   pout = ToBitvFixedRev<kBitvTimeStampOrigSize>(pout, src.GetOrigValue());
+   *(pout - 1) = fon9_BitvT_TimeStamp_Orig7;
+   return kBitvTimeStampOrigSize + 1;
+}
+void BitvTo(DcQueue& buf, TimeStamp& out) {
+   if (const byte* type = buf.Peek1()) {
+      if (*type == fon9_BitvT_TimeStamp_Orig7) {
+         uintmax_t numbuf[2];
+         if (const byte* pnum = static_cast<const byte*>(buf.Peek(numbuf, kBitvTimeStampOrigSize + 1))) {
+            out.SetOrigValue(GetPackedBigEndian<TimeStamp::OrigType>(pnum + 1, kBitvTimeStampOrigSize));
+            buf.PopConsumed(kBitvTimeStampOrigSize + 1);
+            return;
+         }
+         Raise<BitvNeedsMore>("BitvTo(TimeStamp): needs more");
+      }
+   }
+   return BitvTo(buf, *static_cast<TimeStamp::DecimalBase*>(&out));
 }
 
 } // namespaces

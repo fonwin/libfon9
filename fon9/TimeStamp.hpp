@@ -412,5 +412,17 @@ template <> struct FmtSelector<TimeStamp> {
 
 fon9_API char* ToStrRev(char* pout, TimeStamp ts, const FmtTS& fmt);
 
+//--------------------------------------------------------------------------//
+class fon9_API RevBuffer;
+class fon9_API DcQueue;
+
+/// 因 TimeStamp 通常已用掉 7 bytes(6 bytes + 4 bits);
+/// 若使用 Decimal 機制儲存, 需要用到 9 bytes.
+/// 所以這裡會自動根據 src 決定最佳儲存方式.
+/// - 可能使用數字型別: fon9_BitvT_IntegerPos, fon9_BitvT_IntegerNeg, 或 fon9_BitvT_Decimal;
+/// - 或使用 fon9_BitvT_TimeStamp_Orig7
+fon9_API size_t ToBitv(RevBuffer& rbuf, TimeStamp src);
+fon9_API void BitvTo(DcQueue& buf, TimeStamp& out);
+
 } // namespaces
 #endif//__fon9_TimeStamp_hpp__

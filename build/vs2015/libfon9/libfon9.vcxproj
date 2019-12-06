@@ -99,6 +99,7 @@
     <ClInclude Include="..\..\..\fon9\BitvArchive.hpp" />
     <ClInclude Include="..\..\..\fon9\BitvEncode.hpp" />
     <ClInclude Include="..\..\..\fon9\BitvDecode.hpp" />
+    <ClInclude Include="..\..\..\fon9\BitvFixedInt.hpp" />
     <ClInclude Include="..\..\..\fon9\Blob.h" />
     <ClInclude Include="..\..\..\fon9\buffer\BufferList.hpp" />
     <ClInclude Include="..\..\..\fon9\buffer\BufferListBuilder.hpp" />
@@ -172,10 +173,12 @@
     <ClInclude Include="..\..\..\fon9\FwdPrint.hpp" />
     <ClInclude Include="..\..\..\fon9\HistoryArray.hpp" />
     <ClInclude Include="..\..\..\fon9\HostId.hpp" />
+    <ClInclude Include="..\..\..\fon9\InnApf.hpp" />
     <ClInclude Include="..\..\..\fon9\InnDbf.hpp" />
     <ClInclude Include="..\..\..\fon9\InnDbfTable.hpp" />
     <ClInclude Include="..\..\..\fon9\InnFile.hpp" />
     <ClInclude Include="..\..\..\fon9\InnDbfRoom.hpp" />
+    <ClInclude Include="..\..\..\fon9\InnStream.hpp" />
     <ClInclude Include="..\..\..\fon9\InnSyncer.hpp" />
     <ClInclude Include="..\..\..\fon9\InnSyncerFile.hpp" />
     <ClInclude Include="..\..\..\fon9\InnSyncKey.hpp" />
@@ -425,8 +428,10 @@
     <ClCompile Include="..\..\..\fon9\framework\SeedSession.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\SessionFactoryConfigWithAuthMgr.cpp" />
     <ClCompile Include="..\..\..\fon9\HostId.cpp" />
+    <ClCompile Include="..\..\..\fon9\InnApf.cpp" />
     <ClCompile Include="..\..\..\fon9\InnFile.cpp" />
     <ClCompile Include="..\..\..\fon9\InnDbf.cpp" />
+    <ClCompile Include="..\..\..\fon9\InnStream.cpp" />
     <ClCompile Include="..\..\..\fon9\InnSyncer.cpp" />
     <ClCompile Include="..\..\..\fon9\InnSyncerFile.cpp" />
     <ClCompile Include="..\..\..\fon9\io\Device.cpp" />

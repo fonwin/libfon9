@@ -1,11 +1,13 @@
 ﻿// \file fon9/Bitv_UT.cpp
 // \author fonwinz@gmail.com
 #include "fon9/BitvArchive.hpp"
+#include "fon9/BitvFixedInt.hpp"
 #include "fon9/CharVector.hpp"
 #include "fon9/TimeStamp.hpp"
 #include "fon9/buffer/RevBufferList.hpp"
 #include "fon9/buffer/DcQueueList.hpp"
 #include "fon9/TestTools.hpp"
+#include "fon9/Timer.hpp"
 #include <vector>
 
 //--------------------------------------------------------------------------//
@@ -207,30 +209,141 @@ void TestBitvContainer(const char* itemName, Container&& val1, Container&& val2 
    std::cout << "\r" "[ERROR]" << std::endl;
    abort();
 }
-
 //--------------------------------------------------------------------------//
+template <size_t kBitvLen>
+void TestBitvFixedUInt() {
+   fon9::RevBufferList            rbuf{1024};
+   fon9::BitvFixedUInt<kBitvLen>  val;
+   const unsigned                 kTimes = 1000;
+   std::cout << "[TEST ] BitvFixedUInt<" << val.kBitvLen << '>';
+   val.Value_ = 0;
+   for (unsigned L = 0; L < kTimes; ++L) {
+      ++val.Value_;
+      fon9::ToBitv(rbuf, val);
+   }
+   if (kTimes * (val.kBitvLen + 1) != fon9::CalcDataSize(rbuf.cfront())) {
+      std::cout << "|OutputSize=" << fon9::CalcDataSize(rbuf.cfront())
+         << "|expected=" << kTimes * (val.kBitvLen + 1)
+         << "\r[ERROR]" << std::endl;
+      abort();
+   }
+   val.Value_ = std::numeric_limits<decltype(val.Value_)>::max();
+   fon9::DcQueueList dcq{rbuf.MoveOut()};
+   for (unsigned L = kTimes; L > 0; --L) {
+      fon9::BitvTo(dcq, val);
+      if (val.Value_ != static_cast<typename fon9::BitvFixedUInt<kBitvLen>::Type>(L)) {
+         std::cout
+            << "|BitvFixedUInt(); val=" << val.Value_
+            << "|expected=" << static_cast<typename fon9::BitvFixedUInt<kBitvLen>::Type>(L)
+            << "\r[ERROR]"
+            << std::endl;
+         abort();
+      }
+   }
+   std::cout << "\r[OK   ]" << std::endl;
+}
 
+template <size_t kBitvBitSize>
+void TestBitvFixedScale(const unsigned kTimes) {
+   const size_t               kBitvBytes = (2 + (kBitvBitSize + 7 - 2) / 8);
+   fon9::Decimal<uint32_t, 2> val;
+   fon9::RevBufferList        rbuf{1024};
+   std::cout << "[TEST ] TestBitvFixedScale<" << kBitvBitSize << '>';
+   for (unsigned L = 0; L < kTimes; ++L) {
+      fon9::ToBitvFixedScale<kBitvBitSize>(rbuf, val);
+      val.SetOrigValue(val.GetOrigValue() + 1);
+   }
+   if (kTimes * kBitvBytes != fon9::CalcDataSize(rbuf.cfront())) {
+      std::cout << "|OutputSize=" << fon9::CalcDataSize(rbuf.cfront())
+         << "|expected=" << kTimes * kBitvBytes
+         << "\r[ERROR]" << std::endl;
+      abort();
+   }
+   val.AssignNull();
+   fon9::DcQueueList dcq{rbuf.MoveOut()};
+   for (unsigned L = kTimes; L > 0;) {
+      fon9::BitvTo(dcq, val);
+      if (val.GetOrigValue() != --L) {
+         std::cout
+            << "|ToBitvFixedScale(); OrigValue=" << val.GetOrigValue()
+            << "|expected=" << L
+            << "\r[ERROR]"
+            << std::endl;
+         abort();
+      }
+   }
+   std::cout << "\r[OK   ]" << std::endl;
+}
+//--------------------------------------------------------------------------//
 int main(int argc, char** args) {
    (void)argc; (void)args;
 #if defined(_MSC_VER) && defined(_DEBUG)
    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
    fon9::AutoPrintTestInfo utinfo("Bitv/Serialize/Deserialize");
+   fon9::GetDefaultTimerThread();
+   std::this_thread::sleep_for(std::chrono::milliseconds{100});
 
+   //--------------------------------------------------------------------------//
+   TestBitvFixedUInt<1>();
+   TestBitvFixedUInt<2>();
+   TestBitvFixedUInt<3>();
+   TestBitvFixedUInt<4>();
+   TestBitvFixedUInt<5>();
+   TestBitvFixedUInt<6>();
+   TestBitvFixedUInt<7>();
+
+   //--------------------------------------------------------------------------//
+   TestBitvFixedScale<fon9::CalcValueBits(0x3ff)>(0x3ff);
+   TestBitvFixedScale<fon9::CalcValueBits(0x3ffff)>(0x3ffff);
+   // 86401000000 = 14 1DE6 A240‬ => 37
+   static_assert(fon9::CalcValueBits((24 * 60 * 60 + 1) * fon9::DayTime::Divisor) == 37,
+                 "CalcValueBits(DayTime) err.");
+   // 0xffffffff * 1000000 = F 423F FFF0 BDC0‬ => 52
+   static_assert(fon9::CalcValueBits(0xffffffff * fon9::TimeStamp::Divisor) == 52,
+                 "CalcValueBits(TimeStamp) err.");
+
+   fon9::RevBufferList  rbuf{16};
+   using DecU8d2 = fon9::Decimal<uint64_t, 2>;
+   fon9::ToBitvFixedScale(rbuf, DecU8d2{});
+   fon9::ToBitvFixedScale(rbuf, DecU8d2::Null());
+   fon9::ToBitvFixedScale(rbuf, DecU8d2{123.4});
+   fon9::DcQueueList ibuf{rbuf.MoveOut()};
+   DecU8d2 vZero,vNull,v123d4;
+   fon9::BitvTo(ibuf, v123d4);
+   fon9::BitvTo(ibuf, vNull);
+   fon9::BitvTo(ibuf, vZero);
+   if (!ibuf.empty() || !vZero.IsZero() || !vNull.IsNull() || v123d4.To<double>() != 123.4) {
+      std::cout << "[ERROR] ToBitvFixedScale()" << std::endl;
+      abort();
+   }
+
+   //--------------------------------------------------------------------------//
+   fon9::TimeStamp tm1,tm2,now{fon9::UtcNow()};
+   fon9::ToBitv(rbuf, now.ToDecimal());
+   fon9::ToBitv(rbuf, now);
+   ibuf.push_back(rbuf.MoveOut());
+   fon9::BitvTo(ibuf, tm1);
+   fon9::BitvTo(ibuf, tm2);
+   if (tm1 != now || tm2 != now || !ibuf.empty()) {
+      std::cout << "[ERROR] BitvTo/ToBitv(TimeStamp)" << std::endl;
+      abort();
+   }
+
+   //--------------------------------------------------------------------------//
    TestBitvString<std::string>("std::string");
    TestBitvString<fon9::CharVector>("CharVector");
    TestBitvString<fon9::ByteVector>("ByteVector");
    TestBitvString<Blob>("fon9_Blob");
 
    //--------------------------------------------------------------------------//
-   fon9::RevBufferList  rbuf{16};
    std::cout << "[TEST ] Bitv Encode/Decode Decimal<int64_t,3> 0..1,000,000";
    size_t totsz = 0;
    for (int32_t L = 0; L < 1000 * 1000; ++L) {
       using Dec = fon9::Decimal<int32_t, 3>;
       Dec idec{L,3};
       fon9::ToBitv(rbuf, idec);
-      fon9::DcQueueList ibuf{rbuf.MoveOut()};
+      ibuf.push_back(rbuf.MoveOut());
       totsz += ibuf.CalcSize();
       Dec odec{Dec::Null()};
       fon9::BitvTo(ibuf, odec);

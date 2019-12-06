@@ -11,8 +11,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{291E72D9-E99A-47BF-8112-B18FF4DC6BB4}</ProjectGuid>
-    <RootNamespace>Bitv_UT</RootNamespace>
+    <ProjectGuid>{19477A1D-D727-4334-B1AE-B63770B96339}</ProjectGuid>
+    <RootNamespace>InnApf_UT</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -46,8 +46,8 @@
     <IntDir>$(OutDir)$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)..\..\..\output\$(SolutionName)\$(PlatformArchitecture)\$(Configuration)\</OutDir>
     <IntDir>$(OutDir)$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)..\..\..\output\$(SolutionName)\$(PlatformArchitecture)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -55,6 +55,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\..\..\..\fon9</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_DEBUG</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -73,7 +74,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\fon9\Bitv_UT.cpp" />
+    <ClCompile Include="..\..\..\fon9\InnApf_UT.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\libfon9\libfon9.vcxproj">
@@ -81,11 +82,8 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\fon9\Bitv.h" />
-    <ClInclude Include="..\..\..\fon9\BitvArchive.hpp" />
-    <ClInclude Include="..\..\..\fon9\BitvDecode.hpp" />
-    <ClInclude Include="..\..\..\fon9\BitvEncode.hpp" />
-    <ClInclude Include="..\..\..\fon9\BitvFixedInt.hpp" />
+    <ClInclude Include="..\..\..\fon9\InnApf.hpp" />
+    <ClInclude Include="..\..\..\fon9\InnStream.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

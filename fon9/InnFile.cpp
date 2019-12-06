@@ -84,7 +84,7 @@ InnFile::OpenResult InnFile::Open(OpenArgs& args) {
 
 //--------------------------------------------------------------------------//
 
-static inline void CheckIoSize(const File::Result& res, File::SizeType sz, const char* exResError, const char* exSizeError) {
+static void CheckIoSize(const File::Result& res, File::SizeType sz, const char* exResError, const char* exSizeError) {
    if (fon9_UNLIKELY(!res))
       Raise<InnFileError>(res.GetError(), exResError);
    if (fon9_UNLIKELY(res.GetResult() != sz))
@@ -296,7 +296,7 @@ InnFile::SizeT InnFile::Read(const RoomKey& roomKey, SizeT offset, SizeT size, B
    buf.push_back(tempbuf.ReleaseList());
    return size;
 }
-InnFile::SizeT InnFile::Read(const RoomKey& roomKey, SizeT offset, SizeT size, void* buf) {
+InnFile::SizeT InnFile::Read(const RoomKey& roomKey, SizeT offset, void* buf, SizeT size) {
    if (RoomPosT pos = this->CheckReadArgs(roomKey, offset, size)) {
       CheckIoSize(this->Storage_.Read(pos, buf, size), size,
                   "InnFile.Read: read error.",
@@ -313,7 +313,7 @@ InnFile::SizeT InnFile::ReadAll(const RoomKey& roomKey, void* buf, SizeT bufsz) 
 
 //--------------------------------------------------------------------------//
 
-void WriteRoom(File& fd, File::PosType pos, size_t wrsz, DcQueue& buf, const char* exResError, const char* exSizeError) {
+static void WriteRoom(File& fd, File::PosType pos, size_t wrsz, DcQueue& buf, const char* exResError, const char* exSizeError) {
    for (;;) {
       auto blk = buf.PeekCurrBlock();
       if (blk.second > wrsz)

@@ -136,8 +136,8 @@ public:
       if (back && this->BlockList_.front() == back)
          this->MemEnd_ = back->GetDataEnd();
    }
-   void Append(const void* src, size_t size) {
-      AppendToBuffer(this->BlockList_, src, size);
+   void Append(const void* src, size_t size, size_t sizeReserved = 0) {
+      AppendToBuffer(this->BlockList_, src, size, sizeReserved);
       if (this->MemCurrent_)
          this->BackExpanded(this->BlockList_.back());
       else

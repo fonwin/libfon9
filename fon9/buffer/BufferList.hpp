@@ -51,7 +51,8 @@ inline StrT BufferTo(const BufferNode* front) {
 
 /// \ingroup Buffer
 /// 如果 dst.back() 足夠存放 src 則直接複製到 dst.back(), 否則在 dst 後面增加一個節點存放 src.
-fon9_API void AppendToBuffer(BufferList& dst, const void* src, size_t size);
+/// 若有需要增加節點, 則新節點至少需額外保留 sizeReserved bytes; 可能會預留更多, 視 MemBlock 的預留量而定.
+fon9_API void AppendToBuffer(BufferList& dst, const void* src, size_t size, size_t sizeReserved = 0);
 
 /// \ingroup Buffer
 /// 將 node list 的內容複製到 dst, 返回 dst 的尾端.

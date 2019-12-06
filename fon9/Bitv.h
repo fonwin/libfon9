@@ -85,8 +85,10 @@ fon9_ENUM(fon9_BitvT, uint8_t) {
    // 0xc8
    // 0xd0
    // 0xd8
-   // 0xe0
-   // 0xe8
+
+   /// 接著使用 7 bytes 儲存 TimeStamp::GetOrigValue();
+   fon9_BitvT_TimeStamp_Orig7 = 0xe0,
+   // 0xe1..0xe8..0xef
 
    /// - v = `1111 0xxx`; 表明某些資料為 zero.
    /// - fon9_BitvV_Number0
