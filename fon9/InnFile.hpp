@@ -92,11 +92,11 @@ public:
    using SizeT = InnRoomSize;
    using RoomPosT = File::PosType;
 
-   static constexpr FileMode  kDefaultFileMode = FileMode::Read | FileMode::Write | FileMode::DenyWrite | FileMode::CreatePath;
-   static constexpr SizeT     kInnHeaderSize = 64;
-   static constexpr SizeT     kRoomHeaderSize = static_cast<SizeT>(sizeof(InnRoomType/*RoomType*/)
-                                                                   + sizeof(SizeT/*BlockCount*/)
-                                                                   + sizeof(SizeT/*DataSize*/));
+   static constexpr FileMode kDefaultFileMode() { return FileMode::Read | FileMode::Write | FileMode::DenyWrite | FileMode::CreatePath; }
+   enum : SizeT {
+      kInnHeaderSize = 64,
+      kRoomHeaderSize = static_cast<SizeT>(sizeof(InnRoomType/*RoomType*/) + sizeof(SizeT/*BlockCount*/) + sizeof(SizeT/*DataSize*/))
+   };
 
    //--------------------------------------------------------------------------//
 
@@ -105,7 +105,7 @@ public:
       SizeT       BlockSize_;
       FileMode    OpenMode_;
 
-      OpenArgs(std::string fileName, SizeT blockSize = 64, FileMode openMode = kDefaultFileMode)
+      OpenArgs(std::string fileName, SizeT blockSize = 64, FileMode openMode = kDefaultFileMode())
          : FileName_{std::move(fileName)}
          , BlockSize_{blockSize}
          , OpenMode_{openMode} {

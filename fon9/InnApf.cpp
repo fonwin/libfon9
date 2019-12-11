@@ -61,8 +61,12 @@ void InnApf::EmitOnUpdateTimer(TimerEntry* timer, TimeStamp now) {
       rthis.StartUpdateTimer();
       return;
    }
+   // 正要解構, 但 ~InnApf() 尚未呼叫到 this->UpdateTimer_.DisposeAndWait();
+   // 此時, 不用執行底下的 pthis->UpdateChanged(); 交給 ~InnApf() 處理即可.
+   if (intrusive_ptr_add_ref(&rthis) == 0)
+      return;
    // 為了避免佔用 timer thread 的時間, 所以切到 DefaultThreadPool 處理.
-   InnApfSP pthis{&rthis};
+   InnApfSP pthis{&rthis, false}; // false: 不用再 add_ref().
    GetDefaultThreadPool().EmplaceMessage([pthis]() {
       pthis->UpdateChanged();
       pthis->StartUpdateTimer();
