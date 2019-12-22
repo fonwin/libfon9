@@ -287,10 +287,10 @@ TicketRunnerSubscribe::TicketRunnerSubscribe(SeedVisitor& visitor, StrView seed,
    , Subr_{visitor.NewSubscribe()} {
 }
 #define fon9_kCSTR_UNSUB_TAB_NAME   "<u>"
-TicketRunnerSubscribe::TicketRunnerSubscribe(SeedVisitor& visitor, StrView seed, VisitorSubr* subr)
+TicketRunnerSubscribe::TicketRunnerSubscribe(SeedVisitor& visitor, StrView seed, VisitorSubrSP subr)
    : base{visitor, seed}
    , TabName_{StrView{fon9_kCSTR_UNSUB_TAB_NAME}}
-   , Subr_{subr} {
+   , Subr_{std::move(subr)} {
 }
 void TicketRunnerSubscribe::OnFoundTree(TreeOp& opTree) {
    if (ToStrView(this->TabName_) == fon9_kCSTR_UNSUB_TAB_NAME) {

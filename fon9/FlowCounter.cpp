@@ -5,15 +5,17 @@
 namespace fon9 {
 
 ConfigParser::Result FlowCounterArgs::OnTagValue(StrView tag, StrView& value) {
-   if (tag == "Fc") {
-      this->FcCount_ = fon9::StrTo(&value, this->FcCount_);
-      if (StrTrimHead(&value).Get1st() == '/') {
-         value.SetBegin(value.begin() + 1);
-         this->FcTimeMS_ = fon9::StrTo(&value, this->FcTimeMS_);
-      }
-      return value.empty() ? ConfigParser::Result::Success : ConfigParser::Result::EInvalidValue;
-   }
+   if (tag == "Fc")
+      return this->OnValue(value);
    return ConfigParser::Result::EUnknownTag;
+}
+ConfigParser::Result FlowCounterArgs::OnValue(StrView& value) {
+   this->FcCount_ = StrTo(&value, this->FcCount_);
+   if (StrTrimHead(&value).Get1st() == '/') {
+      value.SetBegin(value.begin() + 1);
+      this->FcTimeMS_ = StrTo(&value, this->FcTimeMS_);
+   }
+   return value.empty() ? ConfigParser::Result::Success : ConfigParser::Result::EInvalidValue;
 }
 
 } // namespace

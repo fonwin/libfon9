@@ -86,9 +86,13 @@ public:
    using base::base;
    FieldMakerRegister() = delete;
 
-   #define fon9_kCSTR_UDFieldMaker_Head   "x"
-   /// fldTypeId 不包含前置的 fon9_kCSTR_UDFieldMaker_Head 字元,
-   /// 例如: 您自訂的欄位 GetTypeId() 傳回 fon9_kCSTR_UDFieldMaker_Head "ABC", 則此處應使用 "ABC";
+   /// 字串型式的自訂欄位, 若找不到已註冊的 fnFieldMaker, 則使用 "C0" 建立對應的欄位.
+   #define fon9_kCSTR_UDStrFieldMaker_Head   "x"
+   /// 未知型式的自訂欄位, 若找不到已註冊的 fnFieldMaker, 則無法建立欄位.
+   #define fon9_kCSTR_UDUnkFieldMaker_Head   "X"
+
+   /// fldTypeId 不包含前置的 fon9_kCSTR_UDStrFieldMaker_Head 字元,
+   /// 例如: 您自訂的欄位 GetTypeId() 傳回 fon9_kCSTR_UDStrFieldMaker_Head "ABC", 則此處應使用 "ABC";
    /// - 若 fldTypeId 重複, 則註冊失敗, 傳回先註冊的 fnFieldMaker.
    /// - 若 fnFieldMaker==nullptr, 則傳回已註冊的 fnFieldMaker;
    static FnFieldMaker Register(StrView fldTypeId, FnFieldMaker fnFieldMaker);
@@ -111,7 +115,7 @@ public:
 ///    - Ti = TimeInterval
 ///    - Ts = TimeStamp
 ///    - Td = DayTime
-///    - fon9_kCSTR_UDFieldMaker_Head + "??" = 使用註冊機制的動態欄位. 參考 FieldMakerRegister; FieldSchCfgStr.cpp
+///    - fon9_kCSTR_UDStrFieldMaker_Head + "??" = 使用註冊機制的動態欄位. 參考 FieldMakerRegister; FieldSchCfgStr.cpp
 /// - 例:
 ///    - C4    BrkNo |券商代號
 ///    - U4    IvacNo|投資人帳號|投資人帳號含檢查碼

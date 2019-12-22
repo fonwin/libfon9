@@ -78,6 +78,7 @@ struct ExgTmpHead {
 static_assert(sizeof(ExgTmpHead) == f9tws_kSIZE_TMP_HEAD_A, "struct ExgTmpHead; must pack?");
 
 //--------------------------------------------------------------------------//
+fon9_MSC_WARN_DISABLE(4265); /* class has virtual functions, but destructor is not virtual */
 class f9tws_API ExgTmpIoRevBuffer : public fon9::RevBufferList {
    fon9_NON_COPYABLE(ExgTmpIoRevBuffer);
    using base = fon9::RevBufferList;
@@ -89,6 +90,7 @@ public:
       fon9::RevPutMem(*this, f9tws_kCSTR_SLM_TAIL, f9tws_kSIZE_SLM_TAIL);
    }
 };
+fon9_MSC_WARN_POP;
 
 /// TWSE/OTC 的 「SLM/TMP 連線協定」處理程序.
 class f9tws_API ExgTmpIoSession : public fon9::io::Session {

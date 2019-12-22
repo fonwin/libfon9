@@ -7,18 +7,23 @@
 
 namespace fon9 {
 
+fon9_MSC_WARN_DISABLE(4265); /* class has virtual functions, but destructor is not virtual */
 /// \ingroup Buffer
 /// Reverse buffer: 從尾端往前方填入資料.
-class RevBuffer {
+class fon9_API RevBuffer {
    fon9_NON_COPY_NON_MOVE(RevBuffer);
+   // 此 mf 只是為了讓 RevBuffer 的 vtbl 放在 libfon9; 解決 link 的問題.
+   virtual void ForVtblInLib();
+
 protected:
    char* MemBegin_;
    char* MemCurrent_;
 
    explicit RevBuffer() : MemBegin_{}, MemCurrent_{} {
    }
-   virtual ~RevBuffer() {
+   ~RevBuffer() {
    }
+
    /// 由衍生者決定: 重新分配記憶體? throw exception? 增加 node?
    virtual char* OnRevBufferAlloc(size_t) = 0;
 
@@ -62,15 +67,17 @@ public:
 
 /// \ingroup Buffer
 /// 可用記憶體在建構時提供, 當空間不足時拋出例外: `fon9::BufferOverflow`;
-class RevBufferFixedMem : public RevBuffer {
+class fon9_API RevBufferFixedMem : public RevBuffer {
    fon9_NON_COPY_NON_MOVE(RevBufferFixedMem);
    char* MemEnd_;
-   virtual char* OnRevBufferAlloc(size_t) {
-      Raise<BufferOverflow>("RevBufferFixedMem overflow");
-   }
+
+   /// Raise<BufferOverflow>("RevBufferFixedMem overflow");
+   char* OnRevBufferAlloc(size_t) override;
+
 public:
    RevBufferFixedMem(void* beg, size_t sz) : RevBuffer(beg,sz), MemEnd_{MemCurrent_} {
    }
+
    /// 取得已填入的資料量.
    size_t GetUsedSize() const {
       // 介面名稱不適合使用 size(): size()=剩餘可用量? 原始容量? 已填入的資料量?
@@ -105,6 +112,7 @@ public:
    RevBufferFixedSize() : RevBufferFixedMem{TempBuffer_, sizeof(TempBuffer_)} {
    }
 };
+fon9_MSC_WARN_POP;
 
 /// \ingroup Buffer
 /// 這裡示範一個「完全不檢查」是否超過還衝大小的 RevBuffer.

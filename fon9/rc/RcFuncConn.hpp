@@ -22,7 +22,7 @@ public:
    const CharVector  ApVersion_;
    const CharVector  Description_;
    RcFuncConnection(RcSessionSt stReq, const StrView& apVer, const StrView& description)
-      : base{RcFunctionCode::Connection, stReq}
+      : base{f9rc_FunctionCode_Connection, stReq}
       , ApVersion_{apVer}
       , Description_{description} {
    }
@@ -54,7 +54,7 @@ class fon9_API RcFuncSaslClient : public RcFunctionAgent {
    fon9_NON_COPY_NON_MOVE(RcFuncSaslClient);
    using base = RcFunctionAgent;
 public:
-   RcFuncSaslClient() : base{RcFunctionCode::SASL, RcSessionSt::Logoning} {
+   RcFuncSaslClient() : base{f9rc_FunctionCode_SASL, RcSessionSt::Logoning} {
    }
    void OnSessionConnected(RcSession& ses, StrView saslMechList);
    void OnRecvFunctionCall(RcSession& ses, RcFunctionParam& param) override;
@@ -85,7 +85,7 @@ class fon9_API RcFuncSaslServer : public RcFunctionAgent {
    const auth::AuthMgrSP   AuthMgr_;
 public:
    RcFuncSaslServer(auth::AuthMgrSP authMgr)
-      : base{RcFunctionCode::SASL, RcSessionSt::Connecting}
+      : base{f9rc_FunctionCode_SASL, RcSessionSt::Connecting}
       , AuthMgr_(std::move(authMgr)) {
    }
    void OnSessionLinkBroken(RcSession& ses) override;
@@ -96,7 +96,7 @@ public:
 /// 提供 RcSession SASL 登入驗證處理.
 /// 可以透過底下方式取得 Policy:
 /// \code
-/// if (fon9::rc::RcServerNote_SaslAuth* authNote = ses.GetNote<fon9::rc::RcServerNote_SaslAuth>(fon9::rc::RcFunctionCode::SASL)) {
+/// if (fon9::rc::RcServerNote_SaslAuth* authNote = ses.GetNote<fon9::rc::RcServerNote_SaslAuth>(f9rc_FunctionCode_SASL)) {
 ///    const fon9::auth::AuthResult& authr = authNote->GetAuthResult();
 ///    // 透過 authmgr 取得需要的 policy
 ///    if (auto agent = authr.AuthMgr_->Agents_->Get<AgentType>("PolicyName"))

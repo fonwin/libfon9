@@ -2,6 +2,7 @@
 /// \author fonwinz@gmail.com
 #include "fon9/seed/FieldMaker.hpp"
 #include "fon9/seed/FieldDyBlob.hpp"
+#include "fon9/Log.hpp"
 
 namespace fon9 { namespace seed {
 
@@ -124,8 +125,19 @@ static FieldSP MakeFieldImpl(StrView& fldcfg, char chSpl, char chTail) {
    default:
       fldcfg.SetBegin(fldcfg.begin() - 1);
       break;
-   case *fon9_kCSTR_UDFieldMaker_Head:
-               return MakeFieldXreg(fldcfg, chSpl, chTail);
+
+   case *fon9_kCSTR_UDUnkFieldMaker_Head:
+      return MakeFieldXreg(fldcfg, chSpl, chTail);
+   case *fon9_kCSTR_UDStrFieldMaker_Head:
+      if (auto fld = MakeFieldXreg(fldcfg, chSpl, chTail))
+         return fld;
+      else {
+         Named named{DeserializeNamed(fldcfg, chSpl, chTail)};
+         if (named.Name_.empty())
+            return FieldSP{};
+         return FieldSP{new FieldDyBlob{std::move(named), FieldType::Chars}};
+      }
+
    case 'C':   return MakeFieldChars(fldcfg, chSpl, chTail);
    case 'B':   return MakeFieldBytes(fldcfg, chSpl, chTail);
    case 'T':   return MakeFieldTime(fldcfg, chSpl, chTail);
@@ -188,9 +200,11 @@ static FieldSP MakeFieldImpl(StrView& fldcfg, char chSpl, char chTail) {
 }
 
 fon9_API FieldSP MakeField(StrView& fldcfg, char chSpl, char chTail) {
-   if (StrTrimHead(&fldcfg).empty())
-      return FieldSP{};
-   FieldFlag fldFlags{};
+   FieldSP     retval;
+   FieldFlag   fldFlags{};
+   StrView     origCfg = StrTrimHead(&fldcfg);
+   if (origCfg.empty())
+      goto __RETURN_LOG_ERROR;
    if (fldcfg.Get1st() == '(') { // (FieldFlags)
       for(;;) {
          fldcfg.SetBegin(fldcfg.begin() + 1);
@@ -205,15 +219,22 @@ fon9_API FieldSP MakeField(StrView& fldcfg, char chSpl, char chTail) {
                break;
             // 非空白的無效字元, 返回失敗.
          case EOF:
-            return FieldSP{};
+            goto __RETURN_LOG_ERROR;
          }
       }
    }
 __MAKE_FIELD_IMPL:
-   FieldSP fld = MakeFieldImpl(fldcfg, chSpl, chTail);
-   if (fld && fldFlags != FieldFlag{})
-      fld->Flags_ = fldFlags;
-   return fld;
+   retval = MakeFieldImpl(fldcfg, chSpl, chTail);
+   if (retval) {
+      if (fldFlags != FieldFlag{})
+         retval->Flags_ = fldFlags;
+   }
+   else {
+   __RETURN_LOG_ERROR:
+      fon9_LOG_ERROR("MakeField|cfg=", StrFetchNoTrim(origCfg, chTail),
+                     "|err=Unknown field type, or bad field name.");
+   }
+   return retval;
 }
 
 OpResult FieldsMaker::OnFieldExProperty(Field&, StrView) {

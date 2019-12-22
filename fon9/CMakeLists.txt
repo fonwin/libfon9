@@ -62,6 +62,8 @@ set(fon9src
  buffer/BufferNodeWaiter.cpp
  buffer/DcQueue.cpp
  buffer/DcQueueList.cpp
+ buffer/RevBuffer.cpp
+ buffer/RevBufferList.cpp
  
  io/IoBase.cpp
  io/Session.cpp
@@ -191,6 +193,12 @@ set(fon9src
  rc/RcFuncConnClient.cpp
  rc/RcFuncConnServer.cpp
  rc/RcSession.cpp
+ rc/RcClientSession.cpp
+ rc/RcClientApi.cpp
+ rc/RcSeedVisitor.cpp
+ rc/RcSeedVisitorClient.cpp
+ rc/RcSeedVisitorClientReq.cpp
+ rc/RcSeedVisitorServer.cpp
 )
 add_library(fon9_s STATIC ${fon9src})
 target_link_libraries(fon9_s pthread rt dl)

@@ -8,7 +8,8 @@ namespace fon9 { namespace seed {
 
 static Fields MakeAclTreeFields() {
    Fields fields;
-   fields.Add(fon9_MakeField(AccessList::value_type, second, "Rights"));
+   fields.Add(fon9_MakeField(AccessList::value_type, second.Rights_,       "Rights"));
+   fields.Add(fon9_MakeField(AccessList::value_type, second.MaxSubrCount_, "MaxSubrCount"));
    return fields;
 }
 static LayoutSP MakeAclTreeLayout(TabFlag tabFlags, TreeFlag treeFlags) {
@@ -75,23 +76,25 @@ const char* AclPathParser::NormalizePathStr(StrView path) {
    return path.begin();
 }
 
-AccessRight AclPathParser::GetAccess(const AccessList& acl) const {
+const AccessControl* AclPathParser::GetAccess(const AccessList& acl) const {
    StrView  path{ToStrView(this->Path_)};
    size_t   index = this->IndexEndPos_.size();
    for(;;) {
       auto ifind = acl.find(path);
       if (ifind != acl.end())
-         return ifind->second;
+         return &ifind->second;
       if (index <= 0)
-         return AccessRight::None;
+         return nullptr;
       path.SetEnd(path.begin() + this->IndexEndPos_[--index]);
    }
 }
 
-AccessRight AclPathParser::CheckAccess(const AccessList& acl, AccessRight needsRights) const {
-   AccessRight ac = this->GetAccess(acl);
-   if (ac == AccessRight::None || (needsRights != AccessRight::None && !IsEnumContains(ac, needsRights)))
-      return AccessRight::None;
+const AccessControl* AclPathParser::CheckAccess(const AccessList& acl, AccessRight needsRights) const {
+   const AccessControl* ac = this->GetAccess(acl);
+   if (ac == nullptr
+       || ac->Rights_ == AccessRight::None
+       || (needsRights != AccessRight::None && !IsEnumContains(ac->Rights_, needsRights)))
+      return nullptr;
    return ac;
 }
    

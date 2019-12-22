@@ -15,7 +15,8 @@ enum : InnFile::SizeT {
    kOffset_DataSize = kOffset_RoomType + sizeof(InnRoomType),
    kOffset_DataBegin = kOffset_DataSize + sizeof(InnFile::SizeT),
 };
-static_assert(kOffset_DataBegin == InnFile::kRoomHeaderSize, "RoomHeaderSize or kOffset_DataBegin ERROR!");
+static_assert(cast_to_underlying(kOffset_DataBegin) == cast_to_underlying(InnFile::kRoomHeaderSize),
+              "RoomHeaderSize or kOffset_DataBegin ERROR!");
 
 //--------------------------------------------------------------------------//
 

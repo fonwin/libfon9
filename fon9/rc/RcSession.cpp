@@ -37,7 +37,7 @@ static ChecksumT BufferList_CalcRcChecksum(const BufferNode* node) {
    }
    return cksum;
 }
-static ChecksumT FuncParam_CalcRcChecksum(DcQueueList& buf, RcFunctionCode funcCode, size_t paramSize) {
+static ChecksumT FuncParam_CalcRcChecksum(DcQueueList& buf, f9rc_FunctionCode funcCode, size_t paramSize) {
    ChecksumT   cksum = static_cast<ChecksumT>(funcCode);
    if (fon9_UNLIKELY(paramSize <= 0))
       return cksum;
@@ -62,7 +62,7 @@ static ChecksumT FuncParam_CalcRcChecksum(DcQueueList& buf, RcFunctionCode funcC
    return cksum;
 }
 //--------------------------------------------------------------------------//
-RcSession::RcSession(RcFunctionMgrSP mgr, RcSessionRole role, RcFlag flags)
+RcSession::RcSession(RcFunctionMgrSP mgr, RcSessionRole role, f9rc_RcFlag flags)
    : FunctionMgr_(std::move(mgr))
    , Role_(role) {
    this->LocalParam_.Flags_ = flags;
@@ -84,7 +84,7 @@ void RcSession::OnDevice_Destructing(io::Device&) {
 void RcSession::ResetSessionSt(RcSessionSt st) {
    this->SetSessionSt(st);
    this->RemoteParam_.RcVer_ = -1;
-   this->RemoteParam_.Flags_ = RcFlag{};
+   this->RemoteParam_.Flags_ = f9rc_RcFlag{};
    this->IsRxFunctionCodeReady_ = false;
    this->LastRecvTime_ = this->LastSentTime_ = TimeStamp{};
    this->RemoteIp_.clear();
@@ -113,7 +113,7 @@ io::RecvBufferSize RcSession::OnDevice_LinkReady(io::Device& dev) {
    this->FunctionMgr_->OnSessionLinkReady(*this);
    return kRcSession_RecvBufferSize;
 }
-void RcSession::Send(RcFunctionCode fnCode, RevBufferList&& rbuf) {
+void RcSession::Send(f9rc_FunctionCode fnCode, RevBufferList&& rbuf) {
    ByteArraySizeToBitvT(rbuf, CalcDataSize(rbuf.cfront()));
    char* pout = rbuf.AllocPrefix(sizeof(fnCode));
    PutBigEndian(pout -= sizeof(fnCode), fnCode);
@@ -132,7 +132,7 @@ void RcSession::ForceLogout(std::string reason) {
    } else {
       RevBufferList rbuf{64};
       ToBitv(rbuf, reason);
-      this->Send(RcFunctionCode::Logout, std::move(rbuf));
+      this->Send(f9rc_FunctionCode_Logout, std::move(rbuf));
       this->Dev_->AsyncLingerClose(std::move(reason));
    }
 }
@@ -193,18 +193,18 @@ io::RecvBufferSize RcSession::OnDevice_Recv_Parser(DcQueueList& rxbuf) {
    __CONTINUE_PARSE_BUFFER:
       const byte* phead;
       if (this->RemoteParam_.IsNoChecksum()) {
-         static_assert(sizeof(RcFunctionCode) == 1, "sizeof(RcFunctionCode)必須為1, 才能使用 rxbuf.Peek1()");
+         static_assert(sizeof(f9rc_FunctionCode) == 1, "sizeof(f9rc_FunctionCode)必須為1, 才能使用 rxbuf.Peek1()");
          if ((phead = rxbuf.Peek1()) == nullptr)
             return kRcSession_RecvBufferSize;
-         this->RxFunctionCode_ = static_cast<RcFunctionCode>(*phead);
+         this->RxFunctionCode_ = static_cast<f9rc_FunctionCode>(*phead);
          rxbuf.PopConsumed(1u);
       }
       else {
-         char  headbuf[sizeof(ChecksumT) + sizeof(RcFunctionCode)];
+         char  headbuf[sizeof(ChecksumT) + sizeof(f9rc_FunctionCode)];
          if ((phead = static_cast<const byte*>(rxbuf.Peek(headbuf, sizeof(headbuf)))) == nullptr)
             return kRcSession_RecvBufferSize;
          this->RxChecksum_ = GetBigEndian<ChecksumT>(phead);
-         this->RxFunctionCode_ = static_cast<RcFunctionCode>(phead[sizeof(ChecksumT)]);
+         this->RxFunctionCode_ = static_cast<f9rc_FunctionCode>(phead[sizeof(ChecksumT)]);
          rxbuf.PopConsumed(sizeof(headbuf));
       }
       this->IsRxFunctionCodeReady_ = true;
@@ -282,7 +282,7 @@ io::RecvBufferSize RcSession::OnDevice_Recv_CheckProtocolVersion(io::Device& dev
       while(!params.IsNullOrEmpty()) {
          StrView  spr = StrFetchNoTrim(params, ',');
          if (spr == cstrProtocolParam_NoChecksum)
-            this->RemoteParam_.Flags_ |= RcFlag::NoChecksum;
+            this->RemoteParam_.Flags_ |= f9rc_RcFlag_NoChecksum;
          else {
             errmsg.assign(cstrProtocolHeadErr "Unknown protocol param:");
             spr.AppendTo(errmsg);
@@ -350,7 +350,7 @@ void RcSession::OnDevice_CommonTimer(io::Device& dev, TimeStamp now) {
          else {
             RevBufferList  rbuf{64};
             ToBitv(rbuf, now);
-            this->Send(RcFunctionCode::Heartbeat, std::move(rbuf));
+            this->Send(f9rc_FunctionCode_Heartbeat, std::move(rbuf));
             dev.CommonTimerRunAfter(kRcSession_HbInterval);
          }
       }

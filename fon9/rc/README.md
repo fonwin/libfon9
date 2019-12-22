@@ -96,7 +96,7 @@
 
 ## 三、功能呼叫 Function code
 ### 管理功能 0x00..0x03
-#### fon9::rc::RcFunctionCode::Connection = 0x00
+#### f9rc_FunctionCode_Connection = 0x00
 - C -> S: Connection REQ: "ClientApVer" + "Description"
   - "FomsClient.0.0.1"
   - "fon9 OMS API Client."
@@ -105,7 +105,7 @@
   - "fon9 OMS Server."
   - "PLAIN SCRAM-SHA-1"
 
-#### fon9::rc::RcFunctionCode::SASL = 0x01
+#### f9rc_FunctionCode_SASL = 0x01
 - fon9_Auth_R: [`fon9/auth/AuthBase.h`](../auth/AuthBase.h)
 - C -> S: SASL start: "SASL mech name" + "client-first-message(如果沒有,則填入空白字串)".
   - e.g. 使用者id="user", 密碼="pencil"
@@ -126,14 +126,14 @@
     - "v=rmF9pqV8S7suAoZWja4dJRkFsKQ="
     - "上次登入: 2017/09/08 來自 127.0.0.1, 密碼還有3天到期"
 
-#### fon9::rc::RcFunctionCode::Logout = 0x02
+#### f9rc_FunctionCode_Logout = 0x02
 - C <> S: 強制登出(斷線)
   - data = 強制登出(斷線)原因.
   - e.g. "Unknown function code."
   - e.g. "Packet frame error."
   - e.g. "Checksum error."
 
-#### fon9::rc::RcFunctionCode::Heartbeat = 0x03
+#### f9rc_FunctionCode_Heartbeat = 0x03
 - C -> S: Heartbeat REQ
   - data = 符合 aComposite 規範的任意資料.
 - C <- S: Heartbeat ACK
@@ -142,11 +142,11 @@
 
 -------------------------
 
-### fon9::rc::RcFunctionCode::SeedVisitor = 0x06
+### f9rc_FunctionCode_SeedVisitor = 0x06
 * Query/Subscribe
 * Modify/Remove
 
-### fon9::rc::RcFunctionCode::OmsApi = 0x07
+### f9rc_FunctionCode_OmsApi = 0x07
 細節請參閱 f9oms api 的說明.
 * Query config.
 * TDay changed.

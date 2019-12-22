@@ -202,23 +202,25 @@ void CheckGridView(fon9::seed::Tree& root, const char* path, const char* gvExpec
 }
 
 void CheckPoAcl(fon9::seed::Tree& root) {
+   #define kDEFAULT_MaxSubrCount          kSPL "0"
+   #define kDEFAULT_MaxSubrCount_FcQry    kDEFAULT_MaxSubrCount kSPL "0" kSPL "1000"
    CheckGridView(root, "/MaAuth/PoAcl",
-                 "admin"         kSPL "/"              kROWSPL
-                 "test"          kSPL "/home/{UserId}" kROWSPL
-                 "test-sync-end" kSPL "/home/{UserId}"
+                 "admin"         kSPL "/"              kDEFAULT_MaxSubrCount_FcQry kROWSPL
+                 "test"          kSPL "/home/{UserId}" kDEFAULT_MaxSubrCount_FcQry kROWSPL
+                 "test-sync-end" kSPL "/home/{UserId}" kDEFAULT_MaxSubrCount_FcQry
                   );
    CheckGridView(root, "/MaAuth/PoAcl/test",
-                 "./{UserId}"   kSPL "xd4" kROWSPL
-                 "./{UserId}/"  kSPL "xe5" kROWSPL
-                 "./{UserId}/*" kSPL "xf6" kROWSPL
-                 "/{UserId}"    kSPL "xa1" kROWSPL
-                 "/{UserId}/"   kSPL "xb2" kROWSPL
-                 "/{UserId}/*"  kSPL "xc3" kROWSPL
-                 "{UserId"      kSPL "1"   kROWSPL
-                 "{UserIdx"     kSPL "2"   kROWSPL
-                 "{UserId}"     kSPL "3"   kROWSPL
-                 "{UserId}/"    kSPL "4"   kROWSPL
-                 "{UserId}/*"   kSPL "5");
+                 "./{UserId}"   kSPL "xd4" kDEFAULT_MaxSubrCount kROWSPL
+                 "./{UserId}/"  kSPL "xe5" kDEFAULT_MaxSubrCount kROWSPL
+                 "./{UserId}/*" kSPL "xf6" kDEFAULT_MaxSubrCount kROWSPL
+                 "/{UserId}"    kSPL "xa1" kDEFAULT_MaxSubrCount kROWSPL
+                 "/{UserId}/"   kSPL "xb2" kDEFAULT_MaxSubrCount kROWSPL
+                 "/{UserId}/*"  kSPL "xc3" kDEFAULT_MaxSubrCount kROWSPL
+                 "{UserId"      kSPL "1"   kDEFAULT_MaxSubrCount kROWSPL
+                 "{UserIdx"     kSPL "2"   kDEFAULT_MaxSubrCount kROWSPL
+                 "{UserId}"     kSPL "3"   kDEFAULT_MaxSubrCount kROWSPL
+                 "{UserId}/"    kSPL "4"   kDEFAULT_MaxSubrCount kROWSPL
+                 "{UserId}/*"   kSPL "5"   kDEFAULT_MaxSubrCount);
 }
 
 void CheckInitGridViewAll(fon9::seed::Tree& root) {
@@ -359,11 +361,11 @@ int main(int argc, char** argv) {
    //--------------------------------------------------------------------------//
    TestInit();
    TestReload(&CheckInitGridViewAll);
-   TestSync(&CheckInitGridViewAll, "0");
+   TestSync(&CheckInitGridViewAll, "0" kDEFAULT_MaxSubrCount);
 
    TestRemove();
    TestReload(&CheckRemovedGridViewAll);
-   TestSync(&CheckRemovedGridViewAll, "xd");
+   TestSync(&CheckRemovedGridViewAll, "xd" kDEFAULT_MaxSubrCount);
 
    //--------------------------------------------------------------------------//
    utinfo.PrintSplitter();

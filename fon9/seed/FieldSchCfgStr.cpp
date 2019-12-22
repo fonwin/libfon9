@@ -6,7 +6,7 @@
 namespace fon9 { namespace seed {
 
 StrView FieldSchCfgStr::GetTypeId(NumOutBuf&) const {
-   return StrView{fon9_kCSTR_UDFieldMaker_Head fon9_kCSTR_UDFieldMaker_SchCfgStr};
+   return StrView{fon9_kCSTR_UDStrFieldMaker_Head fon9_kCSTR_UDFieldMaker_SchCfgStr};
 }
 
 static FieldSP SchCfgStrFieldMaker(StrView& fldcfg, char chSpl, char chTail) {

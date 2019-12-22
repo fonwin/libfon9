@@ -33,7 +33,7 @@ void RcFuncConnClient::OnRecvFunctionCall(RcSession& ses, RcFunctionParam& param
    BitvTo(param.RecvBuffer_, saslMechList);
    ses.SetRemoteApVer(std::move(apVer));
    // 通知 Sasl Client 送出登入要求.
-   if (RcFuncSaslClient* saslClient = dynamic_cast<RcFuncSaslClient*>(ses.FunctionMgr_->Get(RcFunctionCode::SASL)))
+   if (RcFuncSaslClient* saslClient = dynamic_cast<RcFuncSaslClient*>(ses.FunctionMgr_->Get(f9rc_FunctionCode_SASL)))
       saslClient->OnSessionConnected(ses, ToStrView(saslMechList));
    else
       ses.ForceLogout("Internal err: RcFuncSaslClient not found.");
@@ -79,7 +79,7 @@ void RcFuncSaslClient::OnSessionConnected(RcSession& ses, StrView saslMechList) 
    RevBufferList  rbuf{128};
    ToBitv(rbuf, sasl.SaslClient_->GetFirstMessage());
    ToBitv(rbuf, sasl.MechName_);
-   ses.ResetNote(RcFunctionCode::SASL,
+   ses.ResetNote(f9rc_FunctionCode_SASL,
                  RcFunctionNoteSP{new RcClientNote_Sasl{std::move(sasl.SaslClient_)}});
    ses.SendSasl(std::move(rbuf));
 }

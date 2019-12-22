@@ -15,23 +15,52 @@ class PolicyAclTree : public MasterPolicyTree {
    using DetailTree = DetailPolicyTreeTable<DetailTableImpl, KeyMakerCharVector>;
    using DetailTable = DetailTree::DetailTable;
 
-   struct MasterItem : public MasterPolicyItem {
+   struct MasterItem : public MasterPolicyItem, public seed::AclHomeConfig {
       fon9_NON_COPY_NON_MOVE(MasterItem);
       using base = MasterPolicyItem;
-      seed::AclPath  Home_;
       MasterItem(const StrView& policyId, MasterPolicyTreeSP owner)
          : base(policyId, std::move(owner)) {
          this->DetailPolicyTree_.reset(new DetailTree{*this});
       }
       void LoadPolicy(DcQueue& buf) override {
-         unsigned ver = 0;
+         unsigned            ver = 0;
          DetailTable::Locker pmap{static_cast<DetailTree*>(this->DetailPolicyTree_.get())->DetailTable_};
-         BitvInArchive{buf}(ver, this->Home_, *pmap);
+         BitvInArchive{buf}(ver, this->Home_);
+         if (ver > 0) {
+            BitvTo(buf, this->MaxSubrCount_);
+            BitvTo(buf, this->FcQuery_.FcCount_);
+            BitvTo(buf, this->FcQuery_.FcTimeMS_);
+         }
+         pmap->clear();
+         if (size_t sz = BitvToContainerElementCount(buf)) {
+            ContainerReserve(*pmap, sz);
+            seed::AclPath        key;
+            seed::AccessControl  val;
+            do {
+               BitvTo(buf, key);
+               BitvTo(buf, val.Rights_);
+               if (ver > 0) {
+                  BitvTo(buf, val.MaxSubrCount_);
+               }
+               pmap->insert(pmap->end(), seed::AccessList::value_type{std::move(key), std::move(val)});
+            } while (--sz > 0);
+         }
       }
       void SavePolicy(RevBuffer& rbuf) override {
-         const unsigned ver = 0;
+         const unsigned           ver = 1;
          DetailTable::ConstLocker pmap{static_cast<DetailTree*>(this->DetailPolicyTree_.get())->DetailTable_};
-         BitvOutArchive{rbuf}(ver, this->Home_, *pmap);
+         const auto               ibeg = pmap->begin();
+         for (auto i = pmap->end(); i != ibeg;) {
+            --i;
+            ToBitv(rbuf, i->second.MaxSubrCount_);
+            ToBitv(rbuf, i->second.Rights_);
+            ToBitv(rbuf, i->first);
+         }
+         ElementCountToBitv(rbuf, *pmap);
+         BitvOutArchive{rbuf}(ver, this->Home_,
+                              this->MaxSubrCount_,
+                              this->FcQuery_.FcCount_,
+                              this->FcQuery_.FcTimeMS_);
       }
    };
    using MasterItemSP = intrusive_ptr<MasterItem>;
@@ -42,7 +71,10 @@ class PolicyAclTree : public MasterPolicyTree {
 
    static seed::LayoutSP MakeLayout() {
       seed::Fields fields;
-      fields.Add(fon9_MakeField(MasterItem, Home_, "HomePath"));
+      fields.Add(fon9_MakeField (MasterItem, Home_, "HomePath"));
+      fields.Add(fon9_MakeField2(MasterItem, MaxSubrCount));
+      fields.Add(fon9_MakeField (MasterItem, FcQuery_.FcCount_,  "FcQryCount"));
+      fields.Add(fon9_MakeField (MasterItem, FcQuery_.FcTimeMS_, "FcQryMS"));
       seed::TabSP tab{new seed::Tab(Named{"Acl"}, std::move(fields), seed::MakeAclTreeLayoutWritable(),
                                     seed::TabFlag::Writable | seed::TabFlag::HasSapling)};
       return new seed::Layout1(fon9_MakeField2(PolicyItem, PolicyId),
@@ -85,6 +117,12 @@ bool PolicyAclAgent::GetPolicy(const AuthResult& authr, PolicyConfig& res) {
    for (auto& v : acl)
       res.Acl_.kfetch(CharVectorReplace(ToStrView(v.first), kUserId, userId)).second = v.second;
    return true;
+}
+void PolicyAclAgent::MakeGridView(RevBuffer& rbuf, const PolicyConfig& aclcfg) {
+   auto* gvLayout = this->Sapling_->LayoutSP_->GetTab(0)->SaplingLayout_.get();
+   auto* gvTab = gvLayout->GetTab(0);
+   seed::SimpleMakeFullGridView(aclcfg.Acl_, *gvTab, rbuf);
+   seed::FieldsNameRevPrint(gvLayout, *gvTab, rbuf);
 }
 
 } } // namespaces

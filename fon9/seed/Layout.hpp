@@ -35,6 +35,7 @@ fon9_ENABLE_ENUM_BITWISE_OP(TreeFlag);
 /// - 每個 Layout 最少有一個 Tab: GetTab(0)==KeyTab.
 class fon9_API Layout : public intrusive_ref_counter<Layout> {
    fon9_NON_COPY_NON_MOVE(Layout);
+   virtual Tab* GetTabImpl(StrView name) const = 0;
 public:
    const TreeFlag Flags_;
    /// KeyField 不列入 Tab::Fields_.
@@ -44,7 +45,8 @@ public:
    }
 
    virtual ~Layout();
-   virtual Tab* GetTab(StrView name) const = 0;
+   /// 如果 isdigit(name.Get1ch()) 則使用 GetTab(index);
+   Tab* GetTab(StrView name) const;
    virtual Tab* GetTab(size_t index) const = 0;
    virtual size_t GetTabCount() const = 0;
 
@@ -59,6 +61,8 @@ public:
 /// 每個 Pod 僅包含一顆 Seed.
 class fon9_API Layout1 : public Layout {
    fon9_NON_COPY_NON_MOVE(Layout1);
+   using base = Layout;
+   virtual Tab* GetTabImpl(StrView name) const override;
 public:
    const TabSP   KeyTab_;
    Layout1(FieldSP&& keyField, TabSP&& keyTab, TreeFlag flags = TreeFlag{});
@@ -66,7 +70,7 @@ public:
       : Layout1(std::move(keyField), std::move(keyTab), flags) {
    }
    ~Layout1();
-   virtual Tab* GetTab(StrView name) const override;
+   using base::GetTab;
    virtual Tab* GetTab(size_t index) const override;
    virtual size_t GetTabCount() const override;
 };
@@ -75,12 +79,14 @@ public:
 /// 每個 Pod 包含固定數量的 Seeds.
 class fon9_API LayoutN : public Layout {
    fon9_NON_COPY_NON_MOVE(LayoutN);
+   using base = Layout;
    std::vector<TabSP>  Tabs_;
    void InitTabIndex();
+   virtual Tab* GetTabImpl(StrView name) const override;
 public:
    template <class... ArgsT>
    LayoutN(FieldSP&& keyField, TreeFlag flags, ArgsT&&... args)
-      : Layout(std::move(keyField), flags)
+      : base(std::move(keyField), flags)
       , Tabs_{std::forward<ArgsT>(args)...} {
       this->InitTabIndex();
    }
@@ -91,8 +97,8 @@ public:
 
    ~LayoutN();
    virtual size_t GetTabCount() const override;
-   virtual Tab* GetTab(StrView name) const override;
    virtual Tab* GetTab(size_t index) const override;
+   using base::GetTab;
 };
 
 /// \ingroup seed
@@ -108,15 +114,17 @@ using TabsDy = NamedIxMapNoRemove<TabSP>;
 /// - 一般而言, [使用端]會在一開始, 就先將需要用到的 Tab 準備好, 可以降低資料取得的延遲.
 class fon9_API LayoutDy : public Layout, public MustLock<TabsDy> {
    fon9_NON_COPY_NON_MOVE(LayoutDy);
+   using base = Layout;
+   virtual Tab* GetTabImpl(StrView name) const override;
 public:
-   LayoutDy(FieldSP&& keyField, TreeFlag flags = TreeFlag{}) : Layout(std::move(keyField), flags) {
+   LayoutDy(FieldSP&& keyField, TreeFlag flags = TreeFlag{}) : base(std::move(keyField), flags) {
    }
-   LayoutDy(FieldSP&& keyField, TabSP&& keyTab, TreeFlag flags = TreeFlag{}) : Layout(std::move(keyField), flags) {
+   LayoutDy(FieldSP&& keyField, TabSP&& keyTab, TreeFlag flags = TreeFlag{}) : base(std::move(keyField), flags) {
       Locker locker(*this);
       locker->Add(std::move(keyTab));
    }
    ~LayoutDy();
-   virtual Tab* GetTab(StrView name) const override;
+   using base::GetTab;
    virtual Tab* GetTab(size_t index) const override;
    virtual size_t GetTabCount() const override;
 };

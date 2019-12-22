@@ -148,7 +148,8 @@ public:
 class fon9_API TicketRunnerRead : public TicketRunner {
    fon9_NON_COPY_NON_MOVE(TicketRunnerRead);
    using base = TicketRunner;
-   void OnReadOp(const SeedOpResult& res, const RawRd* rd);
+protected:
+   virtual void OnReadOp(const SeedOpResult& res, const RawRd* rd);
 public:
    TicketRunnerRead(SeedVisitor& visitor, StrView seed)
       : base(visitor, seed, AccessRight::Read) {
@@ -241,7 +242,7 @@ public:
 class fon9_API TicketRunnerSubscribe : public TicketRunnerTree {
    fon9_NON_COPY_NON_MOVE(TicketRunnerSubscribe);
    using base = TicketRunnerTree;
-   TicketRunnerSubscribe(SeedVisitor& visitor, StrView seed, VisitorSubr* subr);
+   TicketRunnerSubscribe(SeedVisitor& visitor, StrView seed, VisitorSubrSP subr);
 public:
    const CharVector     TabName_;
    const VisitorSubrSP  Subr_;
@@ -249,7 +250,7 @@ public:
    TicketRunnerSubscribe(SeedVisitor& visitor, StrView seed, StrView tabName);
    /// 取消註冊.
    TicketRunnerSubscribe(SeedVisitor& visitor, StrView seed)
-      : TicketRunnerSubscribe{visitor, seed, visitor.Subr_.Lock()->get()} {
+      : TicketRunnerSubscribe(visitor, seed, visitor.GetSubr()) {
    }
 
    void OnFoundTree(TreeOp& opTree) override;

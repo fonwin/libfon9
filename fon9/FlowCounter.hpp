@@ -26,6 +26,7 @@ struct fon9_API FlowCounterArgs {
 
    /// tag = "Fc"; value = "count/ms"; 或 value = "count" (預設 1000 ms);
    ConfigParser::Result OnTagValue(StrView tag, StrView& value);
+   ConfigParser::Result OnValue(StrView& value);
 };
 
 /// \ingroup Misc.

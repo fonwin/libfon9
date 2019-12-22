@@ -16,10 +16,10 @@ inline size_t ToBitv(RevBuffer& rbuf, EnabledYN value) {
    return ToBitv(rbuf, value == EnabledYN::Yes);
 }
 
-template <class RevBuffer>
-inline void BitvTo(RevBuffer& rbuf, EnabledYN& value) {
+template <class DcQueue>
+inline void BitvTo(DcQueue& buf, EnabledYN& value) {
    bool b = (value == EnabledYN::Yes);
-   BitvTo(rbuf, b);
+   BitvTo(buf, b);
    value = b ? EnabledYN::Yes : EnabledYN{};
 }
 

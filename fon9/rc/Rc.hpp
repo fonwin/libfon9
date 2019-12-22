@@ -2,6 +2,7 @@
 // \author fonwinz@gmail.com
 #ifndef __fon9_rc_Rc_hpp__
 #define __fon9_rc_Rc_hpp__
+#include "fon9/rc/Rc.h"
 #include "fon9/buffer/DcQueue.hpp"
 #include "fon9/BitvArchive.hpp"
 #include "fon9/intrusive_ref_counter.hpp"
@@ -9,33 +10,17 @@
 #include <array>
 #include <memory>
 
-namespace fon9 { namespace rc {
+fon9_ENABLE_ENUM_BITWISE_OP(f9rc_RcFlag);
+
+namespace fon9 {
+namespace seed { class fon9_API PluginsHolder; }
+
+namespace rc {
 
 class fon9_API RcSession;
 class fon9_API RcFunctionMgr;
 class fon9_API RcFunctionAgent;
 using RcFunctionAgentSP = std::unique_ptr<RcFunctionAgent>;
-
-enum class RcFunctionCode : uint8_t {
-   Connection = 0,
-   SASL = 1,
-   Logout = 2,
-   Heartbeat = 3,
-
-   SeedVisitor = 6,
-   OmsApi = 7,
-
-   /// 這裡提供一個暫時的最大值, 可減少一些記憶體用量.
-   /// 目前規劃:
-   /// - admin 功能(登入、Heartbeat...)
-   /// - seed visitor
-   /// - f9oms
-   /// - 其他請參考 fon9/rc/README.md
-   Max = 8,
-};
-constexpr unsigned GetRcFunctionCodeArraySize() {
-   return cast_to_underlying(RcFunctionCode::Max) + 1u;
-}
 
 enum class RcSessionSt : int8_t {
    Closing = -1,
@@ -51,15 +36,15 @@ enum class RcSessionSt : int8_t {
 /// 協調 FunctionAgent / RcSession 之間的關聯.
 /// - 提供 FunctionAgent 的註冊及管理.
 /// - RcSession 參考到一個 RcFunctionMgr.
-/// - 建構時自動建立的 FunctionAgent: RcFunctionCode::Heartbeat, RcFunctionCode::Logout
+/// - 建構時自動建立的 FunctionAgent: f9rc_FunctionCode_Heartbeat, f9rc_FunctionCode_Logout
 class fon9_API RcFunctionMgr {
    fon9_NON_COPY_NON_MOVE(RcFunctionMgr);
-   using FunctionAgents = std::array<RcFunctionAgentSP, GetRcFunctionCodeArraySize()>;
+   using FunctionAgents = std::array<RcFunctionAgentSP, f9rc_FunctionCode_Count>;
    FunctionAgents FunctionAgents_;
    void AddDefaultAgents();
 
-   virtual unsigned AddRef() = 0;
-   virtual unsigned Release() = 0;
+   virtual unsigned RcFunctionMgrAddRef() = 0;
+   virtual unsigned RcFunctionMgrRelease() = 0;
 public:
    /// 自動註冊 RcFunctionAgent: Logout, Heartbeat;
    RcFunctionMgr() {
@@ -75,7 +60,7 @@ public:
    /// 若已存在, 則取代之.
    void Reset(RcFunctionAgentSP&& agent);
 
-   RcFunctionAgent* Get(RcFunctionCode fnCode) {
+   RcFunctionAgent* Get(f9rc_FunctionCode fnCode) {
       return cast_to_underlying(fnCode) >= this->FunctionAgents_.size()
          ? nullptr : this->FunctionAgents_[cast_to_underlying(fnCode)].get();
    }
@@ -85,19 +70,23 @@ public:
    void OnSessionApReady(RcSession&);
    void OnSessionLinkBroken(RcSession&);
 
-   inline friend unsigned intrusive_ptr_add_ref(const RcFunctionMgr* px) { return const_cast<RcFunctionMgr*>(px)->AddRef(); }
-   inline friend unsigned intrusive_ptr_release(const RcFunctionMgr* px) { return const_cast<RcFunctionMgr*>(px)->Release(); }
+   inline friend unsigned intrusive_ptr_add_ref(const RcFunctionMgr* px) { return const_cast<RcFunctionMgr*>(px)->RcFunctionMgrAddRef(); }
+   inline friend unsigned intrusive_ptr_release(const RcFunctionMgr* px) { return const_cast<RcFunctionMgr*>(px)->RcFunctionMgrRelease(); }
 };
 using RcFunctionMgrSP = intrusive_ptr<RcFunctionMgr>;
+
+/// 從 holder.Root_ 尋找 RcSessionServer_Factory; 並取得 RcFunctionMgr;
+/// 提供給 RcFunctionAgent 註冊,  例如: cDestPath = "/FpSession/RcSvr"
+fon9_API RcFunctionMgr* FindRcFunctionMgr(seed::PluginsHolder& holder, const StrView cDestPath);
 
 fon9_WARN_DISABLE_PADDING;
 /// \ingroup rc
 /// 有 ref_counter 的 RcFunctionMgr.
 class fon9_API RcFunctionMgrRefCounter : public intrusive_ref_counter<RcFunctionMgrRefCounter>
-   , public RcFunctionMgr {
+                                       , public RcFunctionMgr {
    fon9_NON_COPY_NON_MOVE(RcFunctionMgrRefCounter);
-   unsigned AddRef() override;
-   unsigned Release() override;
+   unsigned RcFunctionMgrAddRef() override;
+   unsigned RcFunctionMgrRelease() override;
 public:
    RcFunctionMgrRefCounter() = default;
 };
@@ -128,13 +117,13 @@ struct RcFunctionParam {
 };
 
 /// \ingroup rc
-/// 對應 RcFunctionCode 處理 f9rc 的功能.
+/// 對應 f9rc_FunctionCode 處理 f9rc 的功能.
 class fon9_API RcFunctionAgent {
    fon9_NON_COPY_NON_MOVE(RcFunctionAgent);
 public:
-   const RcFunctionCode FunctionCode_;
-   const RcSessionSt    SessionStRequired_;
-   RcFunctionAgent(RcFunctionCode fnCode, RcSessionSt stReq = RcSessionSt::ApReady)
+   const f9rc_FunctionCode FunctionCode_;
+   const RcSessionSt       SessionStRequired_;
+   RcFunctionAgent(f9rc_FunctionCode fnCode, RcSessionSt stReq = RcSessionSt::ApReady)
       : FunctionCode_{fnCode}
       , SessionStRequired_{stReq} {
    }

@@ -2,17 +2,11 @@
 // \author fonwinz@gmail.com
 #ifndef __fon9_rc_RcSession_hpp__
 #define __fon9_rc_RcSession_hpp__
-#include "fon9/rc/Rc.h"
 #include "fon9/rc/Rc.hpp"
 #include "fon9/io/Session.hpp"
 #include "fon9/auth/AuthBase.hpp"
 
 namespace fon9 { namespace rc {
-
-enum class RcFlag {
-   NoChecksum = f9rc_RcFlag_NoChecksum,
-};
-fon9_ENABLE_ENUM_BITWISE_OP(RcFlag);
 
 enum class RcSessionRole : int8_t {
    /// 負責在 OnDevice_LinkReady() 先送出 ProtocolVersion: "f9rc.0".
@@ -41,14 +35,14 @@ public:
    const RcFunctionMgrSP   FunctionMgr_;
    const RcSessionRole     Role_;
 
-   RcSession(RcFunctionMgrSP mgr, RcSessionRole role, RcFlag flags = RcFlag{});
+   RcSession(RcFunctionMgrSP mgr, RcSessionRole role, f9rc_RcFlag flags = f9rc_RcFlag{});
    ~RcSession();
 
    /// rbuf 必須已儲存了符合規則的 Function param.
    /// 在透過 Device 送出前, 這裡會加上:
    /// - checksum(如果需要) + fnCode + ByteArraySizeToBitvT(rbuf的資料量)
    /// - 若 if (!this->LocalParam_.IsNoChecksum()) 則加上 checksum.
-   void Send(RcFunctionCode fnCode, RevBufferList&& rbuf);
+   void Send(f9rc_FunctionCode fnCode, RevBufferList&& rbuf);
 
    /// 發生嚴重錯誤, 強制結束 Session.
    void ForceLogout(std::string reason);
@@ -62,38 +56,39 @@ public:
    void SendConnecting(RevBufferList&& rbuf) {
       assert(this->SessionSt_ < RcSessionSt::Connecting);
       this->SetSessionSt(RcSessionSt::Connecting);
-      this->Send(RcFunctionCode::Connection, std::move(rbuf));
+      this->Send(f9rc_FunctionCode_Connection, std::move(rbuf));
    }
 
    void SendSasl(RevBufferList&& rbuf) {
       if (RcSessionSt::Connecting <= this->SessionSt_ && this->SessionSt_ <= RcSessionSt::Logoning) {
          this->SetSessionSt(RcSessionSt::Logoning);
-         this->Send(RcFunctionCode::SASL, std::move(rbuf));
+         this->Send(f9rc_FunctionCode_SASL, std::move(rbuf));
       }
    }
    void OnSaslDone(auth::AuthR rcode, StrView userid);
 
-   void ResetNote(RcFunctionCode fnCode, RcFunctionNoteSP&& note) {
+   void ResetNote(f9rc_FunctionCode fnCode, RcFunctionNoteSP&& note) {
       if (static_cast<size_t>(fnCode) < this->Notes_.size())
          this->Notes_[static_cast<size_t>(fnCode)] = std::move(note);
    }
    template <typename T>
-   T* GetNote(RcFunctionCode fnCode) const {
+   T* GetNote(f9rc_FunctionCode fnCode) const {
       if (static_cast<size_t>(fnCode) < this->Notes_.size())
          return dynamic_cast<T*>(this->Notes_[static_cast<size_t>(fnCode)].get());
       return nullptr;
    }
-   RcFunctionNote* GetNote(RcFunctionCode fnCode) const {
+   RcFunctionNote* GetNote(f9rc_FunctionCode fnCode) const {
       if (static_cast<size_t>(fnCode) < this->Notes_.size())
          return this->Notes_[static_cast<size_t>(fnCode)].get();
       return nullptr;
    }
 
    struct ProtocolParam {
-      RcFlag   Flags_{};
-      int      RcVer_{-1};
+      f9rc_RcFlag Flags_{};
+      char        Padding__[2];
+      int         RcVer_{-1};
       bool IsNoChecksum() const {
-         return IsEnumContains(this->Flags_, RcFlag::NoChecksum);
+         return IsEnumContains(this->Flags_, f9rc_RcFlag_NoChecksum);
       }
       // local 端的 ApVer_ 放在 RcFuncConnection::ApVersion_;
    };
@@ -127,7 +122,7 @@ public:
    TimeStamp GetLastSentTime() const {
       return this->LastSentTime_;
    }
-   RcFunctionCode GetRxFunctionCode() const {
+   f9rc_FunctionCode GetRxFunctionCode() const {
       return this->RxFunctionCode_;
    }
    RcSessionSt GetSessionSt() const {
@@ -163,11 +158,11 @@ private:
    io::RecvBufferSize OnDevice_Recv_Parser(DcQueueList& rxbuf);
 
    // Acceptor 可選擇那些參數使用對方的設定.
-   // RcFlag   FollowRemote_;
+   // f9rc_RcFlag    FollowRemote_;
 
    RcSessionSt       SessionSt_{};
    bool              IsRxFunctionCodeReady_;
-   RcFunctionCode    RxFunctionCode_;
+   f9rc_FunctionCode RxFunctionCode_;
    ChecksumT         RxChecksum_;
    char              pad_____________[2];
    TimeStamp         LastRecvTime_;
@@ -178,7 +173,7 @@ private:
    ProtocolParamRemote  RemoteParam_;
    ProtocolParam        LocalParam_;
 
-   using Notes = std::array<RcFunctionNoteSP, GetRcFunctionCodeArraySize()>;
+   using Notes = std::array<RcFunctionNoteSP, f9rc_FunctionCode_Count>;
    Notes Notes_;
 };
 

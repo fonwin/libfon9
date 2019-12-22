@@ -2,22 +2,28 @@
 /// \author fonwinz@gmail.com
 #include "fon9/seed/Layout.hpp"
 #include "fon9/seed/Tab.hpp"
+#include "fon9/StrTo.hpp"
 
 namespace fon9 { namespace seed {
 
 Layout::~Layout() {
 }
+Tab* Layout::GetTab(StrView name) const {
+   if (fon9::isdigit(name.Get1st()))
+      return this->GetTab(StrTo(name, 0u));
+   return this->GetTabImpl(name);
+}
 
 //--------------------------------------------------------------------------//
 
 Layout1::Layout1(FieldSP&& keyField, TabSP&& keyTab, TreeFlag flags)
-   : Layout(std::move(keyField), flags)
+   : base(std::move(keyField), flags)
    , KeyTab_(keyTab) {
    this->KeyTab_->SetIndex(0);
 }
 Layout1::~Layout1() {
 }
-Tab* Layout1::GetTab(StrView name) const {
+Tab* Layout1::GetTabImpl(StrView name) const {
    if (name == StrView{&this->KeyTab_->Name_})
       return this->KeyTab_.get();
    return nullptr;
@@ -42,7 +48,7 @@ void LayoutN::InitTabIndex() {
 size_t LayoutN::GetTabCount() const {
    return this->Tabs_.size();
 }
-Tab* LayoutN::GetTab(StrView name) const {
+Tab* LayoutN::GetTabImpl(StrView name) const {
    for (const TabSP& sp : this->Tabs_) {
       if (Tab* tab = sp.get())
          if (name == StrView{&tab->Name_})
@@ -58,7 +64,7 @@ Tab* LayoutN::GetTab(size_t index) const {
 
 LayoutDy::~LayoutDy() {
 }
-Tab* LayoutDy::GetTab(StrView name) const {
+Tab* LayoutDy::GetTabImpl(StrView name) const {
    ConstLocker lockedTabs(*this);
    return lockedTabs->Get(name);
 }

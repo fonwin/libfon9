@@ -6,6 +6,7 @@
 #include "fon9/seed/Tab.hpp"
 #include "fon9/CharVector.hpp"
 #include "fon9/SortedVector.hpp"
+#include "fon9/FlowCounter.hpp"
 
 namespace fon9 { namespace seed {
 
@@ -25,12 +26,28 @@ enum class AccessRight : uint8_t {
 };
 fon9_ENABLE_ENUM_BITWISE_OP(AccessRight);
 
+struct AccessControl {
+   AccessRight Rights_;
+   char        Padding___[3];
+   /// AclPath 設定的 tree, 可以訂閱幾個 seed?
+   /// - 0 = 不限制.
+   /// - 由 Session 處理.
+   /// - tree 必須支援訂閱.
+   uint32_t    MaxSubrCount_;
+
+   AccessControl() {
+      memset(this, 0, sizeof(*this));
+   }
+};
+
 using AclPath = CharVector;
 
-/// \ingroup seed
-/// Access control list.
-struct AccessList : public SortedVector<AclPath, AccessRight> {
-   using base = SortedVector<AclPath, AccessRight>;
+template <class AclRecT>
+struct AclPathMap : public SortedVector<AclPath, AclRecT> {
+   using base = SortedVector<AclPath, AclRecT>;
+   using key_type = typename base::key_type;
+   using iterator = typename base::iterator;
+   using const_iterator = typename base::const_iterator;
    using base::lower_bound;
    iterator lower_bound(StrView strKeyText) { return this->lower_bound(key_type::MakeRef(strKeyText)); }
    const_iterator lower_bound(StrView strKeyText) const { return this->lower_bound(key_type::MakeRef(strKeyText)); }
@@ -40,6 +57,10 @@ struct AccessList : public SortedVector<AclPath, AccessRight> {
    const_iterator find(StrView strKeyText) const { return this->find(key_type::MakeRef(strKeyText)); }
 };
 
+/// \ingroup seed
+/// Access control list.
+using AccessList = AclPathMap<AccessControl>;
+
 /// \ingroup seed.
 /// 用來存取 AccessList 的 layout.
 /// - KeyField  = "Path";
@@ -48,16 +69,33 @@ struct AccessList : public SortedVector<AclPath, AccessRight> {
 fon9_API LayoutSP MakeAclTreeLayout();
 fon9_API LayoutSP MakeAclTreeLayoutWritable();
 
-/// \ingroup seed
-struct AclConfig {
+struct AclHomeConfig {
    /// 若有包含 "{UserId}" 則從 AclAgent 取出 PolicyAcl 時,
    /// 會用實際的 UserId 取代 "{UserId}",
    /// e.g. "/home/{UserId}" => "/home/fonwin"
-   AclPath     Home_;
-   AccessList  Acl_;
+   AclPath           Home_;
+   /// 除了 Acl_ 各自設定的訂閱數量之外, 這裡可設定一個「每個 Session 最大可訂閱數量」.
+   uint32_t          MaxSubrCount_{0};
+   /// 查詢的流量管制.
+   FlowCounterArgs   FcQuery_;
+
+   AclHomeConfig() {
+      this->FcQuery_.Clear();
+   }
 
    void Clear() {
       this->Home_.clear();
+      this->MaxSubrCount_ = 0;
+      this->FcQuery_.Clear();
+   }
+};
+
+/// \ingroup seed
+struct AclConfig : public AclHomeConfig {
+   AccessList  Acl_;
+
+   void Clear() {
+      AclHomeConfig::Clear();
       this->Acl_.clear();
    }
 
@@ -65,8 +103,8 @@ struct AclConfig {
    /// - "/" 及 "/.." 權限設為 AccessRight::Full;
    void SetAdminMode() {
       this->Home_.assign("/");
-      this->Acl_.kfetch(AclPath::MakeRef("/", 1)).second = AccessRight::Full;
-      this->Acl_.kfetch(AclPath::MakeRef("/..", 3)).second = AccessRight::Full;
+      this->Acl_.kfetch(AclPath::MakeRef("/", 1)).second.Rights_ = AccessRight::Full;
+      this->Acl_.kfetch(AclPath::MakeRef("/..", 3)).second.Rights_ = AccessRight::Full;
    }
 
    /// 沒任何權限?
@@ -97,10 +135,10 @@ struct fon9_API AclPathParser {
    /// 根據 Path_ 檢查 acl 的設定.
    /// - 必須先執行過 NormalizePath()
    /// - 優先使用完全一致的設定: 從後往前解析, 找到符合的權限設定.
-   AccessRight GetAccess(const AccessList& acl) const;
+   const AccessControl* GetAccess(const AccessList& acl) const;
    /// 若 needsRights != AccessRight::None,
    /// 則必須要有 needsRights 的完整權限, 才會傳回 acl 所設定的權限.
-   AccessRight CheckAccess(const AccessList& acl, AccessRight needsRights) const;
+   const AccessControl* CheckAccess(const AccessList& acl, AccessRight needsRights) const;
 };
 fon9_WARN_POP;
 

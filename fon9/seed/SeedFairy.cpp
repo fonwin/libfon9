@@ -79,7 +79,8 @@ OpResult SeedFairy::NormalizeSeedPath(StrView& seed, AclPath& outpath, AccessRig
       return OpResult::path_format_error;
    }
    AccessRight needs = *reRights;
-   *reRights = pathParser.GetAccess(this->Ac_.Acl_);
+   const auto* ac = pathParser.GetAccess(this->Ac_.Acl_);
+   *reRights = (ac ? ac->Rights_ : AccessRight::None);
    OpResult res = (*reRights == AccessRight::None || (needs != AccessRight::None && !IsEnumContains(*reRights, needs)))
       ? OpResult::access_denied : OpResult::no_error;
    outpath = std::move(pathParser.Path_);
@@ -194,10 +195,10 @@ void TicketRunner::OnLastStep(TreeOp& op, StrView keyText, Tab& tab) {
    op.Get(keyText, std::bind(&TicketRunner::OnLastSeedOp, this, std::placeholders::_1, std::placeholders::_2, std::ref(tab)));
 }
 void TicketRunner::Run() {
-   if (!this->Root_)
-      this->Visitor_->OnTicketRunnerDone(*this, DcQueueFixedMem{});
-   else
+   if (this->Root_)
       StartSeedSearch(*this->Root_, this);
+   else
+      this->OnError(OpResult::not_found_sapling);
 }
 
 } } // namespaces

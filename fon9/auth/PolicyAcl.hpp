@@ -53,6 +53,7 @@ public:
 
    using PolicyConfig = seed::AclConfig;
    bool GetPolicy(const AuthResult& authr, PolicyConfig& res);
+   void MakeGridView(RevBuffer& rbuf, const PolicyConfig& aclcfg);
 };
 
 } } // namespaces

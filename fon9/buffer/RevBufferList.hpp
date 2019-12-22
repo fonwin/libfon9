@@ -105,6 +105,7 @@ public:
    }
 };
 
+fon9_MSC_WARN_DISABLE(4265); /* class has virtual functions, but destructor is not virtual */
 class fon9_API RevBufferList : public RevBuffer {
    fon9_NON_COPYABLE(RevBufferList);
    RevBufferListBuilder Builder_;
@@ -120,11 +121,8 @@ class fon9_API RevBufferList : public RevBuffer {
          this->MemBegin_ = this->MemCurrent_ - front->GetRemainSize();
       }
    }
-   virtual char* OnRevBufferAlloc(size_t sz) override {
-      this->SetFrontNodeUsed();
-      this->ResetMemPtr(this->Builder_.NewFront(sz));
-      return this->MemCurrent_;
-   }
+   char* OnRevBufferAlloc(size_t sz) override;
+
 public:
    RevBufferList(BufferNodeSize newAllocReserved) : RevBuffer(), Builder_{newAllocReserved} {
    }
@@ -172,6 +170,7 @@ public:
       this->Builder_.RemoveBackData(sz);
    }
 };
+fon9_MSC_WARN_POP;
 
 } // namespaces
 #endif//__fon9_buffer_RevBufferList_hpp__

@@ -33,6 +33,8 @@ extern "C" {
       #define fon9_API
    #endif
 
+   #define fon9_CAPI_FN(ReturnType)  extern fon9_API ReturnType fon9_CAPI_CALL
+
    #if defined(_MSC_VER)
       /// 關閉 MSVC 的警告, 關閉前沒有先push現在 warn 設定.
       /// warnlist 使用空白分隔, 例如: fon9_MSC_WARN_DISABLE_NO_PUSH(4777 4888)

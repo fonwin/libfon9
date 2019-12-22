@@ -18,7 +18,7 @@ class RcFuncHeartbeatRTT : public fon9::rc::RcFunctionAgent {
    fon9_NON_COPY_NON_MOVE(RcFuncHeartbeatRTT);
    using base = RcFunctionAgent;
 public:
-   RcFuncHeartbeatRTT() : base{fon9::rc::RcFunctionCode::Heartbeat} {
+   RcFuncHeartbeatRTT() : base{f9rc_FunctionCode_Heartbeat} {
    }
    void OnRecvFunctionCall(fon9::rc::RcSession&, fon9::rc::RcFunctionParam& param) override {
       // 計算 RTT.
@@ -31,7 +31,7 @@ public:
    }
 };
 //--------------------------------------------------------------------------//
-const fon9::rc::RcFunctionCode   RcFuncCode_Test = fon9::rc::RcFunctionCode::Max;
+const f9rc_FunctionCode   RcFuncCode_Test = static_cast<f9rc_FunctionCode>(f9rc_FunctionCode_Count - 1);
 
 class RcFuncTest : public fon9::rc::RcFunctionAgent {
    fon9_NON_COPY_NON_MOVE(RcFuncTest);
@@ -141,7 +141,7 @@ struct ClientTester {
       using base = fon9::rc::RcSession;
       const std::string Password_;
 
-      RcSessionClient(fon9::rc::RcFunctionMgrSP mgr, fon9::StrView userid, fon9::StrView password, fon9::rc::RcFlag rcflags)
+      RcSessionClient(fon9::rc::RcFunctionMgrSP mgr, fon9::StrView userid, fon9::StrView password, f9rc_RcFlag rcflags)
          : base(std::move(mgr), fon9::rc::RcSessionRole::User, rcflags)
          , Password_{password.ToString()} {
          this->SetUserId(userid);
@@ -170,7 +170,7 @@ struct ClientTester {
    fon9::rc::RcFunctionMgrSP  FuncClientMgr_;
    RcSessionClient*           RcCli_;
    fon9::io::DeviceSP         Dev_;
-   ClientTester(fon9::rc::RcFlag rcflag) : FuncClientMgr_{new RcFuncClientMgr} {
+   ClientTester(f9rc_RcFlag rcflag) : FuncClientMgr_{new RcFuncClientMgr} {
       fon9::io::IoServiceArgs argIoSv{};
       IoService::MakeResult   errIoSv;
       argIoSv.ThreadCount_ = 1;
@@ -197,10 +197,10 @@ int main(int argc, const char** argv) {
       _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
    #endif
 
-   fon9::rc::RcFlag  rcflag{};
+   f9rc_RcFlag  rcflag{};
    for (int L = 1; L < argc; ++L) {
       if (strcmp(argv[L], "NoChecksum") == 0)
-         rcflag |= fon9::rc::RcFlag::NoChecksum;
+         rcflag |= f9rc_RcFlag_NoChecksum;
    }
 
    fon9::AutoPrintTestInfo utinfo("Rc_UT");
@@ -231,7 +231,7 @@ int main(int argc, const char** argv) {
             continue;
          case 'h':
             fon9::ToBitv(rbuf, fon9::UtcNow());
-            cliTester.RcCli_->Send(fon9::rc::RcFunctionCode::Heartbeat, std::move(rbuf));
+            cliTester.RcCli_->Send(f9rc_FunctionCode_Heartbeat, std::move(rbuf));
             continue;
          }
       }

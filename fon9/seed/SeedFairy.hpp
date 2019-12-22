@@ -56,6 +56,9 @@ public:
       this->Ac_ = cfg;
       this->SetCurrPathToHome();
    }
+   const AclConfig& GetAclConfig() const {
+      return this->Ac_;
+   }
 
    /// - 正規化路徑, 並檢查訪問權限.
    /// - 正規化的前置路徑:

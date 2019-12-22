@@ -11,7 +11,7 @@ class RcFuncLogout : public RcFunctionAgent {
    fon9_NON_COPY_NON_MOVE(RcFuncLogout);
    using base = RcFunctionAgent;
 public:
-   RcFuncLogout() : base{RcFunctionCode::Logout, RcSessionSt::ProtocolReady} {
+   RcFuncLogout() : base{f9rc_FunctionCode_Logout, RcSessionSt::ProtocolReady} {
    }
    void OnRecvFunctionCall(RcSession& ses, RcFunctionParam& param) override {
       std::string reason{"RxLogout:"};
@@ -23,7 +23,7 @@ class RcFuncHeartbeat : public RcFunctionAgent {
    fon9_NON_COPY_NON_MOVE(RcFuncHeartbeat);
    using base = RcFunctionAgent;
 public:
-   RcFuncHeartbeat() : base{RcFunctionCode::Heartbeat} {
+   RcFuncHeartbeat() : base{f9rc_FunctionCode_Heartbeat} {
    }
    void OnRecvFunctionCall(RcSession& ses, RcFunctionParam& param) override {
       if (IsEnumContains(ses.Role_, RcSessionRole::ProtocolInitiator))
@@ -35,7 +35,7 @@ public:
          (void)rdsz; assert(rdsz == param.RemainParamSize_);
          rbuf.SetPrefixUsed(pout);
          ToBitv(rbuf, param.RecvTime_);
-         ses.Send(RcFunctionCode::Heartbeat, std::move(rbuf));
+         ses.Send(f9rc_FunctionCode_Heartbeat, std::move(rbuf));
       }
    }
 };
@@ -67,11 +67,11 @@ void RcFunctionMgr::OnSessionApReady(RcSession& ses) {
    }
 }
 void RcFunctionMgr::OnSessionLinkReady(RcSession& ses) {
-   if (RcFuncConnClient* agent = dynamic_cast<RcFuncConnClient*>(this->Get(RcFunctionCode::Connection)))
+   if (RcFuncConnClient* agent = dynamic_cast<RcFuncConnClient*>(this->Get(f9rc_FunctionCode_Connection)))
       agent->OnSessionLinkReady(ses);
 }
 void RcFunctionMgr::OnSessionProtocolReady(RcSession& ses) {
-   if (RcFuncConnClient* agent = dynamic_cast<RcFuncConnClient*>(this->Get(RcFunctionCode::Connection)))
+   if (RcFuncConnClient* agent = dynamic_cast<RcFuncConnClient*>(this->Get(f9rc_FunctionCode_Connection)))
       agent->OnSessionProtocolReady(ses);
 }
 void RcFunctionMgr::OnSessionLinkBroken(RcSession& ses) {
@@ -81,10 +81,10 @@ void RcFunctionMgr::OnSessionLinkBroken(RcSession& ses) {
    }
 }
 //--------------------------------------------------------------------------//
-unsigned RcFunctionMgrRefCounter::AddRef() {
+unsigned RcFunctionMgrRefCounter::RcFunctionMgrAddRef() {
    return intrusive_ptr_add_ref(static_cast<intrusive_ref_counter<RcFunctionMgrRefCounter>*>(this));
 }
-unsigned RcFunctionMgrRefCounter::Release() {
+unsigned RcFunctionMgrRefCounter::RcFunctionMgrRelease() {
    return intrusive_ptr_release(static_cast<intrusive_ref_counter<RcFunctionMgrRefCounter>*>(this));
 }
 //--------------------------------------------------------------------------//

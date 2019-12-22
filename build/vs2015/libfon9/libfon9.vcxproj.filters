@@ -959,6 +959,27 @@
     <ClInclude Include="..\..\..\fon9\BitvFixedInt.hpp">
       <Filter>Header Files\_base\_Bitv / Serialize</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\rc\RcClientApi.h">
+      <Filter>Header Files\rc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\rc\RcClientSession.hpp">
+      <Filter>Header Files\rc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\rc\RcSeedVisitor.h">
+      <Filter>Header Files\rc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\rc\RcSeedVisitor.hpp">
+      <Filter>Header Files\rc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\rc\RcSeedVisitorClient.hpp">
+      <Filter>Header Files\rc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\rc\RcSeedVisitorServer.hpp">
+      <Filter>Header Files\rc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\rc\RcSeedVisitorClientReq.hpp">
+      <Filter>Header Files\rc</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -1542,6 +1563,30 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\InnApf.cpp">
       <Filter>Source Files\_base\_Inn</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\buffer\RevBuffer.cpp">
+      <Filter>Source Files\buffer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\rc\RcClientApi.cpp">
+      <Filter>Source Files\rc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\buffer\RevBufferList.cpp">
+      <Filter>Source Files\buffer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\rc\RcClientSession.cpp">
+      <Filter>Source Files\rc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\rc\RcSeedVisitor.cpp">
+      <Filter>Source Files\rc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\rc\RcSeedVisitorClient.cpp">
+      <Filter>Source Files\rc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\rc\RcSeedVisitorServer.cpp">
+      <Filter>Source Files\rc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\rc\RcSeedVisitorClientReq.cpp">
+      <Filter>Source Files\rc</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -7,6 +7,7 @@
 #include "fon9/rc/RcSession.hpp"
 #include "fon9/seed/Plugins.hpp"
 #include "fon9/framework/SessionFactoryConfigWithAuthMgr.hpp"
+#include "fon9/framework/IoManager.hpp"
 
 namespace fon9 { namespace rc {
 
@@ -71,7 +72,7 @@ void RcFuncSaslServer::OnRecvFunctionCall(RcSession& ses, RcFunctionParam& param
    if (!note->AuthSession_)
       ses.ForceLogout("SASL mech not found.");
    else {
-      ses.ResetNote(RcFunctionCode::SASL, std::move(noteSP));
+      ses.ResetNote(f9rc_FunctionCode_SASL, std::move(noteSP));
       note->VerifyRequest();
    }
 }
@@ -94,10 +95,10 @@ struct RcSessionServer_Factory : public SessionFactory, public RcFunctionMgr {
       this->Add(RcFunctionAgentSP{new RcFuncConnServer("f9rcServer.0", "fon9 RcServer", authMgr)});
       this->Add(RcFunctionAgentSP{new RcFuncSaslServer{authMgr}});
    }
-   unsigned AddRef() override {
+   unsigned RcFunctionMgrAddRef() override {
       return intrusive_ptr_add_ref(static_cast<SessionFactory*>(this));
    }
-   unsigned Release() override {
+   unsigned RcFunctionMgrRelease() override {
       return intrusive_ptr_release(static_cast<SessionFactory*>(this));
    }
 
@@ -121,6 +122,26 @@ struct RcSessionServer_Factory : public SessionFactory, public RcFunctionMgr {
       }
    };
 };
+//--------------------------------------------------------------------------//
+fon9_API RcFunctionMgr* FindRcFunctionMgr(seed::PluginsHolder& holder, const StrView cDestPath) {
+   StrView  destPath = cDestPath;
+   StrView  sesFacName = StrFetchTrim(destPath, '/');
+   auto     sesFacPark = holder.Root_->Get<SessionFactoryPark>(sesFacName);
+   if (!sesFacPark) {
+      if (auto iomgr = holder.Root_->GetSapling<IoManager>(sesFacName))
+         sesFacPark = iomgr->SessionFactoryPark_;
+      if (!sesFacPark) {
+         holder.SetPluginsSt(LogLevel::Error, "Not found SessionFactoryPark=", cDestPath);
+         return nullptr;
+      }
+   }
+   RcSessionServer_Factory* rcFuncMgr = dynamic_cast<RcSessionServer_Factory*>(sesFacPark->Get(destPath).get());
+   if (!rcFuncMgr) {
+      holder.SetPluginsSt(LogLevel::Error, "Not found RcFunctionMgr=", cDestPath);
+      return nullptr;
+   }
+   return rcFuncMgr;
+}
 
 } } // namespace
 
