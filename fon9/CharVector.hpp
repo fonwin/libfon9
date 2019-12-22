@@ -8,7 +8,7 @@ namespace fon9 {
 
 /// \ingroup Misc
 /// - 當 key 使用時, 可用來取代 std::string
-/// - 在資料量 <= ByteVector::kMaxBinsSize 時, 不用分配記憶體.
+/// - 在資料量 <= ByteVector::kMaxInternalSize 時, 不用分配記憶體.
 struct CharVector : public ByteVector {
    using value_type = char;
    using ByteVector::ByteVector;
@@ -34,25 +34,20 @@ struct CharVector : public ByteVector {
       this->append(1, ch);
    }
 
-   inline friend StrView ToStrView(const CharVector& pthis) {
-      if (pthis.Key_.BinsSize_ < 0)
-         return StrView{};
-      if (pthis.Key_.BinsSize_ > 0)
-         return StrView{reinterpret_cast<const char*>(pthis.Key_.Bins_), static_cast<size_t>(pthis.Key_.BinsSize_)};
-      return StrView{reinterpret_cast<const char*>(pthis.Key_.Blob_.MemPtr_), pthis.Key_.Blob_.MemUsed_};
-   }
-
    const char* begin() const { return reinterpret_cast<const char*>(ByteVector::begin()); }
    const char* end() const { return reinterpret_cast<const char*>(ByteVector::end()); }
    char* begin() { return reinterpret_cast<char*>(ByteVector::begin()); }
    char* end() { return reinterpret_cast<char*>(ByteVector::end()); }
 
    std::string& AppendTo(std::string& out) const {
-      out.append(this->begin(), this->size());
+      this->Key_.ToStrView().AppendTo(out);
       return out;
    }
    std::string ToString() const {
-      return std::string{this->begin(), this->size()};
+      return this->Key_.ToStrView().ToString();
+   }
+   inline friend StrView ToStrView(const CharVector& pthis) {
+      return pthis.Key_.ToStrView();
    }
 };
 StrView ToStrView(const CharVector& pthis);

@@ -14,11 +14,13 @@ int main() {
    fon9::CharVector skey = fon9::CharVector::MakeRef(cstrTest, sizeof(cstrTest)-1);
    fon9_CheckTestResult("MakeRef()",
                         reinterpret_cast<const char*>(skey.begin()) == cstrTest
+                        && *skey.end() == '\0'
                         && skey.size() == sizeof(cstrTest) - 1);
 
    skey = fon9::CharVector::MakeRef(fon9::StrView{cstrTest});
    fon9_CheckTestResult("opreator=(MakeRef())",
                         reinterpret_cast<const char*>(skey.begin()) != cstrTest
+                        && *skey.end() == '\0'
                         && skey.size() == sizeof(cstrTest) - 1);
 
    std::string stds{cstrTest};
@@ -30,19 +32,22 @@ int main() {
       stds.append(&ch, 1);
       stds.push_back(ch);
 
-      if (fon9::ToStrView(skey) != fon9::ToStrView(stds))
+      if (fon9::ToStrView(skey) != fon9::ToStrView(stds) || *skey.end() != '\0')
          fon9_CheckTestResult("append()", false);
    }
 
    // 測試 CharVector建構(複製cstrTest).
    fon9_CheckTestResult("ctor(copy str)",
-                        fon9::CharVector{fon9::StrView{cstrTest}}.begin() != cstrTest);
+                        fon9::CharVector{fon9::StrView{cstrTest}}.begin() != cstrTest
+                        && fon9::CharVector{fon9::StrView{cstrTest}}.size() == sizeof(cstrTest) - 1
+                        && *fon9::CharVector{fon9::StrView{cstrTest}}.end() == '\0');
 
    // 測試 CharVector建構(複製cstrTest), 然後move()到 skey:
    skey = fon9::CharVector{fon9::StrView{cstrTest}};
    fon9_CheckTestResult("opreator=(ctor(copy str))",
                         reinterpret_cast<const char*>(skey.begin()) != cstrTest
-                        && skey.size() == sizeof(cstrTest) - 1);
+                        && skey.size() == sizeof(cstrTest) - 1
+                        && *skey.end() == '\0');
 
    // 測試 reserve();
    stds = cstrTest;
@@ -50,7 +55,7 @@ int main() {
       skey.reserve(skey.size() + 1);
       skey.push_back(ch);
       stds.push_back(ch);
-      if (fon9::ToStrView(skey) != fon9::ToStrView(stds))
+      if (fon9::ToStrView(skey) != fon9::ToStrView(stds) || *skey.end() != '\0')
          fon9_CheckTestResult("reserve(+1)", false);
    }
 

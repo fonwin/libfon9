@@ -12,54 +12,89 @@ namespace fon9 {
 /// 可變大小的 byte 陣列型別.
 /// - 在小量資料時(在x64系統, 大約23 bytes), 可以不用分配記憶體.
 /// - assign(); append(); 可能丟出 bad_alloc 異常.
+/// - 尾端有 EOS, 但 EOS 不算在 size() 裡面.
 class fon9_API ByteVector : public Comparable<ByteVector> {
 protected:
    struct Key {
       union {
          fon9_Blob   Blob_;
-         byte        Bins_[sizeof(fon9_Blob)];
+         byte        InBuf_[sizeof(fon9_Blob)];
       };
-      char  ExBinsBuffer_[7];
-      char  BinsSize_{-1};
+      char  ExInBuf_[7];
+      /// 為了讓使用內部記憶體時, 有 cstr(尾端有EOS) 的效果:
+      /// - 所以 InLen_ = 0, 表示使用 InBuf_, 且長度為 kMaxInternalSize;
+      /// - fon9_Blob 有提供 EOS.
+      /// - InBuf_ 實際用量 = kMaxInternalSize + InLen_;
+      char  InLen_;
+      Key() {
+         this->ForceEmpty();
+      }
+      void ForceEmpty() {
+         this->InLen_ = -kMaxInternalSize;
+         this->InBuf_[0] = '\0';
+      }
+      void SetUseRefOrBlob() {
+         this->InLen_ = 1;
+      }
+      void SetRefMem(const void* mem, size_t sz) {
+         this->SetUseRefOrBlob();
+         this->Blob_.MemPtr_ = reinterpret_cast<byte*>(const_cast<void*>(mem));
+         this->Blob_.MemSize_ = 0;
+         this->Blob_.MemUsed_ = static_cast<fon9_Blob_Size_t>(sz);
+      }
+      bool IsUseRef() const {
+         return(this->InLen_ > 0 && this->Blob_.MemSize_ == 0);
+      }
+      bool IsUseBlob() const {
+         return(this->InLen_ > 0 && this->Blob_.MemSize_ > 0);
+      }
+      bool IsUseRefOrBlob() const {
+         return(this->InLen_ > 0);
+      }
+      bool IsUseInternal() const {
+         return(this->InLen_ <= 0);
+      }
+      size_t size() const {
+         if (this->InLen_ <= 0)
+            return static_cast<size_t>(kMaxInternalSize + this->InLen_);
+         return this->Blob_.MemUsed_;
+      }
+      size_t GetInLen() const {
+         assert(this->IsUseInternal());
+         return static_cast<size_t>(kMaxInternalSize + this->InLen_);
+      }
+      void SetInLen(size_t sz) {
+         assert(sz <= kMaxInternalSize);
+         this->InLen_ = static_cast<char>(sz - kMaxInternalSize);
+         this->InBuf_[sz] = '\0';
+      }
+      StrView ToStrView() const {
+         return this->IsUseInternal()
+            ? StrView{reinterpret_cast<const char*>(this->InBuf_), static_cast<size_t>(kMaxInternalSize + this->InLen_)}
+            : StrView{reinterpret_cast<const char*>(this->Blob_.MemPtr_), this->Blob_.MemUsed_};
+      }
    };
    Key   Key_;
 
    void FreeBlob() {
-      if (this->IsInBlob())
+      if (this->Key_.IsUseBlob())
          fon9_Blob_Free(&this->Key_.Blob_);
    }
    /// 把現有資料放入 blob, 並額外保留 max(0, reversesz - this->size()) 個空間.
-   /// assert(!this->IsInBlob());
+   /// assert(!this->IsUseBlob());
    bool MoveToBlob(size_t reversesz);
 
    void CopyBytes(const void* mem, size_t sz);
 
-protected:
-   bool IsRefMem() const {
-      return(this->Key_.BinsSize_ == 0 && this->Key_.Blob_.MemSize_ == 0);
-   }
-   bool IsInBlob() const {
-      return(this->Key_.BinsSize_ == 0 && this->Key_.Blob_.MemSize_ > 0);
-   }
-   bool IsUseRefOrBlob() const {
-      return(this->Key_.BinsSize_ == 0);
-   }
-   bool IsUseInternal() const {
-      return(this->Key_.BinsSize_ != 0);
-   }
-
    /// 在 this 的存續期間, 須自行確保 mem 的有效!
    ByteVector(const void* mem, size_t sz) {
-      this->Key_.BinsSize_ = 0;
-      this->Key_.Blob_.MemPtr_ = reinterpret_cast<byte*>(const_cast<void*>(mem));
-      this->Key_.Blob_.MemSize_ = 0;
-      this->Key_.Blob_.MemUsed_ = static_cast<fon9_Blob_Size_t>(sz);
+      this->Key_.SetRefMem(mem, sz);
    }
 
 public:
    using value_type = byte;
    enum {
-      kMaxBinsSize = offsetof(Key, BinsSize_)
+      kMaxInternalSize = offsetof(Key, InLen_)
    };
 
    ByteVector() = default;
@@ -71,7 +106,7 @@ public:
 
    ByteVector(ByteVector&& rhs) {
       this->Key_ = rhs.Key_;
-      rhs.Key_.BinsSize_ = -1;
+      rhs.Key_.ForceEmpty();
    }
    ByteVector& operator=(ByteVector&&);
 
@@ -111,23 +146,16 @@ public:
       return lsz == rsz && memcmp(this->begin(), rhs.begin(), rsz) == 0;
    }
 
-   bool empty() const {
-      return this->size() == 0;
-   }
-   size_t size() const {
-      if (this->Key_.BinsSize_ < 0)
-         return 0;
-      return this->IsUseRefOrBlob() ? this->Key_.Blob_.MemUsed_ : static_cast<size_t>(this->Key_.BinsSize_);
-   }
+   bool empty() const { return this->size() == 0; }
+   size_t size() const { return this->Key_.size(); }
+
    byte* begin() {
-      return this->IsUseRefOrBlob() ? this->Key_.Blob_.MemPtr_ : this->Key_.Bins_;
+      return this->Key_.IsUseInternal() ? this->Key_.InBuf_ : this->Key_.Blob_.MemPtr_;
    }
    byte* end() {
-      if (this->Key_.BinsSize_ < 0)
-         return this->Key_.Bins_;
-      return this->IsUseRefOrBlob()
-         ? (this->Key_.Blob_.MemPtr_ + this->Key_.Blob_.MemUsed_)
-         : (this->Key_.Bins_ + this->Key_.BinsSize_);
+      if (this->Key_.IsUseInternal())
+         return this->Key_.InBuf_ + this->Key_.GetInLen();
+      return(this->Key_.Blob_.MemPtr_ + this->Key_.Blob_.MemUsed_);
    }
    const byte* begin() const {
       return const_cast<ByteVector*>(this)->begin();
@@ -135,14 +163,20 @@ public:
    const byte* end() const {
       return const_cast<ByteVector*>(this)->end();
    }
+   const byte* cbegin() const {
+      return this->begin();
+   }
+   const byte* cend() const {
+      return this->end();
+   }
 
    void clear();
    void reserve(size_t reversesz);
    void erase(size_t offset, size_t count);
    void Free() {
-      if (this->IsInBlob())
+      if (this->Key_.IsUseBlob())
          fon9_Blob_Free(&this->Key_.Blob_);
-      this->Key_.BinsSize_ = -1;
+      this->Key_.ForceEmpty();
    }
 
    void append(const void* mem, size_t sz);
@@ -178,14 +212,14 @@ public:
    }
 
    size_t capacity() const {
-      return this->IsInBlob() ? this->Key_.Blob_.MemSize_ : static_cast<size_t>(this->kMaxBinsSize);
+      return this->Key_.IsUseBlob() ? this->Key_.Blob_.MemSize_ : static_cast<size_t>(this->kMaxInternalSize);
    }
    void resize(size_t sz);
-};
 
-inline StrView CastToStrView(const ByteVector& bary) {
-   return StrView{reinterpret_cast<const char*>(bary.begin()), bary.size()};
-}
+   inline friend StrView CastToStrView(const ByteVector& bary) {
+      return bary.Key_.ToStrView();
+   }
+};
 
 } // namespaces
 #endif//__fon9_ByteVector_hpp__
