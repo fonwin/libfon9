@@ -115,7 +115,7 @@ struct ExgMapMgr::ImpSeedP08 : public ExgMapMgr_ImpSeed {
    template <class... ArgsT>
    ImpSeedP08(ExgSystemType systemType, ArgsT&&... args)
       : base(systemType, std::forward<ArgsT>(args)...) {
-      this->SetDescription("Waitting TDay");
+      this->SetDescription("Waiting TDay");
       if (ExgSystemTypeIsAfterHour(systemType))
          // 夜盤P08: 13:00-05:00(夜盤開始前..OMS換日前), 若有異動主動匯入.
          this->SetSchCfgStr("Start=130000|End=050000");

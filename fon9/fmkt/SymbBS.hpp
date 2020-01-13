@@ -24,12 +24,24 @@ public:
       PriQty         Sells_[kBSCount];
       /// 買進價量列表, [0]=最佳買進價量.
       PriQty         Buys_[kBSCount];
+      /// 衍生賣出.
+      PriQty         DerivedSell_;
+      /// 衍生買進.
+      PriQty         DerivedBuy_;
    };
    Data  Data_;
    
    SymbBS(const Data& rhs) : Data_{rhs} {
    }
    SymbBS() = default;
+
+   void Clear(DayTime tm = DayTime::Null()) {
+      memset(&this->Data_, 0, sizeof(this->Data_));
+      this->Data_.Time_ = tm;
+   }
+   void DailyClear() {
+      this->Clear();
+   }
 
    static seed::Fields MakeFields();
 };

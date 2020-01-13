@@ -8,25 +8,9 @@ namespace fon9 {
 
 static bool NamedIoManager_Start(seed::PluginsHolder& holder, StrView args) {
    IoManagerArgs iomArgs;
-   while (!args.empty()) {
-      StrView fld = SbrFetchNoTrim(args, '|');
-      StrView tag = StrFetchTrim(fld, '=');
-      StrTrim(&fld);
-      if (tag == "Name")
-         iomArgs.Name_ = fld.ToString();
-      else if (tag == "DeviceFactoryPark" || tag == "DevFp")
-         iomArgs.DeviceFactoryPark_ = seed::FetchNamedPark<DeviceFactoryPark>(*holder.Root_, fld);
-      else if (tag == "SessionFactoryPark" || tag == "SesFp")
-         iomArgs.SessionFactoryPark_ = seed::FetchNamedPark<SessionFactoryPark>(*holder.Root_, fld);
-      else if (tag == "IoService" || tag == "Svc")
-         iomArgs.IoServiceSrc_ = holder.Root_->GetSapling<IoManager>(fld);
-      else if (tag == "IoServiceCfg" || tag == "SvcCfg") //"ThreadCount=2|Capacity=100"
-         iomArgs.IoServiceCfgstr_ = SbrFetchInsideNoTrim(fld).ToString();
-      else if (tag == "Config" || tag == "Cfg") {
-         std::string  cfgfn = SysEnv_GetConfigPath(*holder.Root_).ToString();
-         fld.AppendTo(cfgfn);
-         iomArgs.CfgFileName_ = StrView_ToNormalizeStr(&cfgfn);
-      }
+   StrView       tag, value;
+   while (fon9::SbrFetchTagValue(args, tag, value)) {
+      iomArgs.SetTagValue(holder, tag, value);
    }
    if (!iomArgs.Name_.empty() && IoManagerTree::Plant(*holder.Root_, iomArgs))
       return true;

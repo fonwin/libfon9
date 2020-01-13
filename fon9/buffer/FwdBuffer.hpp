@@ -42,6 +42,12 @@ public:
    const char* GetCurrent() const {
       return this->MemCurrent_;
    }
+   /// 返回前已呼叫 SetSuffixUsed(retval + sz);
+   char* AllocBuffer(size_t sz) {
+      char* retval = this->AllocSuffix(sz);
+      this->SetSuffixUsed(retval + sz);
+      return retval;
+   }
 };
 
 /// \ingroup Buffer

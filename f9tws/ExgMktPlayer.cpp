@@ -1,6 +1,6 @@
 ﻿// \file f9tws/ExgMktPlayer.cpp
 // \author fonwinz@gmail.com
-#include "f9tws/ExgMktFeeder.hpp"
+#include "f9tws/ExgMktPkReceiver.hpp"
 #include "fon9/seed/Plugins.hpp"
 #include "fon9/buffer/DcQueueList.hpp"
 #include "fon9/buffer/FwdBufferList.hpp"
@@ -17,7 +17,7 @@ struct ExgMktPlayerArgs {
    fon9::TimeInterval   RdInterval_{fon9::TimeInterval_Millisecond(1)};
    fon9::TimeInterval   AtEnd_;
 };
-class ExgMktPlayer : public ExgMktFeeder, public fon9::io::Session {
+class ExgMktPlayer : public ExgMktPkReceiver, public fon9::io::Session {
    fon9_NON_COPY_NON_MOVE(ExgMktPlayer);
    fon9::io::Device*    Device_{nullptr};
    fon9::DcQueueList    RdBuffer_;
@@ -121,9 +121,10 @@ class ExgMktPlayer : public ExgMktFeeder, public fon9::io::Session {
          this->Device_->Manager_->OnSession_StateUpdated(*this->Device_, &stmsg, stlv);
    }
 
-   void ExgMktOnReceived(const ExgMktHeader& pk, unsigned pksz) override {
+   bool OnPkReceived(const void* pk, unsigned pksz) override {
       ++this->SentPkCount_;
-      NodeSend::Send(*this, &pk, pksz);
+      NodeSend::Send(*this, pk, pksz);
+      return true;
    }
 public:
    ExgMktPlayer(fon9::File&& fd, const ExgMktPlayerArgs& args)

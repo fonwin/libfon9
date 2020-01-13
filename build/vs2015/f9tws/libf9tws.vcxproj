@@ -74,7 +74,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\f9tws\ExgMktFeeder.cpp" />
+    <ClCompile Include="..\..\..\f9tws\ExgMktPkReceiver.cpp" />
     <ClCompile Include="..\..\..\f9tws\ExgMktPlayer.cpp" />
     <ClCompile Include="..\..\..\f9tws\ExgLineArgs.cpp" />
     <ClCompile Include="..\..\..\f9tws\ExgLineFactory.cpp" />
@@ -85,7 +85,7 @@
     <ClCompile Include="..\..\..\f9tws\ExgLineTmpFactory.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\f9tws\ExgMktFeeder.hpp" />
+    <ClInclude Include="..\..\..\f9tws\ExgMktPkReceiver.hpp" />
     <ClInclude Include="..\..\..\f9tws\Config.h" />
     <ClInclude Include="..\..\..\f9tws\ExgMktFmt.hpp" />
     <ClInclude Include="..\..\..\f9tws\ExgMktFmt6.hpp" />

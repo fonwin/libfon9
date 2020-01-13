@@ -115,7 +115,7 @@ bool WebSocket::PeekFrameHeaderLen(DcQueueList& rxbuf) {
    //  + - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
    //  |                     Payload Data continued ...                |
    //  +---------------------------------------------------------------+
-   assert(this->Stage_ == Stage::WaittingFrameHeader);
+   assert(this->Stage_ == Stage::WaitingFrameHeader);
    const byte* pHeader = reinterpret_cast<const byte*>(rxbuf.Peek(this->FrameHeader_, 2));
    if (!pHeader)
       return false;
@@ -171,7 +171,7 @@ io::RecvBufferSize WebSocket::FetchPayload(DcQueueList& rxbuf) {
       this->RemainPayloadLen_ = 0;
    }
    this->FrameHeaderLen_ = 0;
-   this->Stage_ = Stage::WaittingFrameHeader;
+   this->Stage_ = Stage::WaitingFrameHeader;
    if ((this->FrameHeader_[0] & 0x80) == 0) // FIN = 0, 還沒收完, 應接續下一個 frame.
       return io::RecvBufferSize::Default;
    io::RecvBufferSize retval = io::RecvBufferSize::Default;
@@ -196,7 +196,7 @@ io::RecvBufferSize WebSocket::OnDevice_Recv(io::Device& dev, DcQueueList& rxbuf)
    (void)dev; assert(this->Device_ == &dev);
    for (;;) {
       switch (this->Stage_) {
-      case Stage::WaittingFrameHeader:
+      case Stage::WaitingFrameHeader:
          if (this->PeekFrameHeaderLen(rxbuf))
             continue;
          break;

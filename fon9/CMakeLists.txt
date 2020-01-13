@@ -36,6 +36,7 @@ set(fon9src
  ConfigUtils.cpp
  DllHandle.cpp
  PkCont.cpp
+ PkReceiver.cpp
  ObjSupplier.cpp
  FlowCounter.cpp
 
@@ -104,6 +105,7 @@ set(fon9src
  web/WebSocket.cpp
  web/WebSocketAuther.cpp
  web/WsSeedVisitor.cpp
+ web/HttpPlugins.cpp
 
  seed/SeedBase.cpp
  seed/Tab.cpp

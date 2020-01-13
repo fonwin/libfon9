@@ -241,8 +241,8 @@ inline StrView ToStrView(const std::string& str) {
 /// \ingroup AlNum
 /// char cstr[arysz]; 若有包含EOS則到EOS, 否則包含全部.
 template <size_t arysz>
-inline StrView StrView_eos_or_all(const char(&cstr)[arysz]) {
-   if (const char* peos = StrView::traits_type::find(cstr, arysz, '\0'))
+inline StrView StrView_eos_or_all(const char(&cstr)[arysz], char chEOS = '\0') {
+   if (const char* peos = StrView::traits_type::find(cstr, arysz, chEOS))
       return StrView{cstr, peos};
    return StrView{cstr, cstr + arysz};
 }

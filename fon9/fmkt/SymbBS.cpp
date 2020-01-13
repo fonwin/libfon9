@@ -23,6 +23,10 @@ seed::Fields SymbBS::MakeFields() {
       flds.Add(fon9_MakeField(SymbBS, Data_.Buys_[idx].Pri_, bsPriName));
       flds.Add(fon9_MakeField(SymbBS, Data_.Buys_[idx].Qty_, bsQtyName));
    }
+   flds.Add(fon9_MakeField(SymbBS, Data_.DerivedSell_.Pri_, "DS1P"));
+   flds.Add(fon9_MakeField(SymbBS, Data_.DerivedSell_.Qty_, "DS1Q"));
+   flds.Add(fon9_MakeField(SymbBS, Data_.DerivedBuy_.Pri_,  "DB1P"));
+   flds.Add(fon9_MakeField(SymbBS, Data_.DerivedBuy_.Qty_,  "DB1Q"));
    return flds;
 }
 

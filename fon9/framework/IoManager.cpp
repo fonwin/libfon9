@@ -1,6 +1,7 @@
 ﻿/// \file fon9/framework/IoManager.cpp
 /// \author fonwinz@gmail.com
 #include "fon9/framework/IoManager.hpp"
+#include "fon9/seed/SysEnv.hpp"
 
 namespace fon9 {
 
@@ -8,8 +9,7 @@ bool IoManagerArgs::SetIoServiceCfg(seed::PluginsHolder& holder, StrView iosvCfg
    StrView inValue = SbrFetchInsideNoTrim(iosvCfg);
    if (!inValue.IsNull())
       iosvCfg = inValue;
-   iosvCfg = fon9::StrTrim(&iosvCfg);
-   if (iosvCfg.Get1st() != '/') {
+   if (fon9::StrTrim(&iosvCfg).Get1st() != '/') {
       this->IoServiceCfgstr_ = iosvCfg.ToString();
       this->IoServiceSrc_.reset();
       return true;
@@ -22,6 +22,26 @@ bool IoManagerArgs::SetIoServiceCfg(seed::PluginsHolder& holder, StrView iosvCfg
    holder.SetPluginsSt(fon9::LogLevel::Error, this->Name_, ".SetIoService"
                        "|err=Unknown IoManager: ", iosvCfg);
    return false;
+}
+bool IoManagerArgs::SetTagValue(seed::PluginsHolder& holder, StrView tag, StrView value) {
+   if (tag == "Name")
+      this->Name_ = value.ToString();
+   else if (tag == "DeviceFactoryPark" || tag == "DevFp")
+      this->DeviceFactoryPark_ = seed::FetchNamedPark<DeviceFactoryPark>(*holder.Root_, value);
+   else if (tag == "SessionFactoryPark" || tag == "SesFp")
+      this->SessionFactoryPark_ = seed::FetchNamedPark<SessionFactoryPark>(*holder.Root_, value);
+   else if (tag == "IoService" || tag == "Svc")
+      this->IoServiceSrc_ = holder.Root_->GetSapling<IoManager>(value);
+   else if (tag == "IoServiceCfg" || tag == "SvcCfg")
+      this->SetIoServiceCfg(holder, value);
+   else if (tag == "Config" || tag == "Cfg") {
+      std::string  cfgfn = SysEnv_GetConfigPath(*holder.Root_).ToString();
+      value.AppendTo(cfgfn);
+      this->CfgFileName_ = StrView_ToNormalizeStr(&cfgfn);
+   }
+   else
+      return false;
+   return true;
 }
 //--------------------------------------------------------------------------//
 IoManager::IoManager(const IoManagerArgs& args)

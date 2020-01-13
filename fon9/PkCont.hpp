@@ -33,8 +33,18 @@ public:
 
 protected:
    SeqT           NextSeq_{0};
+   /// 收到的封包數量 = 呼叫 this->PkContOnReceived() 的次數.
    SeqT           ReceivedCount_{0};
+   /// 重複(收到的 Seq < 期望的序號)的封包數量.
+   /// 這類封包會直接拋棄.
    SeqT           DroppedCount_{0};
+   /// 遺失的封包數量: 根據 Seq 計算.
+   /// 不含第一個封包前的遺失數量.
+   SeqT           LostCount_{0};
+   /// 預計在 PkContOnReceived(..., seq) 處理完後的下一個封包序號.
+   /// 您可以在 PkContOnReceived() 返回前改變此值.
+   /// 預設為 seq + 1;
+   SeqT           AfterNextSeq_;
    TimeInterval   WaitInterval_{TimeInterval_Millisecond(5)};
    
    struct PkRec : public std::string {
@@ -49,9 +59,12 @@ protected:
    using PkPendings = MustLock<PkPendingsImpl>;
    PkPendings  PkPendings_;
 
-   virtual void PkContOnTimer();
+   virtual void PkContOnTimer(PkPendings::Locker&& pks);
    static void EmitOnTimer(TimerEntry* timer, TimeStamp now);
    DataMemberEmitOnTimer<&PkContFeeder::EmitOnTimer> Timer_;
+
+   /// 序號小於期望, 在 ++this->DroppedCount_; 之後, 呼叫此處, 預設 do nothing;
+   virtual void PkContOnDropped(const void* pk, unsigned pksz, SeqT seq);
 
    /// 通知衍生者收到的封包:
    /// - 當收到連續封包時.
@@ -61,6 +74,13 @@ protected:
    /// - 為了確保資料連續性, 呼叫此處時會將 this->PkPendings_ 鎖住.
    ///   所以不會在不同 thread 重複進入 PkContOnReceived();
    virtual void PkContOnReceived(const void* pk, unsigned pksz, SeqT seq) = 0;
+
+   void CallOnReceived(const void* pk, unsigned pksz, SeqT seq) {
+      this->AfterNextSeq_ = seq + 1;
+      this->PkContOnReceived(pk, pksz, seq);
+      this->NextSeq_ = this->AfterNextSeq_;
+      ++this->ReceivedCount_;
+   }
 };
 
 } // namespaces

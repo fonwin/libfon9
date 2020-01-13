@@ -121,7 +121,7 @@ public:
       this->WaitFlushed();
       return this->File_.Read(offset, buf, count);
    }
-   /// 一般不建議在 Appender file 寫入資料.
+   /// 一般不建議在 Appender file 使用 Write(offset...) 寫入資料.
    /// 但是有可能會需要在 file header 寫入一些額外資訊.
    /// 所以仍然提供 Write() 功能; 但使用時需格外小心.
    Result Write(PosType offset, void* buf, SizeType count) {

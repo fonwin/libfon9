@@ -216,6 +216,8 @@ bool StrToTimeIntervalAux::IsValidChar(TempResultT& res, StrToNumCursor& cur) {
    if (pcur == nullptr)
       return false;
    if (cur.ExpectEnd_ - pcur >= 2 && pcur[1] == 's') {
+      if (this->Scale_ < 0)
+         this->Scale_ = 0;
       switch (pcur[0]) { // ms, us, ns
       case 'm': this->Scale_ += 3;  break;
       case 'u': this->Scale_ += 6;  break;

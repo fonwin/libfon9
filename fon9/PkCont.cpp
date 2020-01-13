@@ -15,39 +15,37 @@ void PkContFeeder::Clear() {
    pks->clear();
    this->ReceivedCount_ = 0;
    this->DroppedCount_ = 0;
+   this->LostCount_ = 0;
    this->NextSeq_ = 0;
 }
 void PkContFeeder::EmitOnTimer(TimerEntry* timer, TimeStamp now) {
    (void)now;
    PkContFeeder& rthis = ContainerOf(*static_cast<decltype(PkContFeeder::Timer_)*>(timer), &PkContFeeder::Timer_);
-   rthis.PkContOnTimer();
+   rthis.PkContOnTimer(rthis.PkPendings_.Lock());
 }
-void PkContFeeder::PkContOnTimer() {
-   PkPendings::Locker pks{this->PkPendings_};
+void PkContFeeder::PkContOnTimer(PkPendings::Locker&& pks) {
    for (const auto& i : *pks) {
-      this->PkContOnReceived(i.data(), static_cast<unsigned>(i.size()), i.Seq_);
-      this->NextSeq_ = i.Seq_ + 1;
-      ++this->ReceivedCount_;
+      this->LostCount_ += (i.Seq_ - this->NextSeq_);
+      this->CallOnReceived(i.data(), static_cast<unsigned>(i.size()), i.Seq_);
    }
    pks->clear();
+}
+void PkContFeeder::PkContOnDropped(const void* pk, unsigned pksz, SeqT seq) {
+   (void)pk; (void)pksz; (void)seq;
 }
 void PkContFeeder::FeedPacket(const void* pk, unsigned pksz, SeqT seq) {
    {  // lock this->PkPendings_;
       PkPendings::Locker pks{this->PkPendings_};
       if (fon9_LIKELY(seq == this->NextSeq_)) {
 __PK_RECEIVED:
-         this->PkContOnReceived(pk, pksz, seq);
-         this->NextSeq_ = seq + 1;
-         ++this->ReceivedCount_;
+         this->CallOnReceived(pk, pksz, seq);
          if (fon9_LIKELY(pks->empty()))
             return;
          auto const ibeg = pks->begin();
          auto const iend = pks->end();
          auto i = ibeg;
          while (i->Seq_ == this->NextSeq_) {
-            this->PkContOnReceived(i->data(), static_cast<unsigned>(i->size()), i->Seq_);
-            ++this->NextSeq_;
-            ++this->ReceivedCount_;
+            this->CallOnReceived(i->data(), static_cast<unsigned>(i->size()), i->Seq_);
             if (++i == iend)
                break;
          }
@@ -57,6 +55,7 @@ __PK_RECEIVED:
       }
       if (seq < this->NextSeq_) {
          ++this->DroppedCount_;
+         this->PkContOnDropped(pk, pksz, seq);
          return;
       }
       if (this->NextSeq_ == 0 || this->WaitInterval_.GetOrigValue() == 0)

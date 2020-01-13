@@ -75,9 +75,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\f9extests\Config.h" />
+    <ClInclude Include="..\..\..\f9extests\ExgMktTester.hpp" />
     <ClInclude Include="..\..\..\f9extests\SymbIn.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\f9extests\ExgMktTester.cpp" />
     <ClCompile Include="..\..\..\f9extests\SymbDyTest.cpp" />
     <ClCompile Include="..\..\..\f9extests\SymbIn.cpp" />
   </ItemGroup>

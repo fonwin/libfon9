@@ -23,6 +23,10 @@ public:
    }
    SymbRef() = default;
 
+   void DailyClear() {
+      memset(&this->Data_, 0, sizeof(this->Data_));
+   }
+
    static seed::Fields MakeFields();
 };
 

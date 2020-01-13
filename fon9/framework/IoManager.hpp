@@ -43,10 +43,32 @@ struct fon9_API IoManagerArgs {
    ///   - 若沒找到 IoManager, 則:
    ///     - holder.SetPluginsSt(LogLevel::Error, this->Name_, ".SetIoService|err=", ...);
    ///     - 返回 false;
-   /// - 若 iosvCfg.Get1st()!='/'
+   /// - 若 iosvCfg.Get1st()!='/'; 例如: "ThreadCount=2|Capacity=100"
    ///   - this->IoServiceCfgstr_ = iosvCfg.ToString();
    ///   - this->IoServiceSrc_.reset();
    bool SetIoServiceCfg(seed::PluginsHolder& holder, StrView iosvCfg);
+
+   /// tag                | value
+   /// -------------------|----------------------------
+   /// Name               | this->Name_ = value;
+   ///                    |
+   /// DeviceFactoryPark  |
+   /// DevFp              | this->DeviceFactoryPark_ = seed::FetchNamedPark<DeviceFactoryPark>(*holder.Root_, value);
+   ///                    |
+   /// SessionFactoryPark |
+   /// SesFp              | this->SessionFactoryPark_ = seed::FetchNamedPark<SessionFactoryPark>(*holder.Root_, value);
+   ///                    |
+   /// IoService          |
+   /// Svc                | iomArgs.IoServiceSrc_ = holder.Root_->GetSapling<IoManager>(fld);
+   ///                    |
+   /// IoServiceCfg       | 例: "ThreadCount=2|Capacity=100"
+   /// SvcCfg             | this->SetIoServiceCfg(holder, value);
+   ///                    |
+   /// Config             |
+   /// Cfg                | this->CfgFileName_ = SysEnv_GetConfigPath(*holder.Root_).ToString() + value;
+   ///
+   /// \retval false 不認識的 tag.
+   bool SetTagValue(seed::PluginsHolder& holder, StrView tag, StrView value);
 };
 
 class fon9_API IoManager : public io::Manager {

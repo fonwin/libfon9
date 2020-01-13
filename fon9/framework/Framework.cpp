@@ -179,7 +179,8 @@ void Framework::Start() {
 void Framework::Dispose() {
    if (this->Syncer_)
       this->Syncer_->StopSync();
-   this->MaAuth_->Storage_->Close();
+   if (this->MaAuth_)
+      this->MaAuth_->Storage_->Close();
    this->Root_->OnParentSeedClear();
 }
 

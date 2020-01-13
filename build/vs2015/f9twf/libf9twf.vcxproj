@@ -85,6 +85,21 @@
     <ClInclude Include="..\..\..\f9twf\ExgMapFcmId.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgMapMgr.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgMapSessionDn.hpp" />
+    <ClInclude Include="..\..\..\f9twf\ExgMcChannel.hpp" />
+    <ClInclude Include="..\..\..\f9twf\ExgMcGroup.hpp" />
+    <ClInclude Include="..\..\..\f9twf\ExgMcReceiver.hpp" />
+    <ClInclude Include="..\..\..\f9twf\ExgMcReceiverFactory.hpp" />
+    <ClInclude Include="..\..\..\f9twf\ExgMcToMiConv.hpp" />
+    <ClInclude Include="..\..\..\f9twf\ExgMdFmt.hpp" />
+    <ClInclude Include="..\..\..\f9twf\ExgMdFmtBasicInfo.hpp" />
+    <ClInclude Include="..\..\..\f9twf\ExgMdFmtBS.hpp" />
+    <ClInclude Include="..\..\..\f9twf\ExgMdFmtHL.hpp" />
+    <ClInclude Include="..\..\..\f9twf\ExgMdFmtMatch.hpp" />
+    <ClInclude Include="..\..\..\f9twf\ExgMcFmtSS.hpp" />
+    <ClInclude Include="..\..\..\f9twf\ExgMdPkReceiver.hpp" />
+    <ClInclude Include="..\..\..\f9twf\ExgMdSymbs.hpp" />
+    <ClInclude Include="..\..\..\f9twf\ExgMrFmt.hpp" />
+    <ClInclude Include="..\..\..\f9twf\ExgMrRecover.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgTmpTradingR1.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgTmpTradingR7.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgTmpTradingR9.hpp" />
@@ -101,6 +116,14 @@
     <ClCompile Include="..\..\..\f9twf\ExgMapFcmId.cpp" />
     <ClCompile Include="..\..\..\f9twf\ExgMapMgr.cpp" />
     <ClCompile Include="..\..\..\f9twf\ExgMapSessionDn.cpp" />
+    <ClCompile Include="..\..\..\f9twf\ExgMcChannel.cpp" />
+    <ClCompile Include="..\..\..\f9twf\ExgMcGroup.cpp" />
+    <ClCompile Include="..\..\..\f9twf\ExgMcReceiver.cpp" />
+    <ClCompile Include="..\..\..\f9twf\ExgMcReceiverFactory.cpp" />
+    <ClCompile Include="..\..\..\f9twf\ExgMcToMiConv.cpp" />
+    <ClCompile Include="..\..\..\f9twf\ExgMdPkReceiver.cpp" />
+    <ClCompile Include="..\..\..\f9twf\ExgMdSymbs.cpp" />
+    <ClCompile Include="..\..\..\f9twf\ExgMrRecover.cpp" />
     <ClCompile Include="..\..\..\f9twf\ExgTradingLineMgr.cpp" />
     <ClCompile Include="..\..\..\f9twf\ExgTmpTypes.cpp" />
   </ItemGroup>

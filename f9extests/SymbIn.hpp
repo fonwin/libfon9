@@ -11,7 +11,7 @@
 namespace f9extests {
 
 /// \ingroup fmkt
-/// 所有商品資料直接機中在此:
+/// 所有商品資料直接集中在此:
 /// - 適用於: 追求速度(而非彈性)的系統.
 /// - 這裡僅是範例.
 class f9extests_API SymbIn : public fon9::fmkt::Symb {

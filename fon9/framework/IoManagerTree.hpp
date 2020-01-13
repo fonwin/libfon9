@@ -30,6 +30,7 @@ public:
       seed::NamedSapling*   seed;
       if (!maTree.Add(seed = new seed::NamedSapling(retval, ioargs.Name_)))
          return nullptr;
+      seed->SetTitle(ioargs.CfgFileName_);
       seed->SetDescription(ioargs.Result_);
       return retval;
    }

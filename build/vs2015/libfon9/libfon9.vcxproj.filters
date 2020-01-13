@@ -980,6 +980,12 @@
     <ClInclude Include="..\..\..\fon9\rc\RcSeedVisitorClientReq.hpp">
       <Filter>Header Files\rc</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\PkReceiver.hpp">
+      <Filter>Header Files\_base\_Tools / Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\FileReadAll.hpp">
+      <Filter>Header Files\_base\_File</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -1587,6 +1593,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\rc\RcSeedVisitorClientReq.cpp">
       <Filter>Source Files\rc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\PkReceiver.cpp">
+      <Filter>Source Files\_base\_Tools / Utility</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

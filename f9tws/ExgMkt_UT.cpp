@@ -1,17 +1,16 @@
 ﻿// \file f9tws/ExgMkt_UT.cpp
 //
-// 測試 TSEC 行情格式解析.
+// 測試 TSEC/OTC 行情格式解析.
 //
 // \author fonwinz@gmail.com
 #define _CRT_SECURE_NO_WARNINGS
-#include "f9tws/ExgMktFeeder.hpp"
+#include "f9tws/ExgMktPkReceiver.hpp"
 #include "f9tws/ExgMktFmt6.hpp"
-#include "f9extests/SymbIn.hpp"
-#include "fon9/RevPrint.hpp"
-#include "fon9/TestTools.hpp"
+#include "f9extests/ExgMktTester.hpp"
 
-struct Feeder : public f9tws::ExgMktFeeder {
-   using base = f9tws::ExgMktFeeder;
+struct TwsPkReceiver : public f9tws::ExgMktPkReceiver {
+   fon9_NON_COPY_NON_MOVE(TwsPkReceiver);
+   using base = f9tws::ExgMktPkReceiver;
    using base::ReceivedCount_;
    using base::ChkSumErrCount_;
    using base::DroppedBytes_;
@@ -19,7 +18,7 @@ struct Feeder : public f9tws::ExgMktFeeder {
    uint32_t LastSeq_[f9tws::kExgMktMaxFmtNoSize];
    uint32_t SeqMisCount_[f9tws::kExgMktMaxFmtNoSize];
 
-   Feeder() {
+   TwsPkReceiver() {
       this->ClearStatus();
    }
    void ClearStatus() {
@@ -28,8 +27,9 @@ struct Feeder : public f9tws::ExgMktFeeder {
       memset(this->LastSeq_, 0, sizeof(this->LastSeq_));
       memset(this->SeqMisCount_, 0, sizeof(this->SeqMisCount_));
    }
-   void ExgMktOnReceived(const f9tws::ExgMktHeader& pk, unsigned pksz) override {
+   bool OnPkReceived(const void* pkptr, unsigned pksz) override {
       (void)pksz;
+      const f9tws::ExgMktHeader& pk = *reinterpret_cast<const f9tws::ExgMktHeader*>(pkptr);
       auto fmtNo = fon9::PackBcdTo<uint32_t>(pk.FmtNo_);
       ++this->FmtCount_[fmtNo];
 
@@ -37,54 +37,35 @@ struct Feeder : public f9tws::ExgMktFeeder {
       if (seqNo != this->LastSeq_[fmtNo] + 1)
          ++this->SeqMisCount_[fmtNo];
       this->LastSeq_[fmtNo] = seqNo;
+      return true;
    }
 };
-void CheckExgMktFeederStep(const Feeder& orig, const char* buf, size_t bufsz, size_t step) {
-   std::cout << "[TEST ] step=" << step << std::flush;
-   const char* const     bufend = buf + bufsz;
-   const char*           pnext = buf;
-   fon9::DcQueueFixedMem dcq{nullptr, nullptr};
-   Feeder                feeder;
-   while (pnext < bufend) {
-      const char* cur = reinterpret_cast<const char*>(dcq.Peek1());
-      if (cur == nullptr)
-         cur = pnext;
-      if ((pnext += step) >= bufend)
-         pnext = bufend;
-      dcq.Reset(cur, pnext);
-      feeder.FeedBuffer(dcq);
-   }
-   if (feeder.ReceivedCount_ != orig.ReceivedCount_
-       || feeder.ChkSumErrCount_ != orig.ChkSumErrCount_
-       || feeder.DroppedBytes_ != orig.DroppedBytes_
-       || memcmp(feeder.FmtCount_, orig.FmtCount_, sizeof(orig.FmtCount_)) != 0
-       || memcmp(feeder.LastSeq_, orig.LastSeq_, sizeof(orig.LastSeq_)) != 0
-       || memcmp(feeder.SeqMisCount_, orig.SeqMisCount_, sizeof(orig.SeqMisCount_)) != 0) {
-      std::cout << "\r[ERROR]" << std::endl;
-      abort();
-   }
-   std::cout << "\r[OK   ]" << std::endl;
-}
 
-struct Fmt6Parser : public Feeder, public fon9::fmkt::SymbTree {
+struct Fmt6Parser : public TwsPkReceiver, public fon9::fmkt::SymbTree {
    fon9_NON_COPY_NON_MOVE(Fmt6Parser);
-   using baseFeeder = Feeder;
+   using basePkReceiver = TwsPkReceiver;
    using baseTree = fon9::fmkt::SymbTree;
    Fmt6Parser() : baseTree{fon9::seed::LayoutSP{}} {
    }
    fon9::fmkt::SymbSP MakeSymb(const fon9::StrView& symbid) override {
       return new f9extests::SymbIn{symbid};
    }
-   void ExgMktOnReceived(const f9tws::ExgMktHeader& pk, unsigned pksz) override {
-      baseFeeder::ExgMktOnReceived(pk, pksz);
+   size_t GetParsedCount() const {
+      return this->FmtCount_[6] + this->FmtCount_[17];
+   }
+   void PrintInfo() {
+   }
+   bool OnPkReceived(const void* pkptr, unsigned pksz) override {
+      basePkReceiver::OnPkReceived(pkptr, pksz);
+      const f9tws::ExgMktHeader& pk = *reinterpret_cast<const f9tws::ExgMktHeader*>(pkptr);
       auto fmtNo = pk.GetFmtNo();
       if (fmtNo != 6 && fmtNo != 17)
-         return;
+         return true;
       const f9tws::ExgMktFmt6v3& fmt6 = *static_cast<const f9tws::ExgMktFmt6v3*>(&pk);
       const f9tws::ExgMktPriQty* pqs  = fmt6.PQs_;
       unsigned                   tmHH = fon9::PackBcdTo<unsigned>(fmt6.Time_.HH_);
       if (fon9_UNLIKELY(tmHH == 99)) // 股票代號"000000"且撮合時間"999999999999",
-         return;                     // 表示普通股競價交易末筆即時行情資料已送出.
+         return true;                // 表示普通股競價交易末筆即時行情資料已送出.
       uint64_t tmu6 = (((tmHH * 60) + fon9::PackBcdTo<unsigned>(fmt6.Time_.MM_)) * 60
                        + fon9::PackBcdTo<unsigned>(fmt6.Time_.SS_));
       tmu6 = (tmu6 * 1000000) + fon9::PackBcdTo<unsigned>(fmt6.Time_.U6_);
@@ -102,6 +83,7 @@ struct Fmt6Parser : public Feeder, public fon9::fmkt::SymbTree {
          pqs = AssignBS(symb.BS_.Data_.Buys_, pqs, (fmt6.ItemMask_ & 0x70) >> 4);
          pqs = AssignBS(symb.BS_.Data_.Sells_, pqs, (fmt6.ItemMask_ & 0x0e) >> 1);
       }
+      return true;
    }
    static const f9tws::ExgMktPriQty* AssignBS(fon9::fmkt::PriQty* dst, const f9tws::ExgMktPriQty* pqs, int count) {
       if (count > fon9::fmkt::SymbBS::kBSCount)
@@ -117,134 +99,34 @@ struct Fmt6Parser : public Feeder, public fon9::fmkt::SymbTree {
    }
 };
 
-unsigned long StrToVal(char* str) {
-   unsigned long val = strtoul(str, &str, 10);
-   switch (toupper(*str)) {
-   case 'K': val *= 1024;  break;
-   case 'M': val *= 1024 * 1024;  break;
-   case 'G': val *= 1024 * 1024 * 1024;  break;
-   }
-   return val;
-}
-
 int main(int argc, char* argv[]) {
    fon9::AutoPrintTestInfo utinfo{"f9tws ExgMkt"};
 
    if (argc < 4) {
-      std::cout << "Usage: TwsExgMktFileName ReadFrom ReadSize [Steps]\n"
+      std::cout << "Usage: MarketDataFile ReadFrom ReadSize [Steps or ?SymbId]\n"
          "ReadSize=0 for read to EOF.\n"
-         "Steps=0 for test Fmt6+17 parsing.\n"
+         "Steps=0 or '?SymbId' for test Match/BS(Fmt6+17) parsing.\n"
          << std::endl;
       return 3;
    }
-   std::cout << "Mkt File=" << argv[1] << std::endl;
-   FILE* fd = fopen(argv[1], "rb");
-   if (!fd) {
-      perror("Open MktFile fail");
-      return 3;
-   }
-   fseek(fd, 0, SEEK_END);
-   auto fsize = ftell(fd);
-   std::cout << "FileSize=" << fsize << std::endl;
 
-   size_t rdfrom = StrToVal(argv[2]);
-   std::cout << "ReadFrom=" << rdfrom << std::endl;
-   if (rdfrom >= static_cast<size_t>(fsize)) {
-      std::cout << "ReadFrom >= FileSize" << std::endl;
+   f9extests::MktDataFile  mdf{argv};
+   if (!mdf.Buffer_)
       return 3;
-   }
-   size_t rdsz = StrToVal(argv[3]);
-   if (rdsz <= 0)
-      rdsz = fsize - rdfrom;
-   else if (rdfrom + rdsz > static_cast<size_t>(fsize)) {
-      std::cout << "ReadFrom + ReadSize > FileSize" << std::endl;
-      return 3;
-   }
-   std::cout << "ReadSize=" << rdsz << std::endl;
-   char* const rdbuf = static_cast<char*>(malloc(rdsz));
-   if (rdbuf == nullptr) {
-      std::cout << "err=Alloc buffer for read." << std::endl;
-      return 3;
-   }
-   fseek(fd, static_cast<long>(rdfrom), SEEK_SET);
-   size_t r = fread(rdbuf, 1, rdsz, fd);
-   if (r != rdsz) {
-      free(rdbuf);
-      std::cout << "err=Read " << r << " bytes, but expect=" << rdsz << std::endl;
-      return 3;
-   }
-   fclose(fd);
 
-   Feeder feeder;
-   fon9::DcQueueFixedMem dcq{rdbuf, rdsz};
-
-   fon9::StopWatch stopWatch;
-   feeder.FeedBuffer(dcq);
-   const double tmFull = stopWatch.StopTimer();
-   stopWatch.PrintResult(tmFull, "Fetch packet", feeder.ReceivedCount_);
-
-   std::cout << "ReceivedCount=" << feeder.ReceivedCount_
-      << "|ChkSumErrCount=" << feeder.ChkSumErrCount_
-      << "|DroppedBytes=" << feeder.DroppedBytes_
-      << std::endl;
-
+   TwsPkReceiver pkReceiver;
+   double        tmFull = f9extests::ExgMktFeedAll(mdf, pkReceiver);
    for (unsigned L = 0; L < f9tws::kExgMktMaxFmtNoSize; ++L) {
-      if (feeder.FmtCount_[L]) {
+      if (pkReceiver.FmtCount_[L]) {
          std::cout << "FmtNo=" << L
-            << "|Count=" << feeder.FmtCount_[L]
-            << "|LastSeq=" << feeder.LastSeq_[L]
-            << "|MisCount=" << feeder.SeqMisCount_[L]
+            << "|Count=" << pkReceiver.FmtCount_[L]
+            << "|LastSeq=" << pkReceiver.LastSeq_[L]
+            << "|MisCount=" << pkReceiver.SeqMisCount_[L]
             << std::endl;
       }
    }
-
    if (argc >= 5) {
-      auto step = StrToVal(argv[4]);
-      if (step > 0) {
-         stopWatch.ResetTimer();
-         CheckExgMktFeederStep(feeder, rdbuf, rdsz, step);
-         stopWatch.PrintResult("Fetch packet by step", feeder.ReceivedCount_);
-      }
-      else { // 解析 Fmt6 => SymbIn: 實際應用時, 還有序號連續性問題, 所以要花更久的時間.
-         Fmt6Parser fmt6parser;
-         dcq.Reset(rdbuf, rdbuf + rdsz);
-         stopWatch.ResetTimer();
-         fmt6parser.FeedBuffer(dcq);
-         const double tmFmt6 = stopWatch.StopTimer();
-         stopWatch.PrintResult(tmFmt6 - tmFull, "Parse Fmt6+17", feeder.FmtCount_[6] + feeder.FmtCount_[17]);
-         // 測試結果:
-         // Hardware: HP ProLiant DL380p Gen8 / E5-2680 v2 @ 2.80GHz
-         // OS: Ubuntu 16.04.2 LTS
-         // Parse Fmt6+17: 2.673751904 secs / 17,034,879 times = 156.957493153 ns
-
-         std::cout << "Symbol count=" << fmt6parser.SymbMap_.Lock()->size() << std::endl;
-         auto symb = fmt6parser.GetSymb("2330");
-         if (!symb && !fmt6parser.SymbMap_.Lock()->empty())
-            symb.reset(&fon9::fmkt::GetSymbValue(*fmt6parser.SymbMap_.Lock()->begin()));
-         if (const f9extests::SymbIn* symi = static_cast<const f9extests::SymbIn*>(symb.get())) {
-            fon9::RevBufferList rbuf{256};
-            fon9::FmtDef fmtPri{7,2};
-            fon9::FmtDef fmtQty{7};
-            for (int L = fon9::fmkt::SymbBS::kBSCount; L > 0;) {
-               --L;
-               RevPrint(rbuf, symi->BS_.Data_.Buys_[L].Pri_, fmtPri, " / ", symi->BS_.Data_.Buys_[L].Qty_, fmtQty, '\n');
-            }
-            RevPrint(rbuf, "---\n");
-            for (int L = 0; L < fon9::fmkt::SymbBS::kBSCount; ++L) {
-               RevPrint(rbuf, symi->BS_.Data_.Sells_[L].Pri_, fmtPri, " / ", symi->BS_.Data_.Sells_[L].Qty_, fmtQty, '\n');
-            }
-            fon9::RevPrint(rbuf,
-               "SymbId=", symi->SymbId_, "\n"
-               "Last deal: ", symi->Deal_.Data_.Time_, "\n"
-               "      Pri: ", symi->Deal_.Data_.Deal_.Pri_, fmtPri, "\n"
-               "      Qty: ", symi->Deal_.Data_.Deal_.Qty_, fmtQty, "\n"
-               " TotalQty: ", symi->Deal_.Data_.TotalQty_, fmtQty, "\n"
-               "Last Sells - Buys: ", symi->BS_.Data_.Time_, "\n"
-               );
-            std::cout << fon9::BufferTo<std::string>(rbuf.MoveOut()) << std::endl;
-         }
-      }
+      if (f9extests::CheckExgMktFeederStep(pkReceiver, mdf, argv[4]) == 0)
+         f9extests::ExgMktTestParser<Fmt6Parser>("Parse Fmt6+17", mdf, argc - 4, argv + 4, tmFull);
    }
-
-   free(rdbuf);
 }

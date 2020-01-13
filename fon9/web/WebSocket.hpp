@@ -49,7 +49,7 @@ class fon9_API WebSocket : public HttpRecvHandler {
 protected:
    const io::DeviceSP Device_;
    enum class Stage : byte {
-      WaittingFrameHeader = 0,
+      WaitingFrameHeader = 0,
       FrameHeaderLenReady,
       FrameHeaderReady,
    }           Stage_{};

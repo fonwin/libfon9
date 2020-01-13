@@ -17,12 +17,18 @@
     <ClInclude Include="..\..\..\f9extests\Config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\f9extests\ExgMktTester.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\f9extests\SymbIn.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\f9extests\SymbDyTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\f9extests\ExgMktTester.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

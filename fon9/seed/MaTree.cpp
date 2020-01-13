@@ -36,7 +36,15 @@ TreeSP NamedSeed::GetSapling() {
    return nullptr;
 }
 
+NamedSapling::~NamedSapling() {
+}
 TreeSP NamedSapling::GetSapling() {
+   return this->Sapling_;
+}
+
+NamedMaTree::~NamedMaTree() {
+}
+TreeSP NamedMaTree::GetSapling() {
    return this->Sapling_;
 }
 

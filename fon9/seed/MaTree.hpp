@@ -85,6 +85,7 @@ public:
       : base(std::forward<NamedArgsT>(namedargs)...)
       , Sapling_{std::move(sapling)} {
    }
+   ~NamedSapling();
 
    virtual TreeSP GetSapling() override;
 };
@@ -196,6 +197,27 @@ public:
    virtual void OnParentSeedClear() override;
 
    virtual void OnTreeOp(FnTreeOp fnCallback) override;
+
+   template <class... NamedArgsT>
+   void AddNamedSapling(TreeSP sapling, NamedArgsT&&... namedargs) {
+      this->Add(new NamedSapling(std::move(sapling), std::forward<NamedArgsT>(namedargs)...));
+   }
+};
+
+class fon9_API NamedMaTree : public NamedSeed {
+   fon9_NON_COPY_NON_MOVE(NamedMaTree);
+   using base = NamedSeed;
+public:
+   const MaTreeSP Sapling_;
+
+   template <class... NamedArgsT>
+   NamedMaTree(NamedArgsT&&... namedargs)
+      : base(std::forward<NamedArgsT>(namedargs)...)
+      , Sapling_{new MaTree{Name_/*tabName*/}} {
+   }
+   ~NamedMaTree();
+
+   virtual TreeSP GetSapling() override;
 };
 
 } } // namespaces

@@ -86,7 +86,7 @@ public:
    static std::ostream& PrintResultNoEOL(double span, const char* msg, uint64_t timesRun) {
       return std::cout << msg << ": "
          << span << " secs / " << timesRun << " times = "
-         << AutoTimeUnit{span / static_cast<double>(timesRun)};
+         << AutoTimeUnit{timesRun ? (span / static_cast<double>(timesRun)) : 0};
    }
    static std::ostream& PrintResult(double span, const char* msg, uint64_t timesRun) {
       PrintResultNoEOL(span, msg, timesRun);

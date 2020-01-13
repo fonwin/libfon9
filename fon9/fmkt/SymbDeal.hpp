@@ -29,6 +29,11 @@ public:
    }
    SymbDeal() = default;
 
+   void DailyClear() {
+      memset(&this->Data_, 0, sizeof(this->Data_));
+      this->Data_.Time_.AssignNull();
+   }
+
    static seed::Fields MakeFields();
 };
 
