@@ -289,6 +289,7 @@ void FileIO::OpenImpl() {
    }
    TimeStamp now = UtcNow();
    ImplSP    impl{new Impl{*this}};
+   // TODO: OutFile_ 應改成 AsyncFileAppender;
    if (this->OpenFile("OutFile", this->OutFileCfg_, impl->OutFile_, now)
        && this->OpenFile("InFile", this->InFileCfg_, impl->InFile_, now)) {
       this->ImplSP_ = std::move(impl);
@@ -322,9 +323,16 @@ FileIO::SendResult FileIO::SendASAP(BufferList&& src) {
 FileIO::SendResult FileIO::SendBuffered(const void* src, size_t size) {
    StartSendChecker sc;
    if (fon9_LIKELY(sc.IsLinkReady(*this))) {
-      assert(this->ImplSP_);
-      AppendToBuffer(this->ImplSP_->OutBuffer_, src, size);
-      this->ImplSP_->AsyncFlushOutBuffer(sc.GetALocker());
+      if (fon9_LIKELY(sc.IsAllowInplace())) {
+         assert(this->ImplSP_);
+         AppendToBuffer(this->ImplSP_->OutBuffer_, src, size);
+         this->ImplSP_->AsyncFlushOutBuffer(sc.GetALocker());
+      }
+      else {
+         FwdBufferList buf{0};
+         memcpy(buf.AllocBuffer(size), src, size);
+         this->AsyncOut(sc.GetALocker(), buf.MoveOut());
+      }
       return Device::SendResult{0};
    }
    return Device::SendResult{std::errc::no_link};
@@ -332,21 +340,42 @@ FileIO::SendResult FileIO::SendBuffered(const void* src, size_t size) {
 FileIO::SendResult FileIO::SendBuffered(BufferList&& src) {
    StartSendChecker sc;
    if (fon9_LIKELY(sc.IsLinkReady(*this))) {
-      assert(this->ImplSP_);
-      this->ImplSP_->OutBuffer_.push_back(std::move(src));
-      this->ImplSP_->AsyncFlushOutBuffer(sc.GetALocker());
+      if (fon9_LIKELY(sc.IsAllowInplace())) {
+         assert(this->ImplSP_);
+         this->ImplSP_->OutBuffer_.push_back(std::move(src));
+         this->ImplSP_->AsyncFlushOutBuffer(sc.GetALocker());
+      }
+      else {
+         this->AsyncOut(sc.GetALocker(), std::move(src));
+      }
       return Device::SendResult{0};
    }
    DcQueueList dcq{std::move(src)};
    dcq.ConsumeErr(std::errc::no_link);
    return Device::SendResult{std::errc::no_link};
 }
+void FileIO::AsyncOut(DeviceOpQueue::ALockerForInplace& alocker, BufferList&& buf) {
+   auto pbuf{MakeObjHolder<BufferList>(std::move(buf))};
+   alocker.AddAsyncTask(DeviceAsyncOp{[pbuf](Device& dev) {
+      if (auto impl = static_cast<FileIO*>(&dev)->ImplSP_.get()) {
+         impl->OutBuffer_.push_back(std::move(*pbuf));
+         impl->OpImpl_FlushOut();
+      }
+      else {
+         DcQueueList dcq{std::move(*pbuf)};
+         dcq.ConsumeErr(std::errc::no_link);
+      }
+   }});
+}
 void FileIO::Impl::AsyncFlushOutBuffer(DeviceOpQueue::ALockerForInplace& alocker) {
    ImplSP impl{this};
    alocker.AddAsyncTask(DeviceAsyncOp{[impl](Device&) {
-      DcQueueList dcq{std::move(impl->OutBuffer_)};
-      impl->OutFile_.Append(dcq);
+      impl->OpImpl_FlushOut();
    }});
+}
+void FileIO::Impl::OpImpl_FlushOut() {
+   DcQueueList dcq{std::move(this->OutBuffer_)};
+   this->OutFile_.Append(dcq);
 }
 
 } } // namespaces

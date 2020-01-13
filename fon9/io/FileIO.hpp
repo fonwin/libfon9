@@ -112,10 +112,12 @@ private:
       void OnTimer(TimeStamp now) override;
       void CheckContinueRecv();
       void AsyncFlushOutBuffer(DeviceOpQueue::ALockerForInplace& alocker);
+      void OpImpl_FlushOut();
    };
    using ImplSP = intrusive_ptr<Impl>;
    ImplSP   ImplSP_;
 
+   void AsyncOut(DeviceOpQueue::ALockerForInplace& alocker, BufferList&&);
    void OpImpl_StopRunning();
    void OpenImpl();
    bool OpenFile(StrView errMsgHead, const FileCfg& cfg, File& fd, TimeStamp tm);
