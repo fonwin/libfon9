@@ -7,7 +7,7 @@
 
 namespace fon9 { namespace seed {
 
-struct SysEnvItem : public NamedSeed {
+class SysEnvItem : public NamedSeed {
    fon9_NON_COPY_NON_MOVE(SysEnvItem);
    using base = NamedSeed;
 public:
@@ -23,6 +23,7 @@ public:
    }
 };
 using SysEnvItemSP = NamedSeedSPT<SysEnvItem>;
+fon9_API void LogSysEnv(SysEnvItem* item);
 
 class fon9_API SysEnv;
 using SysEnvSP = NamedSeedSPT<SysEnv>;

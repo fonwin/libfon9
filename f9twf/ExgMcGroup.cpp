@@ -38,15 +38,17 @@ unsigned ExgMcSystem::CheckTDayYYYYMMDD(fon9::TimeStamp tm) const {
 bool ExgMcSystem::Startup(const unsigned tdayYYYYMMDD) {
    if (tdayYYYYMMDD == this->TDayYYYYMMDD_)
       return false;
-   fon9_LOG_IMP("ExgMcSystem.Startup|name=", this->Name_, "|tday=", tdayYYYYMMDD);
    this->TDayYYYYMMDD_ = tdayYYYYMMDD;
+   this->SetDescription(fon9::RevPrintTo<std::string>("tday=", tdayYYYYMMDD));
+   fon9_LOG_IMP("ExgMcSystem.Startup|name=", this->Name_, '|', this->GetDescription());
+
    fon9::TimedFileName logfn(fon9::seed::SysEnv_GetLogFileFmtPath(*this->Root_), fon9::TimedFileName::TimeScale::Day);
    // 檔名與 TDay 相關, 與 TimeZone 無關, 所以要扣除 logfn.GetTimeChecker().GetTimeZoneOffset();
    logfn.RebuildFileName(fon9::YYYYMMDDHHMMSS_ToTimeStamp(tdayYYYYMMDD, 0) - logfn.GetTimeChecker().GetTimeZoneOffset());
    // logPath = "logs/yyyymmdd/"
    const std::string logPath = logfn.GetFileName();
 
-   this->Symbs_->DailyClear();
+   this->Symbs_->DailyClear(tdayYYYYMMDD);
    auto seeds = this->Sapling_->GetList(nullptr);
    for (fon9::seed::NamedSeedSP& seed : seeds) {
       if (auto* mcGroup = dynamic_cast<ExgMcGroup*>(seed.get()))
@@ -62,9 +64,9 @@ void ExgMcSystem::StartupMcSystem() {
    this->ClearTimer_.RunAt(tm - fon9::GetLocalTimeZoneOffset());
 }
 //--------------------------------------------------------------------------//
-ExgMcGroup::ExgMcGroup(ExgMcSystem* mdsys, std::string name)
+ExgMcGroup::ExgMcGroup(ExgMcSystem* mdsys, std::string name, f9fmkt_TradingSessionId tsesId)
    : base(std::move(name))
-   , ChannelMgr_{new ExgMcChannelMgr(mdsys->Symbs_, &mdsys->Name_, &Name_)} {
+   , ChannelMgr_{new ExgMcChannelMgr(mdsys->Symbs_, &mdsys->Name_, &Name_, tsesId)} {
 }
 ExgMcGroup::~ExgMcGroup() {
 }

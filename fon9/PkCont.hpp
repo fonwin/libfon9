@@ -62,6 +62,9 @@ protected:
    virtual void PkContOnTimer(PkPendings::Locker&& pks);
    static void EmitOnTimer(TimerEntry* timer, TimeStamp now);
    DataMemberEmitOnTimer<&PkContFeeder::EmitOnTimer> Timer_;
+   void StartPkContTimer() {
+      this->Timer_.RunAfter(this->WaitInterval_);
+   }
 
    /// 序號小於期望, 在 ++this->DroppedCount_; 之後, 呼叫此處, 預設 do nothing;
    virtual void PkContOnDropped(const void* pk, unsigned pksz, SeqT seq);

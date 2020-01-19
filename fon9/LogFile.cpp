@@ -91,7 +91,7 @@ class LogFileImpl : public LogFileAppender {
       TimeStamp      utcnow = UtcNow();
       RevBufferList  rbuf{kLogBlockNodeSize};
       if (isFirstStart) {
-         RevPrint(rbuf, "|orig=", fd.GetOpenName(), "|time", this->GetRotateTimeChecker().GetTimeZoneOffset(), "=", utcnow + tzadj, '\n');
+         RevPrint(rbuf, "|orig=", fd.GetOpenName(), "|time", tzadj, "=", utcnow + tzadj, '\n');
          this->OrigStartInfo_ = BufferTo<std::string>(rbuf.MoveOut());
       }
       File* curfd = base::OnFileRotate(fd, openResult);
@@ -121,7 +121,8 @@ public:
       if (!this->OrigStartInfo_.empty()) {
          RevBufferList  rbuf{kLogBlockNodeSize};
          RevPrint(rbuf, "LogFile.OnDestroy", this->OrigStartInfo_);
-         AddLogHeader(rbuf, UtcNow(), LogLevel::Important);
+         // 在 UnsetLogWriter() 之後, AddLogHeader() 的時間不會調整, 所以在此自行調整.
+         AddLogHeader(rbuf, UtcNow() + this->GetRotateTimeChecker().GetTimeZoneOffset(), LogLevel::Important);
          this->Append(rbuf.MoveOut());
       }
       this->Worker_.TakeCall();

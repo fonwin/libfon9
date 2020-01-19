@@ -143,26 +143,79 @@ void ExgMcChannel::DelRecover(ExgMrRecoverSessionSP svr) {
       rs->erase(ifind);
    }
    if (isFront && !this->PkPendings_.Lock()->empty())
-      this->Timer_.RunAfter(this->WaitInterval_);
+      this->StartPkContTimer();
 }
-void ExgMcChannel::OnRecoverErr(SeqT beginSeqNo, unsigned recoverNum) {
+void ExgMcChannel::OnRecoverErr(SeqT beginSeqNo, unsigned recoverNum, ExgMrStatusCode st) {
+   bool isNoRecover = false;
+   if (st == 5) { // 5: 備援尚未開放回補.
+      auto rs = this->Recovers_.Lock();
+      isNoRecover = (rs->empty() || rs->front()->Role_ != ExgMcRecoverRole::Primary);
+   }
    auto pks = this->PkPendings_.Lock();
-   if (pks->empty())
-      return;
-   if (beginSeqNo + recoverNum >= pks->begin()->Seq_)
-      base::PkContOnTimer(std::move(pks));
+   if (!pks->empty()) {
+      SeqT endSeq = beginSeqNo + recoverNum;
+      if (this->NextSeq_ < endSeq)
+         this->NextSeq_ = endSeq;
+      if (isNoRecover) {
+         this->base::PkContOnTimer(std::move(pks));
+         return;
+      }
+      pks.unlock();
+      this->StartPkContTimer();
+   }
+}
+void ExgMcChannel::OnRecoverEnd() {
+   // 補完了, 若 channel 的 PkPending 仍有訊息, 則應繼續回補.
+   auto pks = this->PkPendings_.Lock();
+   if (!pks->empty())
+      this->StartPkContTimer();
 }
 void ExgMcChannel::PkContOnTimer(PkPendings::Locker&& pks) {
    const auto keeps = pks->size();
    if (keeps == 0)
       return;
+   // 每次最多回補 1000 筆.
+   constexpr ExgMrRecoverNum_t kMaxRecoverNum = 1000;
+   // 每個 Session 一天最多可以要求 1000 次(2020/01/15:已無次數限制).
+   // 必須等上次要求完成, 才能送出下一個要求.
+   constexpr uint32_t kMaxRequestCount = std::numeric_limits<uint32_t>::max();//1000;
+
    const bool  isKeepsNoGap = (keeps == 1 || (pks->back().Seq_ - pks->begin()->Seq_ + 1 == keeps));
-   SeqT        recoverNum = (isKeepsNoGap ? pks->begin()->Seq_ : pks->back().Seq_) - this->NextSeq_;
+   const SeqT  lostCount = (isKeepsNoGap ? pks->begin()->Seq_ : pks->back().Seq_) - this->NextSeq_;
+   const ExgMrRecoverNum_t recoverNum = (lostCount > kMaxRecoverNum
+                                         ? kMaxRecoverNum
+                                         : static_cast<ExgMrRecoverNum_t>(lostCount));
    ExgMrRecoverSessionSP svr;
+   bool hasAnyRecover = false;
    {
       auto rs = this->Recovers_.Lock();
-      if (!rs->empty())
-         svr = rs->front();
+      auto iend = rs->end();
+      for (auto ibeg = rs->begin(); ibeg != iend;) {
+         auto* cur = ibeg->get();
+         // 在有 Primary 的時候, 不可使用 Secondary.
+         if (rs->front()->Role_ != cur->Role_)
+            break;
+         if (fon9_UNLIKELY(cur->GetRequestCount() >= kMaxRequestCount)) {
+            fon9_LOG_WARN(this->ChannelMgr_->Name_,
+                          "|dev=", fon9::ToPtr(cur->GetDevice()),
+                          "|err=request count over limit.");
+            ibeg = rs->erase(ibeg);
+            continue;
+         }
+         auto st = cur->RequestMcRecover(this->ChannelId_,
+                                         static_cast<ExgMrMsgSeqNum_t>(this->NextSeq_),
+                                         recoverNum);
+         if (st == ExgMrState::Requesting) { // 成功送出回補要求.
+            svr = cur;
+            break;
+         }
+         if (st != ExgMrState::ApReady) // 連線問題.
+            ibeg = rs->erase(ibeg);
+         else { // 有回補要求正在處理中.
+            hasAnyRecover = true;
+            ++ibeg;
+         }
+      }
    }
    if (fon9_UNLIKELY(fon9::LogLevel::Warn >= fon9::LogLevel_)) {
       fon9::RevBufferList rbuf_{fon9::kLogBlockNodeSize};
@@ -170,48 +223,23 @@ void ExgMcChannel::PkContOnTimer(PkPendings::Locker&& pks) {
       if (!isKeepsNoGap)
          fon9::RevPrint(rbuf_, "|back=", pks->back().Seq_);
       fon9::RevPrint(rbuf_, "|channelId=", this->ChannelId_,
-                     "|from=", this->NextSeq_, "|to=", pks->begin()->Seq_ - 1);
-      if (svr)
-         fon9::RevPrint(rbuf_, "|recoverSessionId=", svr->SessionId_,
+                     "|from=", this->NextSeq_, "|to=", pks->begin()->Seq_ - 1,
+                     "|lostCount=", lostCount);
+      if (svr) {
+         fon9::RevPrint(rbuf_, "|dev=", fon9::ToPtr(svr->GetDevice()),
+                        "|recover.SessionId=", svr->SessionId_,
                         "|requestCount=", svr->GetRequestCount(),
                         "|recoverNum=", recoverNum);
+      }
       fon9::RevPrint(rbuf_, this->ChannelMgr_->Name_, ".PkLost");
       fon9::LogWrite(fon9::LogLevel::Warn, std::move(rbuf_));
    }
-   /// 每次最多回補 1000 筆, 每個 Session 一天最多可以要求 1000 次.
-   const ExgMrRecoverNum_t kMaxRecoverNum = 1000;
-   const ExgMrRecoverNum_t kMaxRequestCount = 1000;
-   if (svr) {
-      ExgMrMsgSeqNum_t from = static_cast<ExgMrMsgSeqNum_t>(this->NextSeq_);
-      for (;;) {
-         if (svr->GetRequestCount() < kMaxRequestCount) {
-            ExgMrRecoverNum_t reNum = (recoverNum > kMaxRecoverNum ? kMaxRecoverNum : static_cast<ExgMrRecoverNum_t>(recoverNum));
-            if (svr->RequestMcRecover(this->ChannelId_, from, reNum)) {
-               if ((recoverNum -= reNum) <= 0)
-                  return;
-               from += reNum;
-               continue;
-            }
-         }
-         auto rs = this->Recovers_.Lock();
-         if (rs->empty())
-            break;
-         ExgMrRecoverSessionSP beg = *rs->begin();
-         if (svr != beg)
-            svr.swap(beg);
-         else {
-            rs->pop_front();
-            if (rs->empty())
-               break;
-            svr = *rs->begin();
-         }
-         fon9_LOG_WARN(this->ChannelMgr_->Name_,
-                       "|recoverSessionId=", svr->SessionId_,
-                       "|requestCount=", svr->GetRequestCount());
-      }
-      fon9_LOG_WARN(this->ChannelMgr_->Name_, ".PkLost|err=NoRecover");
-   }
-   base::PkContOnTimer(std::move(pks));
+   if (svr)
+      return;
+   if (hasAnyRecover)
+      this->StartPkContTimer();
+   else
+      base::PkContOnTimer(std::move(pks));
 }
 // -----
 // 收到完整封包後, 會執行到此, 尚未確定是否重複或有遺漏.
@@ -242,9 +270,20 @@ ExgMcChannelState ExgMcChannel::OnPkReceived(const ExgMcHead& pk, unsigned pksz)
          }
          this->OnCycleStart(seq + 1);
          return this->State_;
-      case '2': // SeqReset.
-         this->NextSeq_ = 0;
+      case '2': // I002.SeqReset.
          if (0);//SeqReset 之後, API 商品訂閱者的序號要怎麼處理呢?
+         fon9_LOG_WARN(this->ChannelMgr_->Name_, ".I002.SeqReset|channelId=", this->ChannelId_);
+         RecoversImpl rs{std::move(*this->Recovers_.Lock())};
+         for (auto& cur : rs) {
+            cur->GetDevice()->AsyncClose("I002.SeqReset");
+            cur->GetDevice()->WaitGetDeviceId(); // 等候 AsyncClose() 完成.
+            cur->GetDevice()->AsyncOpen(std::string{});
+         }
+         {
+            auto pks = this->PkPendings_.Lock();
+            pks->clear();
+            this->NextSeq_ = 0;
+         }
          return this->State_;
       }
    }
@@ -283,9 +322,9 @@ void ExgMcChannel::PkContOnReceived(const void* pk, unsigned pksz, SeqT seq) {
          return;
       }
       SeqT lastRtSeq;
-      switch (static_cast<const f9twf::ExgMcI084*>(pk)->MessageType_) {
+      switch (static_cast<const ExgMcI084*>(pk)->MessageType_) {
       case 'A':
-         lastRtSeq = fon9::PackBcdTo<SeqT>(static_cast<const f9twf::ExgMcI084*>(pk)->_A_RefreshBegin_.LastSeq_);
+         lastRtSeq = fon9::PackBcdTo<SeqT>(static_cast<const ExgMcI084*>(pk)->_A_RefreshBegin_.LastSeq_);
          if (this->IsSkipPkLog_) {
             // 檢查是否可以開始接收新的一輪: 判斷即時行情的 Pk1stSeq_ 是否符合要求?
             auto rtseq = this->ChannelMgr_->GetRealtimeChannel(*this).Pk1stSeq_;
@@ -311,7 +350,7 @@ void ExgMcChannel::PkContOnReceived(const void* pk, unsigned pksz, SeqT seq) {
             this->AfterNextSeq_ = 0;
             return;
          }
-         lastRtSeq = fon9::PackBcdTo<SeqT>(static_cast<const f9twf::ExgMcI084*>(pk)->_Z_RefreshComplete_.LastSeq_);
+         lastRtSeq = fon9::PackBcdTo<SeqT>(static_cast<const ExgMcI084*>(pk)->_Z_RefreshComplete_.LastSeq_);
          if (lastRtSeq == this->CycleStartSeq_) {
             auto rtseq = this->ChannelMgr_->GetRealtimeChannel(*this).Pk1stSeq_;
             // 檢查是否有遺漏? 有遺漏則重收.
@@ -348,28 +387,30 @@ void ExgMcChannel::DispatchMcMessage(ExgMcMessage& e) {
    // assert(this->PkPending_.IsLocked());
    assert(e.Pk_.GetChannelId() == this->ChannelId_);
    this->ChannelMgr_->DispatchMcMessage(e);
-   if (!this->IsSetupReloading_) {
-      struct Combiner {
-         bool operator()(ExgMcMessageConsumer* subr, ExgMcMessage& e) {
-            subr->OnExgMcMessage(e);
-            return true;
-         }
-      } combiner;
-      this->UnsafeConsumers_.Combine(combiner, e);
-   }
+   this->NotifyConsumers(e);
+}
+void ExgMcChannel::NotifyConsumers(ExgMcMessage& e) {
+   if (this->IsSetupReloading_)
+      return;
+   struct Combiner {
+      bool operator()(ExgMcMessageConsumer* subr, ExgMcMessage& e) {
+         subr->OnExgMcMessage(e);
+         return true;
+      }
+   } combiner;
+   this->UnsafeConsumers_.Combine(combiner, e);
 }
 //--------------------------------------------------------------------------//
 struct ExgMcMessageHandler {
    static void I010BasicInfoParser(ExgMcMessage& e) {
-      auto& pk = *static_cast<const f9twf::ExgMcI010*>(&e.Pk_);
-      auto  time = pk.InformationTime_.ToDayTime();
+      auto& pk = *static_cast<const ExgMcI010*>(&e.Pk_);
+      // auto  time = pk.InformationTime_.ToDayTime();
       auto* symbs = e.Channel_.ChannelMgr_->Symbs_.get();
       auto  locker = symbs->SymbMap_.Lock();
       auto& symb = *static_cast<ExgMdSymb*>(symbs->FetchSymb(locker, fon9::StrView_eos_or_all(pk.ProdId_.Chars_, ' ')).get());
       e.Symb_ = &symb;
-      if (!symb.BasicInfoTime_.IsNull() && symb.BasicInfoTime_ >= time)
+      if (!symb.CheckSetTradingSessionId(e.Channel_.ChannelMgr_->TradingSessionId_))
          return;
-      symb.BasicInfoTime_ = time;
       symb.TradingMarket_ = (pk.TransmissionCode_ == '1' ? f9fmkt_TradingMarket_TwFUT : f9fmkt_TradingMarket_TwOPT);
       // symb.TradingSessionId_; 也許 ChannelMgr_ 增加 TradingSessionId_; 或可用 FlowGroup 來判斷?
       symb.FlowGroup_ = fon9::PackBcdTo<fon9::fmkt::SymbFlowGroup_t>(pk.FlowGroup_);
@@ -377,35 +418,37 @@ struct ExgMcMessageHandler {
          static_cast<uint8_t>(fon9::fmkt::Pri::Scale - fon9::PackBcdTo<uint8_t>(pk.DecimalLocator_))));
       symb.StrikePriceDiv_ = static_cast<uint32_t>(fon9::GetDecDivisor(
          fon9::PackBcdTo<uint8_t>(pk.StrikePriceDecimalLocator_)));
-      f9twf::ExgMdPriceTo(symb.Ref_.Data_.PriRef_,   pk.ReferencePrice_,  symb.PriceOrigDiv_);
-      f9twf::ExgMdPriceTo(symb.Ref_.Data_.PriUpLmt_, pk.RiseLimitPrice1_, symb.PriceOrigDiv_);
-      f9twf::ExgMdPriceTo(symb.Ref_.Data_.PriDnLmt_, pk.FallLimitPrice1_, symb.PriceOrigDiv_);
+      ExgMdPriceTo(symb.Ref_.Data_.PriRef_,   pk.ReferencePrice_,  symb.PriceOrigDiv_);
+      ExgMdPriceTo(symb.Ref_.Data_.PriUpLmt_, pk.RiseLimitPrice1_, symb.PriceOrigDiv_);
+      ExgMdPriceTo(symb.Ref_.Data_.PriDnLmt_, pk.FallLimitPrice1_, symb.PriceOrigDiv_);
    }
    //-----------------------------------------------------------------------//
    static void I024MatchParser(ExgMcMessage&) {
       if (0);// 成交明細.
    }
    static void I081BSParser(ExgMcMessage& e) {
-      auto& pk = *static_cast<const f9twf::ExgMcI081*>(&e.Pk_);
+      auto& pk = *static_cast<const ExgMcI081*>(&e.Pk_);
       auto  mdTime = e.Pk_.InformationTime_.ToDayTime();
       auto* symbs = e.Channel_.ChannelMgr_->Symbs_.get();
       auto  locker = symbs->SymbMap_.Lock();
       auto& symb = *static_cast<ExgMdSymb*>(symbs->FetchSymb(locker, fon9::StrView_eos_or_all(pk.ProdId_.Chars_, ' ')).get());
       e.Symb_ = &symb;
-      ExgMdEntryToSymbBS(mdTime, fon9::PackBcdTo<unsigned>(pk.NoMdEntries_), pk.MdEntry_, symb);
+      if (symb.CheckSetTradingSessionId(e.Channel_.ChannelMgr_->TradingSessionId_))
+         ExgMdEntryToSymbBS(mdTime, fon9::PackBcdTo<unsigned>(pk.NoMdEntries_), pk.MdEntry_, symb);
    }
    static void I083BSParser(ExgMcMessage& e) {
-      auto& pk = *static_cast<const f9twf::ExgMcI083*>(&e.Pk_);
+      auto& pk = *static_cast<const ExgMcI083*>(&e.Pk_);
       auto  mdTime = e.Pk_.InformationTime_.ToDayTime();
       auto* symbs = e.Channel_.ChannelMgr_->Symbs_.get();
       auto  locker = symbs->SymbMap_.Lock();
       auto& symb = *static_cast<ExgMdSymb*>(symbs->FetchSymb(locker, fon9::StrView_eos_or_all(pk.ProdId_.Chars_, ' ')).get());
       e.Symb_ = &symb;
-      ExgMdEntryToSymbBS(mdTime, fon9::PackBcdTo<unsigned>(pk.NoMdEntries_), pk.MdEntry_, symb);
+      if (symb.CheckSetTradingSessionId(e.Channel_.ChannelMgr_->TradingSessionId_))
+         ExgMdEntryToSymbBS(mdTime, fon9::PackBcdTo<unsigned>(pk.NoMdEntries_), pk.MdEntry_, symb);
    }
    //-----------------------------------------------------------------------//
    static void I084SSParser(ExgMcMessage& e) {
-      switch (static_cast<const f9twf::ExgMcI084*>(&e.Pk_)->MessageType_) {
+      switch (static_cast<const ExgMcI084*>(&e.Pk_)->MessageType_) {
       //case 'A': McI084SSParserA(e); break;
         case 'O': McI084SSParserO(e); break;
       //case 'S': McI084SSParserS(e); break;
@@ -414,7 +457,23 @@ struct ExgMcMessageHandler {
       }
    }
    static void McI084SSParserO(ExgMcMessage& e) {
-      auto&    pk = static_cast<const f9twf::ExgMcI084*>(&e.Pk_)->_O_OrderData_;
+      ExgMcChannel& rtch = e.Channel_.ChannelMgr_->GetRealtimeChannel(e.Channel_);
+      char          bufI083[sizeof(ExgMcI083) + sizeof(ExgMdEntry) * 100];
+      ExgMcI083*    pI083 = nullptr;
+      if (!rtch.IsSetupReloading_ && !rtch.UnsafeConsumers_.IsEmpty()) {
+         // 轉發 ExgMcI083 訊息.
+         pI083 = reinterpret_cast<ExgMcI083*>(bufI083);
+         *static_cast<ExgMcHead*>(pI083) = e.Pk_;
+         pI083->MessageKind_ = 'B';
+         fon9::ToPackBcd(pI083->ChannelId_,  rtch.GetChannelId());
+         fon9::ToPackBcd(pI083->ChannelSeq_, 0u);
+         fon9::ToPackBcd(pI083->VersionNo_,  1u);
+         // 試撮價格註記, '0':委託簿揭示訊息; '1':試撮後剩餘委託訊息.
+         // 2020.01.17: 根據期交所說明, 試撮階段不會有委託簿快照訊息.
+         pI083->CalculatedFlag_ = '0';
+      }
+
+      auto&    pk = static_cast<const ExgMcI084*>(&e.Pk_)->_O_OrderData_;
       auto     mdTime = e.Pk_.InformationTime_.ToDayTime();
       unsigned prodCount = fon9::PackBcdTo<unsigned>(pk.NoEntries_);
       auto*    prodEntry = pk.Entry_;
@@ -422,8 +481,24 @@ struct ExgMcMessageHandler {
       auto     locker = symbs->SymbMap_.Lock();
       for (unsigned prodL = 0; prodL < prodCount; ++prodL) {
          auto& symb = *static_cast<ExgMdSymb*>(symbs->FetchSymb(locker, fon9::StrView_eos_or_all(prodEntry->ProdId_.Chars_, ' ')).get());
-         prodEntry = static_cast<const f9twf::ExgMcI084::OrderDataEntry*>(
-            ExgMdEntryToSymbBS(mdTime, fon9::PackBcdTo<unsigned>(prodEntry->NoMdEntries_), prodEntry->MdEntry_, symb));
+         auto  mdCount = fon9::PackBcdTo<unsigned>(prodEntry->NoMdEntries_);
+         if (symb.CheckSetTradingSessionId(e.Channel_.ChannelMgr_->TradingSessionId_)) {
+            ExgMdEntryToSymbBS(mdTime, mdCount, prodEntry->MdEntry_, symb);
+            if (pI083) {
+               static_assert(sizeof(pI083->NoMdEntries_) == 1, "");
+               *pI083->NoMdEntries_ = *prodEntry->NoMdEntries_;
+               memcpy(pI083->MdEntry_, prodEntry->MdEntry_, sizeof(ExgMdEntry) * mdCount);
+               pI083->ProdId_ = prodEntry->ProdId_;
+               memcpy(pI083->ProdMsgSeq_, prodEntry->LastProdMsgSeq_, sizeof(pI083->ProdMsgSeq_));
+               const unsigned pksz = sizeof(ExgMcI083) - sizeof(pI083->MdEntry_) + sizeof(ExgMdTail)
+                                   + sizeof(sizeof(ExgMdEntry) * mdCount);
+               fon9::ToPackBcd(pI083->BodyLength_, pksz - sizeof(ExgMcNoBody));
+               ExgMcMessage e083{*pI083, pksz, rtch, 0};
+               e083.Symb_ = &symb;
+               rtch.NotifyConsumers(e083);
+            }
+         }
+         prodEntry = reinterpret_cast<const ExgMcI084::OrderDataEntry*>(prodEntry->MdEntry_ + mdCount);
       }
    }
 };
@@ -454,8 +529,9 @@ struct ExgMcMessageHandler {
 //    因為必須由 [快照更新 Channel] 來決定:
 //    - [即時行情 Channel] 是否可以進入發行狀態.
 //    - [即時行情 Channel] 要從哪個序號開始發行.
-ExgMcChannelMgr::ExgMcChannelMgr(ExgMdSymbsSP symbs, fon9::StrView sysName, fon9::StrView groupName)
-   : Name_{sysName.ToString() + "_" + groupName.ToString()}
+ExgMcChannelMgr::ExgMcChannelMgr(ExgMdSymbsSP symbs, fon9::StrView sysName, fon9::StrView groupName, f9fmkt_TradingSessionId tsesId)
+   : TradingSessionId_{tsesId}
+   , Name_{sysName.ToString() + "_" + groupName.ToString()}
    , Symbs_{std::move(symbs)} {
    // 即時行情.
    this->Channels_[ 1].Ctor(this,  1, ExgMcChannelStyle::PkLog | ExgMcChannelStyle::WaitSnapshot);

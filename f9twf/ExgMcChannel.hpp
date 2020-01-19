@@ -153,6 +153,7 @@ class f9twf_API ExgMcChannel : private fon9::PkContFeeder {
    }
 
    void DispatchMcMessage(ExgMcMessage& e);
+   void NotifyConsumers(ExgMcMessage& e);
    void PkContOnReceived(const void* pk, unsigned pksz, SeqT seq) override;
    void PkContOnTimer(PkPendings::Locker&& pks) override;
    void PkLogAppend(const void* pk, unsigned pksz, SeqT seq) {
@@ -220,19 +221,21 @@ public:
 
    void AddRecover(ExgMrRecoverSessionSP);
    void DelRecover(ExgMrRecoverSessionSP);
-   void OnRecoverErr(SeqT beginSeqNo, unsigned recoverNum);
+   void OnRecoverErr(SeqT beginSeqNo, unsigned recoverNum, ExgMrStatusCode st);
+   void OnRecoverEnd();
 };
 
 //--------------------------------------------------------------------------//
 /// 台灣期交所逐筆行情 Channel 管理員.
 class f9twf_API ExgMcChannelMgr : public fon9::intrusive_ref_counter<ExgMcChannelMgr> {
    fon9_NON_COPY_NON_MOVE(ExgMcChannelMgr);
-   char           Padding____[4];
+   char           Padding____[3];
 public:
+   const f9fmkt_TradingSessionId TradingSessionId_;
    /// = sysName + "_" + groupName;
    const std::string    Name_;
    const ExgMdSymbsSP   Symbs_;
-   ExgMcChannelMgr(ExgMdSymbsSP symbs, fon9::StrView sysName, fon9::StrView groupName);
+   ExgMcChannelMgr(ExgMdSymbsSP symbs, fon9::StrView sysName, fon9::StrView groupName, f9fmkt_TradingSessionId tsesId);
    ~ExgMcChannelMgr();
 
    void StartupChannelMgr(std::string logPath);

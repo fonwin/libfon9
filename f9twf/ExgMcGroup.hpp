@@ -65,7 +65,7 @@ class f9twf_API ExgMcGroup : public fon9::seed::NamedMaTree {
 public:
    const ExgMcChannelMgrSP ChannelMgr_;
 
-   ExgMcGroup(ExgMcSystem* mdsys, std::string name);
+   ExgMcGroup(ExgMcSystem* mdsys, std::string name, f9fmkt_TradingSessionId tsesId);
    ~ExgMcGroup();
 
    /// 啟動(or 換日清檔), 從 ExgMcSystem::StartupMcSystem() 呼叫到此.

@@ -34,8 +34,9 @@ fon9::seed::LayoutSP ExgMdSymb::MakeLayout() {
       TabSP{new Tab{fon9::Named{"Deal"}, SymbDeal::MakeFields(), TabFlag::NoSapling_NoSeedCommand_Writable}}
    )};
 }
-void ExgMdSymb::DailyClear() {
-   this->BasicInfoTime_.AssignNull(); if (0);// 或是應該用 I011.END-SESSION 判斷 '0'一般交易時段, '1'盤後交易時段.
+void ExgMdSymb::DailyClear(unsigned tdayYYYYMMDD) {
+   this->TDayYYYYMMDD_ = tdayYYYYMMDD;
+   this->TradingSessionId_ = f9fmkt_TradingSessionId_Normal;
    this->FlowGroup_ = 0;
    this->ExgSymbSeq_ = 0;
    this->Ref_.DailyClear();
@@ -45,10 +46,10 @@ void ExgMdSymb::DailyClear() {
 //--------------------------------------------------------------------------//
 ExgMdSymbs::ExgMdSymbs() : base{ExgMdSymb::MakeLayout()} {
 }
-void ExgMdSymbs::DailyClear() {
+void ExgMdSymbs::DailyClear(unsigned tdayYYYYMMDD) {
    auto symbs = this->SymbMap_.Lock();
    for (auto& symb : *symbs)
-      static_cast<ExgMdSymb*>(symb.second.get())->DailyClear();
+      static_cast<ExgMdSymb*>(symb.second.get())->DailyClear(tdayYYYYMMDD);
 }
 fon9::fmkt::SymbSP ExgMdSymbs::MakeSymb(const fon9::StrView& symbid) {
    return fon9::fmkt::SymbSP{new ExgMdSymb(symbid)};

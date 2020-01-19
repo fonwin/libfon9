@@ -14,6 +14,7 @@ void ExgMrRecoverSession::OnDevice_Initialized(io::Device& dev) {
 }
 io::RecvBufferSize ExgMrRecoverSession::OnDevice_LinkReady(io::Device& dev) {
    this->Recovering_ = 0;
+   this->ApReadyMsg_.clear();
    FwdBufferList     buf{0};
    ExgMrLoginReq020* req = reinterpret_cast<ExgMrLoginReq020*>(buf.AllocBuffer(sizeof(ExgMrLoginReq020)));
    static uint16_t   gMx = 123;
@@ -28,8 +29,8 @@ io::RecvBufferSize ExgMrRecoverSession::OnDevice_LinkReady(io::Device& dev) {
    return io::RecvBufferSize::Default;
 }
 void ExgMrRecoverSession::OnDevice_StateChanged(io::Device& dev, const io::StateChangedArgs&) {
-   if (this->State_ == MrState_ApReady) {
-      this->State_ = MrState_LinkBroken;
+   if (this->State_ >= ExgMrState::ApReady) {
+      this->State_ = ExgMrState::LinkBroken;
       dev.Manager_->OnSession_StateUpdated(dev, "ApBroken", LogLevel::Info);
       for (unsigned L = 0; L < ExgMcChannelMgr::kChannelCount; ++L) {
          if (auto* channel = this->ChannelMgr_->GetChannel(static_cast<ExgMrChannelId_t>(L)))
@@ -40,7 +41,7 @@ void ExgMrRecoverSession::OnDevice_StateChanged(io::Device& dev, const io::State
 io::RecvBufferSize ExgMrRecoverSession::OnDevice_Recv(io::Device& dev, DcQueueList& rxbuf) {
    if (this->Recovering_ > 0) {
       if (this->FeedBuffer(rxbuf)) {
-         assert(this->Recovering_ > 0);
+         assert(this->Recovering_ > 0 && this->State_ == ExgMrState::Requesting);
          return io::RecvBufferSize::Default;
       }
    }
@@ -57,14 +58,25 @@ io::RecvBufferSize ExgMrRecoverSession::OnDevice_Recv(io::Device& dev, DcQueueLi
       case 10: // 錯誤通知訊息(010).
          dev.AsyncClose(fon9::RevPrintTo<std::string>(
             "ExgMrRecoverSession|Rx010St=", static_cast<const ExgMrError010*>(pkptr)->StatusCode_));
+         dev.AsyncOpen(std::string{});
          return io::RecvBufferSize::CloseRecv;
       case 30: // 期交所用此訊息回覆資訊接收端登錄結果，如有多個 ChannelID，則 030 會有多筆。
-         this->State_ = MrState_ApReady;
-         if (auto* channel = this->ChannelMgr_->GetChannel(TmpGetValueU(static_cast<const ExgMrLoginCfm030*>(pkptr)->ChannelId_)))
+         if (this->State_ < ExgMrState::ApReady)
+            this->State_ = ExgMrState::ApReady;
+         if (auto* channel = this->ChannelMgr_->GetChannel(TmpGetValueU(static_cast<const ExgMrLoginCfm030*>(pkptr)->ChannelId_))) {
+            fon9::NumOutBuf nbuf;
+            char*           pout = fon9::ToStrRev(nbuf.end(), channel->GetChannelId());
+            if (this->ApReadyMsg_.empty())
+               this->ApReadyMsg_.assign(this->Role_ == ExgMcRecoverRole::Primary
+                                        ? fon9::StrView{"ApReady.P:"} : fon9::StrView{"ApReady.S:"});
+            else
+               *--pout = ',';
+            ApReadyMsg_.append(pout, nbuf.end());
             channel->AddRecover(this);
+         }
          break;
       case 50: // 回補服務開始(050)
-         dev.Manager_->OnSession_StateUpdated(dev, "ApReady", LogLevel::Info);
+         dev.Manager_->OnSession_StateUpdated(dev, ToStrView(this->ApReadyMsg_), LogLevel::Info);
          break;
       case 104: // 確認連線訊息(104)-Heartbeat;
          static_assert(sizeof(ExgMrHeartbeat104) == sizeof(ExgMrHeartbeat105), "");
@@ -79,11 +91,12 @@ io::RecvBufferSize ExgMrRecoverSession::OnDevice_Recv(io::Device& dev, DcQueueLi
             auto channelId = TmpGetValueU(pkrec->ChannelId_);
             auto beginSeqNo = TmpGetValueU(pkrec->BeginSeqNo_);
             auto recoverNum = TmpGetValueU(pkrec->RecoverNum_);
-            fon9_LOG_WARN("ExgMrRecoverSession.RecoverErr"
+            fon9_LOG_WARN("ExgMrRecoverSession.RecoverErr|dev=", ToPtr(&dev),
                           "|channelId=", channelId, "|st=", pkrec->StatusCode_,
                           "|beginSeqNo=", beginSeqNo, "|recoverNum=", recoverNum);
+            this->State_ = ExgMrState::ApReady;
             if (auto* channel = this->ChannelMgr_->GetChannel(channelId))
-               channel->OnRecoverErr(beginSeqNo, recoverNum);
+               channel->OnRecoverErr(beginSeqNo, recoverNum, pkrec->StatusCode_);
          }
          break;
       }
@@ -91,9 +104,25 @@ io::RecvBufferSize ExgMrRecoverSession::OnDevice_Recv(io::Device& dev, DcQueueLi
    }
    return io::RecvBufferSize::Default;
 }
-bool ExgMrRecoverSession::RequestMcRecover(ExgMrChannelId_t channelId, ExgMrMsgSeqNum_t from, ExgMrRecoverNum_t count) {
-   if (this->State_ != MrState_ApReady)
-      return false;
+bool ExgMrRecoverSession::OnPkReceived(const void* pk, unsigned pksz) {
+   assert(this->Recovering_ > 0 && this->State_ == ExgMrState::Requesting);
+   auto* channel = this->ChannelMgr_->GetChannel(static_cast<const ExgMcHead*>(pk)->GetChannelId());
+   bool  isRecovering = (--this->Recovering_ > 0);
+   if (!isRecovering)
+      this->State_ = ExgMrState::ApReady;
+   if (channel) {
+      channel->OnPkReceived(*static_cast<const ExgMcHead*>(pk), pksz);
+      if (!isRecovering)
+         channel->OnRecoverEnd();
+   }
+   return isRecovering; // 還沒補完, OnDevice_Recv() 繼續呼叫 this->FeedBuffer();
+}
+ExgMrState ExgMrRecoverSession::RequestMcRecover(ExgMrChannelId_t channelId, ExgMrMsgSeqNum_t from, ExgMrRecoverNum_t count) {
+   if (this->State_ < ExgMrState::ApReady)
+      return this->State_;
+   if (this->State_ == ExgMrState::Requesting)
+      return  ExgMrState::ApReady;
+   this->State_ = ExgMrState::Requesting;
    ++this->RequestCount_;
    FwdBufferList        buf{0};
    ExgMrRecoverReq101*  req = reinterpret_cast<ExgMrRecoverReq101*>(buf.AllocBuffer(sizeof(ExgMrRecoverReq101)));
@@ -102,12 +131,7 @@ bool ExgMrRecoverSession::RequestMcRecover(ExgMrChannelId_t channelId, ExgMrMsgS
    TmpPutValue(req->RecoverNum_, count);
    req->Final(++this->MsgSeqNum_);
    this->Device_->SendASAP(buf.MoveOut());
-   return this->State_ == MrState_ApReady;
-}
-bool ExgMrRecoverSession::OnPkReceived(const void* pk, unsigned pksz) {
-   assert(this->Recovering_ > 0);
-   this->ChannelMgr_->OnPkReceived(*static_cast<const ExgMcHead*>(pk), pksz);
-   return(--this->Recovering_ != 0);
+   return this->State_;
 }
 //--------------------------------------------------------------------------//
 io::SessionSP ExgMrRecoverFactory::CreateSession(IoManager& ioMgr, const IoConfigItem& cfg, std::string& errReason) {

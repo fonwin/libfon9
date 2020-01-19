@@ -14,8 +14,8 @@ struct AuxPackBcd {
       return static_cast<NumT>(AuxPackBcd<NumT, 2>::RevTo(pbcd) + next::RevTo(pbcd - 1) * 100);
    }
    constexpr static void ToRev(unsigned char* pbuf, NumT val) noexcept {
-      AuxPackBcd<NumT, 2>::ToRev(pbuf, (val % 100));
-      next::ToRev(pbuf - 1, val / 100);
+      AuxPackBcd<NumT, 2>::ToRev(pbuf, static_cast<NumT>(val % 100));
+      next::ToRev(pbuf - 1, static_cast<NumT>(val / 100));
    }
 };
 template <typename NumT>

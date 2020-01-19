@@ -4,6 +4,7 @@
 #include "fon9/seed/SysEnv.hpp"
 #include "fon9/seed/FieldMaker.hpp"
 #include "fon9/FilePath.hpp"
+#include "fon9/Log.hpp"
 
 #ifdef fon9_WINDOWS
 #include <direct.h>  // _getcwd();
@@ -16,6 +17,11 @@ static inline pid_t GetCurrentProcessId() {
 #endif
 
 namespace fon9 { namespace seed {
+
+fon9_API void LogSysEnv(seed::SysEnvItem* item) {
+   if (item)
+      fon9_LOG_IMP("SysEnv|", item->Name_, "=", item->Value_);
+}
 
 LayoutSP SysEnv::MakeDefaultLayout() {
    Fields fields = NamedSeed::MakeDefaultFields();

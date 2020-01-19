@@ -27,10 +27,6 @@ static void RaiseInitializeError(std::string err) {
    fon9_LOG_FATAL(err);
    Raise<std::runtime_error>(err);
 }
-static void LogSysEnv(seed::SysEnvItemSP item) {
-   if (item)
-      fon9_LOG_IMP("SysEnv|", item->Name_, "=", item->Value_);
-}
 
 void Framework::Initialize(int argc, char** argv) {
    auto workDir = GetCmdArg(argc, argv, CmdArgDef{
@@ -161,11 +157,11 @@ void Framework::Initialize(int argc, char** argv) {
    sysEnv->Add(new seed::SysEnvItem(fon9_kCSTR_MaPlugins, std::move(fname), std::string{}, std::move(desc)));
 
    // 透過 log 紀錄基本的執行環境.
-   LogSysEnv(sysEnv->Get(fon9_kCSTR_SysEnvItem_ProcessId));
-   LogSysEnv(sysEnv->Get(fon9_kCSTR_SysEnvItem_CommandLine));
-   LogSysEnv(sysEnv->Get(fon9_kCSTR_SysEnvItem_ExecPath));
-   LogSysEnv(sysEnv->Get(fon9_kCSTR_SysEnvItem_ConfigPath));
-   LogSysEnv(sysEnv->Get(fon9_kCSTR_HostId));
+   LogSysEnv(sysEnv->Get(fon9_kCSTR_SysEnvItem_ProcessId).get());
+   LogSysEnv(sysEnv->Get(fon9_kCSTR_SysEnvItem_CommandLine).get());
+   LogSysEnv(sysEnv->Get(fon9_kCSTR_SysEnvItem_ExecPath).get());
+   LogSysEnv(sysEnv->Get(fon9_kCSTR_SysEnvItem_ConfigPath).get());
+   LogSysEnv(sysEnv->Get(fon9_kCSTR_HostId).get());
 }
 
 void Framework::Start() {

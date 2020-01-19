@@ -15,6 +15,12 @@ enum class ExgMcRecoverRole : char {
    Primary = 'P',
    Secondary = 'S',
 };
+enum ExgMrState : uint8_t {
+   Linking,
+   LinkBroken,
+   ApReady,
+   Requesting,
+};
 
 /// 台灣期交所逐筆行情 回補 Session.
 /// 收到回補封包後, 直接轉給 ExgMcChannel;
@@ -22,17 +28,11 @@ class ExgMrRecoverSession : public fon9::io::Session, private ExgMcPkReceiver {
    fon9_NON_COPY_NON_MOVE(ExgMrRecoverSession);
    using base = fon9::io::Session;
    fon9::io::Device* Device_{};
+   fon9::CharVector  ApReadyMsg_;
    ExgMrMsgSeqNum_t  MsgSeqNum_{};
-   uint16_t          RequestCount_{0};
+   uint32_t          RequestCount_{0};
    ExgMrRecoverNum_t Recovering_{0};
-   char              Padding__[2];
-
-   enum State : uint8_t {
-      MrState_Linking,
-      MrState_LinkBroken,
-      MrState_ApReady,
-   };
-   State State_{MrState_Linking};
+   ExgMrState        State_{ExgMrState::Linking};
 
    /// 收到的回補封包, 直接轉給 ChannelMgr_;
    bool OnPkReceived(const void* pk, unsigned pksz) override;
@@ -59,10 +59,19 @@ public:
    }
    ~ExgMrRecoverSession();
 
-   uint16_t GetRequestCount() const {
+   uint32_t GetRequestCount() const {
       return this->RequestCount_;
    }
-   bool RequestMcRecover(ExgMrChannelId_t channelId, ExgMrMsgSeqNum_t from, ExgMrRecoverNum_t count);
+   fon9::io::Device* GetDevice() const {
+      return this->Device_;
+   }
+   ExgMrState GetState() const {
+      return this->State_;
+   }
+   /// \retval ExgMrState::Requesting 成功送出要求.
+   /// \retval ExgMrState::ApReady 有尚未完成的[回補要求], 須等上次的 [回補要求] 完成後才能再次要求回補.
+   /// \retval else 尚未連線成功.
+   ExgMrState RequestMcRecover(ExgMrChannelId_t channelId, ExgMrMsgSeqNum_t from, ExgMrRecoverNum_t count);
 };
 
 //--------------------------------------------------------------------------//
