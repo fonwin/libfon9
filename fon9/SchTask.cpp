@@ -125,6 +125,8 @@ __CHECK_TOMORROW:
    if (next < kNoEndTime) { // 有下次計時時間.
       res.NextCheckTime_ = TimeStampResetHHMMSS(now);
       res.NextCheckTime_ += TimeInterval_Second(next.Seconds_) - this->TimeZoneAdj_.ToTimeInterval();
+      if (res.NextCheckTime_.IsNullOrZero())
+         res.NextCheckTime_.SetOrigValue(1);
    }
    return res;
 }

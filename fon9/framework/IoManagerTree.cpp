@@ -98,7 +98,7 @@ void IoManagerTree::StartTimerForOpen(TimeInterval afterOpen) {
 }
 void IoManagerTree::EmitOnTimer(TimerEntry* timer, TimeStamp now) {
    IoManagerTree&    rthis = ContainerOf(*static_cast<Timer*>(timer), &IoManagerTree::Timer_);
-   TimeStamp         nextCheckTime;
+   TimeStamp         nextCheckTime = TimeStamp::Null();
    DeviceMap::Locker curmap{rthis.DeviceMap_};
    for (auto& item : *curmap) {
       bool isChanged = false;
@@ -115,8 +115,10 @@ void IoManagerTree::EmitOnTimer(TimerEntry* timer, TimeStamp now) {
             break;
          // 必須是 Enabled 才需檢查排程.
          auto res = item->Sch_.Check(now);
-         if (nextCheckTime == TimeStamp{} || nextCheckTime > res.NextCheckTime_)
-            nextCheckTime = res.NextCheckTime_;
+         if (!res.NextCheckTime_.IsNullOrZero()) {
+            if (nextCheckTime.IsNull() || nextCheckTime > res.NextCheckTime_)
+               nextCheckTime = res.NextCheckTime_;
+         }
          if (item->SchSt_ != res.SchSt_)
             item->SchSt_ = res.SchSt_;
          else {
@@ -146,7 +148,7 @@ void IoManagerTree::EmitOnTimer(TimerEntry* timer, TimeStamp now) {
    // 必須在 locked 狀態下啟動 timer,
    // 因為如果此時其他 thread 設定 TimerFor::Open; timer->RunAfter();
    // 然後才執行下面這行, 那時間就錯了!
-   if (nextCheckTime != TimeStamp{}) {
+   if (!nextCheckTime.IsNull()) {
       rthis.TimerFor_ = TimerFor::CheckSch;
       timer->RunAt(nextCheckTime);
    }

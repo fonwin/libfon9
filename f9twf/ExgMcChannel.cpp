@@ -376,7 +376,7 @@ void ExgMcChannel::PkContOnReceived(const void* pk, unsigned pksz, SeqT seq) {
    }
    else {
    __DISPATCH_AND_PkLog:
-      if (fon9_LIKELY(State_ != ExgMcChannelState::Waiting)) {
+      if (fon9_LIKELY(this->State_ != ExgMcChannelState::Waiting)) {
          ExgMcMessage e(*static_cast<const ExgMcHead*>(pk), pksz, *this, seq);
          this->DispatchMcMessage(e);
       }
@@ -462,6 +462,8 @@ struct ExgMcMessageHandler {
       ExgMcI083*    pI083 = nullptr;
       if (!rtch.IsSetupReloading_ && !rtch.UnsafeConsumers_.IsEmpty()) {
          // 轉發 ExgMcI083 訊息.
+         // TODO: 也許應改成選項, 選擇: I084._O_ 是否要轉發 I083 訊息?
+         // TODO: ToMiConv 可以直接訂閱 Channel 13,14 處理 I084._O_ 然後轉發 I080 封包.
          pI083 = reinterpret_cast<ExgMcI083*>(bufI083);
          *static_cast<ExgMcHead*>(pI083) = e.Pk_;
          pI083->MessageKind_ = 'B';
