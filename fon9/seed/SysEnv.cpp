@@ -63,9 +63,8 @@ void SysEnv::Initialize(int argc, char** argv) {
    this->Add(argc, argv, cwd);
    fon9_GCC_WARN_POP;
 
-   RevBufferFixedSize<128> rbuf;
-   RevPrint(rbuf, GetCurrentProcessId());
-   this->Add(new SysEnvItem{fon9_kCSTR_SysEnvItem_ProcessId, rbuf.ToStrT<std::string>()});
+   this->Add(new SysEnvItem{fon9_kCSTR_SysEnvItem_ProcessId, RevPrintTo<std::string>(GetCurrentProcessId())});
+   this->Add(new SysEnvItem{"StartTime", RevPrintTo<std::string>(LocalNow(), FmtTS{"K-T."})});
 }
 
 fon9_API StrView SysEnv_GetEnvValue(const MaTree& root, StrView envItemName, StrView sysEnvName) {
