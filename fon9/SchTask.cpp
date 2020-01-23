@@ -67,18 +67,18 @@ fon9_API void RevPrint(RevBuffer& rbuf, const SchConfig& schcfg) {
 
 //--------------------------------------------------------------------------//
 
-TimeStamp SchConfig::GetNextSchIn(TimeStamp now) const {
-   CheckResult res = this->Check(now);
-   if (res.SchSt_ == SchSt::OutSch) // 如果現在是 SchOut.
+TimeStamp SchConfig::GetNextSchIn(TimeStamp now, SchSt beforeSt) const {
+   CheckResult res = this->Check(now, beforeSt);
+   if (res.SchSt_ == SchSt::OutSch) // 如果 now 的結果是 SchOut.
       return res.NextCheckTime_;    // 則 NextCheckTime_ 就是 SchIn 的時間.
-   // 如果現在是 SchIn, 則 NextCheckTime_ 是 SchOut 的時間.
-   if (res.NextCheckTime_.GetOrigValue() == 0)
-      return res.NextCheckTime_;
+   // 如果 now 的結果是 SchIn, 則 NextCheckTime_ 是 SchOut 的時間.
+   if (res.NextCheckTime_.IsNullOrZero()) // 沒有 SchOut(沒有 EndTime_) 的時間.
+      return res.NextCheckTime_;          // => 沒有下次 SchIn 的時間.
    now.SetOrigValue(res.NextCheckTime_.GetOrigValue() + 1);
-   res = this->Check(now);
+   res = this->Check(now, beforeSt);
    return(res.SchSt_ == SchSt::InSch ? now : res.NextCheckTime_);
 }
-SchConfig::CheckResult SchConfig::Check(TimeStamp now) const {
+SchConfig::CheckResult SchConfig::Check(TimeStamp now, SchSt beforeSt) const {
    now += this->TimeZoneAdj_;
    CheckResult       res;
    const struct tm&  tm = GetDateTimeInfo(now);
@@ -86,8 +86,13 @@ SchConfig::CheckResult SchConfig::Check(TimeStamp now) const {
    DayTimeSec        next = kNoEndTime;
    size_t            wday = static_cast<size_t>(tm.tm_wday);
    if (this->StartTime_ < this->EndTime_) { // 開始-結束: 在同一天.
-      res.SchSt_ = (this->Weekdays_.test(wday) && (this->StartTime_ <= dnow && dnow <= this->EndTime_))
-                  ? SchSt::InSch : SchSt::OutSch;
+      if (this->EndTime_ == kNoEndTime && beforeSt == SchSt::InSch)
+         res.SchSt_ = SchSt::InSch;
+      else {
+         res.SchSt_ = ((this->Weekdays_.test(wday)
+                        && (this->StartTime_ <= dnow && dnow <= this->EndTime_))
+                       ? SchSt::InSch : SchSt::OutSch);
+      }
       if (res.SchSt_ == SchSt::InSch) // 排程時間內, 下次計時器=結束時間.
          next.Seconds_ = this->EndTime_.Seconds_ + 1;
       else if (this->Weekdays_.any()) { // 排程時間外, 今日尚未啟動: 下次計時器=(今日or次日)的開始時間.
@@ -128,6 +133,7 @@ __CHECK_TOMORROW:
       if (res.NextCheckTime_.IsNullOrZero())
          res.NextCheckTime_.SetOrigValue(1);
    }
+   res.IsChanged_ = ((beforeSt == SchSt::InSch) != (res.SchSt_ == SchSt::InSch));
    return res;
 }
 
@@ -148,10 +154,10 @@ void SchTask::Timer::EmitOnTimer(TimeStamp now) {
    case SchSt::Disposing:
       return;
    }
-   auto res = impl->Config_.Check(now);
+   auto res = impl->Config_.Check(now, bfSt);
    if (res.NextCheckTime_.GetOrigValue() != 0)
       sch.Timer_.RunAt(res.NextCheckTime_);
-   if ((bfSt == SchSt::InSch) != (res.SchSt_ == SchSt::InSch) || bfSt == SchSt::Restart) {
+   if (res.IsChanged_ || bfSt == SchSt::Restart) {
       impl->SchSt_ = res.SchSt_;
       impl.unlock();
       sch.OnSchTask_StateChanged(res.SchSt_ == SchSt::InSch);
@@ -210,8 +216,8 @@ SchSt SchTask::Start(const StrView& cfgstr) {
    case SchSt::Restart:
       return retval;
    }
-   auto  res = impl->Config_.Check(now);
-   if ((retval == SchSt::InSch) != (res.SchSt_ == SchSt::InSch)) {
+   auto  res = impl->Config_.Check(now, retval);
+   if (res.IsChanged_) {
       this->Timer_.RunAt(now + TimeInterval_Second(1));
       return(retval == SchSt::Unknown ? SchSt::Stopped : retval);
    }

@@ -259,8 +259,11 @@ void IoManager::UpdateDeviceStateLocked(io::Device& dev, const io::StateUpdatedA
          // 保留 Bookmark, 等 OnDevice_Destructing() 事件時, 將 item 刪除.
       }
       this->NotifyChanged(*item);
-      if (item->IsDeviceItem())
+      if (item->IsDeviceItem()) {
+         if (e.State_ == io::State::Disposing)
+            static_cast<DeviceItem*>(item)->SchSt_ = SchSt::Unknown;
          RevPrint(rbuf, "|cfgid=", static_cast<DeviceItem*>(item)->Id_);
+      }
    }
    static const LogLevel lvs[] {
       LogLevel::Trace, // Initializing,
@@ -417,17 +420,18 @@ void IoManager::MakeAcceptedClientTree(DeviceRun& serverItem, io::DeviceListener
       serverItem.Sapling_.reset(new AcceptedTree{std::move(listener)});
 }
 //--------------------------------------------------------------------------//
-bool IoManager::DeviceRun::DisposeDevice(TimeStamp now, StrView cause) {
+bool IoManager::DeviceItem::AsyncDisposeDevice(TimeStamp now, StrView cause) {
+   this->SchSt_ = SchSt::Unknown;
    if (this->Device_) {
       // 應該在 if (e.State_ == io::State::Disposing) 時清除 ManagerBookmark,
       // 否則會造成 this leak.
       // this->Device_->SetManagerBookmark(0);
       this->Device_->AsyncDispose(cause.ToString());
-      return false;
+      return true;
    }
    this->SessionSt_.clear();
    AssignStStr(this->DeviceSt_, now, cause);
-   return true;
+   return false;
 }
 
 } // namespaces

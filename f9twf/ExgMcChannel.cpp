@@ -468,6 +468,7 @@ struct ExgMcMessageHandler {
          *static_cast<ExgMcHead*>(pI083) = e.Pk_;
          pI083->MessageKind_ = 'B';
          fon9::ToPackBcd(pI083->ChannelId_,  rtch.GetChannelId());
+         // pI083->ChannelSeq_ 設為 0, 讓處理的人可以判斷此時的 I083 是從快照而來.
          fon9::ToPackBcd(pI083->ChannelSeq_, 0u);
          fon9::ToPackBcd(pI083->VersionNo_,  1u);
          // 試撮價格註記, '0':委託簿揭示訊息; '1':試撮後剩餘委託訊息.

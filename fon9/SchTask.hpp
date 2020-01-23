@@ -46,7 +46,10 @@ struct fon9_API SchConfig {
 
    struct CheckResult {
       TimeStamp NextCheckTime_;
+      /// Check() 之後的結果只會有 SchSt::InSch 或 SchSt::OutSch 兩種情形;
       SchSt     SchSt_;
+      /// this->IsChanged_ = ((beforeSt == SchSt::InSch) != (this->SchSt_ == SchSt::InSch));
+      bool      IsChanged_;
    };
 
    SchConfig() {
@@ -57,10 +60,15 @@ struct fon9_API SchConfig {
    }
 
    /// 檢查 now 是否在排程時間內 & 計算下次檢查時間.
-   CheckResult Check(TimeStamp now) const;
+   /// 必須知道 beforeSt 的情況:
+   /// - 只有 StartTime_, 沒有 EndTime_ 的排程.
+   CheckResult Check(TimeStamp now, SchSt beforeSt) const;
 
    /// 取得下次 SchIn 的時間.
-   TimeStamp GetNextSchIn(TimeStamp now) const;
+   /// - 如果 beforeSt != SchIn, 且 now 為 SchIn, 則返回 now;
+   /// - 如果 beforeSt == SchIn, 且 now 為 SchIn, 則返回下次 SchIn 的時間.
+   /// - 如果 beforeSt == SchIn, 且沒有 EndTime_, 則沒有下次 SchIn 的時間(返回 0).
+   TimeStamp GetNextSchIn(TimeStamp now, SchSt beforeSt) const;
 
    /// 設定一直都在時間內 & 沒有結束時間.
    /// - "Weekdays=0123456|Start=00:00:00|End=|TZ=本機localtime offset(GetLocalTimeZoneOffset())"

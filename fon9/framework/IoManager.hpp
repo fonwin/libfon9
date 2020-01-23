@@ -127,8 +127,6 @@ protected:
       bool IsDeviceItem() const {
          return this->AcceptedClientSeq_ == 0;
       }
-      /// return DeviceSt_ changed?
-      bool DisposeDevice(TimeStamp now, StrView cause);
    };
    static DeviceRun* FromManagerBookmark(io::Device& dev);
 
@@ -143,6 +141,10 @@ protected:
       }
       DeviceItem(StrView id, const IoConfigItem& cfg) : Id_{id}, Config_(cfg) {
       }
+      /// this->SchSt_ = SchSt::Unknown;
+      /// \retval true  this->Device_ != nullptr; 也就是有呼叫 this->Device_->AsyncDispose();
+      /// \retval false 清除 this->SessionSt_; 設定 this->DeviceSt_ = now + cause;
+      bool AsyncDisposeDevice(TimeStamp now, StrView cause);
    };
    using DeviceItemSP = intrusive_ptr<DeviceItem>;
 

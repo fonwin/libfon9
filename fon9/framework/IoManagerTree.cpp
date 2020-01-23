@@ -101,11 +101,11 @@ void IoManagerTree::EmitOnTimer(TimerEntry* timer, TimeStamp now) {
    TimeStamp         nextCheckTime = TimeStamp::Null();
    DeviceMap::Locker curmap{rthis.DeviceMap_};
    for (auto& item : *curmap) {
-      bool isChanged = false;
+      bool isStMessageChanged = false;
       switch (rthis.TimerFor_) {
       case TimerFor::Open:
          if (item->Config_.Enabled_ != EnabledYN::Yes) {
-            isChanged = item->DisposeDevice(now, "Disabled");
+            isStMessageChanged = !item->AsyncDisposeDevice(now, "Disabled");
             break;
          }
          // 不用 break; 檢查 item 是否在時間排程內.
@@ -114,7 +114,7 @@ void IoManagerTree::EmitOnTimer(TimerEntry* timer, TimeStamp now) {
          if (item->Config_.Enabled_ != EnabledYN::Yes)
             break;
          // 必須是 Enabled 才需檢查排程.
-         auto res = item->Sch_.Check(now);
+         auto res = item->Sch_.Check(now, item->SchSt_);
          if (!res.NextCheckTime_.IsNullOrZero()) {
             if (nextCheckTime.IsNull() || nextCheckTime > res.NextCheckTime_)
                nextCheckTime = res.NextCheckTime_;
@@ -135,14 +135,14 @@ void IoManagerTree::EmitOnTimer(TimerEntry* timer, TimeStamp now) {
                // 設為 SchSt::Unknown, 讓下次檢查 sch 時, 再 CheckOpenDevice() 一次.
                item->SchSt_ = SchSt::Unknown;
             }
-            isChanged = true;
+            isStMessageChanged = true;
          }
          else {
-            isChanged = item->DisposeDevice(now, "Out of schedule");
+            isStMessageChanged = !item->AsyncDisposeDevice(now, "Out of schedule");
          }
          break;
       }
-      if (isChanged)
+      if (isStMessageChanged)
          rthis.NotifyChanged(*item);
    }
    // 必須在 locked 狀態下啟動 timer,
@@ -169,6 +169,7 @@ void IoManagerTree::DisposeAndReopen(std::string cause, TimeInterval afterReopen
 void IoManagerTree::DisposeDevices(std::string cause) {
    DeviceMap::Locker map{this->DeviceMap_};
    for (auto& i : *map) {
+      i->SchSt_ = SchSt::Unknown;
       if (io::Device* dev = i->Device_.get())
          dev->AsyncDispose(cause);
    }
@@ -281,7 +282,7 @@ struct IoManagerTree::TreeOp : public seed::TreeOp {
       if (!oldmap.empty()) {
          TimeStamp now = UtcNow();
          for (auto& i : oldmap) {
-            i->DisposeDevice(now, "Removed from ApplySubmit");
+            i->AsyncDisposeDevice(now, "Removed from ApplySubmit");
             // StatusSubj_ 使用 [整表] 通知: seed::SeedSubj_TableChanged();
             // 所以這裡就不用樹發 PodRemoved() 事件了.
             // seed::SeedSubj_NotifyPodRemoved(static_cast<IoManagerTree*>(&this->Tree_)->StatusSubj_, this->Tree_, ToStrView(i->Id_));
@@ -346,8 +347,7 @@ void IoManagerTree::Apply(const seed::Fields& flds, StrView src, DeviceMapImpl& 
          if (!isNewItem) {
             if (item->Config_ == this->OldCfg_)
                return;
-            item->DisposeDevice(this->Now_, "Config changed");
-            item->SchSt_ = SchSt::Unknown;
+            item->AsyncDisposeDevice(this->Now_, "Config changed");
          }
          item->Sch_.Parse(ToStrView(item->Config_.SchArgs_));
       }

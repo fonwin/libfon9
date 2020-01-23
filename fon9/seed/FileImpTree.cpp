@@ -179,7 +179,7 @@ TimeInterval FileImpSeed::MonitorCheck(ConfigLocker&& lk, TimeStamp now) {
    case FileImpMonitorFlag::AddTail:
    case FileImpMonitorFlag::Reload:
       SchConfig schcfg{ToStrView(this->SchCfgStr_)};
-      auto      schres = schcfg.Check(now);
+      auto      schres = schcfg.Check(now, SchSt::Unknown);
       if (schres.SchSt_ != SchSt::InSch)
          return TimeInterval_Second(1);
 

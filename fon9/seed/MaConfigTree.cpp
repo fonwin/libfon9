@@ -163,7 +163,7 @@ void MaConfigSeed_SchTask::OnConfigValueChanged(MaConfigTree::Locker&& lk, StrVi
 }
 TimeStamp MaConfigSeed_SchTask::GetNextSchInTime() {
    SchImpl::Locker schImpl{this->SchImpl_};
-   return schImpl->Config_.GetNextSchIn(UtcNow());
+   return schImpl->Config_.GetNextSchIn(UtcNow(), schImpl->SchSt_);
 }
 void MaConfigSeed_SchTask::SetNextTimeInfo(TimeStamp tmNext, StrView exInfo) {
    RevBufferFixedSize<sizeof(NumOutBuf) * 2>  strNextTime;
