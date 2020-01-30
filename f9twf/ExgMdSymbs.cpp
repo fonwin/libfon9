@@ -36,7 +36,10 @@ fon9::seed::LayoutSP ExgMdSymb::MakeLayout() {
 }
 void ExgMdSymb::DailyClear(unsigned tdayYYYYMMDD) {
    this->TDayYYYYMMDD_ = tdayYYYYMMDD;
-   this->TradingSessionId_ = f9fmkt_TradingSessionId_Normal;
+   this->SessionClear(f9fmkt_TradingSessionId_Normal);
+}
+void ExgMdSymb::SessionClear(f9fmkt_TradingSessionId tsesId) {
+   this->TradingSessionId_ = tsesId;
    this->FlowGroup_ = 0;
    this->ExgSymbSeq_ = 0;
    this->Ref_.DailyClear();

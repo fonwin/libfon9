@@ -106,14 +106,8 @@ void ExgMcChannel::ReloadDispatch(SeqT fromSeq) {
       this->State_ = ExgMcChannelState::Running;
 }
 void ExgMcChannel::OnBasicInfoCycled() {
-   if (!IsEnumContains(this->Style_, ExgMcChannelStyle::WaitBasic)
-       || this->State_ != ExgMcChannelState::Waiting)
-      return;
-   if (IsEnumContains(this->Style_, ExgMcChannelStyle::WaitSnapshot)) {
-      if (!this->ChannelMgr_->IsSnapshotDone(*this))
-         return;
-   }
-   this->ReloadDispatch(0);
+   if (IsEnumContains(this->Style_, ExgMcChannelStyle::WaitBasic))
+      this->ReloadDispatch(0);
 }
 void ExgMcChannel::OnSnapshotDone(SeqT lastRtSeq) {
    if (IsEnumContains(this->Style_, ExgMcChannelStyle::WaitSnapshot)
@@ -404,7 +398,6 @@ void ExgMcChannel::NotifyConsumers(ExgMcMessage& e) {
 struct ExgMcMessageHandler {
    static void I010BasicInfoParser(ExgMcMessage& e) {
       auto& pk = *static_cast<const ExgMcI010*>(&e.Pk_);
-      // auto  time = pk.InformationTime_.ToDayTime();
       auto* symbs = e.Channel_.ChannelMgr_->Symbs_.get();
       auto  locker = symbs->SymbMap_.Lock();
       auto& symb = *static_cast<ExgMdSymb*>(symbs->FetchSymb(locker, fon9::StrView_eos_or_all(pk.ProdId_.Chars_, ' ')).get());
@@ -412,7 +405,6 @@ struct ExgMcMessageHandler {
       if (!symb.CheckSetTradingSessionId(e.Channel_.ChannelMgr_->TradingSessionId_))
          return;
       symb.TradingMarket_ = (pk.TransmissionCode_ == '1' ? f9fmkt_TradingMarket_TwFUT : f9fmkt_TradingMarket_TwOPT);
-      // symb.TradingSessionId_; 也許 ChannelMgr_ 增加 TradingSessionId_; 或可用 FlowGroup 來判斷?
       symb.FlowGroup_ = fon9::PackBcdTo<fon9::fmkt::SymbFlowGroup_t>(pk.FlowGroup_);
       symb.PriceOrigDiv_ = static_cast<uint32_t>(fon9::GetDecDivisor(
          static_cast<uint8_t>(fon9::fmkt::Pri::Scale - fon9::PackBcdTo<uint8_t>(pk.DecimalLocator_))));

@@ -34,6 +34,7 @@ public:
    fon9::fmkt::SymbData* FetchSymbData(int tabid) override;
 
    void DailyClear(unsigned tdayYYYYMMDD);
+   void SessionClear(f9fmkt_TradingSessionId tsesId);
 
    /// 檢查並設定 TradingSessionId.
    /// \retval true
@@ -48,7 +49,7 @@ public:
          return true;
       if (this->TradingSessionId_ == f9fmkt_TradingSessionId_AfterHour)
          return false;
-      this->TradingSessionId_ = tsesId;
+      this->SessionClear(tsesId);
       return true;
    }
 
