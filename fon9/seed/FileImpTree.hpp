@@ -156,6 +156,9 @@ class fon9_API FileImpMgr : public MaConfigSeed_SchTask, public MaConfigMgrBase 
    fon9_NON_COPY_NON_MOVE(FileImpMgr);
    using base = MaConfigSeed_SchTask;
 
+   void MaConfigMgr_AddRef() override;
+   void MaConfigMgr_Release() override;
+
    static void OnMonitorTimer(TimerEntry* timer, TimeStamp now);
    DataMemberEmitOnTimer<&FileImpMgr::OnMonitorTimer> MonitorTimer_;
 
@@ -169,16 +172,16 @@ protected:
 
 public:
    template <class... ArgsT>
-   FileImpMgr(FileImpTreeSP sapling, ArgsT&&... args)
+   FileImpMgr(ArgsT&&... args)
       : base(std::forward<ArgsT>(args)...)
-      , MaConfigMgrBase{std::move(sapling)} {
+      , MaConfigMgrBase{} {
    }
 
    ~FileImpMgr();
 
    FileImpTree& GetFileImpSapling() const {
-      assert(dynamic_cast<FileImpTree*>(this->Sapling_.get()) != nullptr);
-      return *static_cast<FileImpTree*>(this->Sapling_.get());
+      assert(dynamic_cast<FileImpTree*>(&this->GetConfigSapling()) != nullptr);
+      return *static_cast<FileImpTree*>(&this->GetConfigSapling());
    }
 
    TreeSP GetSapling() override;

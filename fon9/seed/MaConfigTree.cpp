@@ -18,7 +18,11 @@ fon9_API void RevPrintConfigGridView(RevBuffer& rbuf, const Fields& flds,
 
 //--------------------------------------------------------------------------//
 
+void MaConfigSeed::Ctor() {
+   this->OwnerTree_.ConfigMgr_.MaConfigMgr_AddRef();
+}
 MaConfigSeed::~MaConfigSeed() {
+   this->OwnerTree_.ConfigMgr_.MaConfigMgr_Release();
 }
 LayoutSP MaConfigSeed::MakeLayout(std::string tabName, TabFlag tabFlag) {
    Fields fields;
@@ -135,10 +139,16 @@ void MaConfigMgrBase::BindConfigFile(MaConfigMgrBase& rthis, NamedSeed& named, s
 MaConfigMgr::~MaConfigMgr() {
 }
 TreeSP MaConfigMgr::GetSapling() {
-   return this->Sapling_;
+   return &this->GetConfigSapling();
 }
 StrView MaConfigMgr::Name() const {
    return &this->Name_;
+}
+void MaConfigMgr::MaConfigMgr_AddRef() {
+   intrusive_ptr_add_ref(this);
+}
+void MaConfigMgr::MaConfigMgr_Release() {
+   intrusive_ptr_release(this);
 }
 
 //--------------------------------------------------------------------------//

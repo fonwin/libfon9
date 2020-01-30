@@ -5,19 +5,25 @@
 #include "fon9/DefaultThreadPool.hpp"
 #include <sys/stat.h>
 
-namespace fon9 {
-namespace seed {
+namespace fon9 { namespace seed {
 
 FileImpMgr::~FileImpMgr() {
    this->MonitorTimer_.DisposeAndWait();
    this->DisposeAndWait();
 }
 TreeSP FileImpMgr::GetSapling() {
-   return this->Sapling_;
+   return &this->GetConfigSapling();
 }
 StrView FileImpMgr::Name() const {
    return &this->Name_;
 }
+void FileImpMgr::MaConfigMgr_AddRef() {
+   intrusive_ptr_add_ref(this);
+}
+void FileImpMgr::MaConfigMgr_Release() {
+   intrusive_ptr_release(this);
+}
+
 void FileImpMgr::OnSeedCommand(SeedOpResult&          res,
                                StrView                cmdln,
                                FnCommandResultHandler resHandler,
@@ -43,7 +49,7 @@ void FileImpMgr::LoadAll() {
    this->MonitorTimer_.StopAndWait();
    fon9_LOG_INFO("FileImpMgr|Info=LoadAll.Start"
                  "|Name=", this->OwnerTree_.ConfigMgr_.Name(), '/', this->Name_);
-   static_cast<FileImpTree*>(this->Sapling_.get())->LoadAll();
+   this->GetFileImpSapling().LoadAll();
    this->SetNextTimeInfo(this->GetNextSchInTime(), "LoadAll.Done");
    this->MonitorTimer_.RunAfter(TimeInterval_Second(1));
 }

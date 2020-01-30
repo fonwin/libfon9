@@ -119,12 +119,11 @@ protected:
    virtual void OnP08Updated(const P08Recs& p08recs, ExgSystemType sysType, Maps::ConstLocker&& lk);
 
 public:
-   fon9_MSC_WARN_DISABLE(4355); // 'this': used in base member initializer list.
    template <class... ArgsT>
    ExgMapMgr(ArgsT&&... args)
-      : base(MakeSapling(*this), std::forward<ArgsT>(args)...) {
+      : base(std::forward<ArgsT>(args)...) {
+      this->SetConfigSapling(MakeSapling(*this));
    }
-   fon9_MSC_WARN_POP;
 
    BrkId GetBrkId(FcmId id) const {
       Maps::ConstLocker maps{this->Maps_};

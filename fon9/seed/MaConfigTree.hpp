@@ -65,6 +65,7 @@ fon9_WARN_POP;
 class fon9_API MaConfigSeed : public NamedSeed {
    fon9_NON_COPY_NON_MOVE(MaConfigSeed);
    using base = NamedSeed;
+   void Ctor();
 
 protected:
    CharVector  Value_;
@@ -86,8 +87,8 @@ public:
    MaConfigSeed(MaConfigTree& configTree, NamedArgsT&&... namedargs)
       : base(std::forward<NamedArgsT>(namedargs)...)
       , OwnerTree_(configTree) {
+      this->Ctor();
    }
-
    ~MaConfigSeed();
 
    static LayoutSP MakeLayout(std::string tabName, TabFlag tabFlag = TabFlag::NoSapling_NoSeedCommand_Writable);
@@ -104,13 +105,16 @@ public:
 
 class fon9_API MaConfigMgrBase {
    fon9_NON_COPY_NON_MOVE(MaConfigMgrBase);
-
-public:
-   const MaConfigTreeSP Sapling_;
-
-   MaConfigMgrBase(MaConfigTreeSP sapling) : Sapling_(std::move(sapling)) {
+   MaConfigTreeSP Sapling_;
+protected:
+   /// 衍生者必須在建構完成前設定.
+   void SetConfigSapling(MaConfigTreeSP sapling) {
+      assert(this->Sapling_.get() == nullptr);
+      this->Sapling_ = std::move(sapling);
    }
 
+public:
+   MaConfigMgrBase() = default;
    virtual ~MaConfigMgrBase();
 
    MaConfigTree& GetConfigSapling() const {
@@ -118,6 +122,8 @@ public:
       return *this->Sapling_;
    }
    virtual StrView Name() const = 0;
+   virtual void MaConfigMgr_AddRef() = 0;
+   virtual void MaConfigMgr_Release() = 0;
 
    static void BindConfigFile(MaConfigMgrBase& rthis, NamedSeed& named, std::string cfgfn, bool isFireEvent);
 };
@@ -125,21 +131,21 @@ public:
 class fon9_API MaConfigMgr : public NamedSeed, public MaConfigMgrBase {
    fon9_NON_COPY_NON_MOVE(MaConfigMgr);
    using SeedBase = NamedSeed;
+   void MaConfigMgr_AddRef() override;
+   void MaConfigMgr_Release() override;
 
 public:
    template <class... NamedArgsT>
-   MaConfigMgr(MaConfigTreeSP sapling, NamedArgsT&&... namedargs)
+   MaConfigMgr(NamedArgsT&&... namedargs)
       : SeedBase(std::forward<NamedArgsT>(namedargs)...)
-      , MaConfigMgrBase(std::move(sapling)) {
+      , MaConfigMgrBase{} {
    }
 
-   fon9_MSC_WARN_DISABLE(4355); // 'this': used in base member initializer list.
    template <class... NamedArgsT>
    MaConfigMgr(LayoutSP layout, NamedArgsT&&... namedargs)
-      : MaConfigMgr(new MaConfigTree(*this, std::move(layout)), std::forward<NamedArgsT>(namedargs)...) {
+      : MaConfigMgr(std::forward<NamedArgsT>(namedargs)...) {
+      this->SetConfigSapling(new MaConfigTree(*this, std::move(layout)));
    }
-   fon9_MSC_WARN_POP;
-
 
    ~MaConfigMgr();
 
