@@ -259,10 +259,10 @@ f9sv_Unsubscribe(f9rc_ClientSession* ses, const f9sv_SeedName* seedName);
 /// 將欄位轉成文字, 尾端填入 EOS, 若緩衝區不足, 則僅顯示部分內容.
 /// *bufsz 傳回包含 EOS 需要的資料量.
 f9sv_CAPI_FN(const char*)
-f9sv_GetField_Str(struct f9sv_Seed* seed, const f9sv_Field* fld, char* outbuf, unsigned* bufsz);
+f9sv_GetField_Str(const struct f9sv_Seed* seed, const f9sv_Field* fld, char* outbuf, unsigned* bufsz);
 
 inline const char*
-f9sv_GetField_StrN(struct f9sv_Seed* seed, const f9sv_Field* fld, char* outbuf, unsigned bufsz) {
+f9sv_GetField_StrN(const struct f9sv_Seed* seed, const f9sv_Field* fld, char* outbuf, unsigned bufsz) {
    return f9sv_GetField_Str(seed, fld, outbuf, &bufsz);
 }
 

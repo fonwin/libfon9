@@ -986,6 +986,9 @@
     <ClInclude Include="..\..\..\fon9\FileReadAll.hpp">
       <Filter>Header Files\_base\_File</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\CTools.h">
+      <Filter>Header Files\_base\_Tools / Utility</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -1595,6 +1598,9 @@
       <Filter>Source Files\rc</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\PkReceiver.cpp">
+      <Filter>Source Files\_base\_Tools / Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\CTools.c">
       <Filter>Source Files\_base\_Tools / Utility</Filter>
     </ClCompile>
   </ItemGroup>

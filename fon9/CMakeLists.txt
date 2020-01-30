@@ -24,6 +24,7 @@ set(fon9src
  ErrC.cpp
  Outcome.cpp
  Tools.cpp
+ CTools.c
  Named.cpp
  Blob.c
  ByteVector.cpp

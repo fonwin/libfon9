@@ -393,7 +393,7 @@ f9sv_Query(f9rc_ClientSession* ses, const f9sv_SeedName* seedName, f9sv_ReportHa
 //--------------------------------------------------------------------------//
 
 f9sv_CAPI_FN(const char*)
-f9sv_GetField_Str(struct f9sv_Seed* seed, const f9sv_Field* fld, char* outbuf, unsigned* bufsz) {
+f9sv_GetField_Str(const struct f9sv_Seed* seed, const f9sv_Field* fld, char* outbuf, unsigned* bufsz) {
    assert(reinterpret_cast<const fon9::seed::Field*>(fld->InternalOwner_)->GetIndex() == fld->Named_.Index_);
    fon9::RevBufferList rbuf{128};
    reinterpret_cast<const fon9::seed::Field*>(fld->InternalOwner_)

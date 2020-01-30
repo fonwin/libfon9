@@ -126,6 +126,7 @@
     <ClInclude Include="..\..\..\fon9\crypto\CryptoTools.hpp" />
     <ClInclude Include="..\..\..\fon9\crypto\Sha1.hpp" />
     <ClInclude Include="..\..\..\fon9\crypto\Sha256.hpp" />
+    <ClInclude Include="..\..\..\fon9\CTools.h" />
     <ClInclude Include="..\..\..\fon9\DllHandle.hpp" />
     <ClInclude Include="..\..\..\fon9\DyObj.hpp" />
     <ClInclude Include="..\..\..\fon9\Endian.hpp" />
@@ -395,6 +396,7 @@
     <ClCompile Include="..\..\..\fon9\ConsoleIO.cpp" />
     <ClCompile Include="..\..\..\fon9\crypto\Sha1.cpp" />
     <ClCompile Include="..\..\..\fon9\crypto\Sha256.cpp" />
+    <ClCompile Include="..\..\..\fon9\CTools.c" />
     <ClCompile Include="..\..\..\fon9\DllHandle.cpp" />
     <ClCompile Include="..\..\..\fon9\ErrC.cpp" />
     <ClCompile Include="..\..\..\fon9\FdrNotify.cpp" />
