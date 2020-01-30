@@ -106,16 +106,16 @@ public:
 class fon9_API MaConfigMgrBase {
    fon9_NON_COPY_NON_MOVE(MaConfigMgrBase);
    MaConfigTreeSP Sapling_;
-protected:
-   /// 衍生者必須在建構完成前設定.
-   void SetConfigSapling(MaConfigTreeSP sapling) {
-      assert(this->Sapling_.get() == nullptr);
-      this->Sapling_ = std::move(sapling);
-   }
 
 public:
    MaConfigMgrBase() = default;
    virtual ~MaConfigMgrBase();
+
+   /// 衍生者(使用者)必須在建構完成時設定.
+   void SetConfigSapling(MaConfigTreeSP sapling) {
+      assert(this->Sapling_.get() == nullptr);
+      this->Sapling_ = std::move(sapling);
+   }
 
    MaConfigTree& GetConfigSapling() const {
       assert(this->Sapling_.get() != nullptr);
