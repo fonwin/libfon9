@@ -6,7 +6,7 @@
 
 namespace fon9 { namespace seed {
 
-class fon9_API PodOp {
+class fon9_API PodOp : public SubscribableOp {
    fon9_NON_COPY_NON_MOVE(PodOp);
 protected:
    virtual ~PodOp();

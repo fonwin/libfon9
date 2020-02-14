@@ -34,7 +34,7 @@ TreeSP SeedSearcher::ContinueTree(PodOp& opPod, Tab& tab) {
    return opPod.GetSapling(tab);
 }
 void SeedSearcher::ContinuePod(TreeOp& opTree, StrView keyText, StrView tabName) {
-   Tab* tab = tabName.empty() ? opTree.Tree_.LayoutSP_->GetTab(0) : opTree.Tree_.LayoutSP_->GetTab(tabName);
+   Tab* tab = opTree.Tree_.LayoutSP_->GetTabByNameOrFirst(tabName);
    if (tab) {
       if (this->RemainPath_.empty())
          this->OnLastStep(opTree, keyText, *tab);

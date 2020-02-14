@@ -107,6 +107,9 @@ class ConsoleSeedSession : public fon9::SeedSession {
       fon9::RevBufferList rbuf{256};
       RevPutChar(rbuf, '\n');
       switch (args.NotifyType_) {
+      case fon9::seed::SeedNotifyArgs::NotifyType::SubscribeOK:
+         RevPrint(rbuf, "|SubscribeOK");
+         break;
       case fon9::seed::SeedNotifyArgs::NotifyType::PodRemoved:
          RevPrint(rbuf, "|PodRemoved");
          break;
@@ -311,7 +314,7 @@ int fon9::Fon9CoRun(int argc, char** argv, int (*fnBeforeStart)(fon9::Framework&
       }
    }
    fon9_LOG_IMP("main.quit|cause=console:", AppBreakMsg_);
-   puts(AppBreakMsg_);
+   printf("fon9: %s\n", AppBreakMsg_);
    AppBreakMsg_ = nullptr;
    fon9sys.DisposeForAppQuit();
    return retval;

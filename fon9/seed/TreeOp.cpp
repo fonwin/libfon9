@@ -4,6 +4,15 @@
 
 namespace fon9 { namespace seed {
 
+SubscribableOp::~SubscribableOp() {
+}
+OpResult SubscribableOp::Subscribe(SubConn* pSubConn, Tab&, FnSeedSubr) {
+   return SubscribeUnsupported(pSubConn);
+}
+OpResult SubscribableOp::Unsubscribe(SubConn, Tab&) {
+   return OpResult::not_supported_subscribe;
+}
+
 TreeOp::~TreeOp() {
 }
 void TreeOp::Remove(StrView strKeyText, Tab* tab, FnPodRemoved fnCallback) {
@@ -25,13 +34,6 @@ void TreeOp::GridView(const GridViewRequest& req, FnGridViewOp fnCallback) {
 void TreeOp::GridApplySubmit(const GridApplySubmitRequest& req, FnCommandResultHandler fnCallback) {
    SeedOpResult res{this->Tree_, OpResult::not_supported_grid_apply, StrView{}, req.Tab_};
    fnCallback(res, StrView{});
-}
-
-OpResult TreeOp::Subscribe(SubConn* pSubConn, Tab&, SeedSubr) {
-   return this->SubscribeUnsupported(pSubConn);
-}
-OpResult TreeOp::Unsubscribe(SubConn) {
-   return OpResult::not_supported_subscribe;
 }
 
 } } // namespaces

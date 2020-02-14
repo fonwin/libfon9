@@ -22,7 +22,8 @@ struct CmpNamedSeedSP {
    bool operator()(const StrView& lhs, const NamedSeedSP& rhs) const;
 };
 using NamedSeedContainerImpl = SortedVectorSet<NamedSeedSP, CmpNamedSeedSP>;
-using MaTreeBase = TreeLockContainerT<NamedSeedContainerImpl>;
+// 若在 opTree 有提供訂閱, 在訂閱成功時, 可能會需要取得 gv, 因此需要使用 recursive_mutex;
+using MaTreeBase = TreeLockContainerT<NamedSeedContainerImpl, std::recursive_mutex>;
 
 /// \ingroup seed
 /// 在 fon9 裡面, 通常會將一組相關物件集中, 然後用 **物件名字** 來管理, 例:

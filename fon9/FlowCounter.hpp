@@ -109,6 +109,9 @@ public:
       Locker lk{*this};
       return this->IsNeedsLock_ = lk->Resize(count, timeUnit);
    }
+   bool Resize(const FlowCounterArgs& args) {
+      return this->Resize(args.FcCount_, TimeInterval_Millisecond(args.FcTimeMS_));
+   }
    TimeInterval Check() {
       return (this->IsNeedsLock_ ? Locker{*this}->Check() : TimeInterval{});
    }

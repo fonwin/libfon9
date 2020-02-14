@@ -192,7 +192,9 @@ void TicketRunner::OnError(OpResult res) {
 }
 void TicketRunner::OnLastStep(TreeOp& op, StrView keyText, Tab& tab) {
    this->RemainPath_.SetBegin(keyText.begin());
-   op.Get(keyText, std::bind(&TicketRunner::OnLastSeedOp, this, std::placeholders::_1, std::placeholders::_2, std::ref(tab)));
+   op.Get(keyText, std::bind(&TicketRunner::OnLastSeedOp,
+                             intrusive_ptr<TicketRunner>(this),
+                             std::placeholders::_1, std::placeholders::_2, std::ref(tab)));
 }
 void TicketRunner::Run() {
    if (this->Root_)

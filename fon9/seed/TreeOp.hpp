@@ -79,30 +79,6 @@ using ContainerIterator = conditional_t<std::is_const<Container>::value,
    typename Container::const_iterator,
    typename Container::iterator>;
 
-/// 當用此當作 OnPodOp(), OnPodOpRange() 的參數時, 則表示 container->begin();
-static constexpr const char* const  kStrKeyText_Begin_ = nullptr;
-static constexpr StrView TextBegin() {
-   return StrView{kStrKeyText_Begin_, static_cast<size_t>(0)};
-}
-static constexpr bool IsTextBegin(const StrView& k) {
-   return k.begin() == kStrKeyText_Begin_;
-}
-
-/// 當用此當作 OnPodOp(), OnPodOpRange() 的參數時, 則表示 container->end();
-/// 也可用在支援 append 的 Tree, 例: AddPod(StrView{TreeOp::kStrKeyText_End_,0}); 用來表示 append.
-static constexpr const char* const  kStrKeyText_End_ = reinterpret_cast<const char*>(-1);
-static constexpr StrView TextEnd() {
-   return StrView{kStrKeyText_End_, static_cast<size_t>(0)};
-}
-static constexpr bool IsTextEnd(const StrView& k) {
-   // return k.begin() == kStrKeyText_End_; 這樣寫, VC 不允許: C3249: illegal statement or sub-expression for 'constexpr' function
-   return reinterpret_cast<intptr_t>(k.begin()) == reinterpret_cast<intptr_t>(kStrKeyText_End_);
-}
-
-static constexpr bool IsTextBeginOrEnd(const StrView& k) {
-   return IsTextBegin(k) || IsTextEnd(k);
-}
-
 //--------------------------------------------------------------------------//
 
 struct GridViewRequest {
@@ -242,6 +218,26 @@ static Iterator GetIteratorForPod(Container& container, StrView strKeyText) {
 
 //--------------------------------------------------------------------------//
 
+class fon9_API SubscribableOp {
+   fon9_NON_COPY_NON_MOVE(SubscribableOp);
+protected:
+   virtual ~SubscribableOp();
+
+public:
+   SubscribableOp() = default;
+
+   /// 訂閱異動通知.
+   virtual OpResult Subscribe(SubConn* pSubConn, Tab& tab, FnSeedSubr subr);
+
+   /// 取消異動通知.
+   virtual OpResult Unsubscribe(SubConn subConn, Tab& tab);
+};
+
+inline OpResult SubscribeUnsupported(SubConn* pSubConn) {
+   *pSubConn = nullptr;
+   return OpResult::not_supported_subscribe;
+}
+
 /// \ingroup seed
 /// Tree 的(管理)操作不是放在 class Tree's methods? 因為:
 /// - 無法在操作前知道如何安全的操作 tree:
@@ -251,7 +247,7 @@ static Iterator GetIteratorForPod(Container& container, StrView strKeyText) {
 /// - 必須透過 Tree::OnTreeOp(FnOnTreeOp fnCallback);
 ///   - 然後在 fnCallback(OpResult res, TreeOp* op) 裡面,
 ///   - 對 op 進行操作(thread safe).
-class fon9_API TreeOp {
+class fon9_API TreeOp : public SubscribableOp {
    fon9_NON_COPY_NON_MOVE(TreeOp);
 protected:
    virtual ~TreeOp();
@@ -279,16 +275,6 @@ public:
    ///   - 或不支援.
    ///   - 由實作者決定.
    virtual void Remove(StrView strKeyText, Tab* tab, FnPodRemoved fnCallback);
-
-   /// 訂閱異動通知.
-   virtual OpResult Subscribe(SubConn* pSubConn, Tab& tab, SeedSubr subr);
-   static OpResult SubscribeUnsupported(SubConn* pSubConn) {
-      *pSubConn = nullptr;
-      return OpResult::not_supported_subscribe;
-   }
-
-   /// 取消異動通知.
-   virtual OpResult Unsubscribe(SubConn pSubConn);
 };
 fon9_WARN_POP;
 
@@ -328,6 +314,9 @@ void GetPod(TreeT& sender, Container& container, Iterator ivalue, StrView strKey
 /// \ingroup seed
 /// 將欄位字串輸出到 rbuf, 每個欄位前都會加上 chSplitter 字元.
 fon9_API void FieldsCellRevPrint(const Fields& fields, const RawRd& rd, RevBuffer& rbuf, char chSplitter = GridViewResult::kCellSplitter);
+/// \ingroup seed
+/// 將欄位字串輸出到 rbuf, 除了第0個欄位, 其餘每個欄位前都會加上 chSplitter 字元.
+fon9_API void FieldsCellRevPrint0NoSpl(const Fields& fields, const RawRd& rd, RevBuffer& rbuf, char chSplitter = GridViewResult::kCellSplitter);
 
 template <class Iterator>
 void SimpleMakeRowView(Iterator ivalue, Tab* tab, RevBuffer& rbuf) {

@@ -87,10 +87,9 @@ struct PluginsMgr::PluginsTree : public Tree {
    PluginsRecs       PluginsRecs_;
    const MaTreeSP    Root_;
    ConfigFileBinder  ConfigFileBinder_;
-
-   SeedSubj SeedSubj_;
+   UnsafeSeedSubj    TreeSubj_;
    void SeedNotify(const PluginsRec& rec) {
-      SeedSubj_Notify(this->SeedSubj_, *this, *this->LayoutSP_->GetTab(0), ToStrView(rec.Id_), rec);
+      SeedSubj_Notify(this->TreeSubj_, *this, *this->LayoutSP_->GetTab(0), ToStrView(rec.Id_), rec);
    }
 
    struct PodOp : public PodOpDefault {
@@ -147,7 +146,7 @@ struct PluginsMgr::PluginsTree : public Tree {
          }
          fnCallback(res);
          if (res.OpResult_ == OpResult::removed_pod)
-            SeedSubj_NotifyPodRemoved(static_cast<PluginsTree*>(&this->Tree_)->SeedSubj_, this->Tree_, strKeyText);
+            SeedSubj_NotifyPodRemoved(static_cast<PluginsTree*>(&this->Tree_)->TreeSubj_, this->Tree_, strKeyText);
       }
       void OnPodOp(PluginsRec& rec, FnPodOp&& fnCallback, bool isForceWrite = false) {
          PodOp op{rec, this->Tree_};
@@ -177,13 +176,15 @@ struct PluginsMgr::PluginsTree : public Tree {
          }
          this->OnPodOp(**ifind, std::move(fnCallback), isForceWrite);
       }
-      OpResult Subscribe(SubConn* pSubConn, Tab& tab, SeedSubr subr) override {
-         (void)tab; assert(&tab == this->Tree_.LayoutSP_->GetTab(0));
-         *pSubConn = static_cast<PluginsTree*>(&this->Tree_)->SeedSubj_.Subscribe(subr);
+      OpResult Subscribe(SubConn* pSubConn, Tab& tab, FnSeedSubr subr) override {
+         assert(&tab == this->Tree_.LayoutSP_->GetTab(0));
+         static_cast<PluginsTree*>(&this->Tree_)->TreeSubj_.Subscribe(pSubConn, subr);
+         subr(SeedNotifySubscribeOK{*this, tab, TextBegin(), nullptr});
          return OpResult::no_error;
       }
-      OpResult Unsubscribe(SubConn pSubConn) override {
-         static_cast<PluginsTree*>(&this->Tree_)->SeedSubj_.Unsubscribe(pSubConn);
+      OpResult Unsubscribe(SubConn subConn, Tab& tab) override {
+         (void)tab; assert(&tab == this->Tree_.LayoutSP_->GetTab(0));
+         static_cast<PluginsTree*>(&this->Tree_)->TreeSubj_.Unsubscribe(subConn);
          return OpResult::no_error;
       }
    };
@@ -204,7 +205,7 @@ struct PluginsMgr::PluginsTree : public Tree {
          for (auto& irec : this->PluginsRecs_)
             irec->InThr_StopPlugins();
          this->PluginsRecs_.clear();
-         SeedSubj_ParentSeedClear(this->SeedSubj_, *this);
+         SeedSubj_ParentSeedClear(this->TreeSubj_, *this);
       });
    }
 

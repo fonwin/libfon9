@@ -44,20 +44,24 @@ void MaConfigSeed::OnConfigValueChanged(ConfigLocker&& lk, StrView val) {
 MaConfigTree::~MaConfigTree() {
 }
 void MaConfigTree::OnParentSeedClear() {
-   SeedSubj_ParentSeedClear(this->SeedSubj_, *this);
+   {
+      auto treelk = this->Lock();
+      SeedSubj_ParentSeedClear(this->TreeSubj_, *this);
+   }
    base::OnParentSeedClear();
 }
 void MaConfigTree::OnTreeOp(FnTreeOp fnCallback) {
    struct TreeCfgOp : public TreeOp {
       fon9_NON_COPY_NON_MOVE(TreeCfgOp);
       using TreeOp::TreeOp;
-      OpResult Subscribe(SubConn* pSubConn, Tab&, SeedSubr subr) override {
-         *pSubConn = static_cast<MaConfigTree*>(&this->Tree_)->SeedSubj_.Subscribe(subr);
-         return OpResult::no_error;
+      OpResult Subscribe(SubConn* pSubConn, Tab& tab, FnSeedSubr subr) override {
+         return static_cast<MaConfigTree*>(&this->Tree_)->TreeSubj_.SafeSubscribe(
+            static_cast<MaConfigTree*>(&this->Tree_)->Lock(), *this, pSubConn, tab, subr);
       }
-      OpResult Unsubscribe(SubConn pSubConn) override {
-         static_cast<MaConfigTree*>(&this->Tree_)->SeedSubj_.Unsubscribe(pSubConn);
-         return OpResult::no_error;
+      OpResult Unsubscribe(SubConn subConn, Tab& tab) override {
+         (void)tab;
+         return static_cast<MaConfigTree*>(&this->Tree_)->TreeSubj_.SafeUnsubscribe(
+            static_cast<MaConfigTree*>(&this->Tree_)->Lock(), subConn);
       }
    };
    TreeCfgOp op{*this};
@@ -69,14 +73,14 @@ void MaConfigTree::UpdateConfigSeed(const Locker& lk, MaConfigSeed& item, std::s
       item.SetTitle(std::move(*title));
    if (description)
       item.SetDescription(std::move(*description));
-   SeedSubj_Notify(this->SeedSubj_, *this, *this->LayoutSP_->GetTab(0), ToStrView(item.Name_), item);
+   SeedSubj_Notify(this->TreeSubj_, *this, *this->LayoutSP_->GetTab(0), ToStrView(item.Name_), item);
 }
 void MaConfigTree::OnMaTree_AfterUpdated(Locker& container, NamedSeed& item) {
    if (auto cfgitem = dynamic_cast<MaConfigSeed*>(&item))
       cfgitem->OnConfigValueChanged(std::move(container), ToStrView(cfgitem->Value_));
-   if (container.owns_lock())
-      container.unlock();
-   SeedSubj_Notify(this->SeedSubj_, *this, *this->LayoutSP_->GetTab(0), ToStrView(item.Name_), item);
+   if (!container.owns_lock())
+      container.lock();
+   SeedSubj_Notify(this->TreeSubj_, *this, *this->LayoutSP_->GetTab(0), ToStrView(item.Name_), item);
 }
 void MaConfigTree::WriteConfig(const Locker& container, const MaConfigSeed* item) {
    assert(container.owns_lock());

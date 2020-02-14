@@ -3,6 +3,7 @@
 #ifndef __fon9_rc_RcSeedVisitor_h__
 #define __fon9_rc_RcSeedVisitor_h__
 #include "fon9/rc/RcClientApi.h"
+#include "fon9/Assert.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,9 +18,36 @@ typedef struct {
    char           Padding___[4];
 } f9sv_Named;
 
+/// 覽位型別.
+fon9_ENUM(f9sv_FieldType, uint8_t) {
+   /// 類型不明, 或自訂欄位.
+   f9sv_FieldType_Unknown,
+   /// bytes 陣列.
+   /// 顯示字串 = 需要額外轉換(例: HEX, Base64...)
+   f9sv_FieldType_Bytes,
+   /// 字元串(尾端不一定會有EOS).
+   /// 顯示字串 = 直接使用內含字元, 直到EOS or 最大長度.
+   f9sv_FieldType_Chars,
+   /// 整數欄位.
+   f9sv_FieldType_Integer = 10,
+   /// 固定小數位欄位: fon9::Decimal
+   f9sv_FieldType_Decimal,
+   /// 時間戳.
+   f9sv_FieldType_TimeStamp,
+   /// 時間間隔.
+   f9sv_FieldType_TimeInterval,
+   /// 時間: 距離 00:00:00 的時間間隔.
+   /// 輸出格式 `days-hh:mm:ss.uuuuuu`
+   f9sv_FieldType_DayTime,
+};
+
+/// 小數位數.
+typedef uint8_t   f9sv_DecScale;
+
 /// fon9 SeedVisitor 的欄位型別.
 typedef struct {
    f9sv_Named  Named_;
+   const void* InternalOwner_;
    /// 欄位型別.
    /// - Cn = char[n], 若 n==0 則為 Blob.Chars 欄位.
    /// - Bn = byte[n], 若 n==0 則為 Blob.Bytes 欄位.
@@ -29,8 +57,15 @@ typedef struct {
    /// - Snx = Signed, n=bytes(1,2,4,8), CellRevPrint()使用Hex輸出
    /// - Ti = TimeInterval
    /// - Ts = TimeStamp
-   char  TypeId_[16];
-   const void* InternalOwner_;
+   /// - Td = DayTime
+   char           TypeId_[22];
+   f9sv_DecScale  DecScale_;
+   f9sv_FieldType Type_;
+   /// 欄位資料的大小.
+   uint32_t       Size_;
+   /// ((const char*)(seed) + Offset_) = 儲存原始資料的位置.
+   /// 如果您確定要取得的是整數型內容, 可藉由此方式快速取得, 但請注意記憶體對齊問題.
+   int32_t        Offset_;
 } f9sv_Field;
 
 //--------------------------------------------------------------------------//
@@ -117,13 +152,34 @@ typedef struct {
 } f9sv_Layout;
 
 /// 參考 fon9/seed/SeedBase.hpp: enum class OpResult;
-/// >=0 表示沒有錯誤, 成功完成.
-/// <0 表示錯誤原因.
+/// >=0 表示沒有錯誤.
+/// <0 表示錯誤原因. -10 .. -30 保留給 f9sv_Result;
 typedef enum {
    f9sv_Result_NoError = 0,
 
+   /// 呼叫 f9sv_Unsubscribe() 時, 通知 regHandler 訂閱取消中.
+   /// 告知 regHandler: 後續的訂閱資料及取消結果由 unregHandler 接手.
+   f9sv_Result_Unsubscribing = 9641,
+   /// f9sv_Unsubscribe() 成功的通知.
+   f9sv_Result_Unsubscribed = 9645,
+
+   /// 訂閱 tree, 收到 seed::SeedNotifyArgs::NotifyType::PodRemoved 通知.
+   /// 此時應移除該 pod.
+   f9sv_Result_SubrNotifyPodRemoved = 9652,
+   /// 訂閱 tree, 收到 seed::SeedNotifyArgs::NotifyType::SeedRemoved 通知.
+   /// 此時應移除該 seed.
+   f9sv_Result_SubrNotifySeedRemoved = 9653,
+   /// 收到 seed::SeedNotifyArgs::NotifyType::TableChanged 時.
+   /// 此時應清除訂閱的資料表內容, 通常會立即回覆新的資料表.
+   f9sv_Result_SubrNotifyTableChanged = 9654,
+   /// - 收到 seed::SeedNotifyArgs::NotifyType::ParentSeedClear 通知.
+   /// - 訂閱 seed, 收到 seed::SeedNotifyArgs::NotifyType::PodRemoved 或 SeedRemoved 通知.
+   f9sv_Result_SubrNotifyUnsubscribed = 9655,
+
    /// = fon9::seed::OpResult::access_denied = -2,
    f9sv_Result_AccessDenied = -2,
+   /// = fon9::seed::OpResult::not_found_tab = -201,
+   f9sv_Result_NotFoundTab = -201,
 
    /// 在呼叫 f9sv_Query(); 或 f9sv_Subscribe(); 時,
    /// - 沒有呼叫過 f9OmsRc_Initialize();
@@ -139,12 +195,20 @@ typedef enum {
    f9sv_Result_FlowControl = -12,
 
    /// f9sv_Query() 正在查詢, 尚未取得結果, 則後續相同的 seedName 直接返回失敗. 
-   f9sv_Result_DupQuery = -13,
+   f9sv_Result_InQuery = -13,
+
+   /// 超過可訂閱數量.
+   /// 在收到 Server 端的「取消訂閱確認」之後, 才會扣除訂閱數量.
+   /// 目前: 僅支援「Session累計訂閱數量」限制, 沒有檢查「個別 tree 的訂閱數量」.
+   f9sv_Result_OverMaxSubrCount = -20,
 
    /// 已經有訂閱, 則後續的 f9sv_Query()/f9sv_Subscribe() 直接返回失敗.
-   f9sv_Result_InSubscribe = -14,
+   f9sv_Result_InSubscribe = -21,
    /// 正在取消訂閱, 必須等取消成功後, 才可再次執行 f9sv_Query()/f9sv_Subscribe(), 直接返回失敗.
-   f9sv_Result_InUnsubscribe = -15,
+   /// 或 Server 執行訂閱處理時, 收到取消.
+   f9sv_Result_InUnsubscribe = -22,
+   /// 沒有訂閱, 取消失敗.
+   f9sv_Result_NoSubscribe = -23,
 
 } f9sv_Result;
 
@@ -164,27 +228,29 @@ inline void f9sv_InitClientSessionParams(f9rc_ClientSessionParams* f9rcCliParams
 
 #ifdef __cplusplus
 /// 記錄登入後取得的 Config 訊息.
-#define f9sv_ClientLogFlag_Config      static_cast<f9rc_ClientLogFlag>(0x0008)
+#define f9sv_ClientLogFlag_Config         static_cast<f9rc_ClientLogFlag>(0x0008)
 /// 記錄查詢要求 & 結果(成功 or 失敗, 不含資料內容).
-#define f9sv_ClientLogFlag_Query       static_cast<f9rc_ClientLogFlag>(0x0010)
+#define f9sv_ClientLogFlag_Query          static_cast<f9rc_ClientLogFlag>(0x0010)
 /// 記錄「查詢」的資料內容.
-#define f9sv_ClientLogFlag_QueryData   static_cast<f9rc_ClientLogFlag>(0x0020)
+#define f9sv_ClientLogFlag_QueryData      static_cast<f9rc_ClientLogFlag>(0x0020)
 /// 記錄訂閱要求 & 結果(成功 or 失敗, 不含資料內容).
-#define f9sv_ClientLogFlag_Subscribe   static_cast<f9rc_ClientLogFlag>(0x0040)
+#define f9sv_ClientLogFlag_Subscribe      static_cast<f9rc_ClientLogFlag>(0x0040)
 /// 記錄「訂閱」的資料內容.
-#define f9sv_ClientLogFlag_SubrData    static_cast<f9rc_ClientLogFlag>(0x0080)
+#define f9sv_ClientLogFlag_SubscribeData  static_cast<f9rc_ClientLogFlag>(0x0080)
 #else
-#define f9sv_ClientLogFlag_Config      ((f9rc_ClientLogFlag)0x0008)
-#define f9sv_ClientLogFlag_Query       ((f9rc_ClientLogFlag)0x0010)
-#define f9sv_ClientLogFlag_QueryData   ((f9rc_ClientLogFlag)0x0020)
-#define f9sv_ClientLogFlag_Subscribe   ((f9rc_ClientLogFlag)0x0040)
-#define f9sv_ClientLogFlag_SubrData    ((f9rc_ClientLogFlag)0x0080)
+#define f9sv_ClientLogFlag_Config         ((f9rc_ClientLogFlag)0x0008)
+#define f9sv_ClientLogFlag_Query          ((f9rc_ClientLogFlag)0x0010)
+#define f9sv_ClientLogFlag_QueryData      ((f9rc_ClientLogFlag)0x0020)
+#define f9sv_ClientLogFlag_Subscribe      ((f9rc_ClientLogFlag)0x0040)
+#define f9sv_ClientLogFlag_SubscribeData  ((f9rc_ClientLogFlag)0x0080)
 #endif
 
 typedef struct {
    const char*    TreePath_;
    const char*    SeedKey_;
    /// 若有提供 TabName_ (!= NULL), 則不理會 TabIndex_;
+   /// - 查詢可使用 "*" 表示查詢全部的 tabs.
+   /// - 訂閱、取消訂閱不支援 "*".
    const char*    TabName_;
    f9sv_TabSize   TabIndex_;
    char           Padding___[4];
@@ -207,10 +273,13 @@ typedef struct {
    /// 可透過 f9sv_GetField_*() 取得欄位內容.
    const struct f9sv_Seed* Seed_;
 } f9sv_ClientReport;
-typedef void (fon9_CAPI_CALL *f9sv_FnOnReport)(f9rc_ClientSession*, const f9sv_ClientReport* rpt);
+
+/// 通知收到 SeedVisitor 的: 查詢結果、訂閱結果、訂閱訊息...
+/// - 在通知前會鎖定 session, 您應該盡快結束事件處理, 且不建議在此等候其他 thread.
+/// - 尤其不能等候其他 thread 處理「f9sv_ API 呼叫」, 這樣會造成死結.
+typedef void (fon9_CAPI_CALL *f9sv_FnOnReport)(f9rc_ClientSession* session, const f9sv_ClientReport* rpt);
 
 typedef struct {
-   /// 通知收到: 查詢結果、訂閱結果、訂閱訊息...
    f9sv_FnOnReport   FnOnReport_;
    void*             UserData_;
 } f9sv_ReportHandler;
@@ -231,7 +300,7 @@ f9sv_CAPI_FN(int) f9sv_Initialize(const char* logFileFmt);
 
 /// 送出查詢訊息.
 /// 查詢結果不一定會依照查詢順序回報.
-/// \retval =f9sv_Result_NoError 查詢要求已送出(或因尚未取得 Layout 而暫時保留).
+/// \retval ==f9sv_Result_NoError 查詢要求已送出(或因尚未取得 Layout 而暫時保留).
 ///            如果網路查詢返回夠快, 返回前可能已透過 FnOnReport_() 通知查詢結果(可能成功 or 失敗).
 /// \retval <f9sv_Result_NoError 無法查詢, 失敗原因請參考 f9sv_Result;
 ///            會先用 FnOnReport_() 通知查詢失敗, 然後才返回.
@@ -240,24 +309,53 @@ f9sv_CAPI_FN(int) f9sv_Initialize(const char* logFileFmt);
 f9sv_CAPI_FN(f9sv_Result)
 f9sv_Query(f9rc_ClientSession* ses, const f9sv_SeedName* seedName, f9sv_ReportHandler handler);
 
+/// 訂閱代號, 用於 Client <-> Server 之間的通訊.
+/// 從 0 開始依序編號, 取消訂閱後此編號會回收再用, 先使用回收的編號, 回收的用完後, 才會增加新的編號.
+typedef uint32_t  f9sv_SubrIndex;
+
 /// 訂閱要求.
-/// \retval =f9sv_Result_NoError 訂閱要求已送出.
-///            如果網路查詢返回夠快, 返回前可能已透過 FnOnReport_() 通知訂閱結果及訊息.
+/// 訂閱通知流程:
+/// - f9sv_Subscribe(): rpt.Seed_ == NULL;
+///   - 成功: rpt.ResultCode_ == f9sv_Result_NoError;
+///   - 失敗: rpt.ResultCode_ < f9sv_Result_NoError;
+/// - 收到訂閱的資料:
+///   - rpt.Seed_ != NULL;
+///   - rpt.ResultCode_ == f9sv_Result_NoError;
+/// - f9sv_Unsubscribe(): rpt.Seed_ == NULL;
+///   - 使用訂閱時的 regHandler 通知: rpt.ResultCode_ == f9sv_Result_Unsubscribing;
+///   - 之後不會再使用訂閱時的 regHandler 通知, 改成使用「取消訂閱時的 unregHandler」通知.
+///   - 若在取消訂閱成功之前, 還有「收到訂閱的資料」, 則會使用「取消訂閱時的 unregHandler」通知.
+///
+/// \retval >=f9sv_Result_NoError, 訂閱要求已送出.
+///            如果網路返回夠快, 返回前可能已透過 FnOnReport_() 通知訂閱結果及訊息.
 /// \retval <f9sv_Result_NoError 無法訂閱, 失敗原因請參考 f9sv_Result;
 ///            會先用 FnOnReport_() 通知訂閱失敗, 然後才返回.
 f9sv_CAPI_FN(f9sv_Result)
-f9sv_Subscribe(f9rc_ClientSession* ses, const f9sv_SeedName* seedName, f9sv_ReportHandler handler);
+f9sv_Subscribe(f9rc_ClientSession* ses, const f9sv_SeedName* seedName, f9sv_ReportHandler regHandler);
 
 /// 取消訂閱.
-/// 返回後就不再有訂閱的事件通知, 但網路上可能仍有訂閱的訊息正在傳送, 收到後會拋棄.
-/// 等收到 Server 端確認取消訂閱時, 另有事件通知.
-f9sv_CAPI_FN(void)
-f9sv_Unsubscribe(f9rc_ClientSession* ses, const f9sv_SeedName* seedName);
+/// 若在取消訂閱成功之前, 還有「收到訂閱的資料」, 則會使用「取消訂閱時的 unregHandler」通知.
+///
+/// \retval ==f9sv_Result_NoError 取消訂閱要求已送出.
+///            - 返回前會先使用「訂閱時的 regHandler」通知 f9sv_Result_Unsubscribing;
+///            - 如果網路返回夠快, 返回前可能已透過 unregHandler 通知「訂閱已取消 f9sv_Result_Unsubscribed」.
+/// \retval ==f9sv_Result_Unsubscribed 已取消「尚未送出的訂閱要求」.
+///            - 返回前會先使用「訂閱時的 regHandler」通知 f9sv_Result_Unsubscribing;
+///            - 返回前已透過 unregHandler 通知「訂閱已取消 f9sv_Result_Unsubscribed」.
+/// \retval <f9sv_Result_NoError  無法取消訂閱, 失敗原因請參考 f9sv_Result;
+///            會先用 unregHandler 通知取消失敗, 然後才返回.
+f9sv_CAPI_FN(f9sv_Result)
+f9sv_Unsubscribe(f9rc_ClientSession* ses, const f9sv_SeedName* seedName, f9sv_ReportHandler unregHandler);
+
+/// 取得 res 的文字說明.
+f9sv_CAPI_FN(const char*)
+f9sv_GetSvResultMessage(f9sv_Result res);
 
 //--------------------------------------------------------------------------//
 
 /// 將欄位轉成文字, 尾端填入 EOS, 若緩衝區不足, 則僅顯示部分內容.
 /// *bufsz 傳回包含 EOS 需要的資料量.
+/// 返回 outbuf;
 f9sv_CAPI_FN(const char*)
 f9sv_GetField_Str(const struct f9sv_Seed* seed, const f9sv_Field* fld, char* outbuf, unsigned* bufsz);
 
@@ -265,6 +363,35 @@ inline const char*
 f9sv_GetField_StrN(const struct f9sv_Seed* seed, const f9sv_Field* fld, char* outbuf, unsigned bufsz) {
    return f9sv_GetField_Str(seed, fld, outbuf, &bufsz);
 }
+
+#ifdef __cplusplus
+#define fon9_OFFSET_CAST(type, src, ofs)  reinterpret_cast<type*>(reinterpret_cast<uintptr_t>(src) + ofs)
+#else
+#define fon9_OFFSET_CAST(type, src, ofs)  (type*)((uintptr_t)(src) + ofs)
+#endif
+
+#define f9sv_GET_FIELD_1_FN(fnName, type) \
+inline type fnName(const struct f9sv_Seed* seed, const f9sv_Field* fld) { \
+   assert(fld->Size_ == sizeof(type) && sizeof(type) == 1); \
+   return *fon9_OFFSET_CAST(type, seed, fld->Offset_); \
+}
+f9sv_GET_FIELD_1_FN(f9sv_GetField_u8, uint8_t)
+f9sv_GET_FIELD_1_FN(f9sv_GetField_s8, int8_t)
+f9sv_GET_FIELD_1_FN(f9sv_GetField_char, char)
+
+#define f9sv_GET_FIELD_INT_FN(fnName, type) \
+inline type fnName(const struct f9sv_Seed* seed, const f9sv_Field* fld) { \
+   assert(fld->Size_ == sizeof(type)); \
+   type val; \
+   memcpy(&val, fon9_OFFSET_CAST(type, seed, fld->Offset_), sizeof(val)); \
+   return val; \
+}
+f9sv_GET_FIELD_INT_FN(f9sv_GetField_u16, uint16_t)
+f9sv_GET_FIELD_INT_FN(f9sv_GetField_u32, uint32_t)
+f9sv_GET_FIELD_INT_FN(f9sv_GetField_u64, uint64_t)
+f9sv_GET_FIELD_INT_FN(f9sv_GetField_s16, int16_t)
+f9sv_GET_FIELD_INT_FN(f9sv_GetField_s32, int32_t)
+f9sv_GET_FIELD_INT_FN(f9sv_GetField_s64, int64_t)
 
 #ifdef __cplusplus
 }//extern "C"

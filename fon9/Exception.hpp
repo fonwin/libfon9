@@ -3,7 +3,10 @@
 #ifndef __fon9_Exception_hpp__
 #define __fon9_Exception_hpp__
 #include "fon9/sys/Config.hpp"
+
+fon9_BEFORE_INCLUDE_STD;
 #include <stdexcept>
+fon9_AFTER_INCLUDE_STD;
 
 namespace fon9 {
 

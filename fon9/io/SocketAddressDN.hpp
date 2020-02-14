@@ -4,8 +4,11 @@
 #define __fon9_io_SocketAddressDN_hpp__
 #include "fon9/io/SocketAddress.hpp"
 #include "fon9/Utility.hpp"
+
+fon9_BEFORE_INCLUDE_STD;
 #include <vector>
 #include <functional>
+fon9_AFTER_INCLUDE_STD;
 
 #ifdef fon9_POSIX
 #include <netdb.h>

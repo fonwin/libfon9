@@ -81,12 +81,6 @@ struct SeedImporterVisitor : public seed::SeedVisitor {
                     "|path=", runner.OrigPath_,
                     "|err=", runner.OpResult_, ':', seed::GetOpResultMessage(runner.OpResult_));
    }
-   void OnTicketRunnerGridView(seed::TicketRunnerGridView&, seed::GridViewResult& res) override {
-      (void)res;
-   }
-   void OnTicketRunnerRead(seed::TicketRunnerRead&, const seed::SeedOpResult& res, const seed::RawRd& rd) override {
-      (void)res; (void)rd;
-   }
    void OnTicketRunnerWrite(seed::TicketRunnerWrite& runner, const seed::SeedOpResult& res, const seed::RawWr& wr) override {
       // runner.ParseSetValues() 已經有寫log: SeedVisitor.cpp;
       // 沒有消息就是好消息, 所以成功時不回覆.
@@ -98,16 +92,6 @@ struct SeedImporterVisitor : public seed::SeedVisitor {
       (void)res;
       // Remove 不論成功或失敗, 都有寫log: SeedVisitor.cpp: TicketRunnerRemove::OnBeforeRemove();
       // 所以只要考慮失敗時需要送 Dev_ 的情況: 在 OnTicketRunnerDone() 處理.
-   }
-   void OnTicketRunnerCommand(seed::TicketRunnerCommand&, const seed::SeedOpResult& res, StrView msg) override {
-      (void)res; (void)msg;
-   }
-   void OnTicketRunnerSetCurrPath(seed::TicketRunnerCommand&) override {
-   }
-   void OnSeedNotify(seed::VisitorSubr&, const seed::SeedNotifyArgs&) override {
-   }
-   void OnTicketRunnerSubscribe(seed::TicketRunnerSubscribe&, bool isSubOrUnsub) override {
-      (void)isSubOrUnsub;
    }
 };
 using VisitorSP = intrusive_ptr<SeedImporterVisitor>;

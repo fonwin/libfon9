@@ -25,6 +25,7 @@ class Tree;
 template <class T>
 using TreeSPT = intrusive_ptr<T>;
 using TreeSP  = TreeSPT<Tree>;
+class TreeOp;
 
 class Layout;
 /// \ingroup seed
@@ -80,7 +81,7 @@ enum class OpResult {
    /// 如果在 (2)=>(3) 之間, 有其他人又變動了「編輯中資料」, 則在執行(3)時會產生此錯誤!
    bad_apply_submit = -134,
 
-   /// 不支援異動訂閱: TreeOp::Subscribe();
+   /// 不支援異動訂閱: TreeOp::Subscribe(); PodOp::Subscribe();
    not_supported_subscribe  = -140,
 
    not_found_key      = -200,
@@ -94,6 +95,32 @@ enum class OpResult {
 
 /// \ingroup seed
 fon9_API const char* GetOpResultMessage(OpResult res);
+
+//--------------------------------------------------------------------------//
+
+/// 當用此當作 OnPodOp(), OnPodOpRange() 的參數時, 則表示 container->begin();
+static constexpr const char* const  kStrKeyText_Begin_ = nullptr;
+static constexpr StrView TextBegin() {
+   return StrView{kStrKeyText_Begin_, static_cast<size_t>(0)};
+}
+static constexpr bool IsTextBegin(const StrView& k) {
+   return k.begin() == kStrKeyText_Begin_;
+}
+
+/// 當用此當作 OnPodOp(), OnPodOpRange() 的參數時, 則表示 container->end();
+/// 也可用在支援 append 的 Tree, 例: AddPod(StrView{TreeOp::kStrKeyText_End_,0}); 用來表示 append.
+static constexpr const char* const  kStrKeyText_End_ = reinterpret_cast<const char*>(-1);
+static constexpr StrView TextEnd() {
+   return StrView{kStrKeyText_End_, static_cast<size_t>(0)};
+}
+static constexpr bool IsTextEnd(const StrView& k) {
+   // return k.begin() == kStrKeyText_End_; 這樣寫, VC 不允許: C3249: illegal statement or sub-expression for 'constexpr' function
+   return reinterpret_cast<intptr_t>(k.begin()) == reinterpret_cast<intptr_t>(kStrKeyText_End_);
+}
+
+static constexpr bool IsTextBeginOrEnd(const StrView& k) {
+   return IsTextBegin(k) || IsTextEnd(k);
+}
 
 } } // namespaces
 #endif//__fon9_seed_SeedBase_hpp__

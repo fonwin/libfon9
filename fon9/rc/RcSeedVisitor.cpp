@@ -15,7 +15,7 @@ void SvGvTable::InitializeGvList() {
    if (this->RecList_.empty())
       ZeroStruct(this->GvList_);
    else {
-      this->GvList_.FieldArray_ = this->Fields_.GetVector()->ToPlainC();
+      this->GvList_.FieldArray_ = this->Fields_.GetVector();
       this->GvList_.FieldCount_ = static_cast<unsigned>(this->Fields_.size());
       this->GvList_.RecordCount_ = static_cast<unsigned>(this->RecList_.size());
       const StrView** recs = &this->RecList_[0];
@@ -75,17 +75,20 @@ fon9_API void SvParseGvTablesC(f9sv_GvTables& cTables, SvGvTables& dst, std::str
    fon9_GCC_WARN_POP;
 }
 //--------------------------------------------------------------------------//
-void RcSvReqKey::LoadFrom(DcQueue& rxbuf) {
+void RcSvReqKey::LoadSeedName(DcQueue& rxbuf) {
    this->IsAllTabs_ = false;
    BitvTo(rxbuf, this->TreePath_);
    BitvTo(rxbuf, this->SeedKey_);
+
    const byte* tabi = rxbuf.Peek1();
    if (tabi == nullptr)
       Raise<BitvNeedsMore>("RcSeedVisitor: needs more");
+
    switch (*tabi) {
    default:
       if ((*tabi & fon9_BitvT_Mask) != fon9_BitvT_IntegerPos) {
          BitvTo(rxbuf, this->TabName_);
+         this->IsAllTabs_ = IsTabAll(this->TabName_.begin());
          break;
       }
       // 不用 break; bitv = fon9_BitvT_IntegerPos: 取出 tabidx;
@@ -93,8 +96,10 @@ void RcSvReqKey::LoadFrom(DcQueue& rxbuf) {
    case fon9_BitvV_Number0:
       f9sv_TabSize  tabidx = kTabAll;
       BitvTo(rxbuf, tabidx);
-      if (tabidx == kTabAll)
+      if (tabidx == kTabAll) {
          this->IsAllTabs_ = true;
+         this->TabName_.assign("*");
+      }
       else if (tabidx != 0) {
          NumOutBuf nbuf;
          this->TabName_.assign(fon9::ToStrRev(nbuf.end(), tabidx), nbuf.end());
@@ -102,12 +107,21 @@ void RcSvReqKey::LoadFrom(DcQueue& rxbuf) {
       break;
    }
 }
+void RcSvReqKey::LoadFrom(SvFunc fc, DcQueue& rxbuf) {
+   this->LoadSeedName(rxbuf);
+   if (GetSvFuncCode(fc) == SvFuncCode::Subscribe) {
+      this->SubrIndex_ = kSubrIndexNull;
+      BitvTo(rxbuf, this->SubrIndex_);
+   }
+}
 fon9_API void RevPrint(RevBuffer& rbuf, const RcSvReqKey& reqKey) {
+   if (reqKey.SubrIndex_ != kSubrIndexNull)
+      RevPrint(rbuf, "|subrIndex=", reqKey.SubrIndex_);
    if (reqKey.IsAllTabs_)
-      RevPrint(rbuf, "*");
+      RevPrint(rbuf, '*');
    else
       RevPrint(rbuf, reqKey.TabName_);
-   RevPrint(rbuf, "path=", reqKey.TreePath_, "|key=", reqKey.SeedKey_, "|tab=");
+   RevPrint(rbuf, "|path=", reqKey.TreePath_, "|key=", reqKey.SeedKey_, "|tab=");
 }
 
 } } // namespaces

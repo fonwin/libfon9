@@ -89,7 +89,7 @@ public:
       struct ResultHandler {
          seed::AclConfig* Result_;
          void InLocking(const PolicyItem& master) {
-            this->Result_->Home_ = static_cast<const MasterItem*>(&master)->Home_;
+            *static_cast<seed::AclHomeConfig*>(this->Result_) = *static_cast<const MasterItem*>(&master);
          }
          void OnUnlocked(DetailPolicyTree& detailTree) {
             DetailTable::Locker pmap{static_cast<DetailTree*>(&detailTree)->DetailTable_};

@@ -26,7 +26,7 @@ class fon9_API MaConfigTree : public MaTree {
 
    ConfigFileBinder  ConfigFileBinder_;
    bool              IsFiringEvent_{false};
-   SeedSubj          SeedSubj_;
+   UnsafeSeedSubj    TreeSubj_;
 
    void LoadConfigStr(StrView cfgstr, bool isFireEvent);
 

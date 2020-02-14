@@ -3,6 +3,7 @@
 #ifndef __fon9_rc_RcSeedVisitor_hpp__
 #define __fon9_rc_RcSeedVisitor_hpp__
 #include "fon9/rc/RcSeedVisitor.h"
+#include "fon9/seed/SeedSubr.hpp"
 #include "fon9/Utility.hpp"
 #include "fon9/NamedIx.hpp"
 #include "fon9/CharVector.hpp"
@@ -11,72 +12,93 @@
 
 namespace fon9 { namespace rc {
 
+enum class SvFuncFlag : uint8_t {
+   Layout = 0x10,
+};
 enum class SvFuncCode : uint8_t {
-   FuncMask = 0xf0,
+   Empty = 0x00,
    /// 登入成功後的「可用路徑」及權限.
    /// 透過 fon9::rc::SvParseGvTables() 解析.
-   Acl = 0x00,
+   Acl = 1,
    /// 查詢 Seed or Pod.
    /// - 可選擇是否要查詢 layout:
    ///   - 同一個 tree 的 layout 只需要查詢一次, client 應將 layout 保留.
-   Query = 0x10,
+   Query = 2,
    /// 訂閱.
-   Subscribe = 0x20,
+   Subscribe = 3,
    /// 取消訂閱.
-   Unsubscribe = 0x40,
-
-   FlagLayout = 0x01,
+   Unsubscribe = 4,
+   /// 訂閱資料回覆 Server to Client.
+   SubscribeData = 5,
 };
-fon9_ENABLE_ENUM_BITWISE_OP(SvFuncCode);
+
+/// SvFunc 功能碼.
+/// - RcSeedVisitorServerNote::OnRecvFunctionCall(); RcSeedVisitorClientNote::OnRecvFunctionCall();
+///   收到的 first byte.
+/// - 分成: 0xf0 旗標 SvFuncFlag, 及 0x0f 功能 SvFuncCode.
+enum class SvFunc : uint8_t {
+   Empty = 0x00,
+   FuncMask = 0x0f,
+};
+constexpr bool HasSvFuncFlag(SvFunc src, SvFuncFlag flag) {
+   return (cast_to_underlying(src) & cast_to_underlying(flag)) != 0;
+}
+constexpr SvFunc ToSvFunc(SvFuncCode src) {
+   return static_cast<SvFunc>(cast_to_underlying(src));
+}
+constexpr SvFuncCode GetSvFuncCode(SvFunc src) {
+   return static_cast<SvFuncCode>(cast_to_underlying(src) & cast_to_underlying(SvFunc::FuncMask));
+}
+inline SvFunc SetSvFuncCode(SvFunc* src, SvFuncCode fnCode) {
+   assert((cast_to_underlying(fnCode) & ~cast_to_underlying(SvFunc::FuncMask)) == 0);
+   return *src = static_cast<SvFunc>(cast_to_underlying(fnCode)
+      | (cast_to_underlying(*src) & ~cast_to_underlying(SvFunc::FuncMask)));
+}
+inline SvFunc SetSvFuncFlag(SvFunc* src, SvFuncFlag flag) {
+   assert((cast_to_underlying(flag) & cast_to_underlying(SvFunc::FuncMask)) == 0);
+   return *src = static_cast<SvFunc>(cast_to_underlying(*src) | cast_to_underlying(flag));
+}
+inline SvFunc ClrSvFuncFlag(SvFunc* src, SvFuncFlag flag) {
+   assert((cast_to_underlying(flag) & cast_to_underlying(SvFunc::FuncMask)) == 0);
+   return *src = static_cast<SvFunc>(cast_to_underlying(*src) & ~cast_to_underlying(flag));
+}
+inline SvFunc SvFuncSubscribeData(seed::SeedNotifyArgs::NotifyType v) {
+   return static_cast<SvFunc>(cast_to_underlying(SvFuncCode::SubscribeData)
+                              | (cast_to_underlying(v) << 4));
+}
+inline seed::SeedNotifyArgs::NotifyType GetSvFuncSubscribeDataNotifyType(SvFunc src) {
+   assert(GetSvFuncCode(src) == SvFuncCode::SubscribeData);
+   return static_cast<seed::SeedNotifyArgs::NotifyType>(cast_to_underlying(src) >> 4);
+}
 
 //--------------------------------------------------------------------------//
-
-/// C API: f9sv_Named; 對應的 C++ 型別.
-struct SvNamed : public f9sv_Named {
-   SvNamed() {
-      memset(this, 0, sizeof(*this));
-      this->Index_ = -1;
+/// T 必須包含 f9sv_Named T::Named_;
+template <class T>
+struct NamedWrap : public T {
+   NamedWrap() {
+      ZeroStruct(static_cast<T*>(this));
+      this->Named_.Index_ = -1;
    }
-   SvNamed(StrView name) : SvNamed{} {
-      this->Name_ = name.ToCStrView();
+   NamedWrap(const StrView& name) : NamedWrap{} {
+      this->Named_.Name_ = name.ToCStrView();
    }
 
-   StrView GetNameStr() const { return this->Name_; }
-   int     GetIndex()   const { return this->Index_; }
+   StrView GetNameStr() const { return this->Named_.Name_; }
+   int     GetIndex()   const { return this->Named_.Index_; }
    bool SetIndex(size_t index) {
-      if (this->Index_ >= 0)
+      if (this->Named_.Index_ >= 0)
          return false;
-      this->Index_ = static_cast<int>(index);
+      this->Named_.Index_ = static_cast<int>(index);
       return true;
    }
 };
-
-fon9_GCC_WARN_DISABLE("-Winvalid-offsetof");
+//--------------------------------------------------------------------------//
 /// C API: f9sv_Field; 對應的 C++ 型別.
-struct SvField : public SvNamed {
-   char        TypeId_[sizeof(f9sv_Field::TypeId_)];
-   const void* InternalOwner_{};
-
-   void CtorInit() {
-      memset(this->TypeId_, 0, sizeof(this->TypeId_));
-   }
-
-   SvField() {
-      this->CtorInit();
-   }
-   SvField(StrView name) : SvNamed{name} {
-      this->CtorInit();
-   }
-   f9sv_Field* ToPlainC() {
-      static_assert(offsetof(SvField, Name_) == offsetof(f9sv_Field, Named_.Name_)
-                    && offsetof(SvField, TypeId_) == offsetof(f9sv_Field, TypeId_)
-                    && sizeof(SvField) == sizeof(f9sv_Field),
-                    "SvField must be the same as f9sv_Field.");
-      return reinterpret_cast<f9sv_Field*>(this);
-   }
-   const f9sv_Field* ToPlainC() const {
-      return reinterpret_cast<const f9sv_Field*>(this);
-   }
+class SvField : public NamedWrap<f9sv_Field> {
+   using base = NamedWrap<f9sv_Field>;
+public:
+   using base::base;
+   SvField() = default;
 
    // 為了提供給 NamedIxMapNoRemove<> 使用, 所以提供底下 members.
    using pointer = const SvField*;
@@ -91,28 +113,24 @@ using SvFields = NamedIxMapNoRemove<SvField>;
 //--------------------------------------------------------------------------//
 
 /// C API: f9sv_GvTable; 對應的 C++ 型別.
-struct fon9_API SvGvTable : public SvNamed {
+class fon9_API SvGvTable : public NamedWrap<f9sv_GvTable> {
    fon9_NON_COPY_NON_MOVE(SvGvTable);
+   using base = NamedWrap<f9sv_GvTable>;
+public:
    using RecList = std::vector<const StrView*>;
    f9sv_GvList GvList_;
    SvFields    Fields_;
    RecList     RecList_;
 
-   using SvNamed::SvNamed;
+   using base::base;
    SvGvTable() = default;
    ~SvGvTable();
 
    void InitializeGvList();
 };
-static_assert(offsetof(SvGvTable, Name_) == offsetof(f9sv_GvTable, Named_.Name_)
-              && offsetof(SvGvTable, GvList_) == offsetof(f9sv_GvTable, GvList_),
-              "SvGvTable must be the same as f9sv_GvTable.");
-fon9_GCC_WARN_POP;
-
 using SvGvTableSP = std::unique_ptr<SvGvTable>;
 static_assert(sizeof(const SvGvTableSP) == sizeof(const f9sv_GvTable*),
               "SvGvTables::NamedIxSP cannot be a plain pointer.");
-
 using SvGvTables = NamedIxMapNoRemove<SvGvTableSP>;
 
 /// - 請參考 fon9_kCSTR_LEAD_TABLE 提供的格式說明.
@@ -129,20 +147,38 @@ fon9_API void SvParseGvTablesC(f9sv_GvTables& cTables, SvGvTables& dst, std::str
 
 //--------------------------------------------------------------------------//
 
-struct fon9_API RcSvReqKey {
-   CharVector  TreePath_, SeedKey_, TabName_;
-   bool        IsAllTabs_;
-   char        Padding___[7];
+constexpr f9sv_TabSize     kTabAll = std::numeric_limits<f9sv_TabSize>::max();
+constexpr f9sv_SubrIndex   kSubrIndexNull = std::numeric_limits<f9sv_SubrIndex>::max();
 
-   void LoadFrom(DcQueue& rxbuf);
-};
-/// 輸出: "path=", reqKey.TreePath_, "|key=", reqKey.SeedKey_, "|tab=" ...
-fon9_API void RevPrint(RevBuffer& rbuf, const RcSvReqKey& reqKey);
-
-constexpr f9sv_TabSize  kTabAll = std::numeric_limits<f9sv_TabSize>::max();
+/// 如果 tabName == "*" 則為 all tabs.
 constexpr bool IsTabAll(const char* tabName) {
    return (tabName[0] == '*' && tabName[1] == '\0');
 }
+/// 如果 seedKey == "\t" 則表示訂閱 tree; 否則為訂閱指定的 key.
+constexpr bool IsSubrTree(const char* seedKey) {
+   return seedKey[0] == '\t' && seedKey[1] == '\0';
+}
+
+struct fon9_API RcSvReqKey {
+   CharVector     TreePath_, SeedKey_, TabName_;
+   /// 當 IsAllTabs_ 時, 不應理會 TabName_ 的內容.
+   /// 通常用於查詢 pod;
+   bool           IsAllTabs_;
+   char           Padding___[3];
+   f9sv_SubrIndex SubrIndex_{kSubrIndexNull};
+
+   /// 從 rxbuf 載入 TreePath_, SeedKey_, TabName_; 不包含 SubrIndex_;
+   /// - 如果 rxbuf 提供的 tab 為 index, 則會自動填入:
+   ///   - TabName_ = "n"; n = tab index;
+   ///   - TabName_ = "*"; IsAllTabs_ = true;
+   void LoadSeedName(DcQueue& rxbuf);
+
+   /// 除了 LoadSeedName() 之外,
+   /// 若 GetSvFuncCode(fc) == SvFuncCode::Subscribe; 則在 SeedName 之後包含 this->SubrIndex_;
+   void LoadFrom(SvFunc fc, DcQueue& rxbuf);
+};
+/// 輸出: "|path=", reqKey.TreePath_, "|key=", reqKey.SeedKey_, "|tab=" ...
+fon9_API void RevPrint(RevBuffer& rbuf, const RcSvReqKey& reqKey);
 
 } } // namespaces
 #endif//__fon9_rc_RcSeedVisitor_hpp__

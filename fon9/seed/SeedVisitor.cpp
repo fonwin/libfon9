@@ -48,6 +48,38 @@ SeedVisitor::~SeedVisitor() {
 void SeedVisitor::SetCurrPath(StrView currPath) {
    this->Fairy_->SetCurrPath(currPath);
 }
+void SeedVisitor::OnTicketRunnerDone(TicketRunner& runner, DcQueue&& extmsg) {
+   (void)runner; (void)extmsg;
+}
+void SeedVisitor::OnTicketRunnerWrite(TicketRunnerWrite& runner, const SeedOpResult& res, const RawWr& wr) {
+   (void)runner; (void)res; (void)wr;
+}
+void SeedVisitor::OnTicketRunnerRead(TicketRunnerRead& runner, const SeedOpResult& res, const RawRd& rd) {
+   (void)runner; (void)res; (void)rd;
+}
+void SeedVisitor::OnTicketRunnerRemoved(TicketRunnerRemove& runner, const PodRemoveResult& res) {
+   (void)runner; (void)res;
+}
+void SeedVisitor::OnTicketRunnerGridView(TicketRunnerGridView& runner, GridViewResult& res) {
+   (void)runner; (void)res;
+}
+bool SeedVisitor::OnTicketRunnerBeforeGridView(TicketRunnerGridView& runner, TreeOp& opTree, GridViewRequest& req) {
+   (void)runner; (void)opTree; (void)req;
+   return true;
+}
+void SeedVisitor::OnTicketRunnerCommand(TicketRunnerCommand& runner, const SeedOpResult& res, StrView msg) {
+   (void)runner; (void)res; (void)msg;
+}
+void SeedVisitor::OnTicketRunnerSetCurrPath(TicketRunnerCommand& runner) {
+   (void)runner;
+}
+void SeedVisitor::OnSeedNotify(VisitorSubr& subr, const SeedNotifyArgs& args) {
+   (void)subr; (void)args;
+}
+void SeedVisitor::OnTicketRunnerSubscribe(TicketRunnerSubscribe& runner, bool isSubOrUnsub) {
+   (void)runner; (void)isSubOrUnsub;
+}
+
 //--------------------------------------------------------------------------//
 void TicketRunnerError::OnFoundTree(TreeOp&) {
 }
@@ -211,8 +243,7 @@ void TicketRunnerGridView::OnFoundTree(TreeOp& opTree) {
    req.Tab_ = opTree.Tree_.LayoutSP_->GetTabByNameOrFirst(ToStrView(this->TabName_));
    if (req.Tab_ == nullptr)
       this->OnError(OpResult::not_found_tab);
-   else {
-      this->Visitor_->OnTicketRunnerBeforeGridView(*this, opTree, req);
+   else if (this->Visitor_->OnTicketRunnerBeforeGridView(*this, opTree, req)) {
       opTree.GridView(req, std::bind(&TicketRunnerGridView::OnGridViewOp,
                                      intrusive_ptr<TicketRunnerGridView>(this),
                                      std::placeholders::_1));
@@ -331,11 +362,12 @@ void VisitorSubr::OnSeedNotify(const SeedNotifyArgs& args) {
 }
 void VisitorSubr::Unsubscribe() {
    if (auto tree{std::move(this->Tree_)}) {
+      Tab*    tab = this->Tab_;
       SubConn subConn = this->SubConn_;
       this->SubConn_ = nullptr;
-      tree->OnTreeOp([subConn](const TreeOpResult&, TreeOp* op) {
+      tree->OnTreeOp([subConn, tab](const TreeOpResult&, TreeOp* op) {
          if (op)
-            op->Unsubscribe(subConn);
+            op->Unsubscribe(subConn, *tab);
       });
    }
 }
@@ -355,8 +387,6 @@ VisitorSubrSP SeedVisitor::NewSubscribe() {
    if (oldSubr)
       oldSubr->Unsubscribe();
    return newSubr;
-}
-void SeedVisitor::OnTicketRunnerBeforeGridView(TicketRunnerGridView&, TreeOp&, GridViewRequest&) {
 }
 
 } } // namespaces

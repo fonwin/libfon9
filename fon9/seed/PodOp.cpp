@@ -47,6 +47,16 @@ void PodOpDefault::BeginWrite_NotSupported(Tab& tab, FnWriteOp&& fnCallback) {
 
 //--------------------------------------------------------------------------//
 
+fon9_API void FieldsCellRevPrint0NoSpl(const Fields& fields, const RawRd& rd, RevBuffer& rbuf, char chSplitter) {
+   if (size_t fldidx = fields.size()) {
+      while (const Field* fld = fields.Get(--fldidx)) {
+         fld->CellRevPrint(rd, nullptr, rbuf);
+         if (fldidx == 0)
+            break;
+         RevPutChar(rbuf, chSplitter);
+      }
+   }
+}
 fon9_API void FieldsCellRevPrint(const Fields& fields, const RawRd& rd, RevBuffer& rbuf, char chSplitter) {
    if (size_t fldidx = fields.size()) {
       while (const Field* fld = fields.Get(--fldidx)) {

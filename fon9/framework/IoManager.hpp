@@ -156,7 +156,8 @@ protected:
       bool operator()(const DeviceItemSP& lhs, const DeviceItemId& rhs) const { return lhs->Id_ < rhs; }
    };
    using DeviceMapImpl = SortedVectorSet<DeviceItemSP, CmpDeviceItemSP>;
-   using DeviceMap = MustLock<DeviceMapImpl>;
+   // 在 IoManagerTree 的 opTree 有提供訂閱, 在訂閱成功時, 可能會需要取得 gv, 因此需要使用 recursive_mutex;
+   using DeviceMap = MustLock<DeviceMapImpl, std::recursive_mutex>;
    DeviceMap   DeviceMap_;
 
    template <class IoService>

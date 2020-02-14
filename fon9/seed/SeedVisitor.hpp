@@ -59,27 +59,29 @@ public:
    virtual void SetCurrPath(StrView currPath);
 
    /// 當 runner 事情完成(成功或失敗), 如果沒有觸發 OnTicketRunnerXXX() 事件, 則透過這裡通知 visitor.
-   virtual void OnTicketRunnerDone(TicketRunner& runner, DcQueue&& extmsg) = 0;
+   virtual void OnTicketRunnerDone(TicketRunner& runner, DcQueue&& extmsg);
 
-   virtual void OnTicketRunnerWrite(TicketRunnerWrite&, const SeedOpResult& res, const RawWr& wr) = 0;
-   virtual void OnTicketRunnerRead(TicketRunnerRead&, const SeedOpResult& res, const RawRd& rd) = 0;
-   virtual void OnTicketRunnerRemoved(TicketRunnerRemove&, const PodRemoveResult& res) = 0;
+   virtual void OnTicketRunnerWrite(TicketRunnerWrite&, const SeedOpResult& res, const RawWr& wr);
+   virtual void OnTicketRunnerRead(TicketRunnerRead&, const SeedOpResult& res, const RawRd& rd);
+   virtual void OnTicketRunnerRemoved(TicketRunnerRemove&, const PodRemoveResult& res);
    
    /// 只有在 res.OpResult_ == OpResult::no_error 時, 才會觸發此事件.
-   virtual void OnTicketRunnerGridView(TicketRunnerGridView&, GridViewResult& res) = 0;
+   virtual void OnTicketRunnerGridView(TicketRunnerGridView&, GridViewResult& res);
    /// 在執行 opTree.GridView() 之前的通知, 預設 do nothing.
    /// - 您可以在此直接呼叫 opTree.Subscribe() 先訂閱異動.
    /// - 也可以調整 req 的內容.
-   virtual void OnTicketRunnerBeforeGridView(TicketRunnerGridView&, TreeOp& opTree, GridViewRequest& req);
+   /// - 預設返回 true 表示需要繼續處理 OnTicketRunnerGridView();
+   /// - 返回 false 表示不處理 OnTicketRunnerGridView();
+   virtual bool OnTicketRunnerBeforeGridView(TicketRunnerGridView&, TreeOp& opTree, GridViewRequest& req);
 
-   virtual void OnTicketRunnerCommand(TicketRunnerCommand&, const SeedOpResult& res, StrView msg) = 0;
-   virtual void OnTicketRunnerSetCurrPath(TicketRunnerCommand&) = 0;
+   virtual void OnTicketRunnerCommand(TicketRunnerCommand&, const SeedOpResult& res, StrView msg);
+   virtual void OnTicketRunnerSetCurrPath(TicketRunnerCommand&);
 
    /// 訂閱後的事件通知.
-   virtual void OnSeedNotify(VisitorSubr& subr, const SeedNotifyArgs& args) = 0;
+   virtual void OnSeedNotify(VisitorSubr& subr, const SeedNotifyArgs& args);
    /// isSubOrUnsub == true  訂閱成功.
    /// isSubOrUnsub == false 取消訂閱成功.
-   virtual void OnTicketRunnerSubscribe(TicketRunnerSubscribe&, bool isSubOrUnsub) = 0;
+   virtual void OnTicketRunnerSubscribe(TicketRunnerSubscribe&, bool isSubOrUnsub);
 
    void Unsubscribe();
 };

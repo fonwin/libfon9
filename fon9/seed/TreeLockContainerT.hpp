@@ -97,14 +97,16 @@ inline auto OnTreeClearSeeds(Tree& owner, Container& c)
 
 /// \ingroup seed
 /// - 在 Tree 裡面包含一個 MustLock<ContainerImplT>
-template <class ContainerImplT>
+template <class ContainerImplT,
+   class MutexT = std::mutex,
+   class MutexLockerT = std::unique_lock<MutexT>>
 class TreeLockContainerT : public Tree {
    fon9_NON_COPY_NON_MOVE(TreeLockContainerT);
    using base = Tree;
 
 public:
    using ContainerImpl = ContainerImplT;
-   using Container = MustLock<ContainerImpl>;
+   using Container = MustLock<ContainerImpl, MutexT, MutexLockerT>;
    using Locker = typename Container::Locker;
    using ConstLocker = typename Container::ConstLocker;
 

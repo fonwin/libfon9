@@ -166,16 +166,19 @@ void IoManagerTree::DisposeAndReopen(std::string cause, TimeInterval afterReopen
    this->Timer_.RunAfter(afterReopen);
    this->TimerFor_ = TimerFor::Open;
 }
-void IoManagerTree::DisposeDevices(std::string cause) {
-   DeviceMap::Locker map{this->DeviceMap_};
+void IoManagerTree::LockedDisposeDevices(const DeviceMap::Locker& map, std::string cause) {
    for (auto& i : *map) {
       i->SchSt_ = SchSt::Unknown;
       if (io::Device* dev = i->Device_.get())
          dev->AsyncDispose(cause);
    }
 }
+void IoManagerTree::DisposeDevices(std::string cause) {
+   this->LockedDisposeDevices(DeviceMap::Locker{this->DeviceMap_}, std::move(cause));
+}
 void IoManagerTree::OnParentSeedClear() {
-   this->DisposeDevices("Parent clear");
+   DeviceMap::Locker map{this->DeviceMap_};
+   this->LockedDisposeDevices(map, "Parent clear");
    SeedSubj_ParentSeedClear(this->StatusSubj_, *this);
 }
 //--------------------------------------------------------------------------//
@@ -277,6 +280,8 @@ struct IoManagerTree::TreeOp : public seed::TreeOp {
             }
          }
          IoManagerTree::Apply(req.Tab_->Fields_, req.EditingGrid_, *curmap, oldmap);
+         seed::SeedSubj_TableChanged(static_cast<IoManagerTree*>(&this->Tree_)->StatusSubj_,
+                                     this->Tree_, *this->Tree_.LayoutSP_->GetTab(kTabStatusIndex));
       }  // unlock curmap.
       // After grid view apply. oldmap = removed items.
       if (!oldmap.empty()) {
@@ -284,7 +289,7 @@ struct IoManagerTree::TreeOp : public seed::TreeOp {
          for (auto& i : oldmap) {
             i->AsyncDisposeDevice(now, "Removed from ApplySubmit");
             // StatusSubj_ 使用 [整表] 通知: seed::SeedSubj_TableChanged();
-            // 所以這裡就不用樹發 PodRemoved() 事件了.
+            // 所以這裡就不用觸發 PodRemoved() 事件了.
             // seed::SeedSubj_NotifyPodRemoved(static_cast<IoManagerTree*>(&this->Tree_)->StatusSubj_, this->Tree_, ToStrView(i->Id_));
          }
       }
@@ -300,19 +305,19 @@ struct IoManagerTree::TreeOp : public seed::TreeOp {
 
    __UNLOCK_AND_CALLBACK:
       fnCallback(res, resmsg);
-      if (res.OpResult_ == seed::OpResult::no_error)
-         seed::SeedSubj_TableChanged(static_cast<IoManagerTree*>(&this->Tree_)->StatusSubj_,
-                                     this->Tree_, *this->Tree_.LayoutSP_->GetTab(kTabStatusIndex));
    }
-   seed::OpResult Subscribe(SubConn* pSubConn, seed::Tab& tab, seed::SeedSubr subr) override {
+   seed::OpResult Subscribe(SubConn* pSubConn, seed::Tab& tab, seed::FnSeedSubr subr) override {
       if (&tab != this->Tree_.LayoutSP_->GetTab(kTabStatusIndex))
-         return this->SubscribeUnsupported(pSubConn);
-      *pSubConn = static_cast<IoManagerTree*>(&this->Tree_)->StatusSubj_.Subscribe(subr);
-      return seed::OpResult::no_error;
+         return seed::SubscribeUnsupported(pSubConn);
+      return static_cast<IoManagerTree*>(&this->Tree_)->StatusSubj_.SafeSubscribe(
+         DeviceMap::Locker{static_cast<IoManagerTree*>(&this->Tree_)->DeviceMap_},
+         *this, pSubConn, tab, subr);
    }
-   seed::OpResult Unsubscribe(SubConn pSubConn) override {
-      return static_cast<IoManagerTree*>(&this->Tree_)->StatusSubj_.Unsubscribe(pSubConn)
-         ? seed::OpResult::no_error : seed::OpResult::not_supported_subscribe;
+   seed::OpResult Unsubscribe(SubConn subConn, seed::Tab& tab) override {
+      if (&tab != this->Tree_.LayoutSP_->GetTab(kTabStatusIndex))
+         return seed::OpResult::not_supported_subscribe;
+      return static_cast<IoManagerTree*>(&this->Tree_)->StatusSubj_.SafeUnsubscribe(
+         DeviceMap::Locker{static_cast<IoManagerTree*>(&this->Tree_)->DeviceMap_}, subConn);
    }
 };
 fon9_WARN_POP;

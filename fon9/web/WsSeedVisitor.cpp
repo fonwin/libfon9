@@ -69,13 +69,6 @@ struct WsSeedVisitor::SeedVisitor : public seed::SeedVisitor {
       (void)res; assert(runner.OpResult_ == res.OpResult_);
       this->OnTicketRunnerDone(runner, DcQueueFixedMem{});
    }
-   void OnTicketRunnerBeforeGridView(seed::TicketRunnerGridView& runner, seed::TreeOp& opTree, seed::GridViewRequest& req) override {
-      if (!seed::IsTextBegin(req.OrigKey_))
-         return;
-      auto subr = this->NewSubscribe();
-      if (subr->Subscribe(ToStrView(runner.OrigPath_), *req.Tab_, opTree) != seed::OpResult::no_error)
-         this->Unsubscribe();
-   }
    void OnTicketRunnerSubscribe(seed::TicketRunnerSubscribe&, bool isSubOrUnsub) override {
       (void)isSubOrUnsub;
       // 不支援使用 TicketRunnerSubscribe 訂閱.
@@ -104,6 +97,11 @@ struct WsSeedVisitor::SeedVisitor : public seed::SeedVisitor {
 __REVPRINT_PATH_WITH_KEY_TEXT:
             RevPrint(rbuf, cmdEcho, subr.GetPath(), '/', args.KeyText_);
             break;
+         case fon9::seed::SeedNotifyArgs::NotifyType::SubscribeOK:
+            // 2020.02.06 調整訂閱機制, 應在此回覆首次查詢.
+            // 配合 NotifyType::SubscribeOK 調整, 共用 case NotifyType::TableChanged;
+            // 在此建立 gv 並在此直接送出, 然後 OnTicketRunnerBeforeGridView() 返回 false;
+            // 一旦離開這裡, 就有可能再次觸發 OnSeedNotify(); 甚至 TicketRunnerGridView 還沒結束. 
          case fon9::seed::SeedNotifyArgs::NotifyType::TableChanged:
             RevPrint(rbuf, ' ', subr.GetPath(), "\n" ",0,1,SubrOK" "\n", args.GetGridView());
             if (args.Tab_->GetIndex() != 0)
@@ -113,6 +111,17 @@ __REVPRINT_PATH_WITH_KEY_TEXT:
          }
          ws->Send(WebSocketOpCode::TextFrame, std::move(rbuf));
       }
+   }
+   bool OnTicketRunnerBeforeGridView(seed::TicketRunnerGridView& runner, seed::TreeOp& opTree, seed::GridViewRequest& req) override {
+      if (!seed::IsTextBegin(req.OrigKey_))
+         return true;
+      auto subr = this->NewSubscribe();
+      if (subr->Subscribe(ToStrView(runner.OrigPath_), *req.Tab_, opTree) == seed::OpResult::no_error)
+         // 訂閱成功, 在 case fon9::seed::SeedNotifyArgs::NotifyType::SubscribeOK: 回覆 gv.
+         // 所以這裡返回 false, 不用再回覆 gv;
+         return false;
+      this->Unsubscribe();
+      return true;
    }
    void OnTicketRunnerGridView(seed::TicketRunnerGridView& runner, seed::GridViewResult& res) override {
       struct Output {

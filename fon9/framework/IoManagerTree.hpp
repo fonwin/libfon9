@@ -13,6 +13,8 @@ class fon9_API IoManagerTree : public seed::Tree, public IoManager {
    using baseTree = seed::Tree;
    unsigned IoManagerAddRef() override;
    unsigned IoManagerRelease() override;
+   void LockedDisposeDevices(const DeviceMap::Locker& map, std::string cause);
+
 public:
    /// 若 !args.CfgFileName_.empty()
    /// - afterOpen.IsNull() 載入設定檔, 但不啟動, 後續可透過 StartTimerForOpen() 啟動.
@@ -60,11 +62,11 @@ private:
    struct PodOp;
    static seed::LayoutSP MakeLayoutImpl();
    static seed::LayoutSP GetLayout();
-   seed::TreeSP      TabTreeOp_; // for NeedsApply.
-   seed::SeedSubj    StatusSubj_;
-   ConfigFileBinder  ConfigFileBinder_;
-   SubConn           SubConnDev_;
-   SubConn           SubConnSes_;
+   seed::TreeSP         TabTreeOp_; // for NeedsApply.
+   seed::UnsafeSeedSubj StatusSubj_;
+   ConfigFileBinder     ConfigFileBinder_;
+   SubConn              SubConnDev_;
+   SubConn              SubConnSes_;
    friend class IoManager;
    void NotifyChanged(DeviceItem&) override;
    void NotifyChanged(DeviceRun&) override;
