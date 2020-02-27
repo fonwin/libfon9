@@ -12,6 +12,12 @@ OpResult SubscribableOp::Subscribe(SubConn* pSubConn, Tab&, FnSeedSubr) {
 OpResult SubscribableOp::Unsubscribe(SubConn, Tab&) {
    return OpResult::not_supported_subscribe;
 }
+OpResult SubscribableOp::SubscribeStream(SubConn* pSubConn, Tab&, StrView, FnSeedSubr) {
+   return SubscribeStreamUnsupported(pSubConn);
+}
+OpResult SubscribableOp::UnsubscribeStream(SubConn, Tab&) {
+   return OpResult::not_supported_subscribe_stream;
+}
 
 TreeOp::~TreeOp() {
 }

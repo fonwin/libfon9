@@ -47,6 +47,8 @@ public:
 
    virtual void CellRevPrint(const RawRd& rd, StrView fmt, RevBuffer& out) const override;
    virtual OpResult StrToCell(const RawWr& wr, StrView value) const override;
+   virtual void CellToBitv(const RawRd& rd, RevBuffer& out) const override;
+   virtual OpResult BitvToCell(const RawWr& wr, DcQueue& buf) const override;
 
    /// 將長度設為 0, 其餘不變.
    virtual OpResult SetNull(const RawWr& wr) const override;

@@ -4,6 +4,7 @@
 #define __fon9_seed_Field_hpp__
 #include "fon9/seed/SeedBase.hpp"
 #include "fon9/buffer/RevBuffer.hpp"
+#include "fon9/buffer/DcQueue.hpp"
 #include "fon9/ToStr.hpp"
 #include "fon9/NamedIx.hpp"
 
@@ -132,6 +133,15 @@ public:
    /// \retval value_underflow
    virtual OpResult StrToCell(const RawWr& wr, StrView value) const = 0;
 
+   /// 取出 rd 的資料, 根據 Bitv 的編碼方式, 填入 out.
+   virtual void CellToBitv(const RawRd& rd, RevBuffer& out) const = 0;
+
+   /// 把 buf(Bitv編碼) 轉入 wr 內部儲存形式,
+   /// 若不符合 Bitv 規格, 則可能會丟出 exception!
+   /// \retval no_error             成功轉入.
+   /// \retval not_supported_write  e.g. const欄位不支援填入資料.
+   virtual OpResult BitvToCell(const RawWr& wr, DcQueue& buf) const = 0;
+
    /// 取出欄位數字內容, 可能觸發文字轉數字(由衍生者決定).
    /// - 如果實際的欄位內容是 123;   outDecScale = 1; 則傳回 1230
    /// - 如果實際的欄位內容是 12.34; outDecScale = 1; 則傳回 123
@@ -140,6 +150,10 @@ public:
    /// 把數字轉成正確的型別資料後, 填入 wr 的欄位, 可能觸發數字轉文字.
    /// num = 123; decScale = 1; 表示要填入的數字是 12.3
    virtual OpResult PutNumber(const RawWr& wr, FieldNumberT num, DecScaleT decScale) const = 0;
+
+   /// 若為數值類型, 傳回表達該數字為 null 的值.
+   /// 若沒有支援 null, 則傳回 0;
+   virtual FieldNumberT GetNullValue() const;
 
    /// 設定 wr 的欄位內容為空值.
    /// 如何填入空值由衍生者決定.
@@ -171,6 +185,10 @@ public:
 
    virtual OpResult StrToCell(const RawWr& wr, StrView value) const override {
       (void)wr; (void)value;
+      return OpResult::not_supported_write;
+   }
+   virtual OpResult BitvToCell(const RawWr& wr, DcQueue& buf) const override {
+      (void)wr; (void)buf;
       return OpResult::not_supported_write;
    }
    virtual OpResult SetNull(const RawWr& wr) const override {

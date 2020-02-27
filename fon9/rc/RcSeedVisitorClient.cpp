@@ -1,45 +1,36 @@
 ﻿// \file fon9/rc/RcSeedVisitorClient.cpp
 // \author fonwinz@gmail.com
 #include "fon9/rc/RcSeedVisitorClientReq.hpp"
-#include "fon9/rc/RcSeedVisitor.hpp"
 #include "fon9/seed/FieldMaker.hpp"
 
-namespace fon9 {
+namespace fon9 { namespace rc {
+using namespace fon9::rc::svc;
 
-inline bool IsBitvIntegerNeg(const DcQueue& buf) {
-   if (const byte* p1 = buf.Peek1())
-      return ((*p1 & fon9_BitvT_Mask) == fon9_BitvT_IntegerNeg);
-   return false;
+static void ParseStrValuesToSeed(StrView vals, const seed::RawWr& wr, const seed::Fields& flds) {
+   unsigned fldidx = 0;
+   const seed::Field* fld;
+   while (!vals.empty()) {
+      if ((fld = flds.Get(fldidx++)) == nullptr)
+         return;
+      fld->StrToCell(wr, StrFetchNoTrim(vals, '\x01'));
+   }
+   while ((fld = flds.Get(fldidx++)) != nullptr)
+      fld->StrToCell(wr, StrView{});
 }
-static void NamedToC(f9sv_Named& cNamed, const NamedIx& named) {
-   cNamed.Name_ = ToStrView(named.Name_).ToCStrView();
-   cNamed.Title_ = ToStrView(named.GetTitle()).ToCStrView();
-   cNamed.Description_ = ToStrView(named.GetDescription()).ToCStrView();
-   cNamed.Index_ = named.GetIndex();
+static void NotifySeeds(f9sv_FnOnReport fnOnReport, f9rc_ClientSession* ses, f9sv_ClientReport* rpt,
+                        StrView gv, const seed::RawWr& wr, const seed::Fields& flds, bool hasKeyText) {
+   rpt->ResultCode_ = f9sv_Result_NoError;
+   while (!gv.empty()) {
+      StrView fldValues = StrFetchNoTrim(gv, *fon9_kCSTR_ROWSPL);
+      if (hasKeyText) {
+         rpt->SeedKey_ = StrFetchNoTrim(fldValues, '\x01').ToCStrView();
+         *const_cast<char*>(rpt->SeedKey_.End_) = '\0';
+      }
+      ParseStrValuesToSeed(fldValues, wr, flds);
+      fnOnReport(ses, rpt);
+   }
 }
-static void FieldToC(f9sv_Field& cfld, const seed::Field& fld) {
-   NamedToC(cfld.Named_, fld);
-   NumOutBuf nbuf;
-   fld.GetTypeId(nbuf).ToString(cfld.TypeId_);
-   cfld.Size_ = fld.Size_;
-   cfld.Offset_ = fld.Offset_;
-   cfld.DecScale_ = fld.DecScale_;
-   cfld.Type_ = static_cast<f9sv_FieldType>(cast_to_underlying(fld.Type_));
-   #define static_assert_FieldType(tname) \
-      static_assert(cast_to_underlying(f9sv_FieldType_##tname) == cast_to_underlying(seed::FieldType::tname), "");
-   static_assert_FieldType(Unknown);
-   static_assert_FieldType(Bytes);
-   static_assert_FieldType(Chars);
-   static_assert_FieldType(Integer);
-   static_assert_FieldType(Decimal);
-   static_assert_FieldType(TimeStamp);
-   static_assert_FieldType(TimeInterval);
-   static_assert_FieldType(DayTime);
-}
-
 //--------------------------------------------------------------------------//
-namespace rc {
-
 RcSeedVisitorClientAgent::~RcSeedVisitorClientAgent() {
 }
 void RcSeedVisitorClientAgent::OnSessionCtor(RcClientSession& ses, const f9rc_ClientSessionParams* params) {
@@ -119,76 +110,18 @@ void RcSeedVisitorClientNote::OnSessionLinkBroken(RcClientSession& ses) {
    this->ClearRequests(ses);
 }
 //--------------------------------------------------------------------------//
-RcSeedVisitorClientNote::PodRec& RcSeedVisitorClientNote::TreeRec::FetchPod(StrView seedKey, bool* isNew) {
-   PodRec& pod = this->PodMap_[CharVector::MakeRef(seedKey)];
-   if (pod.Seeds_ != nullptr) {
-      if (isNew)
-         *isNew = false;
-   }
-   else {
-      if (isNew)
-         *isNew = true;
-      pod.Seeds_ = new SeedSP[this->LayoutC_.TabCount_];
-      for (f9sv_TabSize tabidx = this->LayoutC_.TabCount_; tabidx > 0;) {
-         --tabidx;
-         pod.Seeds_[tabidx].reset(SeedRec::MakeSeedRec(*this->Layout_->GetTab(tabidx)));
-      }
-   }
-   return pod;
+RcSeedVisitorClientNote::~RcSeedVisitorClientNote() {
 }
 //--------------------------------------------------------------------------//
-void RcSeedVisitorClientNote::ParseLayoutAndSendPendings(const TreeLocker& locker,
-                                                         RcClientSession&  ses,
-                                                         TreeRec&          tree,
-                                                         DcQueue&          rxbuf) {
-   std::string   strLayout;
-   BitvTo(rxbuf, strLayout);
-   StrView  cfgstr{&strLayout};
-   StrTrimTail(&cfgstr);
-   if (ses.LogFlags_ & (f9sv_ClientLogFlag_Query | f9sv_ClientLogFlag_Subscribe | f9sv_ClientLogFlag_QueryData | f9sv_ClientLogFlag_SubscribeData))
-      fon9_LOG_INFO("f9sv_Layout|ses=", ToPtr(static_cast<f9rc_ClientSession*>(&ses)),
-                    "|path=", tree.TreePath_, "|layout=[", cfgstr, ']');
-
-   seed::TreeFlag treeFlags = static_cast<seed::TreeFlag>(HIntStrTo(StrFetchNoTrim(cfgstr, '|')));
-   seed::FieldSP  fldKey{seed::MakeField(cfgstr, '|', '\n')};
-   std::vector<seed::TabSP> tabs;
-   while (!StrTrimHead(&cfgstr).empty()) {
-      seed::TabFlag tabFlags = static_cast<seed::TabFlag>(HIntStrTo(StrFetchNoTrim(cfgstr, '|')));
-      Named         tabNamed{DeserializeNamed(cfgstr, '|', '\n')};
-      StrView       fldcfg = SbrTrimHeadFetchInside(cfgstr);
-      seed::Fields  fields;
-      seed::MakeFields(fldcfg, '|', '\n', fields);
-      tabs.emplace_back(new seed::Tab{tabNamed, std::move(fields), tabFlags});
-   }
-   seed::LayoutSP layout{new seed::LayoutN{std::move(fldKey), treeFlags, std::move(tabs)}};
-   FieldToC(tree.LayoutC_.KeyField_, *layout->KeyField_);
-   tree.LayoutC_.TabCount_ = static_cast<f9sv_TabSize>(layout->GetTabCount());
-   tree.TabList_.resize(tree.LayoutC_.TabCount_);
-   f9sv_TabSize tabidx = 0;
-   for (TabC& ctab : tree.TabList_) {
-      seed::Tab* stab = layout->GetTab(tabidx++);
-      NamedToC(ctab.Named_, *stab);
-      ctab.FieldCount_ = static_cast<unsigned>(stab->Fields_.size());
-      ctab.Fields_.resize(ctab.FieldCount_);
-      ctab.FieldArray_ = &*ctab.Fields_.begin();
-      unsigned fldidx = 0;
-      while (const auto* fld = stab->Fields_.Get(fldidx)) {
-         auto* cfld = &ctab.Fields_[fldidx];
-         FieldToC(*cfld, *fld);
-         cfld->Offset_ += static_cast<int32_t>(sizeof(SeedRec)); // = SeedRec::DyMemPos_;
-         cfld->InternalOwner_ = fld;
-         ++fldidx;
-      }
-   }
-   tree.LayoutC_.TabList_ = &*tree.TabList_.begin();
-   tree.Layout_ = std::move(layout);
-   // -----
+void RcSeedVisitorClientNote::SendPendings(const TreeLocker& maplk,
+                                           RcClientSession&  ses,
+                                           TreeRec&          tree) {
    // 取得了 layout 之後, tree.PendingReqs_[0] 填入 pod(seed), 然後送出剩餘的要求.
    if (tree.PendingReqs_.empty())
       return;
    PendingReq* preq = &tree.PendingReqs_.front();
-   PodRec&     pod  = tree.FetchPod(ToStrView(preq->SeedKey_));
-   auto*       subr = locker->SubrMap_.GetObjPtr(preq->SubrIndex_);
+   PodRec&     pod = tree.FetchPod(ToStrView(preq->SeedKey_));
+   auto*       subr = maplk->SubrMap_.GetObjPtr(preq->SubrIndex_);
    if (subr) {
       subr->Seeds_ = pod.Seeds_;
       subr->TabIndex_ = kTabAll;
@@ -199,14 +132,18 @@ void RcSeedVisitorClientNote::ParseLayoutAndSendPendings(const TreeLocker& locke
             preq->AssignToSeed(*pod.Seeds_[--L]);
          goto __POP_FRONT_AND_SEND_REQS;
       }
-      auto* stab = tree.Layout_->GetTab(ToStrView(preq->TabName_));
-      preq->TabIndex_ = (stab ? stab->GetIndex() : kTabAll);
+      StrView tabNameAndArgs = ToStrView(preq->TabName_);
+      if (auto* stab = RcSvGetTabStreamArgs(*tree.Layout_, tabNameAndArgs))
+         preq->TabIndex_ = static_cast<f9sv_TabSize>(stab->GetIndex());
+      else // 將 TabIndex_ 設為無效, 然後走 f9sv_Result_NotFoundTab 那條路.
+         preq->TabIndex_ = kTabAll;
    }
-   if (subr)
+   if (subr) {
       subr->TabIndex_ = preq->TabIndex_;
+   }
    if (preq->TabIndex_ < tree.LayoutC_.TabCount_)
       preq->AssignToSeed(*pod.Seeds_[preq->TabIndex_]);
-   else {
+   else { // f9sv_Result_NotFoundTab
       if (ses.LogFlags_ & (subr ? f9sv_ClientLogFlag_Subscribe : f9sv_ClientLogFlag_Query))
          fon9_LOG_ERROR(subr ? StrView{"f9sv_Subscribe.Ack"} : StrView{"f9sv_Query.Ack"},
                         "|ses=", ToPtr(static_cast<f9rc_ClientSession*>(&ses)),
@@ -216,7 +153,7 @@ void RcSeedVisitorClientNote::ParseLayoutAndSendPendings(const TreeLocker& locke
                         "|err=Tab not found");
       if (subr) {
          subr->ClearSvFunc();
-         locker->SubrMap_.RemoveObjPtr(preq->SubrIndex_, subr);
+         maplk->SubrMap_.RemoveObjPtr(preq->SubrIndex_, subr);
       }
       if (preq->Handler_.FnOnReport_) {
          f9sv_ClientReport rpt;
@@ -224,10 +161,10 @@ void RcSeedVisitorClientNote::ParseLayoutAndSendPendings(const TreeLocker& locke
          ZeroStruct(rpt);
          ZeroStruct(tab);
          rpt.ResultCode_ = f9sv_Result_NotFoundTab;
-         rpt.UserData_   = preq->Handler_.UserData_;
-         rpt.TreePath_   = ToStrView(tree.TreePath_).ToCStrView();
-         rpt.SeedKey_    = ToStrView(preq->SeedKey_).ToCStrView();
-         rpt.Tab_        = &tab;
+         rpt.UserData_ = preq->Handler_.UserData_;
+         rpt.TreePath_ = ToStrView(tree.TreePath_).ToCStrView();
+         rpt.SeedKey_ = ToStrView(preq->SeedKey_).ToCStrView();
+         rpt.Tab_ = &tab;
          tab.Named_.Name_ = ToStrView(preq->TabName_).ToCStrView();
          tab.Named_.Index_ = static_cast<int>(preq->TabName_.empty() ? preq->TabIndex_ : 0);
          preq->Handler_.FnOnReport_(&ses, &rpt);
@@ -245,46 +182,32 @@ __POP_FRONT_AND_SEND_REQS:;
          RcSvClientRequest creq(ses, f9rc_ClientLogFlag{} != (ses.LogFlags_ & f9sv_ClientLogFlag_Query),
                                 "f9sv_Query(p)", preq->SvFunc_,
                                 *this, tree, *preq);
-         creq.FinalCheckSendRequest(creq.FetchSeedSt(locker));
+         creq.FinalCheckSendRequest(creq.FetchSeedSt(maplk));
       }
-      else if(fc == SvFuncCode::Subscribe || fc == SvFuncCode::Unsubscribe) {
-         RcSvClientRequest creq(ses, f9rc_ClientLogFlag{} != (ses.LogFlags_ & f9sv_ClientLogFlag_Subscribe),
-                                fc == SvFuncCode::Subscribe
-                                 ? StrView{"f9sv_Subscribe(p)"} : StrView{"f9sv_Unsubscribe(p)"},
-                                preq->SvFunc_, *this, tree, *preq);
+      else if (fc == SvFuncCode::Subscribe || fc == SvFuncCode::Unsubscribe) {
+         struct RcSvReqSubr : public RcSvClientRequest {
+            fon9_NON_COPY_NON_MOVE(RcSvReqSubr);
+            using RcSvClientRequest::RcSvClientRequest;
+            f9sv_Result OnBeforeAssignTo(const TreeLocker& locker, const PodRec* pod) override {
+               if (GetSvFuncCode(this->SvFunc_) == SvFuncCode::Subscribe) {
+                  assert(pod != nullptr);
+                  auto* reg = locker->SubrMap_.GetObjPtr(this->SubrIndex_);
+                  reg->TabIndex_ = this->TabIndex_;
+                  reg->OnPodReady(*pod, this->SubrIndex_);
+               }
+               return f9sv_Result_NoError;
+            }
+         };
+         RcSvReqSubr creq(ses, f9rc_ClientLogFlag{} != (ses.LogFlags_ & f9sv_ClientLogFlag_Subscribe),
+                          fc == SvFuncCode::Subscribe
+                          ? StrView{"f9sv_Subscribe(p)"} : StrView{"f9sv_Unsubscribe(p)"},
+                          preq->SvFunc_, *this, tree, *preq);
          creq.SubrIndex_ = preq->SubrIndex_;
-         creq.FinalCheckSendRequest(creq.FetchSeedSt(locker));
+         creq.FinalCheckSendRequest(creq.FetchSeedSt(maplk));
       }
-   }
-}
-
-static void ParseStrValuesToSeed(StrView vals, const seed::RawWr& wr, const seed::Fields& flds) {
-   unsigned fldidx = 0;
-   const seed::Field* fld;
-   while (!vals.empty()) {
-      if ((fld = flds.Get(fldidx++)) == nullptr)
-         return;
-      fld->StrToCell(wr, StrFetchNoTrim(vals, '\x01'));
-   }
-   while ((fld = flds.Get(fldidx++)) != nullptr)
-      fld->StrToCell(wr, StrView{});
-}
-static void NotifySeeds(f9sv_FnOnReport fnOnReport, f9rc_ClientSession* ses, f9sv_ClientReport* rpt,
-                        StrView gv, const seed::RawWr& wr, const seed::Fields& flds, bool hasKeyText) {
-   rpt->ResultCode_ = f9sv_Result_NoError;
-   while (!gv.empty()) {
-      StrView fldValues = StrFetchNoTrim(gv, *fon9_kCSTR_ROWSPL);
-      if (hasKeyText) {
-         rpt->SeedKey_ = StrFetchNoTrim(fldValues, '\x01').ToCStrView();
-         *const_cast<char*>(rpt->SeedKey_.End_) = '\0';
-      }
-      ParseStrValuesToSeed(fldValues, wr, flds);
-      fnOnReport(ses, rpt);
    }
 }
 //--------------------------------------------------------------------------//
-RcSeedVisitorClientNote::~RcSeedVisitorClientNote() {
-}
 void RcSeedVisitorClientNote::OnRecvFunctionCall(RcSession& ses, RcFunctionParam& param) {
    assert(dynamic_cast<RcClientSession*>(&ses) != nullptr);
    static_assert(sizeof(SvFunc) == 1, "sizeof(SvFunc) != 1, 不可使用 Peek1().");
@@ -404,8 +327,17 @@ void RcSeedVisitorClientNote::OnRecvQrySubrAck(RcClientSession& ses, DcQueue& rx
       return;
    }
    // -----
-   if (HasSvFuncFlag(fcAck, SvFuncFlag::Layout))
-      this->ParseLayoutAndSendPendings(maplk, ses, tree, rxbuf);
+   if (HasSvFuncFlag(fcAck, SvFuncFlag::Layout)) {
+      std::string   strLayout;
+      BitvTo(rxbuf, strLayout);
+      StrView       cfgstr{&strLayout};
+      StrTrimTail(&cfgstr);
+      if (ses.LogFlags_ & (f9sv_ClientLogFlag_Query | f9sv_ClientLogFlag_Subscribe | f9sv_ClientLogFlag_QueryData | f9sv_ClientLogFlag_SubscribeData))
+         fon9_LOG_INFO("f9sv_Layout|ses=", ToPtr(static_cast<f9rc_ClientSession*>(&ses)),
+                       "|path=", tree.TreePath_, "|layout=[", cfgstr, ']');
+      tree.ParseLayout(cfgstr);
+      this->SendPendings(maplk, ses, tree);
+   }
    // -----
    if (const byte* tabi = rxbuf.Peek1()) {
       if (*tabi == fon9_BitvV_NumberNull) { // not_found_tab
@@ -435,6 +367,7 @@ void RcSeedVisitorClientNote::OnRecvQrySubrAck(RcClientSession& ses, DcQueue& rx
       assert(fcCode == SvFuncCode::Subscribe);
       // {取得訂閱結果}
       // 有多少立即回覆的 tab(seeds) 數量?
+      // 組裝結果在 RcSeedVisitorServer.cpp: RcSeedVisitorServerNote::OnSubscribeNotify();
       tabCount = 0;
       BitvTo(rxbuf, tabCount);
       rpt.ResultCode_ = f9sv_Result_NoError;
@@ -447,7 +380,7 @@ void RcSeedVisitorClientNote::OnRecvQrySubrAck(RcClientSession& ses, DcQueue& rx
       auto* subr = maplk->SubrMap_.GetObjPtr(reqKey.SubrIndex_);
       assert(!reqKey.IsAllTabs_ && subr != nullptr && subr->TabIndex_ != kTabAll);
       seed = pod.Seeds_[subr->TabIndex_].get();
-      rpt.Tab_ = &tree.TabList_[subr->TabIndex_];
+      rpt.Tab_ = &tree.LayoutC_.TabList_[subr->TabIndex_];
       auto fnOnReport = seed->Handler_.FnOnReport_;
       if (rpt.ResultCode_ != f9sv_Result_NoError) {
          seed->ClearSvFunc();
@@ -464,6 +397,24 @@ void RcSeedVisitorClientNote::OnRecvQrySubrAck(RcClientSession& ses, DcQueue& rx
       }
       if (rpt.ResultCode_ != f9sv_Result_NoError)
          return;
+      if (subr->IsStream_) {
+         svc::TabRec& rtab = tree.TabList_[subr->TabIndex_];
+         if (rtab.StreamDecoder_.get() == nullptr) {
+            auto*  fac = RcSvStreamDecoderPark::Register(RcSvGetStreamDecoderName(ToStrView(reqKey.TabName_)), nullptr);
+            assert(fac != nullptr); // 因為在訂閱前已經確認過, 此時一定可以取得 fac.
+            rtab.StreamDecoder_ = std::move(fac->CreateStreamDecoder(tree));
+            assert(rtab.StreamDecoder_.get() != nullptr);
+         }
+         if (seed->StreamDecoderNote_.get() == nullptr) {
+            seed->StreamDecoderNote_ = std::move(rtab.StreamDecoder_->CreateDecoderNote());
+            assert(seed->StreamDecoderNote_.get() != nullptr);
+         }
+         assert(tabCount == 0);
+         std::string ack;
+         BitvTo(rxbuf, ack);
+         rtab.StreamDecoder_->OnSubscribeStreamOK(*subr, &ack, ses, rpt, isNeedsLogResult);
+         return;
+      }
    }
 
    // ----- {讀取 tab(seeds) 結果}
@@ -472,7 +423,7 @@ void RcSeedVisitorClientNote::OnRecvQrySubrAck(RcClientSession& ses, DcQueue& rx
       BitvTo(rxbuf, tabidx);
       if (tabidx >= tree.LayoutC_.TabCount_)
          break;
-      rpt.Tab_ = &tree.TabList_[tabidx];
+      rpt.Tab_ = &tree.LayoutC_.TabList_[tabidx];
       seed = pod.Seeds_[tabidx].get();
       assert(seed != nullptr);
       auto fnOnReport = seed->Handler_.FnOnReport_;
@@ -558,112 +509,26 @@ void RcSeedVisitorClientNote::OnRecvUnsubrAck(RcClientSession& ses, DcQueue& rxb
       fnOnReport(&ses, &rpt);
 }
 void RcSeedVisitorClientNote::OnRecvSubrData(RcClientSession& ses, DcQueue& rxbuf, SvFunc fcAck) {
-   struct RxSubrData {
-      fon9_NON_COPY_NON_MOVE(RxSubrData);
-      char                                   Padding___[7];
-      bool                                   IsNeedsLog_;
-      const seed::SeedNotifyArgs::NotifyType NotifyType_;
-      f9sv_SubrIndex                         SubrIndex_{kSubrIndexNull};
-      SubrRec*                               SubrRec_{nullptr};
-      seed::Tab*                             Tab_{nullptr};
-      RevBufferList                          LogBuf_{kLogBlockNodeSize};
-      TreeLocker                             Map_;
-      CharVector                             SeedKey_;
-      std::string                            Gv_;
-      RxSubrData(SvFunc fcAck, f9rc_ClientLogFlag logf, RcSeedVisitorClientNote& note)
-         : IsNeedsLog_(f9rc_ClientLogFlag{} != (logf & f9sv_ClientLogFlag_SubscribeData)
-                       && LogLevel::Info >= LogLevel_)
-         , NotifyType_{GetSvFuncSubscribeDataNotifyType(fcAck)}
-         , Map_{note.LockTree()} {
-         if (this->IsNeedsLog_)
-            RevPutChar(this->LogBuf_, '\n');
-      }
-      ~RxSubrData() {
-         this->FlushLog();
-      }
-      void FlushLog() {
-         if (!this->IsNeedsLog_)
-            return;
-         this->LogSubrRec();
-         this->IsNeedsLog_ = false;
-         RevPrint(this->LogBuf_, "f9sv_SubscribeData"
-                  "|subrIndex=", this->SubrIndex_,
-                  "|notifyType=", this->NotifyType_);
-         LogWrite(LogLevel::Info, std::move(this->LogBuf_));
-      }
-      void LogSubrRec() {
-         if (!this->IsNeedsLog_ || this->SubrRec_ == nullptr)
-            return;
-         if (IsSubrTree(this->SubrRec_->SeedKey_.begin()))
-            RevPrint(this->LogBuf_, "|rxSeedKey=", this->SeedKey_);
-         RevPrint(this->LogBuf_,
-                  "|treePath=", this->SubrRec_->Tree_->TreePath_,
-                  "|seedKey=", this->SubrRec_->SeedKey_,
-                  "|tab=", this->SubrRec_->TabIndex_,
-                  ':', StrView{this->Tab_->GetNameStr()});
-         this->SubrRec_ = nullptr;
-      }
-      StrView CheckLoadSeedKey(DcQueue& rxbuf) {
-         if (IsSubrTree(this->SubrRec_->SeedKey_.begin()))
-            BitvTo(rxbuf, this->SeedKey_);
-         else
-            this->SeedKey_ = this->SubrRec_->SeedKey_;
-         return ToStrView(this->SeedKey_);
-      }
-      void LoadGv(DcQueue& rxbuf) {
-         BitvTo(rxbuf, this->Gv_);
-         if (this->IsNeedsLog_)
-            RevPrint(this->LogBuf_, "|gv={", this->Gv_, '}');
-      }
-   };
-   RxSubrData  rx{fcAck, ses.LogFlags_, *this};
-   BitvTo(rxbuf, rx.SubrIndex_);
-   rx.SubrRec_ = rx.Map_->SubrMap_.GetObjPtr(rx.SubrIndex_);
-   if (rx.SubrRec_ == nullptr) {
-      if (rx.IsNeedsLog_)
-         RevPrint(rx.LogBuf_, "|err=Bad subrIndex.");
+   svc::RxSubrData rx{ses, fcAck, this->LockTree(), rxbuf};
+   if (rx.SubrRec_ == nullptr)
       return;
-   }
-   assert(rx.SubrRec_->SvFunc_ != SvFuncCode::Empty);
-   assert(rx.SubrRec_->Tree_ && rx.SubrRec_->Seeds_);
-   assert(rx.SubrRec_->TabIndex_ < rx.SubrRec_->Tree_->LayoutC_.TabCount_);
-   rx.Tab_ = rx.SubrRec_->Tree_->Layout_->GetTab(rx.SubrRec_->TabIndex_);
-   SeedRec* seed = rx.SubrRec_->Seeds_[rx.SubrRec_->TabIndex_].get();
-   assert(seed && seed->SubrIndex_ == rx.SubrIndex_);
 
    f9sv_ClientReport rpt;
    ZeroStruct(rpt);
    rpt.TreePath_ = ToStrView(rx.SubrRec_->Tree_->TreePath_).ToCStrView();
    rpt.Layout_   = &rx.SubrRec_->Tree_->LayoutC_;
    rpt.Tab_      = &rx.SubrRec_->Tree_->LayoutC_.TabList_[rx.SubrRec_->TabIndex_];
-   rpt.UserData_ = seed->Handler_.UserData_;
-   auto fnOnReport = seed->Handler_.FnOnReport_;
-
-   switch (rx.NotifyType_) {
-   default: // Unknown NotifyType.
-   case seed::SeedNotifyArgs::NotifyType::SubscribeOK:
-      ses.ForceLogout("Unknown SubscribeData NotifyType.");
+   rpt.UserData_ = rx.SeedRec_->Handler_.UserData_;
+   
+   auto fnOnReport = rx.SeedRec_->Handler_.FnOnReport_;
+   switch (rx.NotifyKind_) {
+   case seed::SeedNotifyKind::SubscribeOK:
+   case seed::SeedNotifyKind::SubscribeStreamOK:
+      // 訂閱成功會在 OnRecvQrySubrAck() 回覆處理, 不會來到此處.
+   default: // Unknown NotifyKind.
+      ses.ForceLogout("Unknown SubscribeData NotifyKind.");
       return;
-   case seed::SeedNotifyArgs::NotifyType::ParentSeedClear:
-      // 收到此通知之後, 訂閱會被清除, 不會再收到事件.
-      rpt.ResultCode_ = f9sv_Result_SubrNotifyUnsubscribed;
-      break;
-   case seed::SeedNotifyArgs::NotifyType::SeedChanged:
-      rpt.SeedKey_ = rx.CheckLoadSeedKey(rxbuf).ToCStrView();
-      rx.LoadGv(rxbuf);
-      ParseStrValuesToSeed(&rx.Gv_, seed::SimpleRawWr{seed}, rx.Tab_->Fields_);
-      rpt.Seed_ = seed;
-      break;
-   case seed::SeedNotifyArgs::NotifyType::PodRemoved:
-   case seed::SeedNotifyArgs::NotifyType::SeedRemoved:
-      rpt.SeedKey_ = rx.CheckLoadSeedKey(rxbuf).ToCStrView();
-      rpt.ResultCode_ = (IsSubrTree(rx.SubrRec_->SeedKey_.begin())
-                         ? (rx.NotifyType_ == seed::SeedNotifyArgs::NotifyType::PodRemoved
-                            ? f9sv_Result_SubrNotifyPodRemoved
-                            : f9sv_Result_SubrNotifySeedRemoved)
-                         : f9sv_Result_SubrNotifyUnsubscribed);
-      break;
-   case seed::SeedNotifyArgs::NotifyType::TableChanged:
+   case seed::SeedNotifyKind::TableChanged:
       // 只有訂閱 tree 才會收到此通知, 此時應更新整個 tree 的內容.
       assert(IsSubrTree(rx.SubrRec_->SeedKey_.begin()));
       rpt.SeedKey_ = ToStrView(rx.SubrRec_->SeedKey_).ToCStrView();
@@ -674,156 +539,46 @@ void RcSeedVisitorClientNote::OnRecvSubrData(RcClientSession& ses, DcQueue& rxbu
       // 先通知 TableChanged.
       rpt.ResultCode_ = f9sv_Result_SubrNotifyTableChanged;
       fnOnReport(&ses, &rpt);
-      // 再通知 seed 內容.
-      rpt.Seed_ = seed;
-      NotifySeeds(fnOnReport, &ses, &rpt, &rx.Gv_, seed::SimpleRawWr{seed}, rx.Tab_->Fields_, true);
+      // TableChanged 之後, 再通知 seed 內容.
+      rpt.Seed_ = rx.SeedRec_;
+      NotifySeeds(fnOnReport, &ses, &rpt, &rx.Gv_, seed::SimpleRawWr{rx.SeedRec_}, rx.Tab_->Fields_, true);
       return;
-   }
-   if (rpt.ResultCode_ == f9sv_Result_SubrNotifyUnsubscribed) {
-      auto* subr = rx.SubrRec_;
+   case seed::SeedNotifyKind::StreamData:
+   case seed::SeedNotifyKind::StreamRecover:
+      assert(rx.SeedRec_->StreamDecoderNote_.get() != nullptr);
+      rpt.SeedKey_ = rx.CheckLoadSeedKey(rxbuf).ToCStrView();
+      BitvTo(rxbuf, rx.Gv_); // 將 stream data 載入, 但不寫 log, (使用 rx.LoadGv() 會自動寫入 log).
+      rx.SubrRec_->Tree_->TabList_[rx.SubrRec_->TabIndex_].StreamDecoder_->DecodeStreamData(rx, rpt);
+      return;
+   case seed::SeedNotifyKind::SeedChanged:
+      rpt.SeedKey_ = rx.CheckLoadSeedKey(rxbuf).ToCStrView();
+      rx.LoadGv(rxbuf);
+      ParseStrValuesToSeed(&rx.Gv_, seed::SimpleRawWr{rx.SeedRec_}, rx.Tab_->Fields_);
+      rpt.Seed_ = rx.SeedRec_;
+      break;
+   case seed::SeedNotifyKind::PodRemoved:
+   case seed::SeedNotifyKind::SeedRemoved:
+      rpt.SeedKey_ = rx.CheckLoadSeedKey(rxbuf).ToCStrView();
+      if (IsSubrTree(rx.SubrRec_->SeedKey_.begin())) {
+         rpt.ResultCode_ = (rx.NotifyKind_ == seed::SeedNotifyKind::PodRemoved
+                            ? f9sv_Result_SubrNotifyPodRemoved
+                            : f9sv_Result_SubrNotifySeedRemoved);
+         break;
+      }
+      // 單一 pod/seed 被移除, 不會再收到事件.
+      // 所以不用 break; 繼續處理 [移除訂閱].
+   case seed::SeedNotifyKind::ParentSeedClear:
+      // 收到此通知之後, 訂閱會被清除, 不會再收到事件.
+      rpt.ResultCode_ = f9sv_Result_SubrNotifyUnsubscribed;
       rx.LogSubrRec();
-      seed->ClearSvFunc();
-      subr->ClearSvFunc();
-      rx.Map_->SubrMap_.RemoveObjPtr(rx.SubrIndex_, subr);
+      rx.SubrRec_->ClearSvFunc();
+      rx.SeedRec_->ClearSvFunc();
+      rx.Map_->SubrMap_.RemoveObjPtr(rx.SubrIndex_, rx.SubrRec_);
+      break;
    }
    rx.FlushLog();
    if (fnOnReport)
       fnOnReport(&ses, &rpt);
 }
 
-f9sv_Result RcSeedVisitorClientNote::AddSubr(const TreeLocker& locker, RcSvClientRequest& req, const PodRec* pod) {
-   if (this->Config_.MaxSubrCount_ > 0) {
-      if (locker->SubrMap_.Size() >= this->Config_.MaxSubrCount_) {
-         req.ExtMsg_ = "|err=OverMaxSubrCount";
-         return f9sv_Result_OverMaxSubrCount;
-      }
-   }
-   req.SubrIndex_ = static_cast<f9sv_SubrIndex>(locker->SubrMap_.Alloc());
-   SubrRec*  subr = locker->SubrMap_.GetObjPtr(req.SubrIndex_);
-   subr->SvFunc_   = GetSvFuncCode(req.SvFunc_);
-   assert(subr->SvFunc_ == SvFuncCode::Subscribe);
-   subr->Tree_     = req.Tree_;
-   subr->TabIndex_ = req.TabIndex_;
-   if (pod == nullptr)
-      subr->Seeds_ = nullptr;
-   else {
-      subr->Seeds_ = pod->Seeds_;
-      pod->Seeds_[req.TabIndex_]->SubrIndex_ = req.SubrIndex_;
-   }
-   subr->SeedKey_.assign(req.OrigSeedKey_);
-   return f9sv_Result_NoError;
-}
-
 } } // namespaces
-//-////////////////////////////////////////////////////////////////////////-//
-extern "C" {
-
-f9sv_CAPI_FN(int)
-f9sv_Initialize(const char* logFileFmt) {
-   int retval = fon9_Initialize(logFileFmt);
-   if (retval == 0 && fon9::rc::RcClientMgr_->Get(f9rc_FunctionCode_SeedVisitor) == nullptr)
-      fon9::rc::RcClientMgr_->Add(fon9::rc::RcFunctionAgentSP{new fon9::rc::RcSeedVisitorClientAgent});
-   return retval;
-}
-
-f9sv_CAPI_FN(f9sv_Result)
-f9sv_Query(f9rc_ClientSession* ses, const f9sv_SeedName* seedName, f9sv_ReportHandler handler) {
-   struct Request : public fon9::rc::RcSvClientRequest {
-      fon9_NON_COPY_NON_MOVE(Request);
-      using fon9::rc::RcSvClientRequest::RcSvClientRequest;
-      f9sv_Result OnBeforeAssignTo(const TreeLocker& locker, const PodRec* pod) override {
-         (void)pod;
-         fon9::TimeInterval fcWait = this->Note_->FcQryFetch(locker);
-         if (fon9_LIKELY(fcWait.GetOrigValue() <= 0))
-            return f9sv_Result_NoError;
-         this->ExtMsg_ = "|err=Flow control";
-         return static_cast<f9sv_Result>(fcWait.ShiftUnit<3>() + 1);
-      }
-   };
-   Request  req(*static_cast<fon9::rc::RcClientSession*>(ses),
-                f9rc_ClientLogFlag{} != (ses->LogFlags_ & f9sv_ClientLogFlag_Query),
-                "f9sv_Query", fon9::rc::SvFuncCode::Query,
-                *seedName, handler);
-   return req.FinalCheckSendRequest(req.CheckReqSt());
-}
-
-f9sv_CAPI_FN(f9sv_Result)
-f9sv_Subscribe(f9rc_ClientSession* ses, const f9sv_SeedName* seedName, f9sv_ReportHandler handler) {
-   struct Request : public fon9::rc::RcSvClientRequest {
-      fon9_NON_COPY_NON_MOVE(Request);
-      using fon9::rc::RcSvClientRequest::RcSvClientRequest;
-      f9sv_Result OnBeforeAssignTo(const TreeLocker& locker, const PodRec* pod) override {
-         return this->Note_->AddSubr(locker, *this, pod);
-      }
-   };
-   Request  req(*static_cast<fon9::rc::RcClientSession*>(ses),
-                f9rc_ClientLogFlag{} != (ses->LogFlags_ & f9sv_ClientLogFlag_Subscribe),
-                "f9sv_Subscribe", fon9::rc::SvFuncCode::Subscribe,
-                *seedName, handler);
-   return req.FinalCheckSendRequest(req.CheckSubrReqSt());
-}
-
-f9sv_CAPI_FN(f9sv_Result)
-f9sv_Unsubscribe(f9rc_ClientSession* ses, const f9sv_SeedName* seedName, f9sv_ReportHandler handler) {
-   using Request = fon9::rc::RcSvClientRequest;
-   Request  req(*static_cast<fon9::rc::RcClientSession*>(ses),
-                f9rc_ClientLogFlag{} != (ses->LogFlags_ & f9sv_ClientLogFlag_Subscribe),
-                "f9sv_Unsubscribe", fon9::rc::SvFuncCode::Unsubscribe,
-                *seedName, handler);
-   return req.FinalCheckSendRequest(req.CheckSubrReqSt());
-}
-
-f9sv_CAPI_FN(const char*)
-f9sv_GetSvResultMessage(f9sv_Result res) {
-   static_assert(f9sv_Result_AccessDenied == fon9::rc::ToResultC(fon9::seed::OpResult::access_denied), "");
-   static_assert(f9sv_Result_NotFoundTab == fon9::rc::ToResultC(fon9::seed::OpResult::not_found_tab), "");
-
-   #define case_return(r)  case f9sv_Result_##r:    return #r;
-   switch (res) {
-      case_return(NoError);
-      case_return(Unsubscribing);
-      case_return(Unsubscribed);
-      case_return(SubrNotifyPodRemoved);
-      case_return(SubrNotifySeedRemoved);
-      case_return(SubrNotifyTableChanged);
-      case_return(SubrNotifyUnsubscribed);
-
-      case_return(AccessDenied);
-      case_return(NotFoundTab);
-      case_return(BadInitParams);
-      case_return(LinkBroken);
-      case_return(FlowControl);
-      case_return(InQuery);
-      case_return(OverMaxSubrCount);
-      case_return(InSubscribe);
-      case_return(InUnsubscribe);
-      case_return(NoSubscribe);
-   }
-   return GetOpResultMessage(static_cast<fon9::seed::OpResult>(res));
-}
-
-//--------------------------------------------------------------------------//
-
-f9sv_CAPI_FN(const char*)
-f9sv_GetField_Str(const struct f9sv_Seed* seed, const f9sv_Field* fld, char* outbuf, unsigned* bufsz) {
-   assert(reinterpret_cast<const fon9::seed::Field*>(fld->InternalOwner_)->GetIndex() == fld->Named_.Index_);
-   fon9::RevBufferList rbuf{128};
-   reinterpret_cast<const fon9::seed::Field*>(fld->InternalOwner_)
-      ->CellRevPrint(fon9::seed::SimpleRawRd{seed}, nullptr, rbuf);
-   const size_t outsz = fon9::CalcDataSize(rbuf.cfront());
-   if (outbuf && *bufsz > 0) {
-      fon9::DcQueueList dcq{rbuf.MoveOut()};
-      if (*bufsz > outsz) {
-         dcq.Read(outbuf, outsz);
-         outbuf[outsz] = '\0';
-      }
-      else {
-         dcq.Read(outbuf, *bufsz - 1);
-         outbuf[*bufsz - 1] = '\0';
-      }
-   }
-   *bufsz = static_cast<unsigned>(outsz + 1);
-   return outbuf;
-}
-
-} // extern "C"

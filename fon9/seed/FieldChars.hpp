@@ -47,6 +47,8 @@ public:
 
    virtual void CellRevPrint(const RawRd& rd, StrView fmt, RevBuffer& out) const override;
    virtual OpResult StrToCell(const RawWr& wr, StrView value) const override;
+   virtual void CellToBitv(const RawRd& rd, RevBuffer& out) const override;
+   virtual OpResult BitvToCell(const RawWr& wr, DcQueue& buf) const override;
 
    /// 第1個字元 = '\0' 其餘不變.
    virtual OpResult SetNull(const RawWr& wr) const override;
@@ -104,6 +106,8 @@ public:
 
    virtual void CellRevPrint(const RawRd& rd, StrView fmt, RevBuffer& out) const override;
    virtual OpResult StrToCell(const RawWr& wr, StrView value) const override;
+   virtual void CellToBitv(const RawRd& rd, RevBuffer& out) const override;
+   virtual OpResult BitvToCell(const RawWr& wr, DcQueue& buf) const override;
 
    virtual OpResult Copy(const RawWr& wr, const RawRd& rd) const override;
    virtual int Compare(const RawRd& lhs, const RawRd& rhs) const override;
@@ -123,7 +127,11 @@ class fon9_API FieldEnabledYN : public FieldChar1 {
    using base = FieldChar1;
 public:
    using base::base;
+
    OpResult StrToCell(const RawWr& wr, StrView value) const override;
+   void CellToBitv(const RawRd& rd, RevBuffer& out) const override;
+   OpResult BitvToCell(const RawWr& wr, DcQueue& buf) const override;
+
    /// return "C1Y";
    StrView GetTypeId(NumOutBuf&) const;
 };

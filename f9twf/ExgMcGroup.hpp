@@ -54,11 +54,11 @@ public:
 using ExgMcSystemSP = fon9::intrusive_ptr<ExgMcSystem>;
 
 //--------------------------------------------------------------------------//
-/// Sapling 包含:
-/// - "ChannelMgr" = ExgMcChannelMgr
-/// - "IoMgr"      = ExgMcGroupIoMgr
-/// - "ToMiConvF"  = ExgMcToMiConv
-/// - "ToMiConvO"  = ExgMcToMiConv
+/// - 建構後 Sapling 為空, 但可視情況, 自行加入底下物件.
+///   - "ChannelMgr" = ExgMcChannelMgr
+///   - "IoMgr"      = ExgMcGroupIoMgr
+///   - "ToMiConvF"  = ExgMcToMiConv
+///   - "ToMiConvO"  = ExgMcToMiConv
 class f9twf_API ExgMcGroup : public fon9::seed::NamedMaTree {
    fon9_NON_COPY_NON_MOVE(ExgMcGroup);
    using base = fon9::seed::NamedMaTree;

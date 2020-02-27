@@ -79,17 +79,21 @@ struct WsSeedVisitor::SeedVisitor : public seed::SeedVisitor {
       if (auto ws = this->GetWsSeedVisitor()) {
          RevBufferList rbuf{128};
          const char*   cmdEcho;
-         switch (args.NotifyType_) {
-         case fon9::seed::SeedNotifyArgs::NotifyType::ParentSeedClear:
+         switch (args.NotifyKind_) {
+         default:
+         case fon9::seed::SeedNotifyKind::SubscribeStreamOK:
+         case fon9::seed::SeedNotifyKind::StreamData:
+         case fon9::seed::SeedNotifyKind::StreamRecover:
+         case fon9::seed::SeedNotifyKind::ParentSeedClear:
             return;
-         case fon9::seed::SeedNotifyArgs::NotifyType::PodRemoved:
+         case fon9::seed::SeedNotifyKind::PodRemoved:
             RevPrint(rbuf, '\n');
             cmdEcho = ">rs ";
             goto __REVPRINT_PATH_WITH_KEY_TEXT;
-         case fon9::seed::SeedNotifyArgs::NotifyType::SeedChanged:
+         case fon9::seed::SeedNotifyKind::SeedChanged:
             RevPrint(rbuf, args.GetGridView());
             // 不用 break; 繼續填入 ">ss path\n"
-         case fon9::seed::SeedNotifyArgs::NotifyType::SeedRemoved:
+         case fon9::seed::SeedNotifyKind::SeedRemoved:
             cmdEcho = ">ss ";
             RevPrint(rbuf, '\n');
             if (args.Tab_->GetIndex() != 0)
@@ -97,12 +101,12 @@ struct WsSeedVisitor::SeedVisitor : public seed::SeedVisitor {
 __REVPRINT_PATH_WITH_KEY_TEXT:
             RevPrint(rbuf, cmdEcho, subr.GetPath(), '/', args.KeyText_);
             break;
-         case fon9::seed::SeedNotifyArgs::NotifyType::SubscribeOK:
+         case fon9::seed::SeedNotifyKind::SubscribeOK:
             // 2020.02.06 調整訂閱機制, 應在此回覆首次查詢.
-            // 配合 NotifyType::SubscribeOK 調整, 共用 case NotifyType::TableChanged;
+            // 配合 NotifyKind = SubscribeOK 調整, 共用 case TableChanged;
             // 在此建立 gv 並在此直接送出, 然後 OnTicketRunnerBeforeGridView() 返回 false;
             // 一旦離開這裡, 就有可能再次觸發 OnSeedNotify(); 甚至 TicketRunnerGridView 還沒結束. 
-         case fon9::seed::SeedNotifyArgs::NotifyType::TableChanged:
+         case fon9::seed::SeedNotifyKind::TableChanged:
             RevPrint(rbuf, ' ', subr.GetPath(), "\n" ",0,1,SubrOK" "\n", args.GetGridView());
             if (args.Tab_->GetIndex() != 0)
                RevPrint(rbuf, ",,^", args.Tab_->Name_);
@@ -117,7 +121,7 @@ __REVPRINT_PATH_WITH_KEY_TEXT:
          return true;
       auto subr = this->NewSubscribe();
       if (subr->Subscribe(ToStrView(runner.OrigPath_), *req.Tab_, opTree) == seed::OpResult::no_error)
-         // 訂閱成功, 在 case fon9::seed::SeedNotifyArgs::NotifyType::SubscribeOK: 回覆 gv.
+         // 訂閱成功, 在 case fon9::seed::SeedNotifyKind::SubscribeOK: 回覆 gv.
          // 所以這裡返回 false, 不用再回覆 gv;
          return false;
       this->Unsubscribe();

@@ -3,12 +3,12 @@
 #include "f9twf/ExgMcChannel.hpp"
 #include "f9twf/ExgMdPkReceiver.hpp"
 #include "f9twf/ExgMcFmtSS.hpp"
-#include "f9twf/ExgMdFmtBasicInfo.hpp"
 #include "f9twf/ExgMrRecover.hpp"
 #include "fon9/FileReadAll.hpp"
 #include "fon9/Log.hpp"
 
 namespace f9twf {
+namespace f9fmkt = fon9::fmkt;
 
 ExgMcMessageConsumer::~ExgMcMessageConsumer() {
 }
@@ -395,109 +395,6 @@ void ExgMcChannel::NotifyConsumers(ExgMcMessage& e) {
    this->UnsafeConsumers_.Combine(combiner, e);
 }
 //--------------------------------------------------------------------------//
-struct ExgMcMessageHandler {
-   static void I010BasicInfoParser(ExgMcMessage& e) {
-      auto& pk = *static_cast<const ExgMcI010*>(&e.Pk_);
-      auto* symbs = e.Channel_.ChannelMgr_->Symbs_.get();
-      auto  locker = symbs->SymbMap_.Lock();
-      auto& symb = *static_cast<ExgMdSymb*>(symbs->FetchSymb(locker, fon9::StrView_eos_or_all(pk.ProdId_.Chars_, ' ')).get());
-      e.Symb_ = &symb;
-      if (!symb.CheckSetTradingSessionId(e.Channel_.ChannelMgr_->TradingSessionId_))
-         return;
-      symb.TradingMarket_ = (pk.TransmissionCode_ == '1' ? f9fmkt_TradingMarket_TwFUT : f9fmkt_TradingMarket_TwOPT);
-      symb.FlowGroup_ = fon9::PackBcdTo<fon9::fmkt::SymbFlowGroup_t>(pk.FlowGroup_);
-      symb.PriceOrigDiv_ = static_cast<uint32_t>(fon9::GetDecDivisor(
-         static_cast<uint8_t>(fon9::fmkt::Pri::Scale - fon9::PackBcdTo<uint8_t>(pk.DecimalLocator_))));
-      symb.StrikePriceDiv_ = static_cast<uint32_t>(fon9::GetDecDivisor(
-         fon9::PackBcdTo<uint8_t>(pk.StrikePriceDecimalLocator_)));
-      ExgMdPriceTo(symb.Ref_.Data_.PriRef_,   pk.ReferencePrice_,  symb.PriceOrigDiv_);
-      ExgMdPriceTo(symb.Ref_.Data_.PriUpLmt_, pk.RiseLimitPrice1_, symb.PriceOrigDiv_);
-      ExgMdPriceTo(symb.Ref_.Data_.PriDnLmt_, pk.FallLimitPrice1_, symb.PriceOrigDiv_);
-   }
-   //-----------------------------------------------------------------------//
-   static void I024MatchParser(ExgMcMessage&) {
-      if (0);// 成交明細.
-   }
-   static void I081BSParser(ExgMcMessage& e) {
-      auto& pk = *static_cast<const ExgMcI081*>(&e.Pk_);
-      auto  mdTime = e.Pk_.InformationTime_.ToDayTime();
-      auto* symbs = e.Channel_.ChannelMgr_->Symbs_.get();
-      auto  locker = symbs->SymbMap_.Lock();
-      auto& symb = *static_cast<ExgMdSymb*>(symbs->FetchSymb(locker, fon9::StrView_eos_or_all(pk.ProdId_.Chars_, ' ')).get());
-      e.Symb_ = &symb;
-      if (symb.CheckSetTradingSessionId(e.Channel_.ChannelMgr_->TradingSessionId_))
-         ExgMdEntryToSymbBS(mdTime, fon9::PackBcdTo<unsigned>(pk.NoMdEntries_), pk.MdEntry_, symb);
-   }
-   static void I083BSParser(ExgMcMessage& e) {
-      auto& pk = *static_cast<const ExgMcI083*>(&e.Pk_);
-      auto  mdTime = e.Pk_.InformationTime_.ToDayTime();
-      auto* symbs = e.Channel_.ChannelMgr_->Symbs_.get();
-      auto  locker = symbs->SymbMap_.Lock();
-      auto& symb = *static_cast<ExgMdSymb*>(symbs->FetchSymb(locker, fon9::StrView_eos_or_all(pk.ProdId_.Chars_, ' ')).get());
-      e.Symb_ = &symb;
-      if (symb.CheckSetTradingSessionId(e.Channel_.ChannelMgr_->TradingSessionId_))
-         ExgMdEntryToSymbBS(mdTime, fon9::PackBcdTo<unsigned>(pk.NoMdEntries_), pk.MdEntry_, symb);
-   }
-   //-----------------------------------------------------------------------//
-   static void I084SSParser(ExgMcMessage& e) {
-      switch (static_cast<const ExgMcI084*>(&e.Pk_)->MessageType_) {
-      //case 'A': McI084SSParserA(e); break;
-        case 'O': McI084SSParserO(e); break;
-      //case 'S': McI084SSParserS(e); break;
-      //case 'P': McI084SSParserP(e); break;
-      //case 'Z': McI084SSParserZ(e); break;
-      }
-   }
-   static void McI084SSParserO(ExgMcMessage& e) {
-      ExgMcChannel& rtch = e.Channel_.ChannelMgr_->GetRealtimeChannel(e.Channel_);
-      char          bufI083[sizeof(ExgMcI083) + sizeof(ExgMdEntry) * 100];
-      ExgMcI083*    pI083 = nullptr;
-      if (!rtch.IsSetupReloading_ && !rtch.UnsafeConsumers_.IsEmpty()) {
-         // 轉發 ExgMcI083 訊息.
-         // TODO: 也許應改成選項, 選擇: I084._O_ 是否要轉發 I083 訊息?
-         // TODO: ToMiConv 可以直接訂閱 Channel 13,14 處理 I084._O_ 然後轉發 I080 封包.
-         pI083 = reinterpret_cast<ExgMcI083*>(bufI083);
-         *static_cast<ExgMcHead*>(pI083) = e.Pk_;
-         pI083->MessageKind_ = 'B';
-         fon9::ToPackBcd(pI083->ChannelId_,  rtch.GetChannelId());
-         // pI083->ChannelSeq_ 設為 0, 讓處理的人可以判斷此時的 I083 是從快照而來.
-         fon9::ToPackBcd(pI083->ChannelSeq_, 0u);
-         fon9::ToPackBcd(pI083->VersionNo_,  1u);
-         // 試撮價格註記, '0':委託簿揭示訊息; '1':試撮後剩餘委託訊息.
-         // 2020.01.17: 根據期交所說明, 試撮階段不會有委託簿快照訊息.
-         pI083->CalculatedFlag_ = '0';
-      }
-
-      auto&    pk = static_cast<const ExgMcI084*>(&e.Pk_)->_O_OrderData_;
-      auto     mdTime = e.Pk_.InformationTime_.ToDayTime();
-      unsigned prodCount = fon9::PackBcdTo<unsigned>(pk.NoEntries_);
-      auto*    prodEntry = pk.Entry_;
-      auto*    symbs = e.Channel_.ChannelMgr_->Symbs_.get();
-      auto     locker = symbs->SymbMap_.Lock();
-      for (unsigned prodL = 0; prodL < prodCount; ++prodL) {
-         auto& symb = *static_cast<ExgMdSymb*>(symbs->FetchSymb(locker, fon9::StrView_eos_or_all(prodEntry->ProdId_.Chars_, ' ')).get());
-         auto  mdCount = fon9::PackBcdTo<unsigned>(prodEntry->NoMdEntries_);
-         if (symb.CheckSetTradingSessionId(e.Channel_.ChannelMgr_->TradingSessionId_)) {
-            ExgMdEntryToSymbBS(mdTime, mdCount, prodEntry->MdEntry_, symb);
-            if (pI083) {
-               static_assert(sizeof(pI083->NoMdEntries_) == 1, "");
-               *pI083->NoMdEntries_ = *prodEntry->NoMdEntries_;
-               memcpy(pI083->MdEntry_, prodEntry->MdEntry_, sizeof(ExgMdEntry) * mdCount);
-               pI083->ProdId_ = prodEntry->ProdId_;
-               memcpy(pI083->ProdMsgSeq_, prodEntry->LastProdMsgSeq_, sizeof(pI083->ProdMsgSeq_));
-               const unsigned pksz = sizeof(ExgMcI083) - sizeof(pI083->MdEntry_) + sizeof(ExgMdTail)
-                                   + sizeof(sizeof(ExgMdEntry) * mdCount);
-               fon9::ToPackBcd(pI083->BodyLength_, pksz - sizeof(ExgMcNoBody));
-               ExgMcMessage e083{*pI083, pksz, rtch, 0};
-               e083.Symb_ = &symb;
-               rtch.NotifyConsumers(e083);
-            }
-         }
-         prodEntry = reinterpret_cast<const ExgMcI084::OrderDataEntry*>(prodEntry->MdEntry_ + mdCount);
-      }
-   }
-};
-//--------------------------------------------------------------------------//
 // 即時行情接收流程: (必須區分 Fut or Opt)
 // 1. 準備階段:
 //    - 接收 [Channel 3.4.基本資料] 完整的一輪後, 可關閉 Receiver.
@@ -549,27 +446,6 @@ ExgMcChannelMgr::ExgMcChannelMgr(ExgMdSymbsSP symbs, fon9::StrView sysName, fon9
    // 快照更新.
    this->Channels_[13].Ctor(this, 13, ExgMcChannelStyle::Snapshot);
    this->Channels_[14].Ctor(this, 14, ExgMcChannelStyle::Snapshot);
-   // -----
-   this->McDispatcher_.Reg('1', '1', 7, &ExgMcMessageHandler::I010BasicInfoParser);
-   this->McDispatcher_.Reg('4', '1', 7, &ExgMcMessageHandler::I010BasicInfoParser);
-   if (0);//契約基本資料: I011.KIND-ID, DECIMAL-LOCATOR, STRIKE-PRICE-DECIMAL-LOCATOR...
-   // I011.END-SESSION 可以判斷 '0'一般交易時段, '1'盤後交易時段.
-   //
-   // 當 FetchSymb()->Contract_ == nullptr, 則應設定.
-   // 複式商品的 DECIMAL-LOCATOR 也要從 Contract_ 取得.
-   //
-   // 盤後交易某些商品資訊必須待一般交易時段結束方可產生，盤後交易時段各商品開始傳送 I010 的時間點將不同。
-   // => 所以不能用 Hb 來判斷是否 Cycled.
-
-   this->McDispatcher_.Reg('2', 'A', 1, &ExgMcMessageHandler::I081BSParser);
-   this->McDispatcher_.Reg('2', 'B', 1, &ExgMcMessageHandler::I083BSParser);
-   this->McDispatcher_.Reg('2', 'C', 1, &ExgMcMessageHandler::I084SSParser);
-   this->McDispatcher_.Reg('2', 'D', 1, &ExgMcMessageHandler::I024MatchParser);
-
-   this->McDispatcher_.Reg('5', 'A', 1, &ExgMcMessageHandler::I081BSParser);
-   this->McDispatcher_.Reg('5', 'B', 1, &ExgMcMessageHandler::I083BSParser);
-   this->McDispatcher_.Reg('5', 'C', 1, &ExgMcMessageHandler::I084SSParser);
-   this->McDispatcher_.Reg('5', 'D', 1, &ExgMcMessageHandler::I024MatchParser);
 }
 ExgMcChannelMgr::~ExgMcChannelMgr() {
 }

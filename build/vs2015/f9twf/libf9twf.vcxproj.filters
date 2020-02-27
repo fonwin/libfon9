@@ -27,6 +27,12 @@
     <Filter Include="Source Files\_base">
       <UniqueIdentifier>{5e5cf4db-dc62-47c2-b743-b3db27faa498}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\_MktData\_ToRts">
+      <UniqueIdentifier>{399bc067-3938-41cf-b50b-73fa45b83dbb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\_MktData\_ToRts">
+      <UniqueIdentifier>{890ed6a2-b3b5-4938-b3e0-7aed5bdaf115}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\..\f9twf\CMakeLists.txt" />
@@ -122,6 +128,18 @@
     <ClInclude Include="..\..\..\f9twf\ExgMdFmtBasicInfo.hpp">
       <Filter>Header Files\_MktData</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\f9twf\ExgMdFmtParsers.hpp">
+      <Filter>Header Files\_MktData</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\f9twf\ExgMdFmtMatchToRts.hpp">
+      <Filter>Header Files\_MktData\_ToRts</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\f9twf\ExgMdFmtBSToRts.hpp">
+      <Filter>Header Files\_MktData\_ToRts</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\f9twf\ExgMdFmtBasicInfoToRts.hpp">
+      <Filter>Header Files\_MktData\_ToRts</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\f9twf\ExgLineTmpArgs.cpp">
@@ -174,6 +192,18 @@
     </ClCompile>
     <ClCompile Include="..\..\..\f9twf\ExgMrRecover.cpp">
       <Filter>Source Files\_MktData</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\f9twf\ExgMdFmtParsers.cpp">
+      <Filter>Source Files\_MktData</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\f9twf\ExgMdFmtMatchToRts.cpp">
+      <Filter>Source Files\_MktData\_ToRts</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\f9twf\ExgMdFmtBSToRts.cpp">
+      <Filter>Source Files\_MktData\_ToRts</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\f9twf\ExgMdFmtBasicInfoToRts.cpp">
+      <Filter>Source Files\_MktData\_ToRts</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

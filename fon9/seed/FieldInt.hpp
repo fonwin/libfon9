@@ -75,6 +75,15 @@ public:
       this->PutValue(wr, StrTo(value, static_cast<IntT>(kNullValue)));
       return OpResult::no_error;
    }
+   virtual void CellToBitv(const RawRd& rd, RevBuffer& out) const override {
+      ToBitv(out, this->GetValue(rd));
+   }
+   virtual OpResult BitvToCell(const RawWr& wr, DcQueue& buf) const override {
+      IntT val{};
+      BitvTo(buf, val);
+      this->PutValue(wr, val);
+      return OpResult::no_error;
+   }
 
    virtual FieldNumberT GetNumber(const RawRd& rd, DecScaleT outDecScale, FieldNumberT nullValue) const override {
       (void)nullValue;

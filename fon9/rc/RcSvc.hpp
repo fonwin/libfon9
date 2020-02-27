@@ -1,0 +1,185 @@
+﻿// \file fon9/rc/RcSvc.hpp
+// \author fonwinz@gmail.com
+#ifndef __fon9_rc_RcSvc_hpp__
+#define __fon9_rc_RcSvc_hpp__
+#include "fon9/rc/RcSeedVisitor.hpp"
+#include "fon9/seed/SeedAcl.hpp"
+#include "fon9/ObjPool.hpp"
+#include "fon9/Log.hpp"
+#include <unordered_map>
+#include <deque>
+
+extern "C" {
+   struct f9sv_Seed : public fon9::seed::Raw {
+      fon9_NON_COPY_NON_MOVE(f9sv_Seed);
+      f9sv_Seed() = default;
+   };
+};
+//-----------------------------
+namespace fon9 { namespace rc {
+
+class fon9_API RcSvStreamDecoder;
+using RcSvStreamDecoderSP = std::unique_ptr<RcSvStreamDecoder>;
+class fon9_API RcSvStreamDecoderNote;
+using RcSvStreamDecoderNoteSP = std::unique_ptr<RcSvStreamDecoderNote>;
+
+//-----------------------------
+namespace svc {
+
+struct SeedRec : public f9sv_Seed {
+   fon9_NON_COPYABLE(SeedRec);
+   SeedRec() {
+      ZeroStruct(this->Handler_);
+   }
+   f9sv_ReportHandler      Handler_;
+   f9sv_SubrIndex          SubrIndex_{kSubrIndexNull};
+   SvFunc                  SvFunc_{};
+   char                    Padding___[3];
+   RcSvStreamDecoderNoteSP StreamDecoderNote_;
+   void ClearSvFunc() {
+      this->Handler_.FnOnReport_ = nullptr;
+      this->SubrIndex_ = kSubrIndexNull;
+      this->SvFunc_ = SvFunc::Empty;
+   }
+
+   static SeedRec* MakeSeedRec(const seed::Tab& tab) {
+      return seed::MakeDyMemRaw<SeedRec>(tab);
+   }
+};
+using SeedSP = std::unique_ptr<SeedRec>;
+using Seeds = std::vector<SeedSP>;
+// -----
+struct PodRec {
+   fon9_NON_COPY_NON_MOVE(PodRec);
+   SeedSP* Seeds_{};// 在 TreeRec::FetchPod() 初始化.
+
+   PodRec() = default;
+   ~PodRec() {
+      delete[] this->Seeds_;
+   }
+};
+using PodMap = std::unordered_map<CharVector, PodRec>;
+// -----
+/// 在收到 Layout 之前的查詢、訂閱, 都要先保留.
+struct PendingReq {
+   f9sv_ReportHandler   Handler_;
+   CharVector           SeedKey_;
+   CharVector           TabName_;
+   f9sv_TabSize         TabIndex_;
+   f9sv_SubrIndex       SubrIndex_;
+   SvFunc               SvFunc_;
+   char                 Padding___[7];
+   void AssignToSeed(SeedRec& seed) const {
+      seed.Handler_   = this->Handler_;
+      seed.SvFunc_    = this->SvFunc_;
+      seed.SubrIndex_ = this->SubrIndex_;
+   }
+};
+using PendingReqs = std::deque<PendingReq>;
+// -----
+struct TabRec {
+   fon9_NON_COPYABLE(TabRec);
+   TabRec() = default;
+   TabRec(TabRec&&) = default;
+   TabRec& operator=(TabRec&&) = default;
+   std::vector<f9sv_Field> Fields_;
+   RcSvStreamDecoderSP     StreamDecoder_;
+};
+using TabList = std::vector<TabRec>;
+// -----
+struct TreeRec {
+   fon9_NON_COPY_NON_MOVE(TreeRec);
+   const CharVector  TreePath_;
+   seed::LayoutSP    Layout_;
+   f9sv_Layout       LayoutC_;     // 提供給 C API 使用 layout 的定義.
+   TabList           TabList_;     // 提供給 C API 使用 LayoutC_ 裡面的 tab 的定義.
+   PodMap            PodMap_;      // 此棵樹所擁有的 pods.
+   PendingReqs       PendingReqs_; // 在尚未取得 layout 之前, 所有的要求暫放於此.
+
+   TreeRec(StrView treePath) : TreePath_{treePath} {
+      ZeroStruct(this->LayoutC_);
+   }
+   ~TreeRec();
+
+   PodRec& FetchPod(StrView seedKey, bool* isNew = nullptr);
+
+   /// assert(this->Layout_.get() == nullptr);
+   void ParseLayout(StrView cfgstr);
+};
+using TreeRecSP = std::unique_ptr<TreeRec>;
+// -----
+struct SubrRec {
+   TreeRec*       Tree_{};
+   CharVector     SeedKey_;
+   SeedSP*        Seeds_{}; // = PodRec::Seeds_
+   f9sv_TabSize   TabIndex_{};
+   /// 設定成 SvFuncCode::Unsubscribe 之後, 要拋棄所有的 [訂閱、訂閱資料] 事件.
+   SvFuncCode     SvFunc_{};
+   bool           IsStream_{false};
+   char           Padding___[2];
+   void ClearSvFunc() {
+      this->Tree_ = nullptr;
+      this->Seeds_ = nullptr;
+      this->SvFunc_ = SvFuncCode{};
+   }
+
+   /// 當有 layout 時, 訂閱紀錄必須與 Pod(Seed) 建立關聯.
+   void OnPodReady(const PodRec& pod, f9sv_SubrIndex subrIndex) {
+      assert(this->Seeds_ == nullptr);
+      this->Seeds_ = pod.Seeds_;
+      pod.Seeds_[this->TabIndex_]->SubrIndex_ = subrIndex;
+   }
+};
+using SubrMap = ObjPool<SubrRec>;
+// -----
+class TreeMapImpl : public seed::AclPathMap<TreeRecSP> {
+   using base = seed::AclPathMap<TreeRecSP>;
+public:
+   /// 訂閱註記, 使用 f9sv_SubrIndex 當作索引.
+   /// - 訂閱要求時 Alloc().
+   /// - 收到取消確認時才會呼叫: RemoveObj();
+   SubrMap  SubrMap_{64}; // reserveSize = 64;
+
+   void clear() {
+      base::clear();
+      this->SubrMap_.MoveOut();
+   }
+   TreeRec& fetch(const StrView& treePath) {
+      auto& itree = this->kfetch(CharVector::MakeRef(treePath));
+      if (!itree.second)
+         itree.second.reset(new TreeRec{treePath});
+      return *itree.second;
+   }
+};
+/// 在事件通知時, 允許使用者呼叫「f9sv_ API」, 所以使用 recursive_mutex;
+using TreeMap = MustLock<TreeMapImpl, std::recursive_mutex>;
+using TreeLocker = TreeMap::Locker;
+//--------------------------------------------------------------------------//
+struct RxSubrData {
+   fon9_NON_COPY_NON_MOVE(RxSubrData);
+   f9rc_ClientSession&        Session_;
+   char                       Padding___[6];
+   bool                       IsSubrLogged_{false};
+   bool                       IsNeedsLog_;
+   const seed::SeedNotifyKind NotifyKind_;
+   const f9sv_SubrIndex       SubrIndex_;
+   SubrRec* const             SubrRec_;
+   seed::Tab* const           Tab_;
+   SeedRec* const             SeedRec_;
+   RevBufferList              LogBuf_{kLogBlockNodeSize};
+   const TreeLocker           Map_;
+   CharVector                 SeedKey_;
+   std::string                Gv_;
+
+   RxSubrData(f9rc_ClientSession& ses, SvFunc fcAck, TreeLocker&& maplk, DcQueue& rxbuf);
+   ~RxSubrData() {
+      this->FlushLog();
+   }
+   void FlushLog();
+   void LogSubrRec();
+   StrView CheckLoadSeedKey(DcQueue& rxbuf);
+   void LoadGv(DcQueue& rxbuf);
+};
+
+} } } // namespaces
+#endif//__fon9_rc_RcSvc_hpp__

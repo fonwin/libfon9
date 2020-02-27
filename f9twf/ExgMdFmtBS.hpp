@@ -53,7 +53,7 @@ struct ExgMcI081 : public ExgMcHead {
 struct ExgMcI083 : public ExgMcHead {
    ExgMdProdId20     ProdId_;
    ExgMcProdMsgSeq   ProdMsgSeq_;
-   /// 試撮價格註記, '0':委託簿揭示訊息; '1':試撮後剩餘委託訊息.
+   /// 試撮價格註記, '0':委託簿揭示訊息; '1':試撮後剩餘委託簿.
    char              CalculatedFlag_;
    fon9::PackBcd<2>  NoMdEntries_;
    /// 根據 NoMdEntries_ 決定有幾筆 MdEntry_[];

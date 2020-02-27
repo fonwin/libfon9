@@ -81,8 +81,15 @@ enum class OpResult {
    /// 如果在 (2)=>(3) 之間, 有其他人又變動了「編輯中資料」, 則在執行(3)時會產生此錯誤!
    bad_apply_submit = -134,
 
-   /// 不支援異動訂閱: TreeOp::Subscribe(); PodOp::Subscribe();
+   /// 不支援訂閱「異動事件」: SubscribableOp::Subscribe();
    not_supported_subscribe  = -140,
+   /// 不支援訂閱「Stream 事件」: SubscribableOp::SubscribeStream();
+   not_supported_subscribe_stream = -141,
+   /// 訂閱「Stream 事件」提供的 args 參數有誤:
+   /// SubscribableOp::SubscribeStream(... StrView args ...);.
+   bad_subscribe_stream_args = -142,
+   /// 沒有訂閱, 取消失敗.
+   no_subscribe = -143,
 
    not_found_key      = -200,
    /// 指定的 tabName 找不到, 或 tabIndex 有誤.

@@ -183,10 +183,13 @@ io::RecvBufferSize RcSession::OnDevice_Recv(io::Device& dev, DcQueueList& rxbuf)
    try {
       return this->OnDevice_Recv_Parser(rxbuf);
    }
-   catch (BitvDecodeError&) {
-      this->ForceLogout("Packet frame error");
-      return io::RecvBufferSize::NoRecvEvent;
+   catch (BitvDecodeError& e) {
+      this->ForceLogout(std::string("Rc.BitvDecodeError:") + e.what());
    }
+   catch (std::exception& e) {
+      this->ForceLogout(std::string("Rc.Exception:") + e.what());
+   }
+   return io::RecvBufferSize::NoRecvEvent;
 }
 io::RecvBufferSize RcSession::OnDevice_Recv_Parser(DcQueueList& rxbuf) {
    if (!this->IsRxFunctionCodeReady_) { // 尚未收到 FunctionCode.

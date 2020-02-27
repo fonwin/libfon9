@@ -149,13 +149,16 @@ struct RtParser : public TwfPkReceiver, public fon9::fmkt::SymbTree {
    // isCalc = true = 試撮價格訊息.
    template <class Pk>
    static uintptr_t AssignMatch(RtParser& dst, const Pk& pk, bool isCalc) {
-      return AssignMatch(dst, fon9::StrView_eos_or_all(pk.ProdId_.Chars_, ' '), pk, isCalc)
+      return AssignMatch(dst, fon9::StrView_eos_or_all(pk.ProdId_.Chars_, ' '), pk, pk, isCalc)
              - reinterpret_cast<uintptr_t>(&pk);
    }
-   static uintptr_t AssignMatch(RtParser& dst, const fon9::StrView& symbid, const f9twf::ExgMdMatchHead& mat, bool isCalc) {
+   static uintptr_t AssignMatch(RtParser& dst, const fon9::StrView& symbid,
+                                const f9twf::ExgMdMatchHead& mat, const f9twf::ExgMdHead0& hdr,
+                                bool isCalc) {
       SymbMap::Locker      symbs{dst.SymbMap_};
       f9extests::SymbIn&   symb = *static_cast<f9extests::SymbIn*>(dst.FetchSymb(symbs, symbid).get());
-      symb.Deal_.Data_.Time_ = mat.MatchTime_.ToDayTime();
+      symb.Deal_.Data_.InfoTime_ = hdr.InformationTime_.ToDayTime();
+      symb.Deal_.Data_.DealTime_ = mat.MatchTime_.ToDayTime();
       mat.FirstMatchPrice_.AssignTo(symb.Deal_.Data_.Deal_.Pri_, symb.PriceOrigDiv_);
       symb.Deal_.Data_.Deal_.Qty_ = fon9::PackBcdTo<uint32_t>(mat.FirstMatchQty_);
       const f9twf::ExgMdMatchData* pdat = mat.MatchData_;
@@ -218,7 +221,7 @@ struct RtParser : public TwfPkReceiver, public fon9::fmkt::SymbTree {
       f9extests::SymbIn& symb = *static_cast<f9extests::SymbIn*>(rthis.FetchSymb(symbs, symbid).get());
       unsigned mdCount = fon9::PackBcdTo<unsigned>(static_cast<const f9twf::ExgMcI081*>(&pk)->NoMdEntries_);
       auto*    mdEntry = static_cast<const f9twf::ExgMcI081*>(&pk)->MdEntry_;
-      f9twf::ExgMdEntryToSymbBS(pk.InformationTime_.ToDayTime(), mdCount, mdEntry, symb);
+      f9twf::ExgMdToUpdateBS(pk.InformationTime_.ToDayTime(), mdCount, mdEntry, symb);
       if (reinterpret_cast<uintptr_t>(mdEntry + mdCount) - reinterpret_cast<uintptr_t>(&pk)
           != pksz - sizeof(f9twf::ExgMdTail))
          fon9_CheckTestResult("McI081BSParser.pksz", false);
@@ -228,7 +231,7 @@ struct RtParser : public TwfPkReceiver, public fon9::fmkt::SymbTree {
       SymbMap::Locker    symbs{rthis.SymbMap_};
       f9extests::SymbIn& symb = *static_cast<f9extests::SymbIn*>(rthis.FetchSymb(symbs, symbid).get());
       symb.BS_.Clear();
-      const void* entryEnd = f9twf::ExgMdEntryToSymbBS(pk.InformationTime_.ToDayTime(),
+      const void* entryEnd = f9twf::ExgMdToSnapshotBS(pk.InformationTime_.ToDayTime(),
          fon9::PackBcdTo<unsigned>(static_cast<const f9twf::ExgMcI083*>(&pk)->NoMdEntries_),
          static_cast<const f9twf::ExgMcI083*>(&pk)->MdEntry_,
          symb);

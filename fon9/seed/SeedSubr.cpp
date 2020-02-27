@@ -10,7 +10,7 @@ namespace fon9 { namespace seed {
 SeedNotifyArgs::~SeedNotifyArgs() {
 }
 void SeedNotifyArgs::MakeGridView() const {
-   if (this->NotifyType_ == NotifyType::TableChanged) {
+   if (this->NotifyKind_ == SeedNotifyKind::TableChanged) {
       CountDownLatch waiter{1};
       this->Tree_.OnTreeOp([this, &waiter](const TreeOpResult&, TreeOp* op) {
          if (!op)
@@ -33,7 +33,7 @@ void SeedNotifyArgs::MakeGridView() const {
 }
 
 SeedNotifySubscribeOK::SeedNotifySubscribeOK(TreeOp& opTree, Tab& tab, const StrView& keyText, const RawRd* rd)
-   : base(opTree.Tree_, &tab, keyText, rd, NotifyType::SubscribeOK)
+   : base(opTree.Tree_, &tab, keyText, rd, SeedNotifyKind::SubscribeOK)
    , OpTree_(opTree) {
 }
 void SeedNotifySubscribeOK::MakeGridView() const {
@@ -51,21 +51,21 @@ fon9_API void SeedSubj_Notify(UnsafeSeedSubj& subj, const SeedNotifyArgs& args) 
 }
 fon9_API void SeedSubj_NotifyPodRemoved(UnsafeSeedSubj& subj, Tree& tree, StrView keyText) {
    if (!subj.IsEmpty())
-      SeedSubj_Notify(subj, SeedNotifyArgs(tree, nullptr, keyText, nullptr, SeedNotifyArgs::NotifyType::PodRemoved));
+      SeedSubj_Notify(subj, SeedNotifyArgs(tree, nullptr, keyText, nullptr, SeedNotifyKind::PodRemoved));
 }
 fon9_API void SeedSubj_NotifySeedRemoved(UnsafeSeedSubj& subj, Tree& tree, Tab& tab, StrView keyText) {
    if (!subj.IsEmpty())
-      SeedSubj_Notify(subj, SeedNotifyArgs(tree, &tab, keyText, nullptr, SeedNotifyArgs::NotifyType::SeedRemoved));
+      SeedSubj_Notify(subj, SeedNotifyArgs(tree, &tab, keyText, nullptr, SeedNotifyKind::SeedRemoved));
 }
 fon9_API void SeedSubj_ParentSeedClear(UnsafeSeedSubj& subj, Tree& tree) {
    if (!subj.IsEmpty()) {
-      SeedSubj_Notify(subj, SeedNotifyArgs(tree, nullptr, TextBegin(), nullptr, SeedNotifyArgs::NotifyType::ParentSeedClear));
+      SeedSubj_Notify(subj, SeedNotifyArgs(tree, nullptr, TextBegin(), nullptr, SeedNotifyKind::ParentSeedClear));
       subj.Clear();
    }
 }
 fon9_API void SeedSubj_TableChanged(UnsafeSeedSubj& subj, Tree& tree, Tab& tab) {
    if (!subj.IsEmpty())
-      SeedSubj_Notify(subj, SeedNotifyArgs(tree, &tab, TextEnd(), nullptr, SeedNotifyArgs::NotifyType::TableChanged));
+      SeedSubj_Notify(subj, SeedNotifyArgs(tree, &tab, TextEnd(), nullptr, SeedNotifyKind::TableChanged));
 }
 
 

@@ -187,11 +187,11 @@ void ExgMktTestParser(const char* msgHead, const MktDataFile& mdf, int argc, cha
       }
       fon9::RevPrint(rbuf,
                      "SymbId=", symi->SymbId_, "\n"
-                     "Last deal: ", symi->Deal_.Data_.Time_, "\n"
+                     "Last deal: ", symi->Deal_.DealTime(), "\n"
                      "      Pri: ", symi->Deal_.Data_.Deal_.Pri_, fmtPri, "\n"
                      "      Qty: ", symi->Deal_.Data_.Deal_.Qty_, fmtQty, "\n"
                      " TotalQty: ", symi->Deal_.Data_.TotalQty_, fmtQty, "\n"
-                     "Last Sells --- Buys: ", symi->BS_.Data_.Time_, "\n"
+                     "Last Sells --- Buys: ", symi->BS_.Data_.InfoTime_, "\n"
       );
       std::cout << fon9::BufferTo<std::string>(rbuf.MoveOut()) << std::endl;
    }

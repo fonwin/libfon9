@@ -73,13 +73,13 @@ struct Fmt6Parser : public TwsPkReceiver, public fon9::fmkt::SymbTree {
       SymbMap::Locker      symbs{this->SymbMap_};
       f9extests::SymbIn&   symb = *static_cast<f9extests::SymbIn*>(this->FetchSymb(symbs, stkno).get());
       if (fmt6.ItemMask_ & 0x80) {
-         symb.Deal_.Data_.Time_.Assign<6>(tmu6);
+         symb.Deal_.Data_.InfoTime_.Assign<6>(tmu6);
          symb.Deal_.Data_.TotalQty_ = fon9::PackBcdTo<fon9::fmkt::Qty>(fmt6.TotalQty_);
          pqs->AssignTo(symb.Deal_.Data_.Deal_);
          ++pqs;
       }
       if ((fmt6.ItemMask_ & 0x7e) || (fmt6.ItemMask_ & 1) == 0) {
-         symb.BS_.Data_.Time_.Assign<6>(tmu6);
+         symb.BS_.Data_.InfoTime_.Assign<6>(tmu6);
          pqs = AssignBS(symb.BS_.Data_.Buys_, pqs, (fmt6.ItemMask_ & 0x70) >> 4);
          pqs = AssignBS(symb.BS_.Data_.Sells_, pqs, (fmt6.ItemMask_ & 0x0e) >> 1);
       }

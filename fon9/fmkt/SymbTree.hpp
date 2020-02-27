@@ -125,7 +125,7 @@ public:
       return this->GetSymb(this->SymbMap_.Lock(), symbid);
    }
 
-private:
+protected:
    class PodOp : public SymbPodOp {
       fon9_NON_COPY_NON_MOVE(PodOp);
       using base = SymbPodOp;
@@ -155,11 +155,13 @@ private:
          fnCallback(res);
       }
 
+      virtual void OnSymbPodOp(const StrView& strKeyText, SymbSP&& symb, seed::FnPodOp&& fnCallback, const Locker& lockedMap) {
+         PodOp op(this->Tree_, strKeyText, std::move(symb), lockedMap);
+         fnCallback(op, &op);
+      }
       void OnPodOp(const StrView& strKeyText, SymbSP&& symb, seed::FnPodOp&& fnCallback, const Locker& lockedMap) {
-         if (symb) {
-            PodOp op(this->Tree_, strKeyText, std::move(symb), lockedMap);
-            fnCallback(op, &op);
-         }
+         if (symb)
+            this->OnSymbPodOp(strKeyText, std::move(symb), std::move(fnCallback), lockedMap);
          else
             fnCallback(seed::PodOpResult{this->Tree_, seed::OpResult::not_found_key, strKeyText}, nullptr);
       }

@@ -51,6 +51,14 @@ public:
       return OpResult::no_error;
    }
 
+   virtual void CellToBitv(const RawRd& rd, RevBuffer& out) const override {
+      ToBitv(out, this->GetValue(rd));
+   }
+   virtual OpResult BitvToCell(const RawWr& wr, DcQueue& buf) const override {
+      BitvTo(buf, wr.GetMemberCell<StringT>(*this));
+      return OpResult::no_error;
+   }
+
    virtual OpResult SetNull(const RawWr& wr) const override {
       wr.GetMemberCell<StringT>(*this).clear();
       return OpResult::no_error;

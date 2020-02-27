@@ -7,7 +7,7 @@ namespace fon9 { namespace fmkt {
 
 seed::Fields SymbBS::MakeFields() {
    seed::Fields flds;
-   flds.Add(fon9_MakeField(SymbBS, Data_.Time_, "Time"));
+   flds.Add(fon9_MakeField(SymbBS, Data_.InfoTime_, "InfoTime"));
    char bsPriName[] = "-nP";
    char bsQtyName[] = "-nQ";
    int  idx;
@@ -27,6 +27,9 @@ seed::Fields SymbBS::MakeFields() {
    flds.Add(fon9_MakeField(SymbBS, Data_.DerivedSell_.Qty_, "DS1Q"));
    flds.Add(fon9_MakeField(SymbBS, Data_.DerivedBuy_.Pri_,  "DB1P"));
    flds.Add(fon9_MakeField(SymbBS, Data_.DerivedBuy_.Qty_,  "DB1Q"));
+
+   flds.Add(seed::FieldSP{new seed::FieldIntHx<underlying_type_t<BSFlag>>(
+      Named("Flags"), fon9_OffsetOfRawPointer(SymbBS, Data_.Flags_))});
    return flds;
 }
 

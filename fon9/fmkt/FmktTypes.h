@@ -100,6 +100,26 @@ inline f9fmkt_TradingSessionId IndexTo_f9fmkt_TradingSessionId(unsigned idx) {
       ? f9fmkt_TradingSessionId_Unknown : (f9fmkt_TradingSessionId)(idx);
 }
 
+/// 交易時段狀態.
+/// (value & 0x0f) = FIX Tag#340(TradSesStatus:State of the trading session).
+fon9_ENUM(f9fmkt_TradingSessionSt, uint8_t) {
+   f9fmkt_TradingSessionSt_Unknown         = 0x00,
+   f9fmkt_TradingSessionSt_RequestRejected = 0x06,
+
+   /// 清盤(FIX 無此狀態).
+   f9fmkt_TradingSessionSt_Clear           = 0x10,
+
+   /// 開盤前可收單.
+   f9fmkt_TradingSessionSt_PreOpen         = 0x34,
+   f9fmkt_TradingSessionSt_Open            = 0x42,
+   f9fmkt_TradingSessionSt_Halted          = 0x51,
+   f9fmkt_TradingSessionSt_PreClose        = 0x65,
+   f9fmkt_TradingSessionSt_Closed          = 0x73,
+};
+inline char f9fmkt_TradingSessionSt_ToFixTradSesStatus(f9fmkt_TradingSessionSt st) {
+   return (char)((st & 0x0f) + '0');
+}
+
 fon9_ENUM(f9fmkt_PriType, char) {
    f9fmkt_PriType_Unknown = 0,
    /// 限價.

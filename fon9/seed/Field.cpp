@@ -7,6 +7,9 @@ namespace fon9 { namespace seed {
 
 Field::~Field() {
 }
+FieldNumberT Field::GetNullValue() const {
+   return 0;
+}
 OpResult Field::SetNull(const RawWr& wr) const {
    (void)wr;
    return OpResult::not_supported_null;

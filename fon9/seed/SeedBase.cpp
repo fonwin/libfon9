@@ -40,6 +40,9 @@ fon9_API const char* GetOpResultMessage(OpResult res) {
       case_return(not_supported_grid_apply);
       case_return(bad_apply_submit);
       case_return(not_supported_subscribe);
+      case_return(not_supported_subscribe_stream);
+      case_return(bad_subscribe_stream_args);
+      case_return(no_subscribe);
 
       case_return(not_found_key);
       case_return(not_found_tab);

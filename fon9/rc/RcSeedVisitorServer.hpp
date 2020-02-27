@@ -33,7 +33,7 @@ class RcSeedVisitorServerNote : public RcFunctionNote {
 
    struct UnsubRunnerSP;
    struct TicketRunnerSubscribe;
-   /// 在呼叫 op.Subscribe() 之前設定, 在 NotifyType::SubscribeOK 時, 送出訂閱結果.
+   /// 在呼叫 op.Subscribe() 之前設定, 在 NotifyKind = SubscribeOK 時, 送出訂閱結果.
    /// 此時 SubrList_ 必定在鎖定狀態.
    TicketRunnerSubscribe* Runner_{};
    struct SubrReg : public intrusive_ref_counter<SubrReg> {
@@ -46,7 +46,10 @@ class RcSeedVisitorServerNote : public RcFunctionNote {
       const f9sv_SubrIndex SubrIndex_;
       f9sv_TabSize         TabIndex_;
       SvFuncCode           SvFunc_{SvFuncCode::Subscribe};
-      char                 Padding___[3];
+      bool                 IsStream_{false};
+      /// 當收到 NotifyKind = ParentSeedClear, 或 訂閱 seed 收到 PodRemoved, SeedRemoved 時;
+      bool                 IsSubjectClosed_{false};
+      char                 Padding___[1];
       seed::TreeSP         Tree_;
       SubConn              SubConn_{};
       const CharVector     SeedKey_;

@@ -38,6 +38,9 @@ public:
    /// value = Base64 字串.
    virtual OpResult StrToCell(const RawWr& wr, StrView value) const override;
 
+   virtual void CellToBitv(const RawRd& rd, RevBuffer& out) const override;
+   virtual OpResult BitvToCell(const RawWr& wr, DcQueue& buf) const override;
+
    /// 不支援, 傳回 nullValue;
    virtual FieldNumberT GetNumber(const RawRd& rd, DecScaleT outDecScale, FieldNumberT nullValue) const override;
    /// 不支援, 不改變 wr, 傳回 OpResult::not_supported_number.
@@ -93,7 +96,10 @@ public:
    virtual void CellRevPrint(const RawRd& rd, StrView fmt, RevBuffer& out) const override;
    /// value = Base64 字串.
    virtual OpResult StrToCell(const RawWr& wr, StrView value) const override;
-   
+
+   virtual void CellToBitv(const RawRd& rd, RevBuffer& out) const override;
+   virtual OpResult BitvToCell(const RawWr& wr, DcQueue& buf) const override;
+
    /// 不支援, 傳回 nullValue;
    virtual FieldNumberT GetNumber(const RawRd& rd, DecScaleT outDecScale, FieldNumberT nullValue) const override;
    /// 不支援, 不改變 wr, 傳回 OpResult::not_supported_number.

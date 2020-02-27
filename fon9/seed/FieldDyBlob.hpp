@@ -37,6 +37,9 @@ public:
    /// 否則將 value 視為 base64 字串轉成 bytes 之後填入.
    virtual OpResult StrToCell(const RawWr& wr, StrView value) const override;
 
+   virtual void CellToBitv(const RawRd& rd, RevBuffer& out) const override;
+   virtual OpResult BitvToCell(const RawWr& wr, DcQueue& buf) const override;
+
    /// 清除資料: 將 blob 資料大小設為空.
    virtual OpResult SetNull(const RawWr& wr) const override;
    /// \return blob.empty()

@@ -62,13 +62,13 @@ inline SvFunc ClrSvFuncFlag(SvFunc* src, SvFuncFlag flag) {
    assert((cast_to_underlying(flag) & cast_to_underlying(SvFunc::FuncMask)) == 0);
    return *src = static_cast<SvFunc>(cast_to_underlying(*src) & ~cast_to_underlying(flag));
 }
-inline SvFunc SvFuncSubscribeData(seed::SeedNotifyArgs::NotifyType v) {
+inline SvFunc SvFuncSubscribeData(seed::SeedNotifyKind v) {
    return static_cast<SvFunc>(cast_to_underlying(SvFuncCode::SubscribeData)
                               | (cast_to_underlying(v) << 4));
 }
-inline seed::SeedNotifyArgs::NotifyType GetSvFuncSubscribeDataNotifyType(SvFunc src) {
+inline seed::SeedNotifyKind GetSvFuncSubscribeDataNotifyKind(SvFunc src) {
    assert(GetSvFuncCode(src) == SvFuncCode::SubscribeData);
-   return static_cast<seed::SeedNotifyArgs::NotifyType>(cast_to_underlying(src) >> 4);
+   return static_cast<seed::SeedNotifyKind>(cast_to_underlying(src) >> 4);
 }
 
 //--------------------------------------------------------------------------//
@@ -152,7 +152,15 @@ constexpr f9sv_SubrIndex   kSubrIndexNull = std::numeric_limits<f9sv_SubrIndex>:
 
 /// 如果 tabName == "*" 則為 all tabs.
 constexpr bool IsTabAll(const char* tabName) {
-   return (tabName[0] == '*' && tabName[1] == '\0');
+   return (tabName && tabName[0] == '*' && tabName[1] == '\0');
+}
+/// 如果 tabName.Get1st() == '$' 則為 SubscribeStream 的訂閱格式:
+/// - "$TabName:StreamDecoderName:Args";
+constexpr bool IsSubscribeStream(const StrView& tabName) {
+   return (tabName.Get1st() == '$');
+}
+constexpr bool IsSubscribeStream(const char* tabName) {
+   return (tabName && tabName[0] == '$');
 }
 /// 如果 seedKey == "\t" 則表示訂閱 tree; 否則為訂閱指定的 key.
 constexpr bool IsSubrTree(const char* seedKey) {

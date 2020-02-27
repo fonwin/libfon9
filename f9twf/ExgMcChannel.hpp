@@ -12,7 +12,6 @@
 
 namespace f9twf {
 
-struct ExgMcMessageHandler;
 class f9twf_API ExgMcChannel;
 
 class ExgMrRecoverSession;
@@ -81,6 +80,9 @@ enum class ExgMcChannelStyle : uint8_t {
    /// ChannelCycled() 只會觸發一次.
    /// - Channel 3.4.基本資料: 2個 Hb 之間, 沒有遺漏訊息.
    ///   - 也許應該找一個特定訊息(例:第1次收到的I010, 等下次收到相同內容時, 視為一個循環).
+   ///   - 盤後交易某些商品資訊必須待一般交易時段結束方可產生，
+   ///     盤後交易時段各商品開始傳送 I010 的時間點將不同。
+   ///     => 所以不能用單純使用 Hb 來判斷是否 Cycled.
    CycledNotify = 0x80,
 
    /// Channel 3.4.基本資料.
@@ -113,11 +115,10 @@ enum class ExgMcChannelState : uint8_t {
 class f9twf_API ExgMcChannel : private fon9::PkContFeeder {
    fon9_NON_COPY_NON_MOVE(ExgMcChannel);
    using base = fon9::PkContFeeder;
-   friend struct ExgMcMessageHandler;
    friend class f9twf_API ExgMcChannelMgr;
 
    /// 封包消費者, 例: McToMiConv.
-   /// 在通知 Consumer 之前, 會先進行 DispatchMcMessage();
+   /// 在通知 Consumer 之前, 應先進行 DispatchMcMessage();
    fon9::UnsafeSubject<ExgMcMessageConsumer*> UnsafeConsumers_{8};
 
    using RecoversImpl = std::deque<ExgMrRecoverSessionSP>;
@@ -153,7 +154,6 @@ class f9twf_API ExgMcChannel : private fon9::PkContFeeder {
    }
 
    void DispatchMcMessage(ExgMcMessage& e);
-   void NotifyConsumers(ExgMcMessage& e);
    void PkContOnReceived(const void* pk, unsigned pksz, SeqT seq) override;
    void PkContOnTimer(PkPendings::Locker&& pks) override;
    void PkLogAppend(const void* pk, unsigned pksz, SeqT seq) {
@@ -193,6 +193,13 @@ public:
    bool IsRealtime() const {
       return this->ChannelId_ == 1 || this->ChannelId_ == 2;
    }
+
+   bool IsNeedsNotifyConsumer() const {
+      return (!this->IsSetupReloading_ && !this->UnsafeConsumers_.IsEmpty());
+   }
+   /// - 在 this->ChannelMgr_->DispatchMcMessage(e); 之後, 將收到的封包轉發給訂閱者(例: McToMiConv).
+   /// - 可對於部分手動建立的訊息(例: 收到 I084._O_ 轉成 I083), 透過此處轉發給訂閱者.
+   void NotifyConsumers(ExgMcMessage& e);
 
    /// 返回 channel 狀態, 讓 McReceiver 決定是否需要開啟接收程序.
    /// - 部分 channel 的資料使用輪播方式不斷重複, 所以只要收過一輪,
@@ -235,9 +242,21 @@ public:
    /// = sysName + "_" + groupName;
    const std::string    Name_;
    const ExgMdSymbsSP   Symbs_;
+
+   /// 預設沒有任何的 McMessageParser, 您應該在建構之後, 透過 RegMcMessageParser() 註冊需要解析的封包格式.
    ExgMcChannelMgr(ExgMdSymbsSP symbs, fon9::StrView sysName, fon9::StrView groupName, f9fmkt_TradingSessionId tsesId);
    ~ExgMcChannelMgr();
 
+   using FnMcMessageParser = void(*)(ExgMcMessage&);
+   /// 應在 ExgMcChannelMgr 建構後, 使用前, 立即註冊訊息處理者.
+   /// - McMessageParser 應由 Plugins 處理? 因為不同系統要處理的事項不同, 例:
+   ///   - 行情發送系統: 解析行情時,同時編製要發行(儲存)的包封.
+   ///   - 快速刪單系統: 解析行情後,直接觸發內部事件.
+   void RegMcMessageParser(char tx, char mg, uint8_t ver, FnMcMessageParser parser) {
+      this->McDispatcher_.Reg(tx, mg, ver, parser);
+   }
+
+   /// 在系統啟動時, 換日時... 會重新啟動 ChannelMgr;
    void StartupChannelMgr(std::string logPath);
 
    enum {
@@ -262,11 +281,11 @@ public:
          .GetChannelState() >= ExgMcChannelState::Cycled;
    }
 
-   /// 根據 MessageId(TransmissionCode & MessageKind) 分派處理.
-   /// 若與 e.Pk_ 與 symbol 有關, 則會在返回前設定 e.Symb_;
+   /// 根據 MessageId(TransmissionCode & MessageKind) 分派給之前註冊好的 parser 處理.
+   /// 若與 e.Pk_ 與 symbol 有關, 則會在返回前設定 e.Symb_; 然後 channel 再將 e 送給 Consumers.
    void DispatchMcMessage(ExgMcMessage& e) {
-      if (auto fnHandler = this->McDispatcher_.Get(e.Pk_))
-         fnHandler(e);
+      if (auto fnParser = this->McDispatcher_.Get(e.Pk_))
+         fnParser(e);
    }
    ExgMcChannelState OnPkReceived(const ExgMcHead& pk, unsigned pksz) {
       if (auto* channel = this->GetChannel(pk.GetChannelId()))
@@ -281,8 +300,12 @@ public:
    void ChannelCycled(ExgMcChannel& src);
    void OnSnapshotDone(ExgMcChannel& src, uint64_t lastRtSeq);
 
+   bool CheckSymbTradingSessionId(ExgMdSymb& symb) {
+      return symb.CheckSetTradingSessionId(*this->Symbs_, this->TradingSessionId_);
+   }
+
 private:
-   using McDispatcher = ExgMdMessageDispatcher<void(*)(ExgMcMessage&)>;
+   using McDispatcher = ExgMdMessageDispatcher<FnMcMessageParser>;
    McDispatcher   McDispatcher_;
    ExgMcChannel   Channels_[kChannelCount];
 };

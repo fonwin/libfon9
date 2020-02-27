@@ -174,6 +174,9 @@ set(fon9src
  fmkt/SymbDeal.cpp
  fmkt/TradingRequest.cpp
  fmkt/TradingLine.cpp
+ fmkt/SymbHL.cpp
+ fmkt/MdRtsTypes.cpp
+ fmkt/MdRtStream.cpp
 
  fix/FixBase.cpp
  fix/FixCompID.cpp
@@ -199,9 +202,13 @@ set(fon9src
  rc/RcClientSession.cpp
  rc/RcClientApi.cpp
  rc/RcSeedVisitor.cpp
+ rc/RcSeedVisitorServer.cpp
+ rc/RcSvc.cpp
  rc/RcSeedVisitorClient.cpp
  rc/RcSeedVisitorClientReq.cpp
- rc/RcSeedVisitorServer.cpp
+ rc/RcSeedVisitorClientCAPI.cpp
+ rc/RcSvStreamDecoder.cpp
+ rc/RcMdRtsDecoder.cpp
 )
 add_library(fon9_s STATIC ${fon9src})
 target_link_libraries(fon9_s pthread rt dl)

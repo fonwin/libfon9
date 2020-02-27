@@ -4,6 +4,23 @@
 
 namespace fon9 { namespace rc {
 
+seed::Tab* RcSvGetTabStreamArgs(seed::Layout& layout, StrView& tabNameAndStreamArgs) {
+   StrView tabName = tabNameAndStreamArgs;
+   if (!IsSubscribeStream(tabName))
+      tabNameAndStreamArgs.Reset(nullptr);
+   else {
+      tabNameAndStreamArgs.SetBegin(tabName.begin() + 1);
+      tabName = StrFetchNoTrim(tabNameAndStreamArgs, ':');
+   }
+   return layout.GetTab(tabName);
+}
+StrView RcSvGetStreamDecoderName(StrView tabNameAndStreamArgs) {
+   if (!IsSubscribeStream(tabNameAndStreamArgs))
+      return nullptr;
+   StrFetchNoTrim(tabNameAndStreamArgs, ':'); // 移除 TabName;
+   return StrFetchNoTrim(tabNameAndStreamArgs, ':'); // 取出 StreamDecoderName;
+}
+
 RcSvClientRequest::RcSvClientRequest(RcClientSession& ses, bool isNeedsLogInfo,
                                      StrView funcName, SvFuncCode fc,
                                      const f9sv_SeedName& seedName, f9sv_ReportHandler handler)
@@ -23,8 +40,8 @@ RcSvClientRequest::RcSvClientRequest(RcClientSession& ses, bool isNeedsLogInfo,
 RcSvClientRequest::RcSvClientRequest(RcClientSession& ses, bool isNeedsLogInfo,
                                      StrView funcName, SvFunc fc,
                                      RcSeedVisitorClientNote& note,
-                                     RcSeedVisitorClientNote::TreeRec& tree,
-                                     const RcSeedVisitorClientNote::PendingReq& preq)
+                                     svc::TreeRec& tree,
+                                     const svc::PendingReq& preq)
    : Session_(ses)
    , Note_{&note}
    , OrigTreePath_{ToStrView(tree.TreePath_)}
@@ -111,6 +128,8 @@ void RcSvClientRequest::SendRequest() {
    }
    else if (this->TabIndex_ == kTabAll)
       RevPutBitv(rbuf, fon9_BitvV_NumberNull);
+   else if (fc == SvFuncCode::Subscribe && !this->StreamArgs_.IsNull())
+      ToBitv(rbuf, this->OrigTabName_);
    else
       ToBitv(rbuf, this->TabIndex_);
    // -----
@@ -147,6 +166,18 @@ f9sv_Result RcSvClientRequest::FinalCheckSendRequest(f9sv_Result retval) {
    return retval;
 }
 //--------------------------------------------------------------------------//
+f9sv_Result RcSvClientRequest::CheckSubrReqSt() {
+   if (this->TabIndex_ == kTabAll)
+      return f9sv_Result_NotFoundTab;
+   StrView streamDecoderName = RcSvGetStreamDecoderName(this->OrigTabName_);
+   if (!streamDecoderName.IsNull()) {
+      if (RcSvStreamDecoderPark::Register(streamDecoderName, nullptr) == nullptr) {
+         // StreamDecoder 不存在.
+         return ToResultC(seed::OpResult::bad_subscribe_stream_args);
+      }
+   }
+   return this->CheckReqSt();
+}
 f9sv_Result RcSvClientRequest::CheckReqSt() {
    assert(this->Tree_ == nullptr);
    if (fon9_UNLIKELY(this->Note_ == nullptr)) {
@@ -235,7 +266,7 @@ __UNSUBSCRIBE_1ST_PENDING:;
    // - 沒有 layout 無法建立 seed.
    // - 所以: 尚未取得 layout 的查詢, 都必須暫存在 tree.PendingReqs_.
    this->Tree_->PendingReqs_.resize(this->Tree_->PendingReqs_.size() + 1);
-   RcSeedVisitorClientNote::PendingReq& pending = this->Tree_->PendingReqs_.back();
+   svc::PendingReq& pending = this->Tree_->PendingReqs_.back();
    pending.SvFunc_    = origSvFunc;
    pending.SubrIndex_ = this->SubrIndex_;
    pending.Handler_   = this->Handler_;
@@ -254,7 +285,8 @@ f9sv_Result RcSvClientRequest::FetchSeedSt(const TreeLocker& locker) {
       }
    }
    else if (this->TabIndex_ != kTabAll) {
-      auto* tab = this->Tree_->Layout_->GetTab(this->OrigTabName_);
+      this->StreamArgs_ = this->OrigTabName_;
+      auto* tab = RcSvGetTabStreamArgs(*this->Tree_->Layout_, this->StreamArgs_);
       if (tab == nullptr) {
          this->ExtMsg_ = "|err=TabName not found.";
          return f9sv_Result_NotFoundTab;
@@ -295,7 +327,7 @@ f9sv_Result RcSvClientRequest::FetchSeedSt(const TreeLocker& locker) {
          rpt.TreePath_   = ToStrView(this->Tree_->TreePath_).ToCStrView();
          rpt.SeedKey_    = this->OrigSeedKey_.ToCStrView();
          rpt.Layout_     = &this->Tree_->LayoutC_;
-         rpt.Tab_        = &this->Tree_->TabList_[this->TabIndex_];
+         rpt.Tab_        = &this->Tree_->LayoutC_.TabList_[this->TabIndex_];
          seed->Handler_.FnOnReport_(&this->Session_, &rpt);
       }
       auto* subr = locker->SubrMap_.GetObjPtr(this->SubrIndex_);
@@ -316,7 +348,7 @@ f9sv_Result RcSvClientRequest::FetchSeedSt(const TreeLocker& locker) {
 f9sv_Result RcSvClientRequest::NoSubscribeError() {
    this->SvFunc_ = SvFunc::Empty;
    this->ExtMsg_ = "|info=NoSubscribe.";
-   return f9sv_Result_NoSubscribe;
+   return ToResultC(seed::OpResult::no_subscribe);
 }
 
 } } // namespaces

@@ -228,14 +228,22 @@ public:
 
    /// 訂閱異動通知.
    virtual OpResult Subscribe(SubConn* pSubConn, Tab& tab, FnSeedSubr subr);
-
    /// 取消異動通知.
    virtual OpResult Unsubscribe(SubConn subConn, Tab& tab);
+
+   /// 訂閱 Stream 通知.
+   virtual OpResult SubscribeStream(SubConn* pSubConn, Tab& tab, StrView args, FnSeedSubr subr);
+   /// 取消 Stream 通知.
+   virtual OpResult UnsubscribeStream(SubConn subConn, Tab& tab);
 };
 
 inline OpResult SubscribeUnsupported(SubConn* pSubConn) {
    *pSubConn = nullptr;
    return OpResult::not_supported_subscribe;
+}
+inline OpResult SubscribeStreamUnsupported(SubConn* pSubConn) {
+   *pSubConn = nullptr;
+   return OpResult::not_supported_subscribe_stream;
 }
 
 /// \ingroup seed

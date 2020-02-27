@@ -26,6 +26,15 @@ OpResult FieldChars::StrToCell(const RawWr& wr, StrView value) const {
    return OpResult::no_error;
 }
 
+void FieldChars::CellToBitv(const RawRd& rd, RevBuffer& out) const {
+   ToBitv(out, this->GetValue(rd));
+}
+
+OpResult FieldChars::BitvToCell(const RawWr& wr, DcQueue& buf) const {
+   BitvToByteArray(buf, wr.GetCellPtr<char>(*this), this->Size_);
+   return OpResult::no_error;
+}
+
 OpResult FieldChars::SetNull(const RawWr& wr) const {
    assert(this->Size_ > 0);
    *wr.GetCellPtr<char>(*this) = '\0';
@@ -79,6 +88,14 @@ OpResult FieldChar1::StrToCell(const RawWr& wr, StrView value) const {
    return OpResult::no_error;
 }
 
+void FieldChar1::CellToBitv(const RawRd& rd, RevBuffer& out) const {
+   ToBitv(out, this->GetValue(rd));
+}
+OpResult FieldChar1::BitvToCell(const RawWr& wr, DcQueue& buf) const {
+   BitvTo(buf, *wr.GetCellPtr<char>(*this));
+   return OpResult::no_error;
+}
+
 OpResult FieldChar1::Copy(const RawWr& wr, const RawRd& rd) const {
    *wr.GetCellPtr<char>(*this) = *rd.GetCellPtr<char>(*this);
    return OpResult::no_error;
@@ -97,6 +114,15 @@ OpResult FieldEnabledYN::StrToCell(const RawWr& wr, StrView value) const {
 }
 StrView FieldEnabledYN::GetTypeId(NumOutBuf&) const {
    return StrView{"C1Y"};
+}
+void FieldEnabledYN::CellToBitv(const RawRd& rd, RevBuffer& out) const {
+   ToBitv(out, this->GetValue(rd)=='Y');
+}
+OpResult FieldEnabledYN::BitvToCell(const RawWr& wr, DcQueue& buf) const {
+   bool res;
+   BitvTo(buf, res);
+   *wr.GetCellPtr<char>(*this) = res ? 'Y' : '\0';
+   return OpResult::no_error;
 }
 
 } } // namespaces

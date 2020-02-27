@@ -10,28 +10,42 @@ constexpr f9sv_Result ToResultC(seed::OpResult res) {
    return static_cast<f9sv_Result>(cast_to_underlying(res));
 }
 
+/// 若 IsSubscribeStream(tabNameAndStreamArgs) 則表示為訂閱 Stream 使用的 TabName 格式:
+/// - "$TabName:StreamDecoderName:Args";
+///   返回後 tabNameAndStreamArgs = "StreamDecoderName:Args";
+/// - 否則為一般的 TabName;
+///   返回後 tabNameAndStreamArgs.IsNull();
+seed::Tab* RcSvGetTabStreamArgs(seed::Layout& layout, StrView& tabNameAndStreamArgs);
+StrView RcSvGetStreamDecoderName(StrView tabNameAndStreamArgs);
+
 struct RcSvClientRequest {
    fon9_NON_COPY_NON_MOVE(RcSvClientRequest);
-   RcClientSession&                    Session_;
-   RcSeedVisitorClientNote* const      Note_;
-   seed::AclPathParser                 Parser_;
-   const StrView                       OrigTreePath_;
-   const StrView                       OrigTabName_;
-   const StrView                       OrigSeedKey_;
-   f9sv_TabSize                        TabIndex_;
+   RcClientSession&                 Session_;
+   RcSeedVisitorClientNote* const   Note_;
+   seed::AclPathParser              Parser_;
+   const StrView                    OrigTreePath_;
+   const StrView                    OrigTabName_;
+   const StrView                    OrigSeedKey_;
+   f9sv_TabSize                     TabIndex_;
    // 當 TabName_ == "*" 若有任一 seed 正在查詢或訂閱, 則返回失敗.
    // 此處記錄正在查訊或訂閱的 seed 的 TabIndex.
    f9sv_TabSize                        DupTabIndex_{kTabAll};
+   /// 在 this->Tree_ 有 Layout_ 的情況下, 若 IsSubscribeStream(this->OrigTabName_)
+   /// - 則從 OrigTabName_ = "$TabName:StreamDecoderName:Args";
+   ///   提取出 this->StreamArgs_ = "StreamDecoderName:Args";
+   /// - 否則 this->OrigTabName_ 為一般 TabName,
+   ///   此時 this->StreamArgs_.IsNull();
+   StrView                    StreamArgs_;
    // for log.
-   const StrView                       FuncName_;
-   bool                                IsNeedsLogInfo_;
+   const StrView              FuncName_;
+   bool                       IsNeedsLogInfo_;
    // 若有將 req 放到 TreeRec::PendingReqs_; 則會將此處設為 SvFunc::Empty;
-   SvFunc                              SvFunc_;
-   char                                Padding___[2];
-   f9sv_SubrIndex                      SubrIndex_{kSubrIndexNull};
-   const f9sv_ReportHandler            Handler_;
-   StrView                             ExtMsg_;
-   RcSeedVisitorClientNote::TreeRec*   Tree_{};
+   SvFunc                     SvFunc_;
+   char                       Padding___[2];
+   f9sv_SubrIndex             SubrIndex_{kSubrIndexNull};
+   const f9sv_ReportHandler   Handler_;
+   StrView                    ExtMsg_;
+   svc::TreeRec*              Tree_{};
 
    RcSvClientRequest(RcClientSession& ses, bool isNeedsLogInfo,
                      StrView funcName, SvFuncCode fc,
@@ -39,15 +53,15 @@ struct RcSvClientRequest {
    RcSvClientRequest(RcClientSession& ses, bool isNeedsLogInfo,
                      StrView funcName, SvFunc fc,
                      RcSeedVisitorClientNote& note,
-                     RcSeedVisitorClientNote::TreeRec& tree,
-                     const RcSeedVisitorClientNote::PendingReq& req);
+                     svc::TreeRec& tree,
+                     const svc::PendingReq& req);
 
    /// 解構時, 如果有需要, 則記錄 log.
    virtual ~RcSvClientRequest();
    void FlushLog();
 
-   using TreeLocker = RcSeedVisitorClientNote::TreeLocker;
-   using PodRec = RcSeedVisitorClientNote::PodRec;
+   using TreeLocker = svc::TreeLocker;
+   using PodRec = svc::PodRec;
 
    /// 檢查 retval 是否允許送出要求, 或直接觸發失敗通知(this->Handler_).
    /// retval 的來源: this->FetchSeedSt(); 或 this->CheckSubrReqSt(); 或 this->CheckReqSt();
@@ -61,9 +75,7 @@ struct RcSvClientRequest {
    ///     - 則 this 放入 TreeRec::PendingReqs_;
    ///     - 清除 this->SvFunc_; 讓 this->FinalCheckSendRequest(); 可判斷: 已放入 Pending, 不用 Send;
    f9sv_Result CheckReqSt();
-   f9sv_Result CheckSubrReqSt() {
-      return this->TabIndex_ == fon9::rc::kTabAll ? f9sv_Result_NotFoundTab : this->CheckReqSt();
-   }
+   f9sv_Result CheckSubrReqSt();
 
    /// 在已有 Layout 的情況下.
    /// - 檢查 TabName_, TabIndex_ 是否正確.
@@ -88,7 +100,7 @@ private:
    f9sv_Result CheckCurrSt(SvFunc currSt);
 
    /// 設定 Seed 的 SvFunc_ 及 Handler_;
-   void AssignToSeed(RcSeedVisitorClientNote::SeedRec& seed) {
+   void AssignToSeed(svc::SeedRec& seed) {
       seed.SvFunc_  = this->SvFunc_;
       seed.Handler_ = this->Handler_;
    }

@@ -3,6 +3,7 @@
 #include "fon9/seed/FieldDyBlob.hpp"
 #include "fon9/RevPrint.hpp"
 #include "fon9/Base64.hpp"
+#include "fon9/BitvArchive.hpp"
 
 namespace fon9 { namespace seed {
 
@@ -40,6 +41,19 @@ OpResult FieldDyBlob::StrToCell(const RawWr& wr, StrView value) const {
    }
    else
       blob.MemUsed_ = 0;
+   PutUnaligned(ptr, blob);
+   return OpResult::no_error;
+}
+
+void FieldDyBlob::CellToBitv(const RawRd& rd, RevBuffer& out) const {
+   const fon9_Blob blob = GetUnaligned(rd.GetCellPtr<fon9_Blob>(*this));
+   ByteArrayToBitv(out, blob.MemPtr_, blob.MemUsed_);
+}
+
+OpResult FieldDyBlob::BitvToCell(const RawWr& wr, DcQueue& buf) const {
+   fon9_Blob* ptr = wr.GetCellPtr<fon9_Blob>(*this);
+   fon9_Blob  blob = GetUnaligned(ptr);
+   BitvTo(buf, blob);
    PutUnaligned(ptr, blob);
    return OpResult::no_error;
 }

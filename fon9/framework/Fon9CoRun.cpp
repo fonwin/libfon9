@@ -106,26 +106,44 @@ class ConsoleSeedSession : public fon9::SeedSession {
    void OnSeedNotify(fon9::seed::VisitorSubr& subr, const fon9::seed::SeedNotifyArgs& args) override {
       fon9::RevBufferList rbuf{256};
       RevPutChar(rbuf, '\n');
-      switch (args.NotifyType_) {
-      case fon9::seed::SeedNotifyArgs::NotifyType::SubscribeOK:
+      bool hasKeyTab = false;
+      switch (args.NotifyKind_) {
+      case fon9::seed::SeedNotifyKind::SubscribeOK:
          RevPrint(rbuf, "|SubscribeOK");
          break;
-      case fon9::seed::SeedNotifyArgs::NotifyType::PodRemoved:
+      case fon9::seed::SeedNotifyKind::PodRemoved:
          RevPrint(rbuf, "|PodRemoved");
          break;
-      case fon9::seed::SeedNotifyArgs::NotifyType::SeedChanged:
-         RevPrint(rbuf, args.GetGridView());
-         RevPrint(rbuf, '/', args.KeyText_, '^', args.Tab_->Name_, '|');
+      case fon9::seed::SeedNotifyKind::SeedChanged:
+         RevPrint(rbuf, "|gv={", args.GetGridView(), '}');
+         hasKeyTab = true;
          break;
-      case fon9::seed::SeedNotifyArgs::NotifyType::SeedRemoved:
-         RevPrint(rbuf, '/', args.KeyText_, '^', args.Tab_->Name_, "|SeedRemoved");
+      case fon9::seed::SeedNotifyKind::SeedRemoved:
+         RevPrint(rbuf, "|SeedRemoved");
+         hasKeyTab = true;
          break;
-      case fon9::seed::SeedNotifyArgs::NotifyType::ParentSeedClear:
+      case fon9::seed::SeedNotifyKind::ParentSeedClear:
          RevPrint(rbuf, "|OnParentSeedClear");
          break;
-      case fon9::seed::SeedNotifyArgs::NotifyType::TableChanged:
+      case fon9::seed::SeedNotifyKind::TableChanged:
          RevPrint(rbuf, "/^", args.Tab_->Name_, "|TableChanged");
          break;
+      case fon9::seed::SeedNotifyKind::SubscribeStreamOK:
+         RevPrint(rbuf, "|SubscribeStreamOK");
+         break;
+      case fon9::seed::SeedNotifyKind::StreamData:
+         RevPrint(rbuf, "|StreamDataKind=", fon9::ToHex(args.StreamDataKind_));
+         hasKeyTab = true;
+         break;
+      case fon9::seed::SeedNotifyKind::StreamRecover:
+         RevPrint(rbuf, "|StreamRecoverKind=", fon9::ToHex(args.StreamDataKind_));
+         hasKeyTab = true;
+         break;
+      }
+      if (hasKeyTab) {
+         if (args.Tab_)
+            RevPrint(rbuf, '^', args.Tab_->Name_);
+         RevPrint(rbuf, '/', args.KeyText_);
       }
       RevPrint(rbuf, "\n" "SeedNotify|path=", subr.GetPath());
       this->WriteToConsole(fon9::DcQueueList{rbuf.MoveOut()});

@@ -6,6 +6,7 @@
 #include "fon9/seed/RawWr.hpp"
 #include "fon9/StrTo.hpp"
 #include "fon9/RevPrint.hpp"
+#include "fon9/BitvArchive.hpp"
 
 namespace fon9 { namespace seed {
 
@@ -47,6 +48,15 @@ public:
       this->PutValue(wr, StrTo(value, ValueT::Null()));
       return OpResult::no_error;
    }
+   virtual void CellToBitv(const RawRd& rd, RevBuffer& out) const override {
+      ToBitv(out, this->GetValue(rd));
+   }
+   virtual OpResult BitvToCell(const RawWr& wr, DcQueue& buf) const override {
+      ValueT val;
+      BitvTo(buf, val);
+      this->PutValue(wr, val);
+      return OpResult::no_error;
+   }
 
    virtual FieldNumberT GetNumber(const RawRd& rd, DecScaleT outDecScale, FieldNumberT nullValue) const override {
       ValueT value = this->GetValue(rd);
@@ -59,6 +69,9 @@ public:
       return OpResult::no_error;
    }
 
+   virtual FieldNumberT GetNullValue() const {
+      return static_cast<FieldNumberT>(ValueT::Null().GetOrigValue());
+   }
    virtual OpResult SetNull(const RawWr& wr) const override {
       this->PutValue(wr, ValueT::Null());
       return OpResult::no_error;

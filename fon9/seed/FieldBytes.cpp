@@ -3,6 +3,7 @@
 #include "fon9/seed/FieldBytes.hpp"
 #include "fon9/seed/RawWr.hpp"
 #include "fon9/Base64.hpp"
+#include "fon9/BitvArchive.hpp"
 
 namespace fon9 { namespace seed {
 
@@ -30,6 +31,20 @@ OpResult FieldBytes::StrToCell(const RawWr& wr, StrView value) const {
       return OpResult::value_overflow;
    memset(ptr, 0, this->Size_);
    return OpResult::value_format_error;
+}
+void FieldBytes::CellToBitv(const RawRd& rd, RevBuffer& out) const {
+   const byte* ptr = rd.GetCellPtr<byte>(*this);
+   auto        count = this->Size_;
+   while (count) {
+      if (ptr[count - 1] != 0)
+         break;
+      --count;
+   }
+   ByteArrayToBitv(out, ptr, count);
+}
+OpResult FieldBytes::BitvToCell(const RawWr& wr, DcQueue& buf) const {
+   BitvToByteArray(buf, wr.GetCellPtr<byte>(*this), this->Size_);
+   return OpResult::no_error;
 }
 
 FieldNumberT FieldBytes::GetNumber(const RawRd& rd, DecScaleT outDecScale, FieldNumberT nullValue) const {
@@ -87,6 +102,14 @@ OpResult FieldByteVector::StrToCell(const RawWr& wr, StrView value) const {
    }
    else
       bv.clear();
+   return OpResult::no_error;
+}
+
+void FieldByteVector::CellToBitv(const RawRd& rd, RevBuffer& out) const {
+   ToBitv(out, rd.GetMemberCell<ByteVector>(*this));
+}
+OpResult FieldByteVector::BitvToCell(const RawWr& wr, DcQueue& buf) const {
+   BitvTo(buf, wr.GetMemberCell<ByteVector>(*this));
    return OpResult::no_error;
 }
 

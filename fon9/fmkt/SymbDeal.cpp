@@ -7,10 +7,15 @@ namespace fon9 { namespace fmkt {
 
 seed::Fields SymbDeal::MakeFields() {
    seed::Fields flds;
-   flds.Add(fon9_MakeField(SymbDeal, Data_.Time_,      "Time"));
-   flds.Add(fon9_MakeField(SymbDeal, Data_.Deal_.Pri_, "DealPri"));
-   flds.Add(fon9_MakeField(SymbDeal, Data_.Deal_.Qty_, "DealQty"));
-   flds.Add(fon9_MakeField(SymbDeal, Data_.TotalQty_,  "TotalQty"));
+   flds.Add(fon9_MakeField(SymbDeal, Data_.InfoTime_,    "InfoTime"));
+   flds.Add(fon9_MakeField(SymbDeal, Data_.DealTime_,    "DealTime"));
+   flds.Add(fon9_MakeField(SymbDeal, Data_.Deal_.Pri_,   "DealPri"));
+   flds.Add(fon9_MakeField(SymbDeal, Data_.Deal_.Qty_,   "DealQty"));
+   flds.Add(fon9_MakeField(SymbDeal, Data_.TotalQty_,    "TotalQty"));
+   flds.Add(fon9_MakeField(SymbDeal, Data_.DealBuyCnt_,  "DealBuyCnt"));
+   flds.Add(fon9_MakeField(SymbDeal, Data_.DealSellCnt_, "DealSellCnt"));
+   flds.Add(seed::FieldSP{new seed::FieldIntHx<underlying_type_t<DealFlag>>(
+      Named("Flags"), fon9_OffsetOfRawPointer(SymbDeal, Data_.Flags_))});
    return flds;
 }
 

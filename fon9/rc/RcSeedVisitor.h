@@ -66,6 +66,16 @@ typedef struct {
    /// ((const char*)(seed) + Offset_) = 儲存原始資料的位置.
    /// 如果您確定要取得的是整數型內容, 可藉由此方式快速取得, 但請注意記憶體對齊問題.
    int32_t        Offset_;
+   /// 若為數值類型的欄位,
+   /// 透過 f9sv_GetField_sNN() 或 f9sv_GetField_uNN() 取得的數字, 若與這裡相同, 則表示該值為 null;
+   /// - 若為 f9sv_FieldType_Decimal:
+   ///   - Unsigned_ = max uint64_t or uint32_t or uint16_t or uint8_t;
+   ///   - Signed_   = min int64_t or int32_t or int16_t or int8_t;
+   /// - 若為整數, 則為 0;
+   union {
+      uint64_t    Unsigned_;
+      int64_t     Signed_;
+   } NullValue_;
 } f9sv_Field;
 
 //--------------------------------------------------------------------------//
@@ -163,17 +173,17 @@ typedef enum {
    /// f9sv_Unsubscribe() 成功的通知.
    f9sv_Result_Unsubscribed = 9645,
 
-   /// 訂閱 tree, 收到 seed::SeedNotifyArgs::NotifyType::PodRemoved 通知.
+   /// 訂閱 tree, 收到 NotifyKind = PodRemoved 通知.
    /// 此時應移除該 pod.
    f9sv_Result_SubrNotifyPodRemoved = 9652,
-   /// 訂閱 tree, 收到 seed::SeedNotifyArgs::NotifyType::SeedRemoved 通知.
+   /// 訂閱 tree, 收到 NotifyKind = SeedRemoved 通知.
    /// 此時應移除該 seed.
    f9sv_Result_SubrNotifySeedRemoved = 9653,
-   /// 收到 seed::SeedNotifyArgs::NotifyType::TableChanged 時.
+   /// 收到 NotifyKind = TableChanged 時.
    /// 此時應清除訂閱的資料表內容, 通常會立即回覆新的資料表.
    f9sv_Result_SubrNotifyTableChanged = 9654,
-   /// - 收到 seed::SeedNotifyArgs::NotifyType::ParentSeedClear 通知.
-   /// - 訂閱 seed, 收到 seed::SeedNotifyArgs::NotifyType::PodRemoved 或 SeedRemoved 通知.
+   /// - 收到 NotifyKind = ParentSeedClear 通知.
+   /// - 訂閱 seed, 收到 NotifyKind = PodRemoved 或 SeedRemoved 通知.
    f9sv_Result_SubrNotifyUnsubscribed = 9655,
 
    /// = fon9::seed::OpResult::access_denied = -2,
@@ -207,8 +217,6 @@ typedef enum {
    /// 正在取消訂閱, 必須等取消成功後, 才可再次執行 f9sv_Query()/f9sv_Subscribe(), 直接返回失敗.
    /// 或 Server 執行訂閱處理時, 收到取消.
    f9sv_Result_InUnsubscribe = -22,
-   /// 沒有訂閱, 取消失敗.
-   f9sv_Result_NoSubscribe = -23,
 
 } f9sv_Result;
 
@@ -284,6 +292,10 @@ typedef struct {
    void*             UserData_;
 } f9sv_ReportHandler;
 
+/// 訂閱代號, 用於 Client <-> Server 之間的通訊.
+/// 從 0 開始依序編號, 取消訂閱後此編號會回收再用, 先使用回收的編號, 回收的用完後, 才會增加新的編號.
+typedef uint32_t  f9sv_SubrIndex;
+
 //--------------------------------------------------------------------------//
 
 #define f9sv_CAPI_FN    fon9_CAPI_FN
@@ -309,10 +321,6 @@ f9sv_CAPI_FN(int) f9sv_Initialize(const char* logFileFmt);
 f9sv_CAPI_FN(f9sv_Result)
 f9sv_Query(f9rc_ClientSession* ses, const f9sv_SeedName* seedName, f9sv_ReportHandler handler);
 
-/// 訂閱代號, 用於 Client <-> Server 之間的通訊.
-/// 從 0 開始依序編號, 取消訂閱後此編號會回收再用, 先使用回收的編號, 回收的用完後, 才會增加新的編號.
-typedef uint32_t  f9sv_SubrIndex;
-
 /// 訂閱要求.
 /// 訂閱通知流程:
 /// - f9sv_Subscribe(): rpt.Seed_ == NULL;
@@ -325,6 +333,7 @@ typedef uint32_t  f9sv_SubrIndex;
 ///   - 使用訂閱時的 regHandler 通知: rpt.ResultCode_ == f9sv_Result_Unsubscribing;
 ///   - 之後不會再使用訂閱時的 regHandler 通知, 改成使用「取消訂閱時的 unregHandler」通知.
 ///   - 若在取消訂閱成功之前, 還有「收到訂閱的資料」, 則會使用「取消訂閱時的 unregHandler」通知.
+/// - 訂閱 Stream 訊息時, 必須用 seedName->TabName_ = "$TabName:StreamDecoderName:Args"; 的格式.
 ///
 /// \retval >=f9sv_Result_NoError, 訂閱要求已送出.
 ///            如果網路返回夠快, 返回前可能已透過 FnOnReport_() 通知訂閱結果及訊息.

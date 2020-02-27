@@ -13,6 +13,9 @@
 
 namespace fon9 { namespace fmkt {
 
+class fon9_API SymbPodOp;
+class fon9_API SymbTree;
+
 /// \ingroup fmkt
 /// 為了讓 SymbTree::PodOp 裡面的 seed::SimpleRawRd{*symbdata} 可以正確運作,
 /// SymbData 的衍生者, 必須將 「SymbData 基底」放在第一位,
@@ -39,14 +42,17 @@ public:
    /// 台灣證券「一張」的單位數(股數)
    uint32_t ShUnit_{0};
 
+   /// 交易日.
+   uint32_t TDayYYYYMMDD_{0};
+   char     Filler5_____[4];
+
    /// 交易市場.
    f9fmkt_TradingMarket    TradingMarket_{f9fmkt_TradingMarket_Unknown};
    /// 交易時段.
    /// - 台灣證券: 不提供.
    /// - 台灣期權: 在載入 P08.{SystemType} 時, 根據 SystemType 填入此值.
    f9fmkt_TradingSessionId TradingSessionId_{f9fmkt_TradingSessionId_Unknown};
-
-   char  Filler_____[1];
+   f9fmkt_TradingSessionSt TradingSessionSt_{f9fmkt_TradingSessionSt_Unknown};
 
    /// 台灣期交所的流程群組代碼.
    SymbFlowGroup_t   FlowGroup_{0};

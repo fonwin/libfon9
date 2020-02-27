@@ -30,6 +30,19 @@ fon9_DEFINE_EXCEPTION(BitvUnknownValue, BitvDecodeError);
 fon9_DEFINE_EXCEPTION(BitvSignedError,  BitvDecodeError);
 fon9_MSC_WARN_POP;
 
+inline bool IsBitvIntegerNeg(const DcQueue& buf) {
+   if (const byte* p1 = buf.Peek1())
+      return ((*p1 & fon9_BitvT_Mask) == fon9_BitvT_IntegerNeg);
+   return false;
+}
+inline bool IsBitvByteArray(const DcQueue& buf) {
+   if (const byte* p1 = buf.Peek1())
+      return ((*p1 & 0x80) == 0x00)
+         || (*p1 == fon9_BitvV_ByteArrayEmpty)
+         || ((*p1 & fon9_BitvT_Mask) == fon9_BitvT_ByteArray);
+   return false;
+}
+
 //--------------------------------------------------------------------------//
 
 fon9_API void BitvToChar(DcQueue& buf, char& out);
@@ -121,7 +134,7 @@ inline auto BitvTo(DcQueue& buf, StrT& dst)
 
 /// 從 buf 取出 bitv 格式的 byte array.
 /// - 若 bitv 儲存的資料量超過 barySize: 則會丟出 std::out_of_range
-/// - 若 bitv 儲存的資料量 < barySize: 則在 bary 尾端填入 0.
+/// - 若 bitv 儲存的資料量 < barySize: 則在 bary 尾端填滿 0.
 /// - 傳回實際存入 bary 的資料量, 必定 <= barySize.
 fon9_API size_t BitvToByteArray(DcQueue& buf, void* bary, size_t barySize);
 

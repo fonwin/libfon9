@@ -91,6 +91,32 @@ public:
       this->PutOrigValue(wr, StrToDec(value, this->DecScale_, static_cast<ValueT>(this->kOrigNull)));
       return OpResult::no_error;
    }
+   virtual void CellToBitv(const RawRd& rd, RevBuffer& out) const override {
+      DecToBitv(out, static_cast<ToImax_t<ValueT>>(this->GetOrigValue(rd)), this->DecScale_);
+   }
+   virtual OpResult BitvToCell(const RawWr& wr, DcQueue& buf) const override {
+      fon9_BitvNumR numr;
+      BitvToNumber(buf, numr);
+      ValueT val = 0;
+      switch (numr.Type_) {
+      case fon9_BitvNumT_Null:
+         val = this->kOrigNull;
+         break;
+      case fon9_BitvNumT_Zero:
+         val = 0;
+         break;
+      case fon9_BitvNumT_Neg:
+         if (std::is_unsigned<ValueT>::value)
+            Raise<BitvSignedError>("FieldDecimalDyScale.BitvToCell: cannot load BitvNeg to unsigned");
+         val = static_cast<ValueT>(AdjustDecScale(signed_cast(numr.Num_), numr.Scale_, this->DecScale_));
+         break;
+      case fon9_BitvNumT_Pos:
+         val = static_cast<ValueT>(AdjustDecScale(numr.Num_, numr.Scale_, this->DecScale_));
+         break;
+      }
+      this->PutOrigValue(wr, val);
+      return OpResult::no_error;
+   }
 
    virtual FieldNumberT GetNumber(const RawRd& rd, DecScaleT outDecScale, FieldNumberT nullValue) const override {
       ValueT value = this->GetOrigValue(rd);
@@ -103,6 +129,9 @@ public:
       return OpResult::no_error;
    }
 
+   virtual FieldNumberT GetNullValue() const {
+      return static_cast<FieldNumberT>(this->kOrigNull);
+   }
    virtual OpResult SetNull(const RawWr& wr) const override {
       this->PutOrigValue(wr, this->kOrigNull);
       return OpResult::no_error;

@@ -174,6 +174,12 @@
     <Filter Include="Source Files\rc">
       <UniqueIdentifier>{69b4cf02-ff06-4fdd-8150-58bd2b6bdc30}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\rc\_SeedVisitorClient">
+      <UniqueIdentifier>{1e22e72d-e032-4d32-a8b7-172525ff000d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\rc\_SeedVisitorClient">
+      <UniqueIdentifier>{7237f3a3-ae38-4d72-9fd1-2794dde9e76b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\fon9\sys\Config.h">
@@ -971,13 +977,7 @@
     <ClInclude Include="..\..\..\fon9\rc\RcSeedVisitor.hpp">
       <Filter>Header Files\rc</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\fon9\rc\RcSeedVisitorClient.hpp">
-      <Filter>Header Files\rc</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\fon9\rc\RcSeedVisitorServer.hpp">
-      <Filter>Header Files\rc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\fon9\rc\RcSeedVisitorClientReq.hpp">
       <Filter>Header Files\rc</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\fon9\PkReceiver.hpp">
@@ -988,6 +988,33 @@
     </ClInclude>
     <ClInclude Include="..\..\..\fon9\CTools.h">
       <Filter>Header Files\_base\_Tools / Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbHL.hpp">
+      <Filter>Header Files\fmkt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\rc\RcSvStreamDecoder.hpp">
+      <Filter>Header Files\rc\_SeedVisitorClient</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\rc\RcMdRtsDecoder.h">
+      <Filter>Header Files\rc\_SeedVisitorClient</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\rc\RcSeedVisitorClient.hpp">
+      <Filter>Header Files\rc\_SeedVisitorClient</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\rc\RcSeedVisitorClientReq.hpp">
+      <Filter>Header Files\rc\_SeedVisitorClient</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\rc\RcMdRtsDecoder.hpp">
+      <Filter>Header Files\rc\_SeedVisitorClient</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\rc\RcSvc.hpp">
+      <Filter>Header Files\rc\_SeedVisitorClient</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\MdRtsTypes.hpp">
+      <Filter>Header Files\fmkt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\MdRtStream.hpp">
+      <Filter>Header Files\fmkt</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1588,13 +1615,7 @@
     <ClCompile Include="..\..\..\fon9\rc\RcSeedVisitor.cpp">
       <Filter>Source Files\rc</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\fon9\rc\RcSeedVisitorClient.cpp">
-      <Filter>Source Files\rc</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\fon9\rc\RcSeedVisitorServer.cpp">
-      <Filter>Source Files\rc</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\fon9\rc\RcSeedVisitorClientReq.cpp">
       <Filter>Source Files\rc</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\PkReceiver.cpp">
@@ -1602,6 +1623,33 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\CTools.c">
       <Filter>Source Files\_base\_Tools / Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\SymbHL.cpp">
+      <Filter>Source Files\fmkt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\rc\RcSvStreamDecoder.cpp">
+      <Filter>Source Files\rc\_SeedVisitorClient</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\rc\RcMdRtsDecoder.cpp">
+      <Filter>Source Files\rc\_SeedVisitorClient</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\rc\RcSeedVisitorClient.cpp">
+      <Filter>Source Files\rc\_SeedVisitorClient</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\rc\RcSeedVisitorClientCAPI.cpp">
+      <Filter>Source Files\rc\_SeedVisitorClient</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\rc\RcSeedVisitorClientReq.cpp">
+      <Filter>Source Files\rc\_SeedVisitorClient</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\rc\RcSvc.cpp">
+      <Filter>Source Files\rc\_SeedVisitorClient</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\MdRtsTypes.cpp">
+      <Filter>Source Files\fmkt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\MdRtStream.cpp">
+      <Filter>Source Files\fmkt</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

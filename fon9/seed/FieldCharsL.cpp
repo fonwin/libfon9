@@ -3,6 +3,7 @@
 #include "fon9/seed/FieldCharsL.hpp"
 #include "fon9/StrTo.hpp"
 #include "fon9/RevPrint.hpp"
+#include "fon9/BitvArchive.hpp"
 
 namespace fon9 { namespace seed {
 
@@ -21,6 +22,15 @@ OpResult FieldCharsL::StrToCell(const RawWr& wr, StrView value) const {
    char*  ptr = wr.GetCellPtr<char>(*this);
    size_t sz = std::min(value.size(), static_cast<size_t>(this->MaxSize()));
    memcpy(ptr + 1, value.begin(), sz);
+   *ptr = static_cast<char>(sz);
+   return OpResult::no_error;
+}
+void FieldCharsL::CellToBitv(const RawRd& rd, RevBuffer& out) const {
+   ToBitv(out, this->GetValue(rd));
+}
+OpResult FieldCharsL::BitvToCell(const RawWr& wr, DcQueue& buf) const {
+   char*  ptr = wr.GetCellPtr<char>(*this);
+   size_t sz = BitvToByteArray(buf, ptr + 1, this->MaxSize());
    *ptr = static_cast<char>(sz);
    return OpResult::no_error;
 }

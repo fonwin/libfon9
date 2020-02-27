@@ -118,15 +118,10 @@ public:
 
 const char  kFieldSplitter = '|';
 
-template <class ReqT>
-std::string TestGetFields(std::ostream* os, const fon9::seed::Tab& tab, const ReqT& req) {
-   if (os)
-      *os << fon9::TypeName::Make<ReqT>().get() << '\n';
-
-   std::string res;
-   fon9::seed::SimpleRawRd rd{fon9::seed::CastToRawPointer(&req)};
+std::string MakeFieldValuesStr(std::ostream* os, const fon9::seed::Tab& tab, const fon9::seed::RawRd& rd) {
    fon9::RevBufferFixedSize<1024> rbuf;
-   size_t L = 0;
+   std::string res;
+   size_t      L = 0;
    while (const fon9::seed::Field* fld = tab.Fields_.Get(L)) {
       rbuf.RewindEOS();
       fld->CellRevPrint(rd, nullptr, rbuf);
@@ -139,6 +134,38 @@ std::string TestGetFields(std::ostream* os, const fon9::seed::Tab& tab, const Re
       res.push_back(kFieldSplitter);
       ++L;
    }
+   return res;
+}
+void TestFieldBitv(const fon9::seed::Tab& tab, const fon9::seed::RawWr& wr, const std::string& vlist) {
+   assert(MakeFieldValuesStr(nullptr, tab, wr) == vlist);
+   // 將 wr 填入 rbitv, 然後清除 wr.
+   fon9::RevBufferFixedSize<1024> rbitv;
+   auto fldidx = tab.Fields_.size();
+   while (fldidx > 0) {
+      auto* fld = tab.Fields_.Get(--fldidx);
+      if (!fon9::seed::IsEnumContains(fld->Flags_, fon9::seed::FieldFlag::Readonly)) {
+         fld->CellToBitv(wr, rbitv);
+         fld->SetNull(wr);
+      }
+   }
+   // 已經設定 fld->SetNull(); 則內容必定與 vlist 不同.
+   assert(MakeFieldValuesStr(nullptr, tab, wr) != vlist);
+   // 從 rbitv 還原, 看看結果是否符合預期.
+   fon9::DcQueueFixedMem dcq{rbitv};
+   fldidx = 0;
+   while (auto* fld = tab.Fields_.Get(fldidx++)) {
+      if (!fon9::seed::IsEnumContains(fld->Flags_, fon9::seed::FieldFlag::Readonly))
+         fld->BitvToCell(wr, dcq);
+   }
+   fon9_CheckTestResult("TestBitv", vlist == MakeFieldValuesStr(nullptr, tab, wr));
+}
+
+template <class ReqT>
+std::string TestGetFields(std::ostream* os, const fon9::seed::Tab& tab, ReqT& req) {
+   if (os)
+      *os << fon9::TypeName::Make<ReqT>().get() << '\n';
+   std::string res = MakeFieldValuesStr(os, tab, fon9::seed::SimpleRawRd{fon9::seed::CastToRawPointer(&req)});
+   TestFieldBitv(tab, fon9::seed::SimpleRawWr{fon9::seed::CastToRawPointer(&req)}, res);
    return res;
 }
 
@@ -312,11 +339,11 @@ int main(int argc, char** args) {
    TestDeserializeNamed();
 
    utinfo.PrintSplitter();
-   std::string vlist = TestGetFields<ReqRawData>(&std::cout, MakeReqFields<ReqRawData>());
+   const std::string vlist = TestGetFields<ReqRawData>(&std::cout, MakeReqFields<ReqRawData>());
    fon9_CheckTestResult("ReqDataRaw",    vlist == TestGetFields<ReqDataRaw>(nullptr, MakeReqFields<ReqDataRaw>()));
-   fon9_CheckTestResult("ReqData",       vlist == TestGetFields<ReqData>(nullptr, MakeReqFields<ReqData>()));
+   fon9_CheckTestResult("ReqData",       vlist == TestGetFields<ReqData>   (nullptr, MakeReqFields<ReqData>()));
    fon9_CheckTestResult("ReqRawIncData", vlist == TestGetFields<ReqRawData>(nullptr, MakeReqFieldsIncData<ReqRawIncData>()));
-   fon9_CheckTestResult("ReqIncData",    vlist == TestGetFields<ReqData>(nullptr, MakeReqFieldsIncData<ReqIncData>()));
+   fon9_CheckTestResult("ReqIncData",    vlist == TestGetFields<ReqData>   (nullptr, MakeReqFieldsIncData<ReqIncData>()));
 
    TestDyRec(MakeFieldsConfig(MakeReqFields<ReqRawData>(), '|', '\n'), vlist);
 }
