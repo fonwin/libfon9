@@ -25,6 +25,7 @@ void FdrSocket::SocketError(StrView fnName, int eno) {
 int FdrSocket::Sendv(DeviceOpLocker& sc, DcQueueList& toSend) {
    struct iovec   bufv[IOV_MAX];
    size_t         bufCount = toSend.PeekBlockVector(bufv);
+__RETRY_WRITEV:
    ssize_t        wrsz = writev(this->GetFD(), bufv, static_cast<int>(bufCount));
    if (fon9_LIKELY(wrsz >= 0)) {
       toSend.PopConsumed(static_cast<size_t>(wrsz));
@@ -35,6 +36,17 @@ int FdrSocket::Sendv(DeviceOpLocker& sc, DcQueueList& toSend) {
       return 0;
    }
    if (int eno = ErrorCannotRetry(errno)) {
+      if (eno == EMSGSIZE) { // Message too long.
+         if (bufCount > 1) {
+            bufCount = 1;
+            goto __RETRY_WRITEV;
+         }
+         // 如果 bufCount==1, 則表示 bufv[0] 封包太大, 應調整打包規則?
+         if (bufv[0].iov_len > 512) {
+            bufv[0].iov_len = 512;
+            goto __RETRY_WRITEV;
+         }
+      }
       this->SocketError("Sendv", eno);
       return eno;
    }

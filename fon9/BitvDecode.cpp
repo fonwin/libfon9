@@ -183,9 +183,12 @@ fon9_API void BitvToNumber(DcQueue& buf, fon9_BitvNumR& numr) {
       ++pnum;
       numr.Scale_ = static_cast<byte>(*pnum >> 3);
       numr.Type_ = (*pnum & 0x04) ? fon9_BitvNumT_Neg : fon9_BitvNumT_Pos;
-      numr.Num_ = ((*const_cast<byte*>(pnum) &= 0x03) != 0) // 因為等一下就要從buffer移除此資料了, 所以使用 const_cast<> 沒關係.
-         ? GetPackedBigEndian<uintmax_t>(pnum, static_cast<byte>(byteCount + 1))
-         : GetPackedBigEndian<uintmax_t>(pnum + 1, byteCount);
+      // numr.Num_ = ((*const_cast<byte*>(pnum) &= 0x03) != 0) // 因為等一下就要從buffer移除此資料了, 所以使用 const_cast<> 沒關係.
+      //    ? GetPackedBigEndian<uintmax_t>(pnum, static_cast<byte>(byteCount + 1))
+      //    : GetPackedBigEndian<uintmax_t>(pnum + 1, byteCount);
+      numr.Num_ = (*pnum & 0x03u);
+      for (byte L = 0; L < byteCount; ++L)
+         numr.Num_ = static_cast<uintmax_t>((numr.Num_ << 8) | (*++pnum));
       buf.PopConsumed(byteCount + 2u);
       if (numr.Type_ == fon9_BitvNumT_Neg)
          numr.Num_ = ~numr.Num_;

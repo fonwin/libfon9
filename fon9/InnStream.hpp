@@ -32,7 +32,9 @@ public:
 /// 使用 InnFile Room 機制的 Stream.
 /// - 使用 kInnRoomType_HasNextRoomPos_Flag
 /// - RoomExHeader 由 InnStream 處理, 使用者無須理會.
-/// - 同一個 Room 串列「不支援」多個 Stream 操作.
+/// - 一個 Room 串列構成一個 Stream,「不支援」多個 Stream 物件操作同一個 Room 串列.
+///   - 也就是禁止使用同一個 startAt 呼叫 Open(InnFileP& owner, RoomPos startAt, const OpenArgs& openArgs);
+/// - Read, Write, Append 為 thread safe, 鎖定後直接 read, write.
 /// - 讀寫失敗, 拋出異常.
 ///   - 例如: 不正確的 Room 格式. 不正確的 RoomPos...
 class fon9_API InnStream {
@@ -60,7 +62,7 @@ public:
       /// - 依照分配的順序, 依序使用底下的 room size 設定.
       /// - 若 rooms 超過底下的數量, 則之後的 room size 使用最後非 0 的設定.
       InnRoomSize ExpectedRoomSize_[5];
-      OpenArgs(InnRoomType roomType) {
+      OpenArgs(InnRoomType roomType = InnRoomType{}) {
          memset(this, 0, sizeof(*this));
          this->RoomType_ = roomType;
       }
@@ -81,6 +83,8 @@ public:
    /// 返回: 寫入後的 stream size = 寫入的位置 + bufsz;
    PosType Append(const void* buf, SizeType bufsz);
    PosType Append(DcQueue&& buf);
+
+   PosType Size();
 
 protected:
    struct RoomHeader {

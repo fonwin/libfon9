@@ -10,13 +10,6 @@ namespace f9twf {
 using namespace fon9;
 using namespace fon9::fmkt;
 
-static void PutSingleBS(RevBuffer& rbuf, RtBSType bsType, const PriQty& pq) {
-   ToBitv(rbuf, pq.Qty_);
-   ToBitv(rbuf, pq.Pri_);
-   *rbuf.AllocPacket<RtBSType>() = bsType;
-   static_assert(sizeof(RtBSType) == 1, "");
-}
-
 f9twf_API void I081BSParserToRts(ExgMcMessage& e) {
    auto&       pk = *static_cast<const ExgMcI081*>(&e.Pk_);
    ExgMdLocker lk{e, pk.ProdId_};
@@ -122,26 +115,10 @@ f9twf_API void I081BSParserToRts(ExgMcMessage& e) {
    if (uCount <= 0)
       return;
    *rbuf.AllocPacket<uint8_t>() = static_cast<uint8_t>(uCount - 1);
-   e.Symb_->MdRtStream_.Publish(lk.Symbs_, ToStrView(e.Symb_->SymbId_),
-                                RtsPackType::UpdateBS, symbBS.Data_.InfoTime_, std::move(rbuf));
+   e.Symb_->MdRtStream_.PublishUpdateBS(lk.Symbs_, ToStrView(e.Symb_->SymbId_),
+                                        symbBS, std::move(rbuf));
 }
 //--------------------------------------------------------------------------//
-static void PutOrderBS(RevBuffer& rbuf, RtBSType bsType, const PriQty* pqs) {
-   unsigned bsCount = 0;
-   for (bsCount = 0; bsCount < SymbBS::kBSCount; ++bsCount) {
-      if (pqs->Qty_ == 0)
-         break;
-      ToBitv(rbuf, pqs->Qty_);
-      ToBitv(rbuf, pqs->Pri_);
-      ++pqs;
-   }
-   assert(bsCount > 0);
-   if (bsCount == 0)
-      return;
-   *rbuf.AllocPacket<uint8_t>() = static_cast<uint8_t>(cast_to_underlying(bsType) | (bsCount - 1));
-   static_assert(sizeof(bsType) == 1, "");
-}
-
 f9twf_API void I083BSParserToRts(ExgMcMessage& e) {
    auto&       pk = *static_cast<const ExgMcI083*>(&e.Pk_);
    ExgMdLocker lk{e, pk.ProdId_};
@@ -152,17 +129,8 @@ f9twf_API void I083BSParserToRts(ExgMcMessage& e) {
    const auto  pkType = (pk.CalculatedFlag_ == '1' ? RtsPackType::CalculatedBS : RtsPackType::SnapshotBS);
    if (pkType == RtsPackType::CalculatedBS)
       symbBS.Data_.Flags_ |= BSFlag::Calculated;
-
-   const auto    curFlags = symbBS.Data_.Flags_;
    RevBufferList rbuf{128};
-   if (IsEnumContains(curFlags, BSFlag::DerivedSell))
-      PutSingleBS(rbuf, RtBSType::DerivedSell, symbBS.Data_.DerivedSell_);
-   if (IsEnumContains(curFlags, BSFlag::DerivedBuy))
-      PutSingleBS(rbuf, RtBSType::DerivedBuy, symbBS.Data_.DerivedBuy_);
-   if (IsEnumContains(curFlags, BSFlag::OrderSell))
-      PutOrderBS(rbuf, RtBSType::OrderSell, symbBS.Data_.Sells_);
-   if (IsEnumContains(curFlags, BSFlag::OrderBuy))
-      PutOrderBS(rbuf, RtBSType::OrderBuy, symbBS.Data_.Buys_);
+   MdRtsPackSnapshotBS(rbuf, symbBS);
    e.Symb_->MdRtStream_.Publish(lk.Symbs_, ToStrView(e.Symb_->SymbId_),
                                 pkType, symbBS.Data_.InfoTime_, std::move(rbuf));
 }

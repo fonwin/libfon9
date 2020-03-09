@@ -186,6 +186,20 @@ typedef enum {
    /// - 訂閱 seed, 收到 NotifyKind = PodRemoved 或 SeedRemoved 通知.
    f9sv_Result_SubrNotifyUnsubscribed = 9655,
 
+   /// 收到 NotifyKind = SubscribeStreamOK 通知.
+   f9sv_Result_SubrStreamOK = 9656,
+   /// 收到 NotifyKind = StreamRecover 通知.
+   /// - 一般訂閱(SeedChanged) 及 Stream訂閱(StreamData),
+   ///   回報時使用 f9sv_Result_NoError;
+   f9sv_Result_SubrStreamRecover = 9658,
+   /// 收到 NotifyKind = StreamRecoverEnd 通知.
+   /// 如果回補完後, Stream 已確定不會再有訊息,
+   /// 則會直接回覆 StreamEnd, 不會有 StreamRecoverEnd;
+   f9sv_Result_SubrStreamRecoverEnd = 9659,
+   /// 收到 NotifyKind = StreamEnd 通知.
+   /// 收到後會自動移除訂閱, 不會再收到該 Stream 的訊息.
+   f9sv_Result_SubrStreamEnd = 9660,
+
    /// = fon9::seed::OpResult::access_denied = -2,
    f9sv_Result_AccessDenied = -2,
    /// = fon9::seed::OpResult::not_found_tab = -201,

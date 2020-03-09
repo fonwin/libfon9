@@ -69,6 +69,9 @@ constexpr TimeInterval TimeInterval_Day(TimeInterval::OrigType day) { return Tim
 constexpr TimeInterval TimeInterval_HHMMSS(unsigned hh, unsigned mm, unsigned ss) {
    return TimeInterval_Second((((static_cast<TimeInterval::OrigType>(hh) * 60) + mm) * 60) + ss);
 }
+constexpr TimeInterval TimeInterval_HHMMSS(unsigned hhmmss) {
+   return TimeInterval_HHMMSS(hhmmss / 10000u, (hhmmss / 100u) % 100u, (hhmmss % 100u));
+}
 
 /// \ingroup AlNum
 /// 輸出 TimeInterval 字串, 基本格式為: `days-hh:mm:ss.uuuuuu`; 例: `3-12:34:56.789`

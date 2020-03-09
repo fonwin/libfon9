@@ -55,7 +55,13 @@ struct PodRec {
 
    PodRec() = default;
    ~PodRec() {
-      delete[] this->Seeds_;
+      this->ClearSeeds();
+   }
+   void ClearSeeds() {
+      if (this->Seeds_) {
+         delete[] this->Seeds_;
+         this->Seeds_ = nullptr;
+      }
    }
 };
 using PodMap = std::unordered_map<CharVector, PodRec>;
@@ -92,7 +98,7 @@ struct TreeRec {
    const CharVector  TreePath_;
    seed::LayoutSP    Layout_;
    f9sv_Layout       LayoutC_;     // 提供給 C API 使用 layout 的定義.
-   TabList           TabList_;     // 提供給 C API 使用 LayoutC_ 裡面的 tab 的定義.
+   TabList           TabList_;     // 提供給 C API 使用 LayoutC_ 裡面的 tab.fields 的定義.
    PodMap            PodMap_;      // 此棵樹所擁有的 pods.
    PendingReqs       PendingReqs_; // 在尚未取得 layout 之前, 所有的要求暫放於此.
 
@@ -102,6 +108,8 @@ struct TreeRec {
    ~TreeRec();
 
    PodRec& FetchPod(StrView seedKey, bool* isNew = nullptr);
+   void MakePod(PodRec& pod);
+   void MakeSeed(SeedSP& seed, f9sv_TabSize tabidx);
 
    /// assert(this->Layout_.get() == nullptr);
    void ParseLayout(StrView cfgstr);
@@ -123,7 +131,7 @@ struct SubrRec {
       this->SvFunc_ = SvFuncCode{};
    }
 
-   /// 當有 layout 時, 訂閱紀錄必須與 Pod(Seed) 建立關聯.
+   /// 當有 layout 時, 訂閱記錄必須與 Pod(Seed) 建立關聯.
    void OnPodReady(const PodRec& pod, f9sv_SubrIndex subrIndex) {
       assert(this->Seeds_ == nullptr);
       this->Seeds_ = pod.Seeds_;
@@ -156,22 +164,29 @@ using TreeMap = MustLock<TreeMapImpl, std::recursive_mutex>;
 using TreeLocker = TreeMap::Locker;
 //--------------------------------------------------------------------------//
 struct RxSubrData {
-   fon9_NON_COPY_NON_MOVE(RxSubrData);
-   f9rc_ClientSession&        Session_;
-   char                       Padding___[6];
-   bool                       IsSubrLogged_{false};
-   bool                       IsNeedsLog_;
-   const seed::SeedNotifyKind NotifyKind_;
-   const f9sv_SubrIndex       SubrIndex_;
-   SubrRec* const             SubrRec_;
-   seed::Tab* const           Tab_;
-   SeedRec* const             SeedRec_;
-   RevBufferList              LogBuf_{kLogBlockNodeSize};
-   const TreeLocker           Map_;
-   CharVector                 SeedKey_;
-   std::string                Gv_;
+   RxSubrData(RxSubrData&&) = delete;
+   RxSubrData& operator=(RxSubrData&) = delete;
+   RxSubrData& operator=(RxSubrData&&) = delete;
+
+   f9rc_ClientSession&  Session_;
+   char                 Padding___[6];
+   bool                 IsSubrLogged_{false};
+   bool                 IsNeedsLog_;
+   seed::SeedNotifyKind NotifyKind_;
+   const f9sv_SubrIndex SubrIndex_;
+   SubrRec* const       SubrRec_;
+   seed::Tab* const     Tab_;
+   SeedRec* const       SeedRec_;
+   RevBufferList        LogBuf_{kLogBlockNodeSize};
+   const TreeLocker     LockedMap_;
+   CharVector           SeedKey_;
+   std::string          Gv_;
 
    RxSubrData(f9rc_ClientSession& ses, SvFunc fcAck, TreeLocker&& maplk, DcQueue& rxbuf);
+   /// src = StreamRecover; 建立 StreamData;
+   /// - StreamRecover 可能包含多筆 StreamData;
+   RxSubrData(RxSubrData& src);
+
    ~RxSubrData() {
       this->FlushLog();
    }
@@ -179,6 +194,10 @@ struct RxSubrData {
    void LogSubrRec();
    StrView CheckLoadSeedKey(DcQueue& rxbuf);
    void LoadGv(DcQueue& rxbuf);
+
+   /// 收到 ParentSeedClear, PodRemoved, SeedRemoved, StreamEnd.
+   /// Server 端已移除訂閱, 此時應該移除 Client 訂閱記錄.
+   void RemoveSubscribe();
 };
 
 } } } // namespaces

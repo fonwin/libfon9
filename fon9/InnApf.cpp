@@ -120,6 +120,9 @@ const char* InnApf::ReadExHeader() {
    this->FreeRoomPos1st_ = GetBigEndian<RoomPos>(buf + sizeof(ApfVerT) + sizeof(kSizeExHeader1st));
 
    DcQueueFixedMem dcq{buf + kSizeExHeader1st, rdsz - kSizeExHeader1st};
+   if (dcq.empty())
+      return nullptr;
+
    SPosT           ofsExHdr = kSizeExHeader1st;
    RoomPos         posExHdr = rdsz;
    size_t          szRec = 0;

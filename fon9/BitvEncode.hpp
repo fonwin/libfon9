@@ -192,7 +192,7 @@ inline auto ElementCountToBitv(RevBuffer& rbuf, const Container& c)
       RevPutBitv(rbuf, fon9_BitvV_ContainerEmpty);
 }
 inline void ElementCountToBitv(RevBuffer&, ...) {
-   // 固定大小的陣列, 不用紀錄 element count.
+   // 固定大小的陣列, 不用記錄 element count.
 }
 
 template <class Key, class Value>

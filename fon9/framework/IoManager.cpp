@@ -271,7 +271,7 @@ void IoManager::UpdateDeviceStateLocked(io::Device& dev, const io::StateUpdatedA
       LogLevel::Warn,  // ConfigError,
       LogLevel::Info,  // Opening,
       LogLevel::Info,  // WaitingLinkIn,
-      LogLevel::Trace, // Linking,
+      LogLevel::Info,  // Linking,
       LogLevel::Warn,  // LinkError,
       LogLevel::Info,  // LinkReady,
       LogLevel::Warn,  // LinkBroken,

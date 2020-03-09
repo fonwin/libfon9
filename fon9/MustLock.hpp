@@ -19,6 +19,24 @@ class MustLock {
    fon9_NON_COPY_NON_MOVE(MustLock);
    MutexT mutable Mutex_;
    BaseT          Base_;
+
+   #ifndef NDEBUG
+      mutable std::thread::id   LockedThread_{};
+      mutable size_t            LockedCount_{};
+      void AfterLocked() const {
+         this->LockedThread_ = std::this_thread::get_id();
+         ++this->LockedCount_;
+      }
+      void BeforeUnlocked() const {
+         if(--this->LockedCount_ <= 0)
+            this->LockedThread_ = std::thread::id{};
+      }
+   #else
+      void AfterLocked() const {
+      }
+      void BeforeUnlocked() const {
+      }
+   #endif
 public:
    using MutexLocker = MutexLockerT;
 
@@ -33,14 +51,23 @@ public:
       using base = MutexLockerT;
       OwnerT*  Owner_;
    public:
-      LockerT() : Owner_{nullptr} {}
-      LockerT(OwnerT& owner) : base{owner.Mutex_}, Owner_{&owner} {}
-      LockerT(LockerT&& other) : base{std::move(other)}, Owner_{other.Owner_} { other.Owner_ = nullptr; }
+      LockerT() : Owner_{nullptr} {
+      }
+      LockerT(OwnerT& owner) : base{owner.Mutex_}, Owner_{&owner} {
+         owner.AfterLocked();
+      }
+      LockerT(LockerT&& other) : base{std::move(other)}, Owner_{other.Owner_} {
+         other.Owner_ = nullptr;
+      }
       LockerT& operator=(LockerT&& other) {
          base::operator=(std::move(other));
          this->Owner_ = other.Owner_;
          other.Owner_ = nullptr;
          return *this;
+      }
+      ~LockerT() {
+         if (this->Owner_)
+            this->Owner_->BeforeUnlocked();
       }
       /// 必須在鎖定狀態下才能呼叫, 否則資料可能會被破壞, 甚至造成 crash!
       LockedBaseT* operator->() const {
@@ -69,6 +96,13 @@ public:
    static const MustLock& StaticCast(const BaseT& pbase) {
       return ContainerOf(*const_cast<BaseT*>(&pbase), &MustLock::Base_);
    }
+
+   #ifndef NDEBUG
+   bool IsLocked() const {
+      return this->LockedThread_ == std::this_thread::get_id()
+         && this->LockedCount_ > 0;
+   }
+   #endif
 };
 fon9_WARN_POP;
 

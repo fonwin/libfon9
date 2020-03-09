@@ -177,6 +177,7 @@ set(fon9src
  fmkt/SymbHL.cpp
  fmkt/MdRtsTypes.cpp
  fmkt/MdRtStream.cpp
+ fmkt/MdRtStreamInn.cpp
 
  fix/FixBase.cpp
  fix/FixCompID.cpp

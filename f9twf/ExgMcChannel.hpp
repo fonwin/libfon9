@@ -154,6 +154,7 @@ class f9twf_API ExgMcChannel : private fon9::PkContFeeder {
    }
 
    void DispatchMcMessage(ExgMcMessage& e);
+   void NotifyConsumersLocked(ExgMcMessage& e);
    void PkContOnReceived(const void* pk, unsigned pksz, SeqT seq) override;
    void PkContOnTimer(PkPendings::Locker&& pks) override;
    void PkLogAppend(const void* pk, unsigned pksz, SeqT seq) {
@@ -194,13 +195,6 @@ public:
       return this->ChannelId_ == 1 || this->ChannelId_ == 2;
    }
 
-   bool IsNeedsNotifyConsumer() const {
-      return (!this->IsSetupReloading_ && !this->UnsafeConsumers_.IsEmpty());
-   }
-   /// - 在 this->ChannelMgr_->DispatchMcMessage(e); 之後, 將收到的封包轉發給訂閱者(例: McToMiConv).
-   /// - 可對於部分手動建立的訊息(例: 收到 I084._O_ 轉成 I083), 透過此處轉發給訂閱者.
-   void NotifyConsumers(ExgMcMessage& e);
-
    /// 返回 channel 狀態, 讓 McReceiver 決定是否需要開啟接收程序.
    /// - 部分 channel 的資料使用輪播方式不斷重複, 所以只要收過一輪,
    ///   當盤就可以不用再收, 可降低頻寬負擔.
@@ -209,6 +203,15 @@ public:
    }
    ExgMcChannelState OnPkReceived(const ExgMcHead& pk, unsigned pksz);
 
+   bool IsNeedsNotifyConsumer() const {
+      return (!this->IsSetupReloading_ && !this->UnsafeConsumers_.IsEmpty());
+   }
+   /// - 在 this->ChannelMgr_->DispatchMcMessage(e); 之後, 將收到的封包轉發給訂閱者(例: McToMiConv).
+   /// - 可對於部分手動建立的訊息(例: 收到 I084._O_ 轉成 I083), 透過此處轉發給訂閱者.
+   void NotifyConsumers(ExgMcMessage& e) {
+      auto locker = this->PkPendings_.Lock();
+      this->NotifyConsumersLocked(e);
+   }
    void SubscribeConsumer(fon9::SubConn* conn, ExgMcMessageConsumer& h) {
       auto locker = this->PkPendings_.Lock();
       this->UnsafeConsumers_.Subscribe(conn, &h);

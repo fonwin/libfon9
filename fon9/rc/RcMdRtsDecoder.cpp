@@ -55,7 +55,24 @@ static void BitvToDayTimeOrUnchange(DcQueue& rxbuf, DayTime& dst) {
 }
 //--------------------------------------------------------------------------//
 struct RcSvStreamDecoderNote_MdRts : public RcSvStreamDecoderNote {
-   DayTime  InfoTime_;
+   fon9_NON_COPY_NON_MOVE(RcSvStreamDecoderNote_MdRts);
+   RcSvStreamDecoderNote_MdRts() = default;
+
+   DayTime     RtInfoTime_{DayTime::Null()};
+   DayTime     ReInfoTime_{DayTime::Null()};
+   svc::PodRec RePod_;
+
+   svc::SeedSP* GetSeedRec(svc::RxSubrData& rx) {
+      if (rx.NotifyKind_ == seed::SeedNotifyKind::StreamData)
+         return rx.SubrRec_->Seeds_;
+      if (this->RePod_.Seeds_ == nullptr)
+         rx.SubrRec_->Tree_->MakePod(this->RePod_);
+      return this->RePod_.Seeds_;
+   }
+   DayTime* SelectInfoTime(svc::RxSubrData& rx) {
+      return (rx.NotifyKind_ == seed::SeedNotifyKind::StreamData
+              ? &this->RtInfoTime_ : &this->ReInfoTime_);
+   }
 };
 
 struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder {
@@ -164,9 +181,15 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder {
    void OnSubscribeStreamOK(svc::SubrRec& subr, StrView ack,
                             f9rc_ClientSession& ses, f9sv_ClientReport& rpt,
                             bool isNeedsLogResult) {
+      assert(rpt.ResultCode_ == f9sv_Result_SubrStreamOK);
       // Pod snapshot;
-      DcQueueFixedMem dcq{ack};
       auto fnOnHandler = subr.Seeds_[subr.TabIndex_]->Handler_.FnOnReport_;
+      if (ack.empty()) { // 僅訂閱歷史, 則沒有提供現在的 Pod snapshot.
+         if (fnOnHandler)
+            fnOnHandler(&ses, &rpt);
+         return;
+      }
+      DcQueueFixedMem dcq{ack};
       while (!dcq.empty()) {
          size_t tabidx = kTabAll;
          BitvTo(dcq, tabidx);
@@ -194,11 +217,10 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder {
             fnOnHandler(&ses, &rpt);
       }
    }
-   void DecodeStreamData(svc::RxSubrData& rx, f9sv_ClientReport& rpt) {
-      DcQueueFixedMem         rxbuf{rx.Gv_};
+   void DecodeStreamRx(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {
       const fmkt::RtsPackType pkType = ReadOrRaise<fmkt::RtsPackType>(rxbuf);
       if (fon9_UNLIKELY(rx.IsNeedsLog_))
-         RevPrint(rx.LogBuf_, "|mdRts=", pkType);
+         RevPrint(rx.LogBuf_, "|pkType=", pkType);
 
       switch (pkType) {
       case fmkt::RtsPackType::DealPack:
@@ -215,35 +237,87 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder {
          return this->DecodeBaseInfoTwf(rx, rpt, rxbuf);
       }
    }
+   void DecodeStreamData(svc::RxSubrData& rx, f9sv_ClientReport& rpt) {
+      assert(rx.NotifyKind_ == seed::SeedNotifyKind::StreamData
+             && rpt.ResultCode_ == f9sv_Result_NoError);
+      DcQueueFixedMem rxbuf{rx.Gv_};
+      this->DecodeStreamRx(rx, rpt, rxbuf);
+   }
+   void DecodeStreamRe(svc::RxSubrData& rxSrc, f9sv_ClientReport& rpt) {
+      DcQueueFixedMem gvdcq{rxSrc.Gv_};
+      size_t pksz;
+      while (PopBitvByteArraySize(gvdcq, pksz)) {
+         svc::RxSubrData rxRec{rxSrc};
+         DcQueueFixedMem dcq{gvdcq.Peek1(), pksz};
+         this->DecodeStreamRx(rxRec, rpt, dcq);
+         gvdcq.PopConsumed(pksz);
+      }
+      assert(gvdcq.empty()); // 必定全部用完, 沒有剩餘資料.
+   }
+   void DecodeStreamRecover(svc::RxSubrData& rxSrc, f9sv_ClientReport& rpt) override {
+      assert(rxSrc.NotifyKind_ == seed::SeedNotifyKind::StreamRecover
+             && rpt.ResultCode_ == f9sv_Result_SubrStreamRecover);
+      this->DecodeStreamRe(rxSrc, rpt);
+      rxSrc.IsNeedsLog_ = false; // Log 已分配到 rxRec 去記錄, rxSrc 不用再記錄 Log.
+   }
+   void DecodeStreamRecoverEnd(svc::RxSubrData& rx, f9sv_ClientReport& rpt) override {
+      assert(rx.NotifyKind_ == seed::SeedNotifyKind::StreamRecoverEnd
+             && rpt.ResultCode_ == f9sv_Result_SubrStreamRecoverEnd);
+      if (!rx.Gv_.empty()) {
+         auto* tab = rpt.Tab_;
+         rpt.ResultCode_ = f9sv_Result_SubrStreamRecover;
+         this->DecodeStreamRe(rx, rpt);
+         rpt.Tab_ = tab;
+         rpt.Seed_ = nullptr;
+         rpt.ResultCode_ = f9sv_Result_SubrStreamRecoverEnd;
+      }
+      this->NotifyStreamRpt(rx, rpt);
+   }
+   void DecodeStreamEnd(svc::RxSubrData& rx, f9sv_ClientReport& rpt) override {
+      assert(rx.NotifyKind_ == seed::SeedNotifyKind::StreamEnd
+             && rpt.ResultCode_ == f9sv_Result_SubrStreamEnd);
+      this->NotifyStreamRpt(rx, rpt);
+   }
+   void NotifyStreamRpt(svc::RxSubrData& rx, f9sv_ClientReport& rpt) {
+      rx.FlushLog();
+      if (auto fnOnHandler = rx.SubrRec_->Seeds_[rx.SubrRec_->TabIndex_]->Handler_.FnOnReport_)
+         fnOnHandler(&rx.Session_, &rpt);
+   }
    // -----
    struct DecoderAux {
       fon9_NON_COPY_NON_MOVE(DecoderAux);
-      RcSvStreamDecoderNote_MdRts*  Note_{nullptr};
+      RcSvStreamDecoderNote_MdRts*  Note_;
+      DayTime*                      InfoTime_;
       svc::SeedRec*                 SeedRec_;
       seed::SimpleRawWr             RawWr_;
       DecoderAux(svc::RxSubrData& rx, f9sv_ClientReport& rpt, f9sv_TabSize tabidx)
-         : SeedRec_{rx.SubrRec_->Seeds_[tabidx].get()}
+         : Note_{static_cast<RcSvStreamDecoderNote_MdRts*>(rx.SeedRec_->StreamDecoderNote_.get())}
+         , InfoTime_{Note_->SelectInfoTime(rx)}
+         , SeedRec_{Note_->GetSeedRec(rx)[tabidx].get()}
          , RawWr_{*SeedRec_} {
+         assert(dynamic_cast<RcSvStreamDecoderNote_MdRts*>(rx.SeedRec_->StreamDecoderNote_.get()) != nullptr);
          rpt.Seed_ = this->SeedRec_;
          rpt.Tab_ = &rx.SubrRec_->Tree_->LayoutC_.TabList_[tabidx];
       }
       DecoderAux(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf, f9sv_TabSize tabidx)
          : DecoderAux{rx, rpt, tabidx} {
-         assert(dynamic_cast<RcSvStreamDecoderNote_MdRts*>(rx.SeedRec_->StreamDecoderNote_.get()) != nullptr);
-         this->Note_ = static_cast<RcSvStreamDecoderNote_MdRts*>(rx.SeedRec_->StreamDecoderNote_.get());
-         BitvToDayTimeOrUnchange(rxbuf, this->Note_->InfoTime_);
+         BitvToDayTimeOrUnchange(rxbuf, *this->InfoTime_);
+      }
+      template <class DecT>
+      void PutDecField(const seed::Field& fld, DecT val) {
+         fld.PutNumber(this->RawWr_, val.GetOrigValue(), val.Scale);
       }
    };
    // -----
    void DecodeDealPack(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {
       DecoderAux  dec{rx, rpt, rxbuf, this->TabIdxDeal_};
-      DayTime     dealTime = dec.Note_->InfoTime_;
-      this->FldDealInfoTime_->PutNumber(dec.RawWr_, dealTime.GetOrigValue(), dealTime.Scale);
+      DayTime     dealTime = *dec.InfoTime_;
+      dec.PutDecField(*this->FldDealInfoTime_, dealTime);
 
       fmkt::DealFlag dealFlags = ReadOrRaise<fmkt::DealFlag>(rxbuf);
       if (IsEnumContains(dealFlags, fmkt::DealFlag::DealTimeChanged)) {
          BitvToDayTimeOrUnchange(rxbuf, dealTime);
-         this->FldDealTime_->PutNumber(dec.RawWr_, dealTime.GetOrigValue(), dealTime.Scale);
+         dec.PutDecField(*this->FldDealTime_, dealTime);
       }
 
       // 取得現在的 totalQty, 試算階段不提供 totalQty, 所以將 pTotalQty 設為 nullptr, 表示不更新.
@@ -315,7 +389,7 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder {
    }
    void DecodeSnapshotBS(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf, fmkt::BSFlag bsFlags) {
       DecoderAux dec(rx, rpt, rxbuf, this->TabIdxBS_);
-      this->FldBSInfoTime_->PutNumber(dec.RawWr_, dec.Note_->InfoTime_.GetOrigValue(), dec.Note_->InfoTime_.Scale);
+      dec.PutDecField(*this->FldBSInfoTime_, *dec.InfoTime_);
       const FieldPQList* flds;
       while (!rxbuf.empty()) {
          const uint8_t first = ReadOrRaise<uint8_t>(rxbuf);
@@ -401,7 +475,7 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder {
    }
    void DecodeUpdateBS(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {
       DecoderAux dec(rx, rpt, rxbuf, this->TabIdxBS_);
-      this->FldBSInfoTime_->PutNumber(dec.RawWr_, dec.Note_->InfoTime_.GetOrigValue(), dec.Note_->InfoTime_.Scale);
+      dec.PutDecField(*this->FldBSInfoTime_, *dec.InfoTime_);
       const uint8_t first = ReadOrRaise<uint8_t>(rxbuf);
       fmkt::BSFlag  bsFlags{};
       if (first & 0x80)

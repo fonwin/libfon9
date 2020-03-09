@@ -261,9 +261,7 @@ StrToTimeIntervalAux::ResultT StrToTimeIntervalAux::MakeResult(TempResultT res, 
    retval /= TimeInterval::Divisor;
 
    const unsigned hhmmss = static_cast<unsigned>(retval % kDivHHMMSS);
-   retval = (TimeInterval_Day(retval / kDivHHMMSS)
-          + TimeInterval_HHMMSS(hhmmss / 10000u, (hhmmss / 100u) % 100u, (hhmmss % 100u))).GetOrigValue()
-          + dec;
+   retval = dec + (TimeInterval_Day(retval / kDivHHMMSS) + TimeInterval_HHMMSS(hhmmss)).GetOrigValue();
    return TimeInterval::Make<TimeInterval::Scale>(isNeg ? -retval : retval);
 }
 

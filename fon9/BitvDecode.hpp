@@ -78,10 +78,10 @@ fon9_API PeekBitvByteArraySizeR PeekBitvByteArraySize(const DcQueue& buf, size_t
 /// \ingroup AlNum
 /// 取得 ByteArray 資料的長度.
 /// 若資料型別不是 ByteArray 則會拋出 BitvTypeNotMatch 異常.
-/// \retval true 正確取出了長度, 長度存放在 barySize.
+/// \retval true 正確取出了長度(且剩餘資料量足夠), 長度存放在 barySize.
 ///   - 此時 buf 會移除「儲存長度的部分」, 且 buf 的剩餘資料量必定 >= barySize;
-///   - 通常在返回後會取出接下來的資料.
-/// \retval false 資料不足, buf 內如不變.
+///   - 通常在返回後應取出接下來的資料.
+/// \retval false 資料不足, buf 內容不變.
 ///   - 若 barySize==0, 則表示 buf 的資料量不足「儲存長度的部分」,
 ///   - 若 barySize>0, 則表示 buf 的資料量不足 barySize.
 fon9_API bool PopBitvByteArraySize(DcQueue& buf, size_t& barySize);

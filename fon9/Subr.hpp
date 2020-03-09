@@ -157,7 +157,17 @@ public:
       }
       return 0;
    }
-      
+   /// 取消訂閱, 並將 Subscriber 取出.
+   bool MoveOutSubscriber(SubConn connection, SubscriberT& subr) {
+      Locker subrs(this->Subrs_);
+      auto   ifind = subrs->find(connection);
+      if (ifind == subrs->end())
+         return false;
+      subr = std::move(ifind->second);
+      this->EraseIterator(subrs, ifind);
+      return true;
+   }
+
    /// 取消訂閱.
    /// \param subr  SubscriberT 必須支援: bool operator==(const SubscriberT&) const;
    /// \return 傳回實際移除的數量: 0 or 1

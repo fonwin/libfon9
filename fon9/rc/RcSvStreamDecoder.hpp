@@ -23,15 +23,22 @@ public:
 
    /// - ack 由 Stream 提供者自訂內容, 不一定是文字.
    /// - rpt 已初始化: rpt.TreePath_; rpt.Layout_; rpt.SeedKey_; rpt.Tab_; rpt.UserData_;
+   ///   rpt.ResultCode_ = f9sv_Result_SubrStreamOK;
+   ///   其餘為0;
    /// - 衍生者解碼後, 若有需要應觸發事件通知, 然後才返回.
    virtual void OnSubscribeStreamOK(svc::SubrRec& subr, StrView ack,
                                     f9rc_ClientSession& ses, f9sv_ClientReport& rpt,
                                     bool isNeedsLogResult) = 0;
 
    /// - rpt 已初始化: rpt.TreePath_; rpt.Layout_; rpt.SeedKey_; rpt.Tab_; rpt.UserData_;
+   ///   - rpt.ResultCode_ = f9sv_Result_SubrStream*; 已填入對應值;
+   ///   -  其餘為0;
    /// - 收到的 stream data 放在 rx.Gv_, 內容由 Stream 自訂, 不一定是文字.
    /// - 衍生者解碼後應觸發事件通知, 然後才返回.
    virtual void DecodeStreamData(svc::RxSubrData& rx, f9sv_ClientReport& rpt) = 0;
+   virtual void DecodeStreamRecover(svc::RxSubrData& rx, f9sv_ClientReport& rpt) = 0;
+   virtual void DecodeStreamRecoverEnd(svc::RxSubrData& rx, f9sv_ClientReport& rpt) = 0;
+   virtual void DecodeStreamEnd(svc::RxSubrData& rx, f9sv_ClientReport& rpt) = 0;
 };
 using RcSvStreamDecoderSP = std::unique_ptr<RcSvStreamDecoder>;
 

@@ -412,6 +412,7 @@ void RcSeedVisitorClientNote::OnRecvQrySubrAck(RcClientSession& ses, DcQueue& rx
          assert(tabCount == 0);
          std::string ack;
          BitvTo(rxbuf, ack);
+         rpt.ResultCode_ = f9sv_Result_SubrStreamOK;
          rtab.StreamDecoder_->OnSubscribeStreamOK(*subr, &ack, ses, rpt, isNeedsLogResult);
          return;
       }
@@ -519,8 +520,9 @@ void RcSeedVisitorClientNote::OnRecvSubrData(RcClientSession& ses, DcQueue& rxbu
    rpt.Layout_   = &rx.SubrRec_->Tree_->LayoutC_;
    rpt.Tab_      = &rx.SubrRec_->Tree_->LayoutC_.TabList_[rx.SubrRec_->TabIndex_];
    rpt.UserData_ = rx.SeedRec_->Handler_.UserData_;
-   
-   auto fnOnReport = rx.SeedRec_->Handler_.FnOnReport_;
+
+   auto  fnOnReport = rx.SeedRec_->Handler_.FnOnReport_;
+   void (RcSvStreamDecoder::*fnStreamDecoder)(svc::RxSubrData& rx, f9sv_ClientReport& rpt);
    switch (rx.NotifyKind_) {
    case seed::SeedNotifyKind::SubscribeOK:
    case seed::SeedNotifyKind::SubscribeStreamOK:
@@ -528,6 +530,31 @@ void RcSeedVisitorClientNote::OnRecvSubrData(RcClientSession& ses, DcQueue& rxbu
    default: // Unknown NotifyKind.
       ses.ForceLogout("Unknown SubscribeData NotifyKind.");
       return;
+   // ------------------------------------
+   case seed::SeedNotifyKind::StreamRecover:
+      rpt.ResultCode_ = f9sv_Result_SubrStreamRecover;
+      fnStreamDecoder = &RcSvStreamDecoder::DecodeStreamRecover;
+      goto __DECODE_STREAM;
+   case seed::SeedNotifyKind::StreamRecoverEnd:
+      rpt.ResultCode_ = f9sv_Result_SubrStreamRecoverEnd;
+      fnStreamDecoder = &RcSvStreamDecoder::DecodeStreamRecoverEnd;
+      goto __DECODE_STREAM;
+   case seed::SeedNotifyKind::StreamEnd:
+      rpt.ResultCode_ = f9sv_Result_SubrStreamEnd;
+      fnStreamDecoder = &RcSvStreamDecoder::DecodeStreamEnd;
+      goto __DECODE_STREAM;
+   case seed::SeedNotifyKind::StreamData:
+      fnStreamDecoder = &RcSvStreamDecoder::DecodeStreamData;
+   __DECODE_STREAM:;
+      assert(rx.SeedRec_->StreamDecoderNote_.get() != nullptr);
+      rpt.SeedKey_ = rx.CheckLoadSeedKey(rxbuf).ToCStrView();
+      BitvTo(rxbuf, rx.Gv_); // 將 stream data 載入, 但不寫 log, (使用 rx.LoadGv() 會自動寫入 log).
+      (rx.SubrRec_->Tree_->TabList_[rx.SubrRec_->TabIndex_].StreamDecoder_.get()
+       ->*(fnStreamDecoder))(rx, rpt);
+      if (rx.NotifyKind_ == seed::SeedNotifyKind::StreamEnd)
+         rx.RemoveSubscribe();
+      return;
+   // ------------------------------------
    case seed::SeedNotifyKind::TableChanged:
       // 只有訂閱 tree 才會收到此通知, 此時應更新整個 tree 的內容.
       assert(IsSubrTree(rx.SubrRec_->SeedKey_.begin()));
@@ -543,19 +570,14 @@ void RcSeedVisitorClientNote::OnRecvSubrData(RcClientSession& ses, DcQueue& rxbu
       rpt.Seed_ = rx.SeedRec_;
       NotifySeeds(fnOnReport, &ses, &rpt, &rx.Gv_, seed::SimpleRawWr{rx.SeedRec_}, rx.Tab_->Fields_, true);
       return;
-   case seed::SeedNotifyKind::StreamData:
-   case seed::SeedNotifyKind::StreamRecover:
-      assert(rx.SeedRec_->StreamDecoderNote_.get() != nullptr);
-      rpt.SeedKey_ = rx.CheckLoadSeedKey(rxbuf).ToCStrView();
-      BitvTo(rxbuf, rx.Gv_); // 將 stream data 載入, 但不寫 log, (使用 rx.LoadGv() 會自動寫入 log).
-      rx.SubrRec_->Tree_->TabList_[rx.SubrRec_->TabIndex_].StreamDecoder_->DecodeStreamData(rx, rpt);
-      return;
+   // ------------------------------------
    case seed::SeedNotifyKind::SeedChanged:
       rpt.SeedKey_ = rx.CheckLoadSeedKey(rxbuf).ToCStrView();
       rx.LoadGv(rxbuf);
       ParseStrValuesToSeed(&rx.Gv_, seed::SimpleRawWr{rx.SeedRec_}, rx.Tab_->Fields_);
       rpt.Seed_ = rx.SeedRec_;
       break;
+   // ------------------------------------
    case seed::SeedNotifyKind::PodRemoved:
    case seed::SeedNotifyKind::SeedRemoved:
       rpt.SeedKey_ = rx.CheckLoadSeedKey(rxbuf).ToCStrView();
@@ -570,10 +592,7 @@ void RcSeedVisitorClientNote::OnRecvSubrData(RcClientSession& ses, DcQueue& rxbu
    case seed::SeedNotifyKind::ParentSeedClear:
       // 收到此通知之後, 訂閱會被清除, 不會再收到事件.
       rpt.ResultCode_ = f9sv_Result_SubrNotifyUnsubscribed;
-      rx.LogSubrRec();
-      rx.SubrRec_->ClearSvFunc();
-      rx.SeedRec_->ClearSvFunc();
-      rx.Map_->SubrMap_.RemoveObjPtr(rx.SubrIndex_, rx.SubrRec_);
+      rx.RemoveSubscribe();
       break;
    }
    rx.FlushLog();

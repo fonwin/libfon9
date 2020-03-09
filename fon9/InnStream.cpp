@@ -225,5 +225,8 @@ InnStream::SizeType InnStream::Append(DcQueue&& buf) {
    PosType pos = this->SeekToEndWithFlush(impl);
    return pos + this->WriteDcQueue(impl, pos, std::move(buf));
 }
+InnStream::PosType InnStream::Size() {
+   return this->SeekToEndWithFlush(this->Lock());
+}
 
 } // namespace fon9

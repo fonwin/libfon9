@@ -44,7 +44,8 @@ public:
 
    /// 交易日.
    uint32_t TDayYYYYMMDD_{0};
-   char     Filler5_____[4];
+   /// 下市日期.
+   uint32_t EndYYYYMMDD_{0};
 
    /// 交易市場.
    f9fmkt_TradingMarket    TradingMarket_{f9fmkt_TradingMarket_Unknown};

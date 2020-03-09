@@ -31,13 +31,19 @@ public:
    fon9::fmkt::SymbLow     Low_;
    fon9::fmkt::MdRtStream  MdRtStream_;
 
-   using base::base;
+   ExgMdSymb(const fon9::StrView& symbid, fon9::fmkt::MdRtStreamInnMgr& innMgr)
+      : base{symbid}
+      , MdRtStream_{innMgr} {
+      this->TDayYYYYMMDD_ = innMgr.TDayYYYYMMDD();
+   }
 
    fon9::fmkt::SymbData* GetSymbData(int tabid) override;
    fon9::fmkt::SymbData* FetchSymbData(int tabid) override;
 
    void DailyClear(fon9::fmkt::SymbTree& tree, unsigned tdayYYYYMMDD);
    void SessionClear(fon9::fmkt::SymbTree& tree, f9fmkt_TradingSessionId tsesId);
+   /// 移除商品, 通常是因為商品下市.
+   void BeforeRemove(fon9::fmkt::SymbTree& tree, unsigned tdayYYYYMMDD);
 
    /// 檢查並設定 TradingSessionId.
    /// \retval true
@@ -62,9 +68,14 @@ public:
 class f9twf_API ExgMdSymbs : public fon9::fmkt::SymbTree {
    fon9_NON_COPY_NON_MOVE(ExgMdSymbs);
    using base = fon9::fmkt::SymbTree;
+
 public:
-   fon9::seed::Tab* RtTab_;
-   ExgMdSymbs();
+   fon9::seed::Tab* const        RtTab_;
+   fon9::fmkt::MdRtStreamInnMgr  RtInnMgr_;
+
+   /// pathFmt = RtInnMgr 儲存檔名的路徑格式(不含副檔名),
+   /// 使用 fon9::TimedFileName 格式;
+   ExgMdSymbs(std::string pathFmt);
 
    void DailyClear(unsigned tdayYYYYMMDD);
 

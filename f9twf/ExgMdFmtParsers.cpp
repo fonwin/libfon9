@@ -15,6 +15,7 @@ f9twf_API bool I010BasicInfoLockedParser(ExgMcMessage& e, const ExgMdLocker&) {
       return false;
    symb.TradingMarket_ = (pk.TransmissionCode_ == '1' ? f9fmkt_TradingMarket_TwFUT : f9fmkt_TradingMarket_TwOPT);
    symb.FlowGroup_ = fon9::PackBcdTo<f9fmkt::SymbFlowGroup_t>(pk.FlowGroup_);
+   symb.EndYYYYMMDD_ = fon9::PackBcdTo<uint32_t>(pk.EndDateYYYYMMDD_);
    symb.PriceOrigDiv_ = static_cast<uint32_t>(fon9::GetDecDivisor(
       static_cast<uint8_t>(f9fmkt::Pri::Scale - fon9::PackBcdTo<uint8_t>(pk.DecimalLocator_))));
    symb.StrikePriceDiv_ = static_cast<uint32_t>(fon9::GetDecDivisor(

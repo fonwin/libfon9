@@ -84,6 +84,8 @@ struct WsSeedVisitor::SeedVisitor : public seed::SeedVisitor {
          case fon9::seed::SeedNotifyKind::SubscribeStreamOK:
          case fon9::seed::SeedNotifyKind::StreamData:
          case fon9::seed::SeedNotifyKind::StreamRecover:
+         case fon9::seed::SeedNotifyKind::StreamRecoverEnd:
+         case fon9::seed::SeedNotifyKind::StreamEnd:
          case fon9::seed::SeedNotifyKind::ParentSeedClear:
             return;
          case fon9::seed::SeedNotifyKind::PodRemoved:

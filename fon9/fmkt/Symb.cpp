@@ -29,6 +29,7 @@ seed::Fields Symb::MakeFields() {
    flds.Add(fon9_MakeField2(Symb, PriceOrigDiv));
    flds.Add(fon9_MakeField2(Symb, StrikePriceDiv));
    flds.Add(fon9_MakeField2(Symb, ExgSymbSeq));
+   flds.Add(fon9_MakeField (Symb, EndYYYYMMDD_, "EndDate"));
    return flds;
 }
 

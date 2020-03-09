@@ -2,13 +2,14 @@
 // \author fonwinz@gmail.com
 #ifndef __fon9_fmkt_MdRtsTypes_hpp__
 #define __fon9_fmkt_MdRtsTypes_hpp__
-#include "fon9/fmkt/FmktTypes.h"
+#include "fon9/fmkt/FmktTypes.hpp"
 #include "fon9/TimeStamp.hpp"
 
 namespace fon9 { namespace fmkt {
 
 enum class MdRtsKind : uint32_t {
-   /// 基本資料訊息: BasicInfo
+   All = 0xff,
+   /// 基本資料訊息.
    Base = 0x01,
    /// 參考價訊息.
    Ref = 0x02,
@@ -22,6 +23,10 @@ fon9_ENABLE_ENUM_BITWISE_OP(MdRtsKind);
 /// \ingroup fmkt
 /// - 預期 RtsPackType 應在 0..0x7f 之間.
 ///   若超過 0x7f, 則應思考編碼端及解碼端應如何處理.
+/// - 封包基本格式:
+///   - RtsPackType(1 byte)
+///   - InfoTime(Bitv:DayTime, 可能為 Null, 表示 InfoTime 與前一個封包相同)
+///   - 後續內容由各 RtsPackType 自行定義.
 enum class RtsPackType : uint8_t {
    /// 打包成交明細.
    /// - 收到封包者: 一個 DealPack 可能觸發多次「交易明細」異動事件.
@@ -61,7 +66,7 @@ enum class RtsPackType : uint8_t {
    UpdateBS,
 
    /// 盤別狀態通知.
-   /// - InfoTime(Bitv: Null=PreClear or Unchanged)
+   /// - InfoTime(Bitv: Null=清盤 or Unchanged)
    /// - TDayYYYYMMDD(uint32_t BigEndian)
    /// - f9fmkt_TradingSessionId(char)
    /// - f9fmkt_TradingSessionSt(uint8_t)
@@ -94,6 +99,17 @@ enum class RtBSAction : uint8_t {
    ChangePQ = 0x80,
    ChangeQty = 0xc0,
 };
+
+//--------------------------------------------------------------------------//
+
+inline MdRtsKind StrToMdRtsKind(StrView* args) {
+   MdRtsKind res = static_cast<MdRtsKind>(HexStrTo(args));
+   return(res == MdRtsKind{} ? MdRtsKind::All : res);
+}
+fon9_API MdRtsKind GetMdRtsKind(RtsPackType pkType);
+
+class SymbBS;
+fon9_API void MdRtsPackSnapshotBS(RevBuffer& rbuf, const SymbBS& symbBS);
 
 } } // namespaces
 #endif//__fon9_fmkt_MdRtsTypes_hpp__

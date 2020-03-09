@@ -132,11 +132,19 @@ class ConsoleSeedSession : public fon9::SeedSession {
          RevPrint(rbuf, "|SubscribeStreamOK");
          break;
       case fon9::seed::SeedNotifyKind::StreamData:
-         RevPrint(rbuf, "|StreamDataKind=", fon9::ToHex(args.StreamDataKind_));
+         RevPrint(rbuf, "|StreamData.Kind=", fon9::ToHex(args.StreamDataKind_));
          hasKeyTab = true;
          break;
       case fon9::seed::SeedNotifyKind::StreamRecover:
-         RevPrint(rbuf, "|StreamRecoverKind=", fon9::ToHex(args.StreamDataKind_));
+         RevPrint(rbuf, "|StreamRecover.Kind=", fon9::ToHex(args.StreamDataKind_));
+         hasKeyTab = true;
+         break;
+      case fon9::seed::SeedNotifyKind::StreamRecoverEnd:
+         RevPrint(rbuf, "|StreamRecoverEnd.Kind=", fon9::ToHex(args.StreamDataKind_));
+         hasKeyTab = true;
+         break;
+      case fon9::seed::SeedNotifyKind::StreamEnd:
+         RevPrint(rbuf, "|StreamEnd.Kind=", fon9::ToHex(args.StreamDataKind_));
          hasKeyTab = true;
          break;
       }

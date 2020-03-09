@@ -157,6 +157,9 @@
     <ClInclude Include="..\..\..\fon9\fix\IoFixSession.hpp" />
     <ClInclude Include="..\..\..\fon9\FlowCounter.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\FmktTypes.hpp" />
+    <ClInclude Include="..\..\..\fon9\fmkt\MdRtsTypes.hpp" />
+    <ClInclude Include="..\..\..\fon9\fmkt\MdRtStream.hpp" />
+    <ClInclude Include="..\..\..\fon9\fmkt\MdRtStreamInn.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\Symb.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\SymbBS.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\SymbDeal.hpp" />
@@ -167,8 +170,6 @@
     <ClInclude Include="..\..\..\fon9\fmkt\FmktTypes.h" />
     <ClInclude Include="..\..\..\fon9\fmkt\TradingLine.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\TradingRequest.hpp" />
-    <ClInclude Include="..\..\..\fon9\fmkt\MdRtsTypes.hpp" />
-    <ClInclude Include="..\..\..\fon9\fmkt\MdRtStream.hpp" />
     <ClInclude Include="..\..\..\fon9\framework\Framework.hpp" />
     <ClInclude Include="..\..\..\fon9\framework\IoFactory.hpp" />
     <ClInclude Include="..\..\..\fon9\framework\IoManager.hpp" />
@@ -427,6 +428,9 @@
     <ClCompile Include="..\..\..\fon9\fix\IoFixSender.cpp" />
     <ClCompile Include="..\..\..\fon9\fix\IoFixSession.cpp" />
     <ClCompile Include="..\..\..\fon9\FlowCounter.cpp" />
+    <ClCompile Include="..\..\..\fon9\fmkt\MdRtsTypes.cpp" />
+    <ClCompile Include="..\..\..\fon9\fmkt\MdRtStream.cpp" />
+    <ClCompile Include="..\..\..\fon9\fmkt\MdRtStreamInn.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\Symb.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\SymbBS.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\SymbDeal.cpp" />
@@ -436,8 +440,6 @@
     <ClCompile Include="..\..\..\fon9\fmkt\SymbTree.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\TradingLine.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\TradingRequest.cpp" />
-    <ClCompile Include="..\..\..\fon9\fmkt\MdRtsTypes.cpp" />
-    <ClCompile Include="..\..\..\fon9\fmkt\MdRtStream.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\Framework.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\IoFactory.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\IoFactoryDgram.cpp" />

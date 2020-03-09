@@ -7,9 +7,10 @@ namespace f9twf {
 
 ExgMcSystem::ExgMcSystem(fon9::seed::MaTreeSP root, std::string name)
    : base{name}
-   , Root_{std::move(root)}
-   , Symbs_{new ExgMdSymbs} {
+   , Symbs_{new ExgMdSymbs{fon9::seed::SysEnv_GetLogFileFmtPath(*root) + name}}
+   , Root_{std::move(root)} {
    this->Sapling_->AddNamedSapling(this->Symbs_, "Symbs");
+   this->Symbs_->RtInnMgr_.SetDailyClearTime(fon9::TimeInterval_HHMMSS(this->ClearHHMMSS_));
 }
 ExgMcSystem::~ExgMcSystem() {
    this->ClearTimer_.DisposeAndWait();
@@ -27,6 +28,7 @@ void ExgMcSystem::SetClearHHMMSS(unsigned clearHHMMSS) {
    if (this->ClearHHMMSS_ == clearHHMMSS)
       return;
    this->ClearHHMMSS_ = clearHHMMSS;
+   this->Symbs_->RtInnMgr_.SetDailyClearTime(fon9::TimeInterval_HHMMSS(clearHHMMSS));
    if (this->TDayYYYYMMDD_) // 必須有 StartupMcSystem() 啟動過, 才需要重啟計時器.
       this->StartupMcSystem();
 }
@@ -50,9 +52,18 @@ bool ExgMcSystem::Startup(const unsigned tdayYYYYMMDD) {
 
    this->Symbs_->DailyClear(tdayYYYYMMDD);
    auto seeds = this->Sapling_->GetList(nullptr);
+   // 必須先啟動[夜盤], 因為一旦商品進入夜盤, 則不應再處理日盤訊息.
+   // - 啟動時會先從「基本資料 Channel 保留檔」載入商品基本資料.
+   //   所以先啟動夜盤, 則可以讓商品直接進入夜盤時段.
    for (fon9::seed::NamedSeedSP& seed : seeds) {
       if (auto* mcGroup = dynamic_cast<ExgMcGroup*>(seed.get()))
-         mcGroup->StartupMcGroup(*this, logPath);
+         if (mcGroup->ChannelMgr_->TradingSessionId_ == f9fmkt_TradingSessionId_AfterHour)
+            mcGroup->StartupMcGroup(*this, logPath);
+   }
+   for (fon9::seed::NamedSeedSP& seed : seeds) {
+      if (auto* mcGroup = dynamic_cast<ExgMcGroup*>(seed.get()))
+         if (mcGroup->ChannelMgr_->TradingSessionId_ != f9fmkt_TradingSessionId_AfterHour)
+            mcGroup->StartupMcGroup(*this, logPath);
    }
    return true;
 }

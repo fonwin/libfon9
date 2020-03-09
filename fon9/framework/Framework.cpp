@@ -156,7 +156,7 @@ void Framework::Initialize(int argc, char** argv) {
    desc = this->MaPlugins_->BindConfigFile(&fname);
    sysEnv->Add(new seed::SysEnvItem(fon9_kCSTR_MaPlugins, std::move(fname), std::string{}, std::move(desc)));
 
-   // 透過 log 紀錄基本的執行環境.
+   // 透過 log 記錄基本的執行環境.
    LogSysEnv(sysEnv->Get(fon9_kCSTR_SysEnvItem_ProcessId).get());
    LogSysEnv(sysEnv->Get(fon9_kCSTR_SysEnvItem_CommandLine).get());
    LogSysEnv(sysEnv->Get(fon9_kCSTR_SysEnvItem_ExecPath).get());

@@ -1016,6 +1016,9 @@
     <ClInclude Include="..\..\..\fon9\fmkt\MdRtStream.hpp">
       <Filter>Header Files\fmkt</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\MdRtStreamInn.hpp">
+      <Filter>Header Files\fmkt</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -1649,6 +1652,9 @@
       <Filter>Source Files\fmkt</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\fmkt\MdRtStream.cpp">
+      <Filter>Source Files\fmkt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\MdRtStreamInn.cpp">
       <Filter>Source Files\fmkt</Filter>
     </ClCompile>
   </ItemGroup>

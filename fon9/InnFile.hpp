@@ -27,7 +27,7 @@ enum : InnRoomType {
    kInnRoomType_FreeList = kInnRoomType_Free | kInnRoomType_HasNextRoomPos_Flag,
 
    /// 通常放在第1間房, 記錄此 InnFile 額外的訊息.
-   /// e.g. InnDbf 用第1間房紀錄 TableName list.
+   /// e.g. InnDbf 用第1間房記錄 TableName list.
    kInnRoomType_ExFileHeader = kInnRoomType_HasNextRoomPos_Flag | 0x01,
 };
 

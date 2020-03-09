@@ -59,18 +59,37 @@ void ExgMdSymb::SessionClear(fon9::fmkt::SymbTree& tree, f9fmkt_TradingSessionId
    this->Low_.DailyClear();
    this->MdRtStream_.SessionClear(tree, *this);
 }
-//--------------------------------------------------------------------------//
-ExgMdSymbs::ExgMdSymbs()
-   : base{ExgMdSymb::MakeLayout()}
-   , RtTab_{LayoutSP_->GetTab(kCSTR_RtTabName)} {
+void ExgMdSymb::BeforeRemove(fon9::fmkt::SymbTree& tree, unsigned tdayYYYYMMDD) {
+   (void)tdayYYYYMMDD;
+   this->MdRtStream_.BeforeRemove(tree, *this);
 }
+//--------------------------------------------------------------------------//
+fon9_MSC_WARN_DISABLE(4355) // 'this': used in base member initializer list
+ExgMdSymbs::ExgMdSymbs(std::string pathFmt)
+   : base{ExgMdSymb::MakeLayout()}
+   , RtTab_{LayoutSP_->GetTab(kCSTR_RtTabName)}
+   , RtInnMgr_(*this, std::move(pathFmt)) {
+}
+fon9_MSC_WARN_POP;
+
 void ExgMdSymbs::DailyClear(unsigned tdayYYYYMMDD) {
    auto symbs = this->SymbMap_.Lock();
-   for (auto& symb : *symbs)
-      static_cast<ExgMdSymb*>(symb.second.get())->DailyClear(*this, tdayYYYYMMDD);
+   this->RtInnMgr_.DailyClear(tdayYYYYMMDD);
+   auto iend = symbs->end();
+   for (auto ibeg = symbs->begin(); ibeg != iend;) {
+      auto& symb = *static_cast<ExgMdSymb*>(ibeg->second.get());
+      if (symb.EndYYYYMMDD_ == 0 || tdayYYYYMMDD <= symb.EndYYYYMMDD_) {
+         symb.DailyClear(*this, tdayYYYYMMDD);
+         ++ibeg;
+      }
+      else { // 移除已下市商品, 移除時需觸發 PodRemoved 事件.
+         symb.BeforeRemove(*this, tdayYYYYMMDD);
+         ibeg = symbs->erase(ibeg);
+      }
+   }
 }
 fon9::fmkt::SymbSP ExgMdSymbs::MakeSymb(const fon9::StrView& symbid) {
-   return fon9::fmkt::SymbSP{new ExgMdSymb(symbid)};
+   return new ExgMdSymb(symbid, this->RtInnMgr_);
 }
 void ExgMdSymbs::OnTreeOp(fon9::seed::FnTreeOp fnCallback) {
    using namespace fon9;

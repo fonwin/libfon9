@@ -11,13 +11,13 @@ namespace fon9 { namespace fmkt {
 enum class BSFlag : uint8_t {
    /// 試撮後剩餘委託簿.
    Calculated = 0x01,
-   /// 委託簿的買方有異動.
+   /// 委託簿的買方有異動, 或快照有買方資料.
    OrderBuy = 0x02,
-   /// 委託簿的賣方有異動.
+   /// 委託簿的賣方有異動, 或快照有賣方資料.
    OrderSell = 0x04,
-   /// 委託簿的衍生買方有異動.
+   /// 委託簿的衍生買方有異動, 或快照有衍生買方資料.
    DerivedBuy = 0x10,
-   /// 委託簿的衍生賣方有異動.
+   /// 委託簿的衍生賣方有異動, 或快照有衍生賣方資料.
    DerivedSell = 0x20,
 };
 fon9_ENABLE_ENUM_BITWISE_OP(BSFlag);

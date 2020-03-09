@@ -31,9 +31,9 @@ class f9twf_API ExgMcSystem : public fon9::seed::NamedMaTree {
    void OnParentTreeClear(fon9::seed::Tree& parent) override;
 
 public:
+   const ExgMdSymbsSP         Symbs_;
    /// 用 Root_ 取得系統參數, 例如: SysEnv_GetLogFileFmtPath();
    const fon9::seed::MaTreeSP Root_;
-   const ExgMdSymbsSP         Symbs_;
 
    ExgMcSystem(fon9::seed::MaTreeSP root, std::string name);
    ~ExgMcSystem();

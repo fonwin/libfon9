@@ -122,6 +122,7 @@ Device::SendResult IocpSocket::SendAfterAddRef(DcQueueList& dcbuf) {
       // wbuf[0].buf = nullptr;
    }
 
+__RETRY_SEND:
    DWORD  txBytes = 0, flags = 0;
    const int sres = this->SendTo_
       ? WSASendTo(this->Socket_.GetSocketHandle(), wbuf, wcount, &txBytes, flags, &this->SendTo_->Addr_, this->SendTo_->GetAddrLen(), &this->SendOverlapped_, nullptr)
@@ -130,6 +131,17 @@ Device::SendResult IocpSocket::SendAfterAddRef(DcQueueList& dcbuf) {
       switch (int eno = WSAGetLastError()) {
       case WSA_IO_PENDING: // ERROR_IO_PENDING: 正常傳送等候中.
          break;
+      case WSAEMSGSIZE:
+         if (wcount > 1) {
+            wcount = 1;
+            goto __RETRY_SEND;
+         }
+         // 如果 wcount==1, 則表示 wbuf[0] 封包太大, 應調整打包規則?
+         if (wbuf[0].len > 512) {
+            wbuf[0].len = 512;
+            goto __RETRY_SEND;
+         }
+         // 不用 break; 視為失敗.
       default: // 傳送失敗, 不會產生 OnIocp_* 事件
          this->OnIocp_Error(&this->SendOverlapped_, static_cast<DWORD>(eno));
          return GetSocketErrC(eno);

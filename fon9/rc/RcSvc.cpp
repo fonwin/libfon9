@@ -10,6 +10,21 @@ namespace fon9 { namespace rc { namespace svc {
 TreeRec::~TreeRec() {
    delete[] this->LayoutC_.TabList_;
 }
+void TreeRec::MakeSeed(SeedSP& seed, f9sv_TabSize tabidx) {
+   assert(tabidx < this->LayoutC_.TabCount_);
+   if (tabidx < this->LayoutC_.TabCount_)
+      seed.reset(SeedRec::MakeSeedRec(*this->Layout_->GetTab(tabidx)));
+   else
+      seed.reset();
+}
+void TreeRec::MakePod(PodRec& pod) {
+   pod.ClearSeeds();
+   pod.Seeds_ = new SeedSP[this->LayoutC_.TabCount_];
+   for (f9sv_TabSize tabidx = this->LayoutC_.TabCount_; tabidx > 0;) {
+      --tabidx;
+      this->MakeSeed(pod.Seeds_[tabidx], tabidx);
+   }
+}
 PodRec& TreeRec::FetchPod(StrView seedKey, bool* isNew) {
    PodRec& pod = this->PodMap_[CharVector::MakeRef(seedKey)];
    if (pod.Seeds_ != nullptr) {
@@ -19,11 +34,7 @@ PodRec& TreeRec::FetchPod(StrView seedKey, bool* isNew) {
    else {
       if (isNew)
          *isNew = true;
-      pod.Seeds_ = new SeedSP[this->LayoutC_.TabCount_];
-      for (f9sv_TabSize tabidx = this->LayoutC_.TabCount_; tabidx > 0;) {
-         --tabidx;
-         pod.Seeds_[tabidx].reset(SeedRec::MakeSeedRec(*this->Layout_->GetTab(tabidx)));
-      }
+      this->MakePod(pod);
    }
    return pod;
 }
@@ -107,13 +118,24 @@ RxSubrData::RxSubrData(f9rc_ClientSession& ses, SvFunc fcAck, TreeLocker&& maplk
    , SubrRec_{maplk->SubrMap_.GetObjPtr(SubrIndex_)}
    , Tab_{SubrRec_ ? SubrRec_->Tree_->Layout_->GetTab(SubrRec_->TabIndex_) : nullptr}
    , SeedRec_{SubrRec_ ? SubrRec_->Seeds_[SubrRec_->TabIndex_].get() : nullptr}
-   , Map_{std::move(maplk)} {
+   , LockedMap_{std::move(maplk)} {
    if (this->IsNeedsLog_) {
       RevPutChar(this->LogBuf_, '\n');
       if (this->SubrRec_ == nullptr)
          RevPrint(this->LogBuf_, "|err=Bad subrIndex.");
    }
    assert(this->SeedRec_ == nullptr || (this->SeedRec_->SubrIndex_ == this->SubrIndex_));
+}
+RxSubrData::RxSubrData(RxSubrData& src)
+   : Session_(src.Session_)
+   , IsNeedsLog_{src.IsNeedsLog_}
+   , NotifyKind_{src.NotifyKind_}
+   , SubrIndex_{src.SubrIndex_}
+   , SubrRec_{src.SubrRec_}
+   , Tab_{src.Tab_}
+   , SeedRec_{src.SeedRec_} {
+   if (this->IsNeedsLog_)
+      RevPutChar(this->LogBuf_, '\n');
 }
 void RxSubrData::FlushLog() {
    if (!this->IsNeedsLog_)
@@ -148,6 +170,12 @@ void RxSubrData::LoadGv(DcQueue& rxbuf) {
    BitvTo(rxbuf, this->Gv_);
    if (this->IsNeedsLog_)
       RevPrint(this->LogBuf_, "|gv={", this->Gv_, '}');
+}
+void RxSubrData::RemoveSubscribe() {
+   this->LogSubrRec();
+   this->SubrRec_->ClearSvFunc();
+   this->SeedRec_->ClearSvFunc();
+   this->LockedMap_->SubrMap_.RemoveObjPtr(this->SubrIndex_, this->SubrRec_);
 }
 
 } } } // namespaces

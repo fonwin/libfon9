@@ -20,6 +20,15 @@ fon9_WARN_DISABLE_PADDING;
 /// - 儲存的資料可用類似檔案讀寫的方式操作:
 ///   - Read、Wite、Append、Reduce;
 ///   - 僅適合循序讀寫, 及 Append.
+/// - 使用方式:
+///   \code
+///      StreamRW srw;
+///      srw.Open(innApf, key, fileMode);
+///      srw.Read(pos, ...);
+///      srw.Write(pos, ...);
+///      srw.AppendBuffered();
+///      srw.AppendNoBuffer();
+///   \endcode
 /// - 使用 InnFile 實作.
 /// - InnFile.FileExHeader: 儲存 key 及其相關的索引.
 ///   - RoomPos  NextExHeaderRoomPos;
@@ -43,6 +52,7 @@ public:
    using RoomPos = InnFile::RoomPosT;
    using InnBitvFixedRoomPos = BitvFixedUInt<sizeof(RoomPos) - 1>;
 
+public: // 雖然為 public, 但一般不會直接使用到, 只是為了在 InnApf.cpp 裡面可以直接取用.
    /// 與 key 一同記錄在 FileExHeader 的資訊.
    /// InnFile 開啟後, 重建 stream 時使用.
    struct StreamInfo {
@@ -58,8 +68,6 @@ public:
       SKeyT       Key_;
       StreamInfo  Info_;
    };
-
-private:
    using RoomKey = InnFile::RoomKey;
    class Stream : public intrusive_ref_counter<Stream>, private InnStream {
       fon9_NON_COPY_NON_MOVE(Stream);
@@ -95,6 +103,7 @@ private:
       const SKeyT& Key() const {
          return this->Saved_.Key_;
       }
+      using base::Size;
 
       SizeT Read(SPosT pos, void* buf, SizeT bufsz) {
          return base::Read(pos, buf, bufsz);
@@ -151,8 +160,17 @@ public:
       bool IsReady() const {
          return this->Stream_.get() != nullptr;
       }
+      StreamSP GetStream() const {
+         return this->Stream_;
+      }
       StrView GetKey() const {
          return this->Stream_ ? ToStrView(this->Stream_->Key()) : nullptr;
+      }
+      InnApf* Owner() const {
+         return this->Stream_ ? &this->Stream_->Owner() : nullptr;
+      }
+      SizeT Size() const {
+         return this->Stream_ ? this->Stream_->Size() : 0;
       }
       /// - 若開啟失敗, 則返回後 this->IsReady() == false;
       /// - 若開啟成功: retval.GetResult() == 0;
@@ -162,25 +180,32 @@ public:
       /// 從指定位置讀出.
       /// \return 讀出的資料量, 必定 <= bufsz; 
       SizeT Read(SPosT pos, void* buf, SizeT bufsz) {
+         assert(this->IsReady());
          return this->Stream_->Read(pos, buf, bufsz);
       }
       /// 從指定位置寫入.
       /// \return 寫入的資料量, 必定 == bufsz; 
       SizeT Write(SPosT pos, const void* buf, SizeT bufsz) {
+         assert(this->IsReady());
          return this->Stream_->Write(pos, buf, bufsz);
       }
       SizeT Write(SPosT pos, DcQueue&& buf) {
+         assert(this->IsReady());
          return this->Stream_->Write(pos, std::move(buf));
       }
       /// 在尾端寫入.
       /// 返回: 寫入後的 stream size = 寫入的位置 + bufsz;
       SPosT AppendNoBuffer(const void* pbufmem, SizeT bufsz) {
+         assert(this->IsReady());
          return this->Stream_->AppendNoBuffer(pbufmem, bufsz);
       }
+      /// 將 buf 放入 queue, 在另一個 thread 執行寫入動作.
       void AppendBuffered(BufferList&& buf) {
+         assert(this->IsReady());
          return this->Stream_->AppendBuffered(std::move(buf));
       }
       void AppendBuffered(const void* pbufmem, SizeT bufsz, SizeT sizeReserved = 0) {
+         assert(this->IsReady());
          return this->Stream_->AppendBuffered(pbufmem, bufsz, sizeReserved);
       }
    };

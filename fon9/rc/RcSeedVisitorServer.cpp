@@ -88,9 +88,11 @@ struct RcSeedVisitorServerNote::UnsubRunnerSP : public intrusive_ptr<SubrReg> {
          opTree->Get(ToStrView(reg->SeedKey_), UnsubRunnerSP{*this});
    }
    void Unsubscribe(seed::Tree& tree, seed::OpResult opres, seed::SubscribableOp* opSubr) {
-      SubrReg* preg = this->get();
-      assert(opSubr != nullptr); // 必定可以取消註冊, 因為需要取消者, 必定已經訂閱成功.
+      // 必定可以取消註冊, 因為需要取消者, 必定已經訂閱成功.
+      // 但是有可能在系統結束時: Tree 已經清除, 但取消訂閱正在執行, 此時 opSubr 可能會是 nullptr;
+      // assert(opSubr != nullptr);
 
+      SubrReg* preg = this->get();
       assert(preg->Tree_.get() == &tree);
       seed::Tab* tab = tree.LayoutSP_->GetTab(preg->TabIndex_);
 
@@ -119,8 +121,8 @@ struct RcSeedVisitorServerNote::UnsubRunnerSP : public intrusive_ptr<SubrReg> {
             opres = opSubr->UnsubscribeStream(preg->SubConn_, *tab);
          else
             opres = opSubr->Unsubscribe(preg->SubConn_, *tab);
+         (void)opres; assert(opres == seed::OpResult::no_error);
       }
-      (void)opres; assert(opres == seed::OpResult::no_error);
       RevBufferList ackbuf{64};
       ToBitv(ackbuf, preg->SubrIndex_);
       PutBigEndian(ackbuf.AllocBuffer(sizeof(SvFuncCode)), SvFuncCode::Unsubscribe);
@@ -508,9 +510,13 @@ void RcSeedVisitorServerNote::OnSubscribeNotify(SubrRegSP preg, const seed::Seed
    case seed::SeedNotifyKind::TableChanged:
       ToBitv(ackbuf, e.GetGridView());
       break;
+   case seed::SeedNotifyKind::StreamEnd:
+      preg->IsSubjectClosed_ = true;
+      // 不用 break; 繼續處理 gv 及 key 填入 ackbuf;
    case seed::SeedNotifyKind::SeedChanged:
    case seed::SeedNotifyKind::StreamData:
    case seed::SeedNotifyKind::StreamRecover:
+   case seed::SeedNotifyKind::StreamRecoverEnd:
       ToBitv(ackbuf, e.GetGridView());
       if (IsSubrTree(preg->SeedKey_.begin())) // 如果訂閱的是 tree, 則需要額外提供 seedKey.
          ToBitv(ackbuf, e.KeyText_);

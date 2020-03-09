@@ -378,12 +378,13 @@ void ExgMcChannel::PkContOnReceived(const void* pk, unsigned pksz, SeqT seq) {
    this->PkLogAppend(pk, pksz, seq);
 }
 void ExgMcChannel::DispatchMcMessage(ExgMcMessage& e) {
-   // assert(this->PkPending_.IsLocked());
+   assert(this->PkPendings_.IsLocked());
    assert(e.Pk_.GetChannelId() == this->ChannelId_);
    this->ChannelMgr_->DispatchMcMessage(e);
-   this->NotifyConsumers(e);
+   this->NotifyConsumersLocked(e);
 }
-void ExgMcChannel::NotifyConsumers(ExgMcMessage& e) {
+void ExgMcChannel::NotifyConsumersLocked(ExgMcMessage& e) {
+   assert(this->PkPendings_.IsLocked());
    if (this->IsSetupReloading_)
       return;
    struct Combiner {

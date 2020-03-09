@@ -444,12 +444,25 @@ inline NumT StrToDec(const StrView& str, DecScaleT decScale, NumT value = NumT{}
 /// 若 hexstr 排除前方空白及 'x' 之後, 無有效的 hex 字元, 則傳回 null;
 /// \return hexstr 的16進位數值.
 fon9_API uintmax_t HexStrTo(StrView hexstr, const char** endptr = nullptr, uintmax_t null = 0);
+inline uintmax_t HexStrTo(StrView* str, uintmax_t null = 0) {
+   const char* pend;
+   null = HexStrTo(*str, &pend, null);
+   str->SetBegin(pend);
+   return null;
+}
+
 /// \ingroup AlNum
 /// - 如果第一碼為 'x' or 'X', 表示 value 為 16 進為字串, 轉成16進位數值返回.
 /// - 如果為 "0x" or "0X" 開頭, 表示 value 為 16 進為字串, 轉成16進位數值返回.
 /// - 其他使用10進位轉出.
 /// - 若 str 排除前方空白之後, 10進位無有效的數字字元, 16進位時無有效的hex字元, 則傳回 null;
 fon9_API uintmax_t HIntStrTo(StrView str, const char** endptr = nullptr, uintmax_t null = 0);
+inline uintmax_t HIntStrTo(StrView* str, uintmax_t null = 0) {
+   const char* pend;
+   null = HIntStrTo(*str, &pend, null);
+   str->SetBegin(pend);
+   return null;
+}
 
 /// \ingroup AlNum
 /// 單純數字字串轉成正整數, 一開始就必須是數字(開頭不可有: 正負號、空白字元), 處理到 pend 或非數字字元為止.

@@ -8,7 +8,7 @@
 namespace fon9 {
 
 /// \ingroup AlNum
-/// ToBitv(rbuf, BitvFixedUInt<n> v); 固定使用 n bytes 紀錄(加上fon9_BitvT, 共 n + 1 bytes);
+/// ToBitv(rbuf, BitvFixedUInt<n> v); 固定使用 n bytes 記錄(加上fon9_BitvT, 共 n + 1 bytes);
 /// - 通常用在整筆料使用Bitv格式儲存, 但某欄位特別需要使用固定長度, 例如:
 ///   - InnApf.FileExHeader: key使用Bitv, FirstRoomPos 使用 BitvFixedUInt<>;
 /// - 解碼時也可以直接使用 BitvTo(rbuf, uintXX_t& v);

@@ -100,6 +100,10 @@ f9sv_GetSvResultMessage(f9sv_Result res) {
       case_return(SubrNotifySeedRemoved);
       case_return(SubrNotifyTableChanged);
       case_return(SubrNotifyUnsubscribed);
+      case_return(SubrStreamOK);
+      case_return(SubrStreamRecover);
+      case_return(SubrStreamRecoverEnd);
+      case_return(SubrStreamEnd);
 
       case_return(AccessDenied);
       case_return(NotFoundTab);

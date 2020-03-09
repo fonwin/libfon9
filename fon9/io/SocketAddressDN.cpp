@@ -33,12 +33,16 @@ void DomainNameParser::Parse(StrView dnPort, DomainNameParseResult& res) {
    *const_cast<char*>(dn1.end()) = '\0';
    *const_cast<char*>(dnPort.end()) = '\0';
    if (*dn1.begin() || *dnPort.begin()) {
+      // #define _DEBUG_PRINT_getaddrinfo
+      #ifdef _DEBUG_PRINT_getaddrinfo
+         printf("[getaddrinfo(%s:%s)]\n", dn1.begin(), dnPort.begin());
+      #endif
       struct addrinfo* gaiRes;
       if (int eno = getaddrinfo(dn1.begin(), dnPort.begin(), &this->AddrHints_, &gaiRes)) {
          // "(dn1:dnPort=eno:message)"
-      #ifdef fon9_WINDOWS
-         eno = WSAGetLastError();
-      #endif
+         #ifdef fon9_WINDOWS
+            eno = WSAGetLastError();
+         #endif
          if (res.ErrMsg_.empty())
             res.ErrMsg_.push_back('(');
          else
@@ -56,15 +60,17 @@ void DomainNameParser::Parse(StrView dnPort, DomainNameParseResult& res) {
          NumOutBuf nbuf;
          res.ErrMsg_.append(SIntToStrRev(nbuf.end(), eno), nbuf.end());
          res.ErrMsg_.push_back(':');
-      #ifdef fon9_WINDOWS
-         res.ErrMsg_.append(GetSocketErrC(eno).message());
-      #else
-         res.ErrMsg_.append(gai_strerror(eno));
-      #endif
+         #ifdef fon9_WINDOWS
+            res.ErrMsg_.append(GetSocketErrC(eno).message());
+         #else
+            res.ErrMsg_.append(gai_strerror(eno));
+         #endif
          res.ErrMsg_.push_back(')');
+         #ifdef _DEBUG_PRINT_getaddrinfo
+            printf("[err=%s]\n", res.ErrMsg_.c_str());
+         #endif
       }
       else {
-         //printf("%s:%s\n", dn1.begin(), dnPort.begin());
          port_t*           sPortPtr;
          SocketAddress     sAddr;
          struct addrinfo*  pAddrPrev = nullptr;
@@ -98,14 +104,14 @@ void DomainNameParser::Parse(StrView dnPort, DomainNameParseResult& res) {
                this->LastPortNo_ = *sPortPtr;
             res.AddressList_.push_back(sAddr);
 
-         #if 0
-            printf("    ");
-            for (const byte* p = reinterpret_cast<const byte*>(&addr.Addr_); addrSize > 0; --addrSize)
-               printf("%02x ", *p++);
-            char ip[fon9::io::SocketAddress::kMaxAddrPortStrSize];
-            addr.ToAddrPortStr(ip);
-            printf("/// %s\n", ip);
-         #endif
+            #ifdef _DEBUG_PRINT_getaddrinfo
+               printf("    ");
+               for (const byte* p = reinterpret_cast<const byte*>(&sAddr.Addr_); addrSize > 0; --addrSize)
+                  printf("%02x ", *p++);
+               char ip[fon9::io::SocketAddress::kMaxAddrPortStrSize];
+               sAddr.ToAddrPortStr(ip);
+               printf("/// %s\n", ip);
+            #endif
          }
          freeaddrinfo(gaiRes);
       }
