@@ -433,17 +433,17 @@ ExgMcChannelMgr::ExgMcChannelMgr(ExgMdSymbsSP symbs, fon9::StrView sysName, fon9
    this->Channels_[ 3].Ctor(this,  3, ExgMcChannelStyle::BasicInfo);
    this->Channels_[ 4].Ctor(this,  4, ExgMcChannelStyle::BasicInfo);
    // 文字公告. 盤中可能會有新增文字公告?
-   this->Channels_[ 5].Ctor(this,  5, ExgMcChannelStyle::AnySeq);
-   this->Channels_[ 6].Ctor(this,  6, ExgMcChannelStyle::AnySeq);
+   this->Channels_[ 5].Ctor(this,  5, ExgMcChannelStyle::AnySeq | ExgMcChannelStyle::PkLogChangeable);
+   this->Channels_[ 6].Ctor(this,  6, ExgMcChannelStyle::AnySeq | ExgMcChannelStyle::PkLogChangeable);
    // 統計資訊.
-   this->Channels_[ 7].Ctor(this,  7, ExgMcChannelStyle::AnySeq);
-   this->Channels_[ 8].Ctor(this,  8, ExgMcChannelStyle::AnySeq);
+   this->Channels_[ 7].Ctor(this,  7, ExgMcChannelStyle::AnySeq | ExgMcChannelStyle::PkLogChangeable);
+   this->Channels_[ 8].Ctor(this,  8, ExgMcChannelStyle::AnySeq | ExgMcChannelStyle::PkLogChangeable);
    // 詢價資訊.
-   this->Channels_[ 9].Ctor(this,  9, ExgMcChannelStyle::AnySeq);
-   this->Channels_[10].Ctor(this, 10, ExgMcChannelStyle::AnySeq);
+   this->Channels_[ 9].Ctor(this,  9, ExgMcChannelStyle::AnySeq | ExgMcChannelStyle::PkLogChangeable);
+   this->Channels_[10].Ctor(this, 10, ExgMcChannelStyle::AnySeq | ExgMcChannelStyle::PkLogChangeable);
    // 現貨資訊
-   this->Channels_[11].Ctor(this, 11, ExgMcChannelStyle{});
-   this->Channels_[12].Ctor(this, 12, ExgMcChannelStyle{});
+   this->Channels_[11].Ctor(this, 11, ExgMcChannelStyle::PkLogChangeable);
+   this->Channels_[12].Ctor(this, 12, ExgMcChannelStyle::PkLogChangeable);
    // 快照更新.
    this->Channels_[13].Ctor(this, 13, ExgMcChannelStyle::Snapshot);
    this->Channels_[14].Ctor(this, 14, ExgMcChannelStyle::Snapshot);

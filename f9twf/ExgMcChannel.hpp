@@ -55,6 +55,8 @@ enum class ExgMcChannelStyle : uint8_t {
    /// 啟動時, 需要從 PkLog 載入.
    /// 例: Channel 3.4.基本資料;
    Reload = 0x04,
+   /// 可改變 PkLog 的設定.
+   PkLogChangeable = 0x08,
 
    /// 是否需要等候基本資料?
    /// - 在尚未收到基本資料之前, 依然會確保連續性、排除重複.
@@ -193,6 +195,15 @@ public:
    }
    bool IsRealtime() const {
       return this->ChannelId_ == 1 || this->ChannelId_ == 2;
+   }
+   bool SetPkLog(bool isEnabled) {
+      if (!IsEnumContains(this->Style_, ExgMcChannelStyle::PkLogChangeable))
+         return false;
+      if (isEnabled)
+         this->Style_ |= ExgMcChannelStyle::PkLog;
+      else
+         this->Style_ -= ExgMcChannelStyle::PkLog;
+      return true;
    }
 
    /// 返回 channel 狀態, 讓 McReceiver 決定是否需要開啟接收程序.
