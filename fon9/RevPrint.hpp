@@ -29,28 +29,32 @@ template <class RevBuffer> inline void RevPrint(RevBuffer& rbuf, char ch)       
 template <class RevBuffer> inline void RevPrint(RevBuffer& rbuf, char ch, FmtDef fmt) { return RevPrint(rbuf, StrView{&ch,1}, fmt); }
 
 template <class RevBuffer, class ValueT>
-inline auto RevPrint(RevBuffer& rbuf, ValueT&& value) -> decltype(RevPrint(rbuf, ToStrView(value)), void()) {
-   return RevPrint(rbuf, ToStrView(value));
+inline auto RevPrint(RevBuffer& rbuf, ValueT&& value)
+-> decltype(RevPrint(rbuf, ToStrView(std::forward<ValueT>(value))), void()) {
+   return RevPrint(rbuf, ToStrView(std::forward<ValueT>(value)));
 }
 
 template <class RevBuffer, class ValueT>
-inline auto RevPrint(RevBuffer& rbuf, ValueT&& value, FmtDef fmt) -> decltype(RevPrint(rbuf, ToStrView(value), fmt)) {
-   return RevPrint(rbuf, ToStrView(value), fmt);
+inline auto RevPrint(RevBuffer& rbuf, ValueT&& value, FmtDef fmt)
+-> decltype(RevPrint(rbuf, ToStrView(std::forward<ValueT>(value)), fmt)) {
+   return RevPrint(rbuf, ToStrView(std::forward<ValueT>(value)), fmt);
 }
 
 //--------------------------------------------------------------------------//
 
 template <class RevBuffer, class ValueT>
-inline auto RevPrint(RevBuffer& rbuf, ValueT value) -> decltype(ToStrRev(static_cast<char*>(nullptr), value), void()) {
-   char* pout = rbuf.AllocPrefix(ToStrMaxWidth(value));
-   pout = ToStrRev(pout, value);
+inline auto RevPrint(RevBuffer& rbuf, ValueT&& value)
+-> decltype(ToStrRev(static_cast<char*>(nullptr), std::forward<ValueT>(value)), void()) {
+   char* pout = rbuf.AllocPrefix(ToStrMaxWidth(std::forward<ValueT>(value)));
+   pout = ToStrRev(pout, std::forward<ValueT>(value));
    rbuf.SetPrefixUsed(pout);
 }
 
 template <class RevBufferT, class ValueT, class FmtT>
-inline auto RevPrint(RevBufferT& rbuf, ValueT value, const FmtT& fmt) -> decltype(ToStrRev(static_cast<char*>(nullptr), value, fmt), void()) {
-   char* pout = rbuf.AllocPrefix(ToStrMaxWidth(value, fmt));
-   pout = ToStrRev(pout, value, fmt);
+inline auto RevPrint(RevBufferT& rbuf, ValueT&& value, const FmtT& fmt)
+-> decltype(ToStrRev(static_cast<char*>(nullptr), std::forward<ValueT>(value), fmt), void()) {
+   char* pout = rbuf.AllocPrefix(ToStrMaxWidth(std::forward<ValueT>(value), fmt));
+   pout = ToStrRev(pout, std::forward<ValueT>(value), fmt);
    rbuf.SetPrefixUsed(pout);
 }
 

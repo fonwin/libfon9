@@ -40,6 +40,7 @@ set(fon9src
  PkReceiver.cpp
  ObjSupplier.cpp
  FlowCounter.cpp
+ CtrlBreakHandler.c
 
  File.cpp
  FilePath.cpp
@@ -152,6 +153,7 @@ set(fon9src
  auth/SaslScramSha256.cpp
  auth/SaslScramSha256Client.cpp
  auth/SaslScramSha256Server.cpp
+ auth/PolicySocketFrom.cpp
  
  framework/Framework.cpp
  framework/SeedSession.cpp
@@ -161,6 +163,7 @@ set(fon9src
  framework/IoFactory.cpp
  framework/IoFactoryTcpClient.cpp
  framework/IoFactoryTcpServer.cpp
+ framework/IoFactoryTcpServerAB.cpp
  framework/IoFactoryDgram.cpp
  framework/IoFactoryFileIO.cpp
  framework/SeedImporter.cpp

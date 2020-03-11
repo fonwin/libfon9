@@ -11,12 +11,10 @@ enum class EnabledYN : char {
    Yes = 'Y'
 };
 
-template <class RevBuffer>
 inline size_t ToBitv(RevBuffer& rbuf, EnabledYN value) {
    return ToBitv(rbuf, value == EnabledYN::Yes);
 }
 
-template <class DcQueue>
 inline void BitvTo(DcQueue& buf, EnabledYN& value) {
    bool b = (value == EnabledYN::Yes);
    BitvTo(buf, b);

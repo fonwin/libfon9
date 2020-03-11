@@ -96,7 +96,10 @@ public:
       // Windows 也可能會有 FdrService_? 或其他種類的 io service?
    public:
       io::IocpServiceSP GetIocpService();
-#endif
+      io::IocpServiceSP GetIoService() {
+         return this->GetIocpService();
+      }
+   #endif
 
 #ifdef __fon9_io_FdrService_hpp__
    private:
@@ -104,7 +107,10 @@ public:
       // Linux/Unix 可能會有其他種類的 io service?
    public:
       io::FdrServiceSP GetFdrService();
-#endif
+      io::FdrServiceSP GetIoService() {
+         return this->GetFdrService();
+      }
+   #endif
 
 
 protected:

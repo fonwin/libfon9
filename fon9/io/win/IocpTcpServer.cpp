@@ -161,6 +161,7 @@ void IocpTcpListener::OnIocp_Done(OVERLAPPED* lpOverlapped, DWORD bytesTransfere
    StrView        strConnUID;
    DWORD          rxBytes, flags;
    SocketResult   soRes;
+   CharVector     exlog;
    SOCKET         soAccepted = this->ClientSocket_.GetSocketHandle();
    if (!WSAGetOverlappedResult(this->ListenSocket_.GetSocketHandle(),
                                &this->ListenOverlapped_,
@@ -180,8 +181,9 @@ void IocpTcpListener::OnIocp_Done(OVERLAPPED* lpOverlapped, DWORD bytesTransfere
                            &addrRemote,
                            &addrRemoteLen);
       strConnUID = MakeTcpConnectionUID(bufConnUID, reinterpret_cast<SocketAddress*>(addrRemote), reinterpret_cast<SocketAddress*>(addrLocal));
-
-      IocpTcpServer&             server = *this->Server_;
+      IocpTcpServer& server = *this->Server_;
+      if (!server.OnBeforeAccept(*reinterpret_cast<SocketAddress*>(addrRemote), soRes, exlog))
+         goto __DENY_ACCEPT;
       const SocketServerConfig&  cfg = server.Config_;
       if (cfg.ServiceArgs_.Capacity_ > 0 && this->GetConnectionCount() >= cfg.ServiceArgs_.Capacity_)
          // 如果超過了 MaxConnections, 要等一個 AcceptedClient 斷線後, 才允許接受新的連線.
@@ -204,16 +206,18 @@ void IocpTcpListener::OnIocp_Done(OVERLAPPED* lpOverlapped, DWORD bytesTransfere
             soRes = SocketResult{"CreateSession", std::errc::operation_not_supported};
       }
    }
-   if (soRes.IsError() || devAccepted == nullptr)
+   if (soRes.IsError() || devAccepted == nullptr) {
+   __DENY_ACCEPT:;
       fon9_LOG_ERROR("TcpServer.Accepted"
                      "|dev=", ToHex{devAccepted},
                      "|soAccepted=", soAccepted,
-                     "|err=", soRes, '|', strConnUID);
+                     '|', soRes, exlog, '|', strConnUID);
+   }
    else
       fon9_LOG_INFO("TcpServer.Accepted"
                     "|dev=", ToHex{devAccepted},
                     "|seq=", devAccepted->GetAcceptedClientSeq(),
-                    "|soAccepted=", soAccepted, '|', strConnUID);
+                    "|soAccepted=", soAccepted, exlog, '|', strConnUID);
 
    this->ClientSocket_.Close();
    this->ResetupAccepter();

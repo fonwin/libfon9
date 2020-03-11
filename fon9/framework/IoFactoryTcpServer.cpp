@@ -4,14 +4,10 @@
 
 #ifdef fon9_WINDOWS
 #include "fon9/io/win/IocpTcpServer.hpp"
-static fon9::io::IocpTcpServer* CreateDevice(fon9::IoManager& mgr, fon9::io::SessionServerSP&& ses) {
-   return new fon9::io::IocpTcpServer(mgr.GetIocpService(), std::move(ses), &mgr);
-}
+using fon9_TcpServer = fon9::io::IocpTcpServer;
 #else
 #include "fon9/io/FdrTcpServer.hpp"
-static fon9::io::FdrTcpServer* CreateDevice(fon9::IoManager& mgr, fon9::io::SessionServerSP&& ses) {
-   return new fon9::io::FdrTcpServer(mgr.GetFdrService(), std::move(ses), &mgr);
-}
+using fon9_TcpServer = fon9::io::FdrTcpServer;
 #endif
 
 namespace fon9 {
@@ -23,7 +19,7 @@ fon9_API DeviceFactorySP MakeIoFactoryTcpServer(std::string name) {
       }
       io::DeviceSP CreateDevice(IoManagerSP mgr, SessionFactory& sesFactory, const IoConfigItem& cfg, std::string& errReason) override {
          if (auto ses = sesFactory.CreateSessionServer(*mgr, cfg, errReason))
-            return ::CreateDevice(*mgr, std::move(ses));
+            return new fon9_TcpServer(mgr->GetIoService(), std::move(ses), mgr);
          return io::DeviceSP{};
       }
    };

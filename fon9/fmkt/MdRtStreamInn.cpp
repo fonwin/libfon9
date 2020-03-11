@@ -28,6 +28,7 @@ struct MdRtStreamInnMgr::MdRtRecoverHandler {
          return;
       switch (this->OnRecover(recover)) {
       case RecoverResult::RecoverContinue:
+         if (0);// 尚未補完, 要建一個 BufferNode, 確定送完後再繼續, 避免回補占用太多資源.
          this->Owner_.RecoverPool_.EmplaceMessage(std::move(recover));
          break;
       case RecoverResult::RecoverEnd:

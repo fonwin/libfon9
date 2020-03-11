@@ -22,7 +22,18 @@ template <class StringT>
 class fon9_API FieldString : public Field {
    fon9_NON_COPY_NON_MOVE(FieldString);
    typedef Field  base;
+
+protected:
+   virtual void OnCellChanged(const RawWr&) const {
+   }
+   OpResult StrToCellNoEvent(const RawWr& wr, StrView value) const {
+      wr.GetMemberCell<StringT>(*this).assign(value.begin(), value.end());
+      return OpResult::no_error;
+   }
+
 public:
+   using ValueT = StringT;
+
    /// 建構, 固定為:
    /// - FieldType::Chars;
    /// - StringT 只能是 data member(不可是 DyMem), 所以 FieldSource 固定為 DataMember;
@@ -47,7 +58,8 @@ public:
    }
 
    virtual OpResult StrToCell(const RawWr& wr, StrView value) const override {
-      wr.GetMemberCell<StringT>(*this).assign(value.begin(), value.end());
+      this->StrToCellNoEvent(wr, value);
+      this->OnCellChanged(wr);
       return OpResult::no_error;
    }
 
@@ -56,6 +68,7 @@ public:
    }
    virtual OpResult BitvToCell(const RawWr& wr, DcQueue& buf) const override {
       BitvTo(buf, wr.GetMemberCell<StringT>(*this));
+      this->OnCellChanged(wr);
       return OpResult::no_error;
    }
 
@@ -109,6 +122,59 @@ fon9_API_TEMPLATE_CLASS(FieldStdString, FieldString, std::string)
 /// \ingroup seed
 /// FieldCharVector = 存取 CharVector member 的欄位.
 fon9_API_TEMPLATE_CLASS(FieldCharVector, FieldString, CharVector)
+
+} } // namespaces
+
+namespace fon9 {
+
+// 因為 EvStringT<> 有 friend void BitvTo(); friend StrView ToStrView
+// 所以 EvStringT<> 放到 namespace fon9;
+template <class StringT>
+class EvStringT {
+protected:
+   StringT  String_;
+   virtual void OnStringAfterChanged() = 0;
+public:
+   virtual ~EvStringT() = default;
+
+   bool empty() const {
+      return this->String_.empty();
+   }
+
+   int compare(const EvStringT& rhs) const {
+      return this->String_.compare(rhs.String_);
+   }
+   void assign(const char* pbeg, const char* pend) {
+      this->String_.assign(pbeg, pend);
+      this->OnStringAfterChanged();
+   }
+   void clear() {
+      this->String_.clear();
+      this->OnStringAfterChanged();
+   }
+
+   inline friend void BitvTo(DcQueue& dcq, EvStringT& dst) {
+      BitvTo(dcq, dst.String_);
+      dst.OnStringAfterChanged();
+   }
+   inline friend StrView ToStrView(const EvStringT& src) {
+      return ToStrView(src.String_);
+   }
+};
+fon9_API_TEMPLATE_CLASS(EvCharVector, EvStringT, CharVector)
+fon9_API_TEMPLATE_CLASS(EvStdString, EvStringT, std::string)
+
+namespace seed { // MakeField() 必須在 namespace fon9::seed;
+template <class StringT>
+inline FieldSP MakeField(Named&& named, int32_t ofs, EvStringT<StringT>&) {
+   using FieldT = FieldString<EvStringT<StringT>>;
+   return FieldSP{new FieldT{std::move(named), ofs}};
+}
+template <class StringT>
+inline FieldSP MakeField(Named&& named, int32_t ofs, const EvStringT<StringT>&) {
+   using FieldT = FieldString<EvStringT<StringT>>;
+   return FieldSP{new seed::FieldConst<FieldT>{std::move(named), ofs}};
+}
 
 } } // namespaces
 #endif//__fon9_seed_FieldString_hpp__

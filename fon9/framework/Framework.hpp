@@ -16,7 +16,7 @@ struct fon9_API Framework {
    auth::AuthMgrSP      MaAuth_;
    seed::PluginsMgrSP   MaPlugins_;
 
-   ~Framework();
+   virtual ~Framework();
 
    /// create system default object.
    /// - 設定工作目錄:  `-w dir` or `--workdir dir`
@@ -31,6 +31,10 @@ struct fon9_API Framework {
    ///   - $MemLock    預設 "N"
    ///   - $MaPlugins  預設 "MaPlugins.f9gv": 儲存 「plugins設定」的檔案, 實際儲存位置為: this->ConfigPath_ + $MaPlugins
    void Initialize(int argc, char** argv);
+   /// 在 Initialize() 建立 this->MaAuth_ 之後呼叫; 預設 do nothing;
+   virtual void OnAfterMaAuth();
+   /// 在 Initialize() 建立 this->MaPlugins_ 之後呼叫; 預設 do nothing;
+   virtual void OnAfterMaPlugins();
 
    /// dbf.LoadAll(), syncer.StartSync(), ...
    void Start();
@@ -47,6 +51,14 @@ struct fon9_API Framework {
 /// - 您可以在 fnBeforeStart() 啟動您自訂的物件, 例如:
 ///   - `f9omstw::OmsPoIvListAgent::Plant(*fon9sys.MaAuth_);`
 int Fon9CoRun(int argc, char** argv, int (*fnBeforeStart)(Framework&));
+/// - 必須已經呼叫過 fon9sys.Initialize(argc, argv);
+/// - 執行 fnBeforeStart() 及 fon9sys.Start();
+/// - 結束前呼叫 fon9sys.DisposeForAppQuit();
+int Fon9SysCoStart(Framework& fon9sys, int argc, char** argv, int (*fnBeforeStart)(Framework&));
+/// 預設加入:
+///   fon9::auth::PlantScramSha256(*fon9sys.MaAuth_);
+///   fon9::auth::PolicyAclAgent::Plant(*fon9sys.MaAuth_);
+void PlantMaAuth_UserAgent(Framework& fon9sys);
 
 } // namespaces
 #endif//__fon9_framework_Framework_hpp__

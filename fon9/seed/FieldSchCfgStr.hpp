@@ -22,18 +22,21 @@ template <class BaseField>
 class FieldSchCfgStrT : public BaseField {
    fon9_NON_COPY_NON_MOVE(FieldSchCfgStrT);
    using base = BaseField;
+
+   void OnCellChanged(const RawWr& wr) const override {
+      const StrView  bfValue = this->GetValue(wr);
+      StrView        afValue = bfValue;
+      CharVector     buf;
+      if (!StrTrim(&afValue).empty()) {
+         SchConfig cfg{afValue};
+         afValue = ToStrView(RevPrintAppendTo(buf, cfg));
+      }
+      if (afValue != bfValue)
+         this->StrToCellNoEvent(wr, afValue);
+   }
+
 public:
    using base::base;
-
-   OpResult StrToCell(const RawWr& wr, StrView value) const {
-      if (StrTrim(&value).empty())
-         base::StrToCell(wr, value);
-      else {
-         SchConfig cfg{value};
-         base::StrToCell(wr, ToStrView(RevPrintTo<CharVector>(cfg)));
-      }
-      return OpResult::no_error;
-   }
 };
 
 

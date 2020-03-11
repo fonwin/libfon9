@@ -128,6 +128,14 @@ class TcpServerBase : public DeviceServer {
                static_cast<Listener*>(static_cast<TcpServerBase*>(&dev)->Listener_.get())->OnTcpServer_OnCommonTimer();
          }});
    }
+
+   /// 衍生者可在此檢查: AllowListing, BlockListing (白名單 or 黑名單)
+   /// 預設返回 true.
+   virtual bool OnBeforeAccept(const SocketAddress& addrRemote, SocketResult& soRes, CharVector& exlog) {
+      (void)addrRemote; (void)soRes; (void)exlog;
+      return true;
+   }
+
 public:
    const IoServiceSP IoServiceSP_;
 

@@ -58,8 +58,8 @@ void Framework::Initialize(int argc, char** argv) {
    sysEnv->Add(new seed::SysEnvItem(argConfigPath, this->ConfigPath_));
    sysEnv->Initialize(argc, argv);
 
-   #define fon9_kCSTR_SyncerPath    "SyncerPath"
-   #define fon9_kCSTR_MaAuthName    "MaAuthName"
+#define fon9_kCSTR_SyncerPath    "SyncerPath"
+#define fon9_kCSTR_MaAuthName    "MaAuthName"
    ConfigLoader cfgld{this->ConfigPath_};
    cfgld.IncludeConfig("$" fon9_kCSTR_SyncerPath "=fon9syn\n"
                        "$" fon9_kCSTR_MaAuthName "=MaAuth\n"
@@ -87,7 +87,7 @@ void Framework::Initialize(int argc, char** argv) {
       }
    }
 
-   #define fon9_kCSTR_HostId   "HostId"
+#define fon9_kCSTR_HostId   "HostId"
    if (auto hostId = cfgld.GetVariable(fon9_kCSTR_HostId)) {
       LocalHostId_ = StrTo(&hostId->Value_.Str_, 0u);
       if (LocalHostId_ == 0)
@@ -118,33 +118,34 @@ void Framework::Initialize(int argc, char** argv) {
    if (!openres)
       RaiseInitializeError(RevPrintTo<std::string>("AuthStorage.Open|fname=", fname, '|', openres));
    this->MaAuth_ = auth::AuthMgr::Plant(this->Root_, maAuthStorage, cfgstr.ToString());
+   this->OnAfterMaAuth();
 
-   #define fon9_kCSTR_MemLock       "MemLock"
+#define fon9_kCSTR_MemLock       "MemLock"
    if (auto varMemLock = cfgld.GetVariable(fon9_kCSTR_MemLock)) {
       cfgstr = &varMemLock->Value_.Str_;
       if (toupper(static_cast<unsigned char>(StrTrimHead(&cfgstr).Get1st())) == 'Y') {
          // MemLock 開啟 mlockall(MCL_CURRENT|MCL_FUTURE), 不支援 Windows.
-         #define MLOCK()       mlockall(MCL_CURRENT|MCL_FUTURE)
-         #define MLOCK_cstr   "mlockall(MCL_CURRENT|MCL_FUTURE)"
-         #define MLOCK_log    "$" fon9_kCSTR_MemLock ":" MLOCK_cstr "|"
-         #if !defined(fon9_WINDOWS)
-            if (MLOCK() == 0) {
-               desc = "OK";
-               fon9_LOG_INFO(MLOCK_log "info=OK!");
-            }
-            else {
-               desc = RevPrintTo<std::string>("err=", GetSysErrC());
-               fon9_LOG_ERROR(MLOCK_log, desc);
-            }
-         #else
-            desc = "err=Not support on Windows";
-            fon9_LOG_WARN(MLOCK_log, desc);
-         #endif
-            sysEnv->Add(new seed::SysEnvItem(fon9_kCSTR_MemLock, MLOCK_cstr "=Y", std::string{}, std::move(desc)));
+      #define MLOCK()       mlockall(MCL_CURRENT|MCL_FUTURE)
+      #define MLOCK_cstr   "mlockall(MCL_CURRENT|MCL_FUTURE)"
+      #define MLOCK_log    "$" fon9_kCSTR_MemLock ":" MLOCK_cstr "|"
+      #if !defined(fon9_WINDOWS)
+         if (MLOCK() == 0) {
+            desc = "OK";
+            fon9_LOG_INFO(MLOCK_log "info=OK!");
+         }
+         else {
+            desc = RevPrintTo<std::string>("err=", GetSysErrC());
+            fon9_LOG_ERROR(MLOCK_log, desc);
+         }
+      #else
+         desc = "err=Not support on Windows";
+         fon9_LOG_WARN(MLOCK_log, desc);
+      #endif
+         sysEnv->Add(new seed::SysEnvItem(fon9_kCSTR_MemLock, MLOCK_cstr "=Y", std::string{}, std::move(desc)));
       }
    }
 
-   #define fon9_kCSTR_MaPlugins   "MaPlugins"
+#define fon9_kCSTR_MaPlugins   "MaPlugins"
    this->MaPlugins_.reset(new seed::PluginsMgr(this->Root_, fon9_kCSTR_MaPlugins));
    this->Root_->Add(this->MaPlugins_, "Plant." fon9_kCSTR_MaPlugins);
    cfgstr.Reset(nullptr);
@@ -155,6 +156,7 @@ void Framework::Initialize(int argc, char** argv) {
    fname = StrView_ToNormalizeStr(ToStrView(FilePath::MergePath(&this->ConfigPath_, cfgstr)));
    desc = this->MaPlugins_->BindConfigFile(&fname);
    sysEnv->Add(new seed::SysEnvItem(fon9_kCSTR_MaPlugins, std::move(fname), std::string{}, std::move(desc)));
+   this->OnAfterMaPlugins();
 
    // 透過 log 記錄基本的執行環境.
    LogSysEnv(sysEnv->Get(fon9_kCSTR_SysEnvItem_ProcessId).get());
@@ -162,6 +164,10 @@ void Framework::Initialize(int argc, char** argv) {
    LogSysEnv(sysEnv->Get(fon9_kCSTR_SysEnvItem_ExecPath).get());
    LogSysEnv(sysEnv->Get(fon9_kCSTR_SysEnvItem_ConfigPath).get());
    LogSysEnv(sysEnv->Get(fon9_kCSTR_HostId).get());
+}
+void Framework::OnAfterMaAuth() {
+}
+void Framework::OnAfterMaPlugins() {
 }
 
 void Framework::Start() {

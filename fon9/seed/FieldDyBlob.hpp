@@ -14,6 +14,12 @@ namespace fon9 { namespace seed {
 class fon9_API FieldDyBlob : public Field {
    fon9_NON_COPY_NON_MOVE(FieldDyBlob);
    typedef Field  base;
+
+protected:
+   // do nothing.
+   virtual void OnCellChanged(const RawWr&) const;
+   OpResult StrToCellNoEvent(const RawWr& wr, StrView value) const;
+
 public:
    /// 建構: 固定為 FieldSource::DyBlob;
    FieldDyBlob(Named&& named, FieldType type)

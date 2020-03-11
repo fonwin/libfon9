@@ -107,6 +107,9 @@ struct fon9_API SocketAddress {
    bool operator!=(const SocketAddress& rhs) const {
       return !(*this == rhs);
    }
+   /// 比較 addr 的大小, 不包含 port;
+   /// 如果 sa_family 不同, 則返回 this->Addr_.sa_family - rhs.Addr_.sa_family;
+   int CompareAddr(const SocketAddress& rhs) const;
 
    void SetAddrAny(AddressFamily af, port_t port);
 };
@@ -133,6 +136,30 @@ inline StrView MakeTcpConnectionUID(char(&uid)[uidSize], const SocketAddress* ad
    return MakeTcpConnectionUID(uid, uidSize, addrRemote, addrLocal);
 }
 
+struct SocketAddressRange {
+   io::SocketAddress AddrFrom_;
+   io::SocketAddress AddrTo_;
+
+   /// 檢查 addr 是否在 [AddrFrom_ .. AddrTo_] 範圍內, 包含 AddrFrom_ .. AddrTo_;
+   bool InRange(const io::SocketAddress& addr) const {
+      if (addr.CompareAddr(this->AddrFrom_) < 0)
+         return false;
+      if(this->AddrTo_.Addr_.sa_family == AF_UNSPEC
+         || addr.CompareAddr(this->AddrTo_) <= 0)
+         return true;
+      return false;
+   }
+};
+/// - (AddrFrom_ == AddrTo_): AddrFrom_.ToAddrStr();
+///   - e.g. "192.168.1.3"
+/// - (AddrFrom_ != AddrTo_): AddrFrom_.ToAddrStr() - AddrTo_.ToAddrStr()
+///   - e.g. "192.168.1.0 - 192.168.1.255"
+fon9_API char* ToStrRev(char* pout, const SocketAddressRange& value);
+constexpr size_t ToStrMaxWidth(const SocketAddressRange&) {
+   return kMaxTcpConnectionUID;
+}
+
+fon9_API void StrTo(StrView str, SocketAddressRange& value);
 
 } } // namespaces
 #endif//__fon9_io_SocketAddress_hpp__

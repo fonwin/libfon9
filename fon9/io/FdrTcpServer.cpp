@@ -141,34 +141,41 @@ void FdrTcpListener::OnFdrEvent_Handling(FdrEventFlag evs) {
       StrView  strConnUID = MakeTcpConnectionUID(bufConnUID, &addrRemote,
          (getsockname(soAccepted.GetSocketHandle(), &addrLocal.Addr_, &addrLen) == 0 ? &addrLocal : nullptr));
 
-      AcceptedClient*            devAccepted{nullptr};
-      SocketResult               soRes;
-      const SocketServerConfig&  cfg = server.Config_;
-      if (cfg.ServiceArgs_.Capacity_ > 0 && this->GetConnectionCount() >= cfg.ServiceArgs_.Capacity_)
-         // 如果超過了 MaxConnections, 要等一個 AcceptedClient 斷線後, 才允許接受新的連線.
-         soRes = SocketResult{"OverMaxConnections", std::errc::too_many_files_open};
-      else if (soAccepted.SetSocketOptions(cfg.AcceptedSocketOptions_, soRes)) {
-         if (SessionSP sesAccepted = server.OnDevice_Accepted()) {
-            DeviceSP dev{devAccepted = new AcceptedClient::Impl(*this,
-                                                                std::move(soAccepted),
-                                                                std::move(sesAccepted),
-                                                                server.Manager_,
-                                                                cfg.AcceptedClientOptions_)};
-            this->AddAcceptedClient(server, *devAccepted, strConnUID);
+      AcceptedClient* devAccepted{nullptr};
+      SocketResult    soRes;
+      CharVector      exlog;
+      const bool      isAcceptAllow = this->Server_->OnBeforeAccept(addrRemote, soRes, exlog);
+      if (isAcceptAllow) {
+         const SocketServerConfig&  cfg = server.Config_;
+         if (cfg.ServiceArgs_.Capacity_ > 0 && this->GetConnectionCount() >= cfg.ServiceArgs_.Capacity_)
+            // 如果超過了 MaxConnections, 要等一個 AcceptedClient 斷線後, 才允許接受新的連線.
+            soRes = SocketResult{"OverMaxConnections", std::errc::too_many_files_open};
+         else if (soAccepted.SetSocketOptions(cfg.AcceptedSocketOptions_, soRes)) {
+            if (SessionSP sesAccepted = server.OnDevice_Accepted()) {
+               DeviceSP dev{devAccepted = new AcceptedClient::Impl(*this,
+                                                                   std::move(soAccepted),
+                                                                   std::move(sesAccepted),
+                                                                   server.Manager_,
+                                                                   cfg.AcceptedClientOptions_)};
+               this->AddAcceptedClient(server, *devAccepted, strConnUID);
+            }
+            else
+               soRes = SocketResult{"CreateSession", std::errc::operation_not_supported};
          }
-         else
-            soRes = SocketResult{"CreateSession", std::errc::operation_not_supported};
       }
-      if (soRes.IsError() || devAccepted == nullptr) {
+      if (soRes.IsError() || devAccepted == nullptr || !isAcceptAllow) {
          fon9_LOG_ERROR("TcpServer.Accepted"
                         "|dev=", ToHex{devAccepted},
-                        "|err=", soRes, '|', strConnUID);
-         break;
+                        '|', soRes, exlog, '|', strConnUID);
+         if (isAcceptAllow)
+            break;
       }
-      fon9_LOG_INFO("TcpServer.Accepted"
-                    "|dev=", ToHex{devAccepted},
-                    "|seq=", devAccepted->GetAcceptedClientSeq(),
-                    '|', strConnUID);
+      else {
+         fon9_LOG_INFO("TcpServer.Accepted"
+                       "|dev=", ToHex{devAccepted},
+                       "|seq=", devAccepted->GetAcceptedClientSeq(), exlog,
+                       '|', strConnUID);
+      }
    } while (!this->IsDisposing());
 }
 

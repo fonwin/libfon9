@@ -42,11 +42,19 @@ inline void fon9_GetConsoleSize(fon9_winsize* winsz) {
    winsz->ws_row = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
    winsz->ws_col = csbi.srWindow.Right - csbi.srWindow.Left + 1;
 }
+inline void fon9_SetConsoleUTF8(void) {
+   SetConsoleCP(CP_UTF8);
+   SetConsoleOutputCP(CP_UTF8);
+}
+
 #else
 typedef struct winsize  fon9_winsize;
 inline void fon9_GetConsoleSize(fon9_winsize* winsz) {
    ioctl(STDOUT_FILENO, TIOCGWINSZ, winsz);
 }
+inline void fon9_SetConsoleUTF8(void) {
+}
+
 #endif
 
 #ifdef __cplusplus

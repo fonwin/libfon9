@@ -19,6 +19,17 @@ int main() {
 #endif
    fon9::AutoPrintTestInfo utinfo("Socket");
 
+   //--------------------------------------------------------------------------//
+   // 測試 SocketAddress::CompareAddr();
+   fon9::io::SocketAddress sa1, sa2;
+   sa1.FromStr("1.2.3.4");
+   sa2.FromStr("4.3.2.1");
+   fon9_CheckTestResult("CompareAddr(ipv4)", sa1.CompareAddr(sa2) < 0);
+   sa1.FromStr("[2002:999:0:2:0:0:0:2]");
+   sa2.FromStr("[20:888:0:2:0:0:0:234]");
+   fon9_CheckTestResult("CompareAddr(ipv6)", sa1.CompareAddr(sa2) > 0);
+   //--------------------------------------------------------------------------//
+   utinfo.PrintSplitter();
    std::string dn{"localhost, www.google.com:6666,  localhost:bad,  127.0.0.1:https,aaa,[www.yahoo.com]:5555  "};
    std::cout << "Test dn resolve|dn=" << dn << std::endl;
 

@@ -561,5 +561,7 @@ fon9_API const void* memrchr(const void* s, int c, size_t n);
 fon9_API const void* memrmem(const void* v, size_t size, const void *pat, size_t patSize);
 #endif
 
+fon9_API int memrcmp(const void* end1, const void *end2, size_t size);
+
 } // namespace fon9
 #endif//__fon9_StrTools_hpp__

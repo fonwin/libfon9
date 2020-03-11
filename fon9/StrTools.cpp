@@ -369,6 +369,9 @@ fon9_API const void* memrchr(const void* s, int c, size_t n) {
    }
    return nullptr;
 }
+#endif
+
+#ifndef fon9_POSIX
 fon9_API const void* memrmem(const void* v, size_t size, const void *pat, size_t patSize) {
    assert(v != nullptr);
    assert(pat != nullptr);
@@ -391,6 +394,15 @@ fon9_API const void* memrmem(const void* v, size_t size, const void *pat, size_t
    return nullptr;
 }
 #endif
+
+fon9_API int memrcmp(const void* end1, const void *end2, size_t size) {
+   auto* a = static_cast<const uint8_t*>(end1);
+   auto* b = static_cast<const uint8_t*>(end2);
+   for (; size; --size)
+      if (*--a != *--b)
+         return *a - *b;
+   return 0;
+}
 
 fon9_API bool IsStrWildMatch(StrView str, StrView wild) {
    int wch, sch;

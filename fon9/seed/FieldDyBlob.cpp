@@ -24,7 +24,9 @@ void FieldDyBlob::CellRevPrint(const RawRd& rd, StrView fmt, RevBuffer& out) con
       RevPutB64(out, blob.MemPtr_, blob.MemUsed_);
 }
 
-OpResult FieldDyBlob::StrToCell(const RawWr& wr, StrView value) const {
+void FieldDyBlob::OnCellChanged(const RawWr&) const {
+}
+OpResult FieldDyBlob::StrToCellNoEvent(const RawWr& wr, StrView value) const {
    fon9_Blob* ptr = wr.GetCellPtr<fon9_Blob>(*this);
    fon9_Blob blob = GetUnaligned(ptr);
    if (this->Type_ == FieldType::Chars)
@@ -44,6 +46,12 @@ OpResult FieldDyBlob::StrToCell(const RawWr& wr, StrView value) const {
    PutUnaligned(ptr, blob);
    return OpResult::no_error;
 }
+OpResult FieldDyBlob::StrToCell(const RawWr& wr, StrView value) const {
+   OpResult res = this->StrToCellNoEvent(wr, value);
+   if (res == OpResult::no_error)
+      this->OnCellChanged(wr);
+   return res;
+}
 
 void FieldDyBlob::CellToBitv(const RawRd& rd, RevBuffer& out) const {
    const fon9_Blob blob = GetUnaligned(rd.GetCellPtr<fon9_Blob>(*this));
@@ -55,6 +63,7 @@ OpResult FieldDyBlob::BitvToCell(const RawWr& wr, DcQueue& buf) const {
    fon9_Blob  blob = GetUnaligned(ptr);
    BitvTo(buf, blob);
    PutUnaligned(ptr, blob);
+   this->OnCellChanged(wr);
    return OpResult::no_error;
 }
 

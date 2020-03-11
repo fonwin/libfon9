@@ -6,16 +6,32 @@
 #include "fon9/auth/SaslScramSha256Server.hpp"
 #include "fon9/auth/SaslClient.hpp"
 #include "fon9/auth/PolicyAcl.hpp"
-#include "fon9/ConsoleIO.h"
 #include "fon9/CountDownLatch.hpp"
 #include "fon9/CmdArgs.hpp"
 #include "fon9/Log.hpp"
-
-#include "fon9/web/HttpSession.hpp"
-#include "fon9/web/HttpHandlerStatic.hpp"
-#include "fon9/web/HttpDate.hpp"
-#include "fon9/web/WsSeedVisitor.hpp"
-
+#include "fon9/buffer/DcQueueList.hpp"
+#include "fon9/CtrlBreakHandler.h"
+#include "fon9/ConsoleIO.h"
+//--------------------------------------------------------------------------//
+// 若要提供 http 管理介面, 載入必要的 plugins, 底下的設定都是立即生效:
+// 建立 TcpServer factory, 放在 DeviceFactoryPark=FpDevice
+//    >ss,Enabled=Y,EntryName=TcpServer,Args='Name=TcpServer|AddTo=FpDevice' /MaPlugins/DevTcps
+// 建立 Http request 靜態分配器, wwwroot/HttpStatic.cfg 可參考 fon9/web/HttpStatic.cfg:
+//    >ss,Enabled=Y,EntryName=HttpStaticDispatcher,Args='Name=HttpRoot|Cfg=wwwroot/HttpStatic.cfg' /MaPlugins/Http-R
+// 建立 Http session factory, 使用剛剛建立的 http 分配器(HttpRoot), 放在 SessionFactoryPark=FpSession
+//    >ss,Enabled=Y,EntryName=HttpSession,Args='Name=HttpMa|HttpDispatcher=HttpRoot|AddTo=FpSession' /MaPlugins/HttpSes
+// 建立 WsSeedVisitor(透過 web service 管理 fon9::seed), 使用 AuthMgr=MaAuth 檢核帳密權限, 放在剛剛建立的 http 分配器(HttpRoot)
+//    >ss,Enabled=Y,EntryName=WsSeedVisitor,Args='Name=WsSeedVisitor|AuthMgr=MaAuth|AddTo=HttpRoot' /MaPlugins/HttpWsMa
+// 建立 io 管理員, DeviceFactoryPark=FpDevice; SessionFactoryPark=FpSession; 設定儲存在 fon9cfg/MaIo.f9gv
+//    >ss,Enabled=Y,EntryName=NamedIoManager,Args='Name=MaIo|DevFp=FpDevice|SesFp=FpSession|Cfg=MaIo.f9gv|SvcCfg="ThreadCount=2|Capacity=100"' /MaPlugins/MaIo
+//
+// 在 io 管理員(MaIo) 設定 HttpSession:
+// 建立設定, 此時尚未套用(也尚未存檔):
+//    >ss,Enabled=Y,Session=HttpMa,Device=TcpServer,DeviceArgs=6080 /MaIo/^edit:Config/MaHttp
+// 查看設定及套用時的 SubmitId:
+//    >gv /MaIo/^apply:Config
+// 套用設定, 假設上一行指令的結果提示 SubmitId=123:
+//    >/MaIo/^apply:Config submit 123
 //--------------------------------------------------------------------------//
 
 #ifdef __GNUC__
@@ -27,59 +43,6 @@ static void prepare_mtrace(void) { mtrace(); }
 // 就可解決 g++: "Enable multithreading to use std::thread: Operation not permitted" 的問題了!
 void FixBug_use_std_thread(pthread_t* thread, void *(*start_routine) (void *)) {
    pthread_create(thread, NULL, start_routine, NULL);
-}
-#endif
-
-//--------------------------------------------------------------------------//
-
-static const char* AppBreakMsg_ = nullptr;
-
-#ifdef fon9_WINDOWS
-fon9::ThreadId::IdType mainThreadId;
-static BOOL WINAPI WindowsCtrlBreakHandler(DWORD dwCtrlType) {
-   switch (dwCtrlType) {
-   case CTRL_C_EVENT:         AppBreakMsg_ = "<Ctrl-C>";      break;// Handle the CTRL-C signal.
-   case CTRL_BREAK_EVENT:     AppBreakMsg_ = "<Ctrl-Break>";  break;// Pass other signals to the next handler.
-   case CTRL_CLOSE_EVENT:     AppBreakMsg_ = "<Close>";       break;// CTRL-CLOSE: confirm that the user wants to exit.
-   case CTRL_LOGOFF_EVENT:    AppBreakMsg_ = "<Logoff>";      break;
-   case CTRL_SHUTDOWN_EVENT:  AppBreakMsg_ = "<Shutdown>";    break;
-   default:                   AppBreakMsg_ = "<Unknow Ctrl>"; break;
-   }
-   //FILE* fstdin = nullptr;
-   //freopen_s(&fstdin, "NUL:", "r", stdin); // 如果遇到 CTRL_CLOSE_EVENT(或其他?) 會卡死在這兒!?
-   //所以改用 CancelIoEx() 一樣可以強制中斷 gets();
-   CancelIoEx(GetStdHandle(STD_INPUT_HANDLE), nullptr);
-   // 雖然 [MSDN](https://docs.microsoft.com/en-us/windows/console/handlerroutine)
-   // 說: When the signal is received, the system creates a new thread in the process to execute the function.
-   // 但這裡還是多此一舉的判斷一下 (this thread 不是 main thread 才要等 main thread 做完).
-   if (mainThreadId != fon9::GetThisThreadId().ThreadId_) {
-      do {
-         CancelIoEx(GetStdHandle(STD_INPUT_HANDLE), nullptr);
-         std::this_thread::sleep_for(std::chrono::milliseconds(20));
-      } while (AppBreakMsg_);
-      // 因為從這裡返回後 Windows 會直接呼叫 ExitProcess(); 造成 main thread 事情還沒做完.
-      // 所以這裡直接結束 this thread, 讓 main thread 可以正常結束, 而不是 ExitProcess(); 強制結束程式.
-      ExitThread(0);
-   }
-   return TRUE;
-}
-static void SetupCtrlBreakHandler() {
-   mainThreadId = fon9::GetThisThreadId().ThreadId_;
-   SetConsoleCP(CP_UTF8);
-   SetConsoleOutputCP(CP_UTF8);
-   SetConsoleCtrlHandler(&WindowsCtrlBreakHandler, TRUE);
-}
-#else
-#include <signal.h>
-static void UnixSignalTermHandler(int) {
-   AppBreakMsg_ = "<Signal TERM>";
-   if (!freopen("/dev/null", "r", stdin)) {
-      // Linux 可透過 freopen() 中斷執行中的 fgets();
-   }
-}
-static void SetupCtrlBreakHandler() {
-   signal(SIGTERM, &UnixSignalTermHandler);
-   signal(SIGINT, &UnixSignalTermHandler);
 }
 #endif
 
@@ -247,49 +210,36 @@ public:
 //--------------------------------------------------------------------------//
 
 int fon9::Fon9CoRun(int argc, char** argv, int (*fnBeforeStart)(fon9::Framework&)) {
-   #if defined(_MSC_VER) && defined(_DEBUG)
-      _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-      //_CrtSetBreakAlloc(176);
-   #endif
+#if defined(_MSC_VER) && defined(_DEBUG)
+   _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+   //_CrtSetBreakAlloc(176);
+#endif
 
-   #if defined(NDEBUG)
-      fon9::LogLevel_ = fon9::LogLevel::Info;
-   #endif
+#if defined(NDEBUG)
+   fon9::LogLevel_ = fon9::LogLevel::Info;
+#endif
 
-   SetupCtrlBreakHandler();
+   fon9_SetConsoleUTF8();
+   fon9_SetupCtrlBreakHandler();
 
    fon9::Framework   fon9sys;
    fon9sys.Initialize(argc, argv);
 
    // PlantScramSha256(), PolicyAclAgent::Plant() 要用 plugins 機制嗎?
+   fon9::PlantMaAuth_UserAgent(fon9sys);
+
+   return Fon9SysCoStart(fon9sys, argc, argv, fnBeforeStart);
+}
+
+void fon9::PlantMaAuth_UserAgent(Framework& fon9sys) {
    fon9::auth::PlantScramSha256(*fon9sys.MaAuth_);
    fon9::auth::PolicyAclAgent::Plant(*fon9sys.MaAuth_);
+}
 
-// ---------------------------------------------------------------
-// 若要提供 http 管理介面, 載入必要的 plugins, 底下的設定都是立即生效:
-// 建立 TcpServer factory, 放在 DeviceFactoryPark=FpDevice
-//    >ss,Enabled=Y,EntryName=TcpServer,Args='Name=TcpServer|AddTo=FpDevice' /MaPlugins/DevTcps
-// 建立 Http request 靜態分配器, wwwroot/HttpStatic.cfg 可參考 fon9/web/HttpStatic.cfg:
-//    >ss,Enabled=Y,EntryName=HttpStaticDispatcher,Args='Name=HttpRoot|Cfg=wwwroot/HttpStatic.cfg' /MaPlugins/Http-R
-// 建立 Http session factory, 使用剛剛建立的 http 分配器(HttpRoot), 放在 SessionFactoryPark=FpSession
-//    >ss,Enabled=Y,EntryName=HttpSession,Args='Name=HttpMa|HttpDispatcher=HttpRoot|AddTo=FpSession' /MaPlugins/HttpSes
-// 建立 WsSeedVisitor(透過 web service 管理 fon9::seed), 使用 AuthMgr=MaAuth 檢核帳密權限, 放在剛剛建立的 http 分配器(HttpRoot)
-//    >ss,Enabled=Y,EntryName=WsSeedVisitor,Args='Name=WsSeedVisitor|AuthMgr=MaAuth|AddTo=HttpRoot' /MaPlugins/HttpWsMa
-// 建立 io 管理員, DeviceFactoryPark=FpDevice; SessionFactoryPark=FpSession; 設定儲存在 fon9cfg/MaIo.f9gv
-//    >ss,Enabled=Y,EntryName=NamedIoManager,Args='Name=MaIo|DevFp=FpDevice|SesFp=FpSession|Cfg=MaIo.f9gv|SvcCfg="ThreadCount=2|Capacity=100"' /MaPlugins/MaIo
-//
-// 在 io 管理員(MaIo) 設定 HttpSession:
-// 建立設定, 此時尚未套用(也尚未存檔):
-//    >ss,Enabled=Y,Session=HttpMa,Device=TcpServer,DeviceArgs=6080 /MaIo/^edit:Config/MaHttp
-// 查看設定及套用時的 SubmitId:
-//    >gv /MaIo/^apply:Config
-// 套用設定, 假設上一行指令的結果提示 SubmitId=123:
-//    >/MaIo/^apply:Config submit 123
-// ---------------------------------------------------------------
-
+int fon9::Fon9SysCoStart(fon9::Framework& fon9sys, int argc, char** argv, int (*fnBeforeStart)(fon9::Framework&)) {
    int retval = fnBeforeStart ? fnBeforeStart(fon9sys) : 0;
    if (retval)
-      AppBreakMsg_ = "Before fon9sys.Start()";
+      fon9_AppBreakMsg = "Before fon9sys.Start()";
    else {
       fon9sys.Start();
 
@@ -304,7 +254,7 @@ int fon9::Fon9CoRun(int argc, char** argv, int (*fnBeforeStart)(fon9::Framework&
          res = coSession->RunLoop();
       }
 
-      while (AppBreakMsg_ == nullptr) {
+      while (fon9_AppBreakMsg == nullptr) {
          switch (res) {
          case ConsoleSeedSession::State::None:
          case ConsoleSeedSession::State::AuthError:
@@ -315,7 +265,7 @@ int fon9::Fon9CoRun(int argc, char** argv, int (*fnBeforeStart)(fon9::Framework&
             res = coSession->RunLoop();
             break;
          case ConsoleSeedSession::State::QuitApp:
-            AppBreakMsg_ = "Normal QuitApp";
+            fon9_AppBreakMsg = "Normal QuitApp";
             break;
          default:
          case ConsoleSeedSession::State::Authing:
@@ -332,16 +282,16 @@ int fon9::Fon9CoRun(int argc, char** argv, int (*fnBeforeStart)(fon9::Framework&
                std::this_thread::sleep_for(std::chrono::milliseconds(500));
                clearerr(stdin);
                c = fgetc(stdin);
-            } while (c == EOF && AppBreakMsg_ == nullptr);
+            } while (c == EOF && fon9_AppBreakMsg == nullptr);
             ungetc(c, stdin);
             res = coSession->GetState();
             continue;
          }
       }
    }
-   fon9_LOG_IMP("main.quit|cause=console:", AppBreakMsg_);
-   printf("fon9: %s\n", AppBreakMsg_);
-   AppBreakMsg_ = nullptr;
+   fon9_LOG_IMP("main.quit|cause=console:", fon9_AppBreakMsg);
+   printf("fon9: %s\n", fon9_AppBreakMsg);
+   fon9_AppBreakMsg = nullptr;
    fon9sys.DisposeForAppQuit();
    return retval;
 }

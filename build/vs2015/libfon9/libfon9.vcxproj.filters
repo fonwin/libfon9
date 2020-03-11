@@ -1019,6 +1019,12 @@
     <ClInclude Include="..\..\..\fon9\fmkt\MdRtStreamInn.hpp">
       <Filter>Header Files\fmkt</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\auth\PolicySocketFrom.hpp">
+      <Filter>Header Files\auth</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\CtrlBreakHandler.h">
+      <Filter>Header Files\_base\_Tools / Utility</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -1656,6 +1662,15 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\fmkt\MdRtStreamInn.cpp">
       <Filter>Source Files\fmkt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\framework\IoFactoryTcpServerAB.cpp">
+      <Filter>Source Files\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\auth\PolicySocketFrom.cpp">
+      <Filter>Source Files\auth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\CtrlBreakHandler.c">
+      <Filter>Source Files\_base\_Tools / Utility</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

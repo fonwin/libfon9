@@ -86,6 +86,7 @@
     <ClInclude Include="..\..\..\fon9\auth\PolicyMaster.hpp" />
     <ClInclude Include="..\..\..\fon9\auth\PolicyTable.hpp" />
     <ClInclude Include="..\..\..\fon9\auth\PolicyTree.hpp" />
+    <ClInclude Include="..\..\..\fon9\auth\PolicySocketFrom.hpp" />
     <ClInclude Include="..\..\..\fon9\auth\RoleMgr.hpp" />
     <ClInclude Include="..\..\..\fon9\auth\SaslClient.hpp" />
     <ClInclude Include="..\..\..\fon9\auth\SaslScram.hpp" />
@@ -127,6 +128,7 @@
     <ClInclude Include="..\..\..\fon9\crypto\Sha1.hpp" />
     <ClInclude Include="..\..\..\fon9\crypto\Sha256.hpp" />
     <ClInclude Include="..\..\..\fon9\CTools.h" />
+    <ClInclude Include="..\..\..\fon9\CtrlBreakHandler.h" />
     <ClInclude Include="..\..\..\fon9\DllHandle.hpp" />
     <ClInclude Include="..\..\..\fon9\DyObj.hpp" />
     <ClInclude Include="..\..\..\fon9\Endian.hpp" />
@@ -376,6 +378,7 @@
     <ClCompile Include="..\..\..\fon9\auth\PolicyMaster.cpp" />
     <ClCompile Include="..\..\..\fon9\auth\PolicyTable.cpp" />
     <ClCompile Include="..\..\..\fon9\auth\PolicyTree.cpp" />
+    <ClCompile Include="..\..\..\fon9\auth\PolicySocketFrom.cpp" />
     <ClCompile Include="..\..\..\fon9\auth\RoleMgr.cpp" />
     <ClCompile Include="..\..\..\fon9\auth\SaslClient.cpp" />
     <ClCompile Include="..\..\..\fon9\auth\SaslScramServer.cpp" />
@@ -405,6 +408,7 @@
     <ClCompile Include="..\..\..\fon9\crypto\Sha1.cpp" />
     <ClCompile Include="..\..\..\fon9\crypto\Sha256.cpp" />
     <ClCompile Include="..\..\..\fon9\CTools.c" />
+    <ClCompile Include="..\..\..\fon9\CtrlBreakHandler.c" />
     <ClCompile Include="..\..\..\fon9\DllHandle.cpp" />
     <ClCompile Include="..\..\..\fon9\ErrC.cpp" />
     <ClCompile Include="..\..\..\fon9\FdrNotify.cpp" />
@@ -446,6 +450,7 @@
     <ClCompile Include="..\..\..\fon9\framework\IoFactoryFileIO.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\IoFactoryTcpClient.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\IoFactoryTcpServer.cpp" />
+    <ClCompile Include="..\..\..\fon9\framework\IoFactoryTcpServerAB.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\IoManager.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\IoManagerTree.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\NamedIoManager.cpp" />

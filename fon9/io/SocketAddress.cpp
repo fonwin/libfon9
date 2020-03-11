@@ -33,9 +33,29 @@ bool SocketAddress::IsAddrAny() const {
 }
 
 bool SocketAddress::operator==(const SocketAddress& rhs) const {
+   if (this->Addr_.sa_family != rhs.Addr_.sa_family)
+      return false;
    return this->Addr_.sa_family == AF_INET6
       ? (this->Addr6_.sin6_port == rhs.Addr6_.sin6_port && memcmp(&this->Addr6_.sin6_addr, &rhs.Addr6_.sin6_addr, sizeof(rhs.Addr6_.sin6_addr)) == 0)
       : (this->Addr4_.sin_port == rhs.Addr4_.sin_port && this->Addr4_.sin_addr.s_addr == rhs.Addr4_.sin_addr.s_addr);
+}
+
+int SocketAddress::CompareAddr(const SocketAddress& rhs) const {
+   if (this->Addr_.sa_family != rhs.Addr_.sa_family)
+      return this->Addr_.sa_family - rhs.Addr_.sa_family;
+   if (this->Addr_.sa_family == AF_INET) {
+      const auto a = ntohl(this->Addr4_.sin_addr.s_addr);
+      const auto b = ntohl(rhs.Addr4_.sin_addr.s_addr);
+      return (a == b) ? 0 : (a < b) ? -1 : 1;
+   }
+   if (this->Addr_.sa_family == AF_INET6)
+      return memcmp(this->Addr6_.sin6_addr.s6_addr, rhs.Addr6_.sin6_addr.s6_addr,
+                    sizeof(this->Addr6_.sin6_addr.s6_addr));
+   if (this->Addr_.sa_family == AF_UNSPEC)
+      return 0;
+   char a[kMaxTcpConnectionUID], b[kMaxTcpConnectionUID];
+   StrView sva{a, this->ToAddrStr(a)}, svb{b, rhs.ToAddrStr(b)};
+   return sva.Compare(svb);
 }
 
 void SocketAddress::SetAddrAny(AddressFamily af, port_t port) {
@@ -93,7 +113,7 @@ void SocketAddress::FromStr(StrView strAddr) {
 //--------------------------------------------------------------------------//
 
 size_t SocketAddress::ToAddrStr(char strbuf[], size_t bufsz) const {
-   if (fon9_UNLIKELY(bufsz <= 3)) {
+   if (fon9_UNLIKELY(bufsz <= 3 || this->Addr_.sa_family == AF_UNSPEC)) {
       if (bufsz > 0)
          strbuf[0] = 0;
       return 0;
@@ -171,6 +191,31 @@ StrView MakeTcpConnectionUID(char* const uid, size_t uidSize, const SocketAddres
    }
    *puid = 0;
    return StrView{uid, puid};
+}
+
+//--------------------------------------------------------------------------//
+
+static char* ToStrRev(char* pout, const SocketAddress& value) {
+   char   buf[kMaxTcpConnectionUID];
+   size_t sz = value.ToAddrStr(buf);
+   memcpy(pout -= sz, buf, sz);
+   return pout;
+}
+
+fon9_API char* ToStrRev(char* pout, const SocketAddressRange& value) {
+   if (value.AddrTo_.Addr_.sa_family != AF_UNSPEC && value.AddrFrom_ != value.AddrTo_) {
+      pout = ToStrRev(pout, value.AddrTo_);
+      memcpy(pout -= 3, " - ", 3);
+   }
+   return ToStrRev(pout, value.AddrFrom_);
+}
+fon9_API void StrTo(StrView str, SocketAddressRange& value) {
+   value.AddrFrom_.FromStr(StrFetchNoTrim(str, '-'));
+   value.AddrTo_.FromStr(str);
+   if (value.AddrTo_.IsEmpty())
+      value.AddrTo_ = value.AddrFrom_;
+   else if (value.AddrTo_.CompareAddr(value.AddrFrom_) < 0)
+      std::swap(value.AddrTo_, value.AddrFrom_);
 }
 
 } } // namespaces
