@@ -113,7 +113,7 @@ bool ExgMrRecoverSession::OnPkReceived(const void* pk, unsigned pksz) {
    if (channel) {
       channel->OnPkReceived(*static_cast<const ExgMcHead*>(pk), pksz);
       if (!isRecovering)
-         channel->OnRecoverEnd();
+         channel->OnRecoverEnd(this);
    }
    return isRecovering; // 還沒補完, OnDevice_Recv() 繼續呼叫 this->FeedBuffer();
 }

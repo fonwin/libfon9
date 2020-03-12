@@ -135,6 +135,7 @@ class f9twf_API ExgMcChannel : private fon9::PkContFeeder {
    /// 記錄 [PkLog 開啟後] 收到的 [第一筆封包] 的序號.
    /// 如果是 Snapshot 則會在收到 [A:Refresh Begin] 時視為 [第一筆封包].
    SeqT                 Pk1stSeq_;
+   fon9::DayTime        LastInfoTime_;
 
    ExgMcChannelMgr*  ChannelMgr_{};
    ExgMrChannelId_t  ChannelId_{};
@@ -243,7 +244,7 @@ public:
    void AddRecover(ExgMrRecoverSessionSP);
    void DelRecover(ExgMrRecoverSessionSP);
    void OnRecoverErr(SeqT beginSeqNo, unsigned recoverNum, ExgMrStatusCode st);
-   void OnRecoverEnd();
+   void OnRecoverEnd(ExgMrRecoverSession* svr);
 };
 
 //--------------------------------------------------------------------------//

@@ -158,7 +158,12 @@ void ExgMcChannel::OnRecoverErr(SeqT beginSeqNo, unsigned recoverNum, ExgMrStatu
       this->StartPkContTimer();
    }
 }
-void ExgMcChannel::OnRecoverEnd() {
+void ExgMcChannel::OnRecoverEnd(ExgMrRecoverSession* svr) {
+   fon9_LOG_INFO(this->ChannelMgr_->Name_, ".RecoverEnd"
+                 "|lastInfoTime=", this->LastInfoTime_,
+                 "|dev=", fon9::ToPtr(svr->GetDevice()),
+                 "|recover.SessionId=", svr->SessionId_,
+                 "|requestCount=", svr->GetRequestCount());
    // 補完了, 若 channel 的 PkPending 仍有訊息, 則應繼續回補.
    auto pks = this->PkPendings_.Lock();
    if (!pks->empty())
@@ -225,7 +230,8 @@ void ExgMcChannel::PkContOnTimer(PkPendings::Locker&& pks) {
                         "|requestCount=", svr->GetRequestCount(),
                         "|recoverNum=", recoverNum);
       }
-      fon9::RevPrint(rbuf_, this->ChannelMgr_->Name_, ".PkLost");
+      fon9::RevPrint(rbuf_, this->ChannelMgr_->Name_, ".PkLost"
+                     "|lastInfoTime=", this->LastInfoTime_);
       fon9::LogWrite(fon9::LogLevel::Warn, std::move(rbuf_));
    }
    if (svr)
@@ -375,6 +381,7 @@ void ExgMcChannel::PkContOnReceived(const void* pk, unsigned pksz, SeqT seq) {
          this->DispatchMcMessage(e);
       }
    }
+   this->LastInfoTime_ = static_cast<const ExgMcHead*>(pk)->InformationTime_.ToDayTime();
    this->PkLogAppend(pk, pksz, seq);
 }
 void ExgMcChannel::DispatchMcMessage(ExgMcMessage& e) {
