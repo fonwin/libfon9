@@ -3,47 +3,18 @@
 #ifndef __fon9_fmkt_SymbBS_hpp__
 #define __fon9_fmkt_SymbBS_hpp__
 #include "fon9/fmkt/SymbDy.hpp"
-#include "fon9/fmkt/FmktTypes.hpp"
-#include "fon9/TimeStamp.hpp"
+#include "fon9/fmkt/SymbBSData.hpp"
 
 namespace fon9 { namespace fmkt {
-
-enum class BSFlag : uint8_t {
-   /// 試撮後剩餘委託簿.
-   Calculated = 0x01,
-   /// 委託簿的買方有異動, 或快照有買方資料.
-   OrderBuy = 0x02,
-   /// 委託簿的賣方有異動, 或快照有賣方資料.
-   OrderSell = 0x04,
-   /// 委託簿的衍生買方有異動, 或快照有衍生買方資料.
-   DerivedBuy = 0x10,
-   /// 委託簿的衍生賣方有異動, 或快照有衍生賣方資料.
-   DerivedSell = 0x20,
-};
-fon9_ENABLE_ENUM_BITWISE_OP(BSFlag);
 
 /// \ingroup fmkt
 /// 商品資料的擴充: 行情的買賣報價.
 class fon9_API SymbBS : public SymbData {
    fon9_NON_COPY_NON_MOVE(SymbBS);
 public:
+   using Data = SymbBSData;
    enum {
-      /// 買賣價量列表數量.
-      kBSCount = 5,
-   };
-   struct Data {
-      /// 報價時間.
-      DayTime  InfoTime_{DayTime::Null()};
-      /// 賣出價量列表, [0]=最佳賣出價量.
-      PriQty   Sells_[kBSCount];
-      /// 買進價量列表, [0]=最佳買進價量.
-      PriQty   Buys_[kBSCount];
-      /// 衍生賣出.
-      PriQty   DerivedSell_;
-      /// 衍生買進.
-      PriQty   DerivedBuy_;
-      BSFlag   Flags_{};
-      char     Padding___[7];
+      kBSCount = Data::kBSCount,
    };
    Data  Data_;
    

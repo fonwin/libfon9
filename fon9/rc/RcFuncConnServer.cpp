@@ -3,7 +3,7 @@
 // 提供 f9rc 的 Connection & SASL 認證服務.
 //
 // \author fonwinz@gmail.com
-#include "fon9/rc/RcFuncConn.hpp"
+#include "fon9/rc/RcFuncConnServer.hpp"
 #include "fon9/rc/RcSession.hpp"
 #include "fon9/seed/Plugins.hpp"
 #include "fon9/framework/SessionFactoryConfigWithAuthMgr.hpp"

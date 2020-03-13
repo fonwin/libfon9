@@ -2,8 +2,8 @@
 // \author fonwinz@gmail.com
 #include "fon9/rc/RcMdRtsDecoder.hpp"
 #include "fon9/rc/RcMdRtsDecoder.h"
-#include "fon9/fmkt/SymbDeal.hpp"
-#include "fon9/fmkt/SymbBS.hpp"
+#include "fon9/fmkt/SymbDealData.hpp"
+#include "fon9/fmkt/SymbBSData.hpp"
 #include "fon9/seed/RawWr.hpp"
 #include "fon9/BitvDecode.hpp"
 
@@ -152,7 +152,7 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder {
       this->FldPriDnLmt_ = GetFieldOrRaise(*tab, "PriDnLmt");
    }
    static void GetBSFields(FieldPQList& dst, const seed::Fields& flds, char ch1, char ch2) {
-      dst.reserve(fmkt::SymbBS::kBSCount);
+      dst.reserve(fmkt::SymbBSData::kBSCount);
       NumOutBuf   nbuf;
       char* const pend = nbuf.end();
       // ch1 + ch2 + N + ('P' or 'Q'); e.g. "B1P", "B1Q"... "DB1P", "DB1Q";

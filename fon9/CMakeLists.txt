@@ -129,6 +129,7 @@ set(fon9src
  seed/FieldSchCfgStr.cpp
  seed/SeedSearcher.cpp
  seed/SeedAcl.cpp
+ seed/SeedAclTree.cpp
  seed/SeedFairy.cpp
  seed/SeedVisitor.cpp
  seed/SysEnv.cpp

@@ -10,6 +10,14 @@
 
 namespace fon9 { namespace seed {
 
+/// \ingroup seed.
+/// 用來存取 AccessList 的 layout.
+/// - KeyField  = "Path";
+/// - Tab[0]    = "AclRights";
+/// - Fields[0] = "Rights";
+fon9_API LayoutSP MakeAclTreeLayout();
+fon9_API LayoutSP MakeAclTreeLayoutWritable();
+
 /// \ingroup seed
 /// Seed 的存取權限旗標.
 enum class AccessRight : uint8_t {
@@ -62,14 +70,6 @@ struct AclPathMap : public SortedVector<AclPath, AclRecT> {
 /// \ingroup seed
 /// Access control list.
 using AccessList = AclPathMap<AccessControl>;
-
-/// \ingroup seed.
-/// 用來存取 AccessList 的 layout.
-/// - KeyField  = "Path";
-/// - Tab[0]    = "AclRights";
-/// - Fields[0] = "Rights";
-fon9_API LayoutSP MakeAclTreeLayout();
-fon9_API LayoutSP MakeAclTreeLayoutWritable();
 
 struct AclHomeConfig {
    /// 若有包含 "{UserId}" 則從 AclAgent 取出 PolicyAcl 時,

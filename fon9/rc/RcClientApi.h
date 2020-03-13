@@ -126,10 +126,10 @@ f9rc_CreateClientSession(f9rc_ClientSession** result,
 fon9_CAPI_FN(void)
 f9rc_DestroyClientSession(f9rc_ClientSession* ses, int isWait);
 
-inline void f9rc_DestroyClientSession_Wait(f9rc_ClientSession* ses) {
+static inline void f9rc_DestroyClientSession_Wait(f9rc_ClientSession* ses) {
    f9rc_DestroyClientSession(ses, 1);
 }
-inline void f9rc_DestroyClientSession_NoWait(f9rc_ClientSession* ses) {
+static inline void f9rc_DestroyClientSession_NoWait(f9rc_ClientSession* ses) {
    f9rc_DestroyClientSession(ses, 0);
 }
 

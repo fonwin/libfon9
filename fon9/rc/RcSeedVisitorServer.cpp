@@ -2,7 +2,7 @@
 // \author fonwinz@gmail.com
 #include "fon9/rc/RcSeedVisitorServer.hpp"
 #include "fon9/rc/RcSession.hpp"
-#include "fon9/rc/RcFuncConn.hpp"
+#include "fon9/rc/RcFuncConnServer.hpp"
 #include "fon9/auth/PolicyAcl.hpp"
 #include "fon9/seed/FieldMaker.hpp"
 

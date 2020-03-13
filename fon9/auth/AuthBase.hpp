@@ -3,7 +3,8 @@
 #ifndef __fon9_auth_AuthBase_hpp__
 #define __fon9_auth_AuthBase_hpp__
 #include "fon9/auth/AuthBase.h"
-#include "fon9/seed/PodOp.hpp"
+#include "fon9/intrusive_ptr.hpp"
+#include "fon9/SortedVector.hpp"
 #include "fon9/CharVector.hpp"
 
 namespace fon9 { namespace auth {

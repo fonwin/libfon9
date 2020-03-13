@@ -99,7 +99,7 @@ public:
       io::IocpServiceSP GetIoService() {
          return this->GetIocpService();
       }
-   #endif
+#endif
 
 #ifdef __fon9_io_FdrService_hpp__
    private:
@@ -110,7 +110,7 @@ public:
       io::FdrServiceSP GetIoService() {
          return this->GetFdrService();
       }
-   #endif
+#endif
 
 
 protected:

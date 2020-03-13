@@ -1,8 +1,6 @@
 ﻿// \file fon9/seed/SeedSubr.cpp
 // \author fonwinz@gmail.com
 #include "fon9/seed/Tree.hpp"
-#include "fon9/seed/ConfigGridView.hpp"
-#include "fon9/RevPrint.hpp"
 #include "fon9/CountDownLatch.hpp"
 
 namespace fon9 { namespace seed {

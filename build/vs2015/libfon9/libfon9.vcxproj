@@ -164,7 +164,9 @@
     <ClInclude Include="..\..\..\fon9\fmkt\MdRtStreamInn.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\Symb.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\SymbBS.hpp" />
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbBSData.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\SymbDeal.hpp" />
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbDealData.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\SymbDy.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\SymbHL.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\SymbRef.hpp" />
@@ -248,6 +250,7 @@
     <ClInclude Include="..\..\..\fon9\rc\RcClientApi.h" />
     <ClInclude Include="..\..\..\fon9\rc\RcClientSession.hpp" />
     <ClInclude Include="..\..\..\fon9\rc\RcFuncConn.hpp" />
+    <ClInclude Include="..\..\..\fon9\rc\RcFuncConnServer.hpp" />
     <ClInclude Include="..\..\..\fon9\rc\RcSeedVisitor.h" />
     <ClInclude Include="..\..\..\fon9\rc\RcSeedVisitor.hpp" />
     <ClInclude Include="..\..\..\fon9\rc\RcSeedVisitorClient.hpp" />
@@ -533,6 +536,7 @@
     <ClCompile Include="..\..\..\fon9\seed\NamedPark.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\Plugins.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\PluginsMgr.cpp" />
+    <ClCompile Include="..\..\..\fon9\seed\SeedAclTree.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\SeedFairy.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\MaTree.cpp" />
     <ClCompile Include="..\..\..\fon9\seed\PodOp.cpp" />

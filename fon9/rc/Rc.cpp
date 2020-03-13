@@ -3,7 +3,6 @@
 #include "fon9/rc/Rc.hpp"
 #include "fon9/rc/RcSession.hpp"
 #include "fon9/rc/RcFuncConn.hpp"
-#include "fon9/Log.hpp"
 
 namespace fon9 { namespace rc {
 

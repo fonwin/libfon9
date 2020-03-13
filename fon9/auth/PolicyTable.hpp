@@ -3,6 +3,7 @@
 #ifndef __fon9_auth_PolicyTable_hpp__
 #define __fon9_auth_PolicyTable_hpp__
 #include "fon9/auth/AuthBase.hpp"
+#include "fon9/seed/PodOp.hpp"
 #include "fon9/InnDbf.hpp"
 #include <map>
 

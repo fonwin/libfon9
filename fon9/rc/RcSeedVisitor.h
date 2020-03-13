@@ -244,7 +244,7 @@ typedef struct {
    f9sv_FnOnConfig   FnOnConfig_;
 } f9sv_ClientSessionParams;
 
-inline void f9sv_InitClientSessionParams(f9rc_ClientSessionParams* f9rcCliParams, f9sv_ClientSessionParams* f9svRcParams) {
+static inline void f9sv_InitClientSessionParams(f9rc_ClientSessionParams* f9rcCliParams, f9sv_ClientSessionParams* f9svRcParams) {
    f9rc_InitClientSessionParams(f9rcCliParams, f9svRcParams, f9rc_FunctionCode_SeedVisitor);
 }
 
@@ -382,7 +382,7 @@ f9sv_GetSvResultMessage(f9sv_Result res);
 f9sv_CAPI_FN(const char*)
 f9sv_GetField_Str(const struct f9sv_Seed* seed, const f9sv_Field* fld, char* outbuf, unsigned* bufsz);
 
-inline const char*
+static inline const char*
 f9sv_GetField_StrN(const struct f9sv_Seed* seed, const f9sv_Field* fld, char* outbuf, unsigned bufsz) {
    return f9sv_GetField_Str(seed, fld, outbuf, &bufsz);
 }
@@ -394,7 +394,7 @@ f9sv_GetField_StrN(const struct f9sv_Seed* seed, const f9sv_Field* fld, char* ou
 #endif
 
 #define f9sv_GET_FIELD_1_FN(fnName, type) \
-inline type fnName(const struct f9sv_Seed* seed, const f9sv_Field* fld) { \
+static inline type fnName(const struct f9sv_Seed* seed, const f9sv_Field* fld) { \
    assert(fld->Size_ == sizeof(type) && sizeof(type) == 1); \
    return *fon9_OFFSET_CAST(type, seed, fld->Offset_); \
 }
@@ -403,7 +403,7 @@ f9sv_GET_FIELD_1_FN(f9sv_GetField_s8, int8_t)
 f9sv_GET_FIELD_1_FN(f9sv_GetField_char, char)
 
 #define f9sv_GET_FIELD_INT_FN(fnName, type) \
-inline type fnName(const struct f9sv_Seed* seed, const f9sv_Field* fld) { \
+static inline type fnName(const struct f9sv_Seed* seed, const f9sv_Field* fld) { \
    assert(fld->Size_ == sizeof(type)); \
    type val; \
    memcpy(&val, fon9_OFFSET_CAST(type, seed, fld->Offset_), sizeof(val)); \

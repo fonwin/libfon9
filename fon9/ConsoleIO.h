@@ -49,10 +49,10 @@ inline void fon9_SetConsoleUTF8(void) {
 
 #else
 typedef struct winsize  fon9_winsize;
-inline void fon9_GetConsoleSize(fon9_winsize* winsz) {
+static inline void fon9_GetConsoleSize(fon9_winsize* winsz) {
    ioctl(STDOUT_FILENO, TIOCGWINSZ, winsz);
 }
-inline void fon9_SetConsoleUTF8(void) {
+static inline void fon9_SetConsoleUTF8(void) {
 }
 
 #endif

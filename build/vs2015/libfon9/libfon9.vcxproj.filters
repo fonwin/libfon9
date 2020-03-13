@@ -1025,6 +1025,15 @@
     <ClInclude Include="..\..\..\fon9\CtrlBreakHandler.h">
       <Filter>Header Files\_base\_Tools / Utility</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\rc\RcFuncConnServer.hpp">
+      <Filter>Header Files\rc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbDealData.hpp">
+      <Filter>Header Files\fmkt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbBSData.hpp">
+      <Filter>Header Files\fmkt</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -1671,6 +1680,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\CtrlBreakHandler.c">
       <Filter>Source Files\_base\_Tools / Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\seed\SeedAclTree.cpp">
+      <Filter>Source Files\seed\_tools</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -21,10 +21,10 @@ inline uint64_t fon9_GetSystemUS() {
 #else // fon9_WINDOWS..else
 #  include <unistd.h>
 #  include <sys/time.h>
-inline void fon9_SleepMS(useconds_t ms) {
+static inline void fon9_SleepMS(useconds_t ms) {
    usleep(ms * 1000);
 }
-inline uint64_t fon9_GetSystemUS() {
+static inline uint64_t fon9_GetSystemUS() {
    struct timeval tv;
    gettimeofday(&tv, (struct timezone*)NULL);
    return tv.tv_sec * (uint64_t)1000000 + tv.tv_usec;
