@@ -39,6 +39,7 @@ void ExgMrRecoverSession::OnDevice_StateChanged(io::Device& dev, const io::State
    }
 }
 io::RecvBufferSize ExgMrRecoverSession::OnDevice_Recv(io::Device& dev, DcQueueList& rxbuf) {
+__FEED_BUFFER:;
    if (this->Recovering_ > 0) {
       if (this->FeedBuffer(rxbuf)) {
          assert(this->Recovering_ > 0 && this->State_ == ExgMrState::Requesting);
@@ -85,19 +86,21 @@ io::RecvBufferSize ExgMrRecoverSession::OnDevice_Recv(io::Device& dev, DcQueueLi
          break;
       case 102: // 請求行情資料回補回覆訊息(102).
          auto pkrec = static_cast<const ExgMrRecoverSt102*>(pkptr);
-         if (pkrec->StatusCode_ == 0)
+         if (pkrec->StatusCode_ == 0) {
             this->Recovering_ = TmpGetValueU(pkrec->RecoverNum_);
-         else {
-            auto channelId = TmpGetValueU(pkrec->ChannelId_);
-            auto beginSeqNo = TmpGetValueU(pkrec->BeginSeqNo_);
-            auto recoverNum = TmpGetValueU(pkrec->RecoverNum_);
-            fon9_LOG_WARN("ExgMrRecoverSession.RecoverErr|dev=", ToPtr(&dev),
-                          "|channelId=", channelId, "|st=", pkrec->StatusCode_,
-                          "|beginSeqNo=", beginSeqNo, "|recoverNum=", recoverNum);
-            this->State_ = ExgMrState::ApReady;
-            if (auto* channel = this->ChannelMgr_->GetChannel(channelId))
-               channel->OnRecoverErr(beginSeqNo, recoverNum, pkrec->StatusCode_);
+            rxbuf.PopConsumed(pksz);
+            // 回補的訊息可能會緊接在 102 之後, 所以需要立即處理.
+            goto __FEED_BUFFER;
          }
+         auto channelId = TmpGetValueU(pkrec->ChannelId_);
+         auto beginSeqNo = TmpGetValueU(pkrec->BeginSeqNo_);
+         auto recoverNum = TmpGetValueU(pkrec->RecoverNum_);
+         fon9_LOG_WARN("ExgMrRecoverSession.RecoverErr|dev=", ToPtr(&dev),
+                        "|channelId=", channelId, "|st=", pkrec->StatusCode_,
+                        "|beginSeqNo=", beginSeqNo, "|recoverNum=", recoverNum);
+         this->State_ = ExgMrState::ApReady;
+         if (auto* channel = this->ChannelMgr_->GetChannel(channelId))
+            channel->OnRecoverErr(beginSeqNo, recoverNum, pkrec->StatusCode_);
          break;
       }
       rxbuf.PopConsumed(pksz);
@@ -121,7 +124,7 @@ ExgMrState ExgMrRecoverSession::RequestMcRecover(ExgMrChannelId_t channelId, Exg
    if (this->State_ < ExgMrState::ApReady)
       return this->State_;
    if (this->State_ == ExgMrState::Requesting)
-      return  ExgMrState::ApReady;
+      return ExgMrState::ApReady;
    this->State_ = ExgMrState::Requesting;
    ++this->RequestCount_;
    FwdBufferList        buf{0};
