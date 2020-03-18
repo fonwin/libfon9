@@ -205,7 +205,7 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder {
          svc::SeedRec*     seed = subr.Seeds_[tabidx].get();
          seed::SimpleRawWr wr{seed};
          rpt.Seed_ = seed;
-         rpt.Tab_ = &subr.Tree_->LayoutC_.TabList_[tabidx];
+         rpt.Tab_ = &subr.Tree_->LayoutC_.TabArray_[tabidx];
          size_t fldidx = 0;
          while (auto* fld = tab->Fields_.Get(fldidx++))
             fld->BitvToCell(wr, dcq);
@@ -297,7 +297,7 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder {
          , RawWr_{*SeedRec_} {
          assert(dynamic_cast<RcSvStreamDecoderNote_MdRts*>(rx.SeedRec_->StreamDecoderNote_.get()) != nullptr);
          rpt.Seed_ = this->SeedRec_;
-         rpt.Tab_ = &rx.SubrRec_->Tree_->LayoutC_.TabList_[tabidx];
+         rpt.Tab_ = &rx.SubrRec_->Tree_->LayoutC_.TabArray_[tabidx];
       }
       DecoderAux(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf, f9sv_TabSize tabidx)
          : DecoderAux{rx, rpt, tabidx} {

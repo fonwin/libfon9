@@ -8,7 +8,7 @@
 namespace fon9 { namespace rc { namespace svc {
 
 TreeRec::~TreeRec() {
-   delete[] this->LayoutC_.TabList_;
+   delete[] this->LayoutC_.TabArray_;
 }
 void TreeRec::MakeSeed(SeedSP& seed, f9sv_TabSize tabidx) {
    assert(tabidx < this->LayoutC_.TabCount_);
@@ -82,11 +82,11 @@ void TreeRec::ParseLayout(StrView cfgstr) {
    seed::LayoutSP layout{new seed::LayoutN{std::move(fldKey), treeFlags, std::move(tabs)}};
    FieldToC(this->LayoutC_.KeyField_, *layout->KeyField_);
    this->LayoutC_.TabCount_ = static_cast<f9sv_TabSize>(layout->GetTabCount());
-   this->LayoutC_.TabList_ = new f9sv_Tab[this->LayoutC_.TabCount_];
-   this->TabList_.resize(this->LayoutC_.TabCount_);
+   this->LayoutC_.TabArray_ = new f9sv_Tab[this->LayoutC_.TabCount_];
+   this->TabArray_.resize(this->LayoutC_.TabCount_);
    f9sv_TabSize tabidx = 0;
-   for (TabRec& rtab : this->TabList_) {
-      f9sv_Tab&  ctab = this->LayoutC_.TabList_[tabidx];
+   for (TabRec& rtab : this->TabArray_) {
+      f9sv_Tab&  ctab = this->LayoutC_.TabArray_[tabidx];
       seed::Tab* stab = layout->GetTab(tabidx++);
       NamedToC(ctab.Named_, *stab);
       ctab.FieldCount_ = static_cast<unsigned>(stab->Fields_.size());

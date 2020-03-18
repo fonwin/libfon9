@@ -14,20 +14,21 @@ extern "C" void _crt_atexit(void (__cdecl* func)(void));
 
 static std::atomic<unsigned>     OnWindowsMainExitHandleCount_{};
 static OnWindowsMainExitHandle*  OnWindowsMainExitHandles_[16];
+static void __cdecl OnAtexitCallback() {
+   const unsigned count = OnWindowsMainExitHandleCount_;
+   OnWindowsMainExitHandleCount_ = 0;
+   unsigned L = count;
+   OnWindowsMainExitHandle* hdr;
+   while (L > 0)
+      if ((hdr = OnWindowsMainExitHandles_[--L]) != nullptr)
+         hdr->OnWindowsMainExit_Notify();
+   L = count;
+   while (L > 0)
+      if ((hdr = OnWindowsMainExitHandles_[--L]) != nullptr)
+         hdr->OnWindowsMainExit_ThreadJoin();
+}
 OnWindowsMainExitHandle::OnWindowsMainExitHandle() {
    struct Aux {
-      static void __cdecl OnAtexitCallback() {
-         const unsigned count = OnWindowsMainExitHandleCount_;
-         unsigned L = count;
-         OnWindowsMainExitHandle* hdr;
-         while (L > 0)
-            if ((hdr = OnWindowsMainExitHandles_[--L]) != nullptr)
-               hdr->OnWindowsMainExit_Notify();
-         L = count;
-         while (L > 0)
-            if ((hdr = OnWindowsMainExitHandles_[--L]) != nullptr)
-               hdr->OnWindowsMainExit_ThreadJoin();
-      }
       static HMODULE GetCurrentModule() {
          HMODULE hModule = NULL;
          GetModuleHandleEx(
@@ -56,6 +57,10 @@ OnWindowsMainExitHandle::~OnWindowsMainExitHandle() {
    while (L > 0)
       if (OnWindowsMainExitHandles_[--L] == this)
          OnWindowsMainExitHandles_[L] = nullptr;
+}
+
+void OnWindowsMainExit_When_No_atexit() {
+   OnAtexitCallback();
 }
 #endif
 

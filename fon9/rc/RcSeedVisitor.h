@@ -18,7 +18,7 @@ typedef struct {
    char           Padding___[4];
 } f9sv_Named;
 
-/// 覽位型別.
+/// 欄位型別.
 fon9_ENUM(f9sv_FieldType, uint8_t) {
    /// 類型不明, 或自訂欄位.
    f9sv_FieldType_Unknown,
@@ -156,7 +156,7 @@ typedef uint32_t  f9sv_TabSize;
 ///   - 例如: "台股商品/2330^Deal" = 成交明細資料表.
 typedef struct {
    f9sv_Field     KeyField_;
-   f9sv_Tab*      TabList_;
+   f9sv_Tab*      TabArray_;
    f9sv_TabSize   TabCount_;
    char           Padding___[4];
 } f9sv_Layout;

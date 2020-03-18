@@ -108,18 +108,18 @@ typedef struct {
 
 //--------------------------------------------------------------------------//
 
-/// 建立一個下單連線物件, 當您不再使用時, 應呼叫 f9rc_DestroyClientSession(*result) 銷毀.
-/// - 除了 params->UserData_ 可以為任意值(包含NULL), 其他指標若為 NULL, 則直接 crash!
-/// - params->DevName_: 通訊設備名稱, 例如: "TcpClient";
-/// - params->DevParams_: 通訊設備參數, 例如: "192.168.1.1:6601"; "dn=localhost:6601"
+/// 建立一個 rc 連線物件, 當您不再使用時, 應呼叫 f9rc_DestroyClientSession(*result) 銷毀.
+/// - 除了 args->UserData_ 可以為任意值(包含NULL), 其他指標若為 NULL, 則直接 crash!
+/// - args->DevName_: 通訊設備名稱, 例如: "TcpClient";
+/// - args->DevParams_: 通訊設備參數, 例如: "192.168.1.1:6601"; "dn=localhost:6601"
 /// - 有可能在返回前就觸發事件, 但此時 *result 必定已經填妥已建立的 Session.
 /// - retval 1 成功: *result 儲存 Session;
-/// - retval 0 失敗: devName 不正確, 或尚未呼叫 f9rc_Initialize();
+/// - retval 0 失敗: devName 不正確, 或尚未呼叫 fon9_Initialize();
 fon9_CAPI_FN(int)
 f9rc_CreateClientSession(f9rc_ClientSession** result,
-                         const f9rc_ClientSessionParams* params);
+                         const f9rc_ClientSessionParams* args);
 
-/// 銷毀一個下單連線物件.
+/// 銷毀一個 rc 連線物件.
 /// 在返回前, 仍然可能在其他 thread 收到事件.
 /// isWait = 1 表示要等確定銷毀後才返回.
 /// isWait = 0 表示在返回後仍可能收到事件, 如果您是在事件通知時呼叫, 則不能等候銷毀(會造成死結).

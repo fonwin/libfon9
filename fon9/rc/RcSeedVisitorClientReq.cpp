@@ -327,7 +327,7 @@ f9sv_Result RcSvClientRequest::FetchSeedSt(const TreeLocker& locker) {
          rpt.TreePath_   = ToStrView(this->Tree_->TreePath_).ToCStrView();
          rpt.SeedKey_    = this->OrigSeedKey_.ToCStrView();
          rpt.Layout_     = &this->Tree_->LayoutC_;
-         rpt.Tab_        = &this->Tree_->LayoutC_.TabList_[this->TabIndex_];
+         rpt.Tab_        = &this->Tree_->LayoutC_.TabArray_[this->TabIndex_];
          seed->Handler_.FnOnReport_(&this->Session_, &rpt);
       }
       auto* subr = locker->SubrMap_.GetObjPtr(this->SubrIndex_);

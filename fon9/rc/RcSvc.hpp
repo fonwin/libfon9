@@ -91,14 +91,14 @@ struct TabRec {
    std::vector<f9sv_Field> Fields_;
    RcSvStreamDecoderSP     StreamDecoder_;
 };
-using TabList = std::vector<TabRec>;
+using TabArray = std::vector<TabRec>;
 // -----
 struct TreeRec {
    fon9_NON_COPY_NON_MOVE(TreeRec);
    const CharVector  TreePath_;
    seed::LayoutSP    Layout_;
    f9sv_Layout       LayoutC_;     // 提供給 C API 使用 layout 的定義.
-   TabList           TabList_;     // 提供給 C API 使用 LayoutC_ 裡面的 tab.fields 的定義.
+   TabArray          TabArray_;    // 提供給 C API 使用 LayoutC_.TabArray_ 裡面的 fields 的定義.
    PodMap            PodMap_;      // 此棵樹所擁有的 pods.
    PendingReqs       PendingReqs_; // 在尚未取得 layout 之前, 所有的要求暫放於此.
 

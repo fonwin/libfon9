@@ -60,7 +60,7 @@ private:
    void OnRecvQrySubrAck(RcClientSession& ses, DcQueue& rxbuf, SvFunc fcAck, StrView fnName);
    void OnRecvUnsubrAck(RcClientSession& ses, DcQueue& rxbuf);
    void OnRecvSubrData(RcClientSession& ses, DcQueue& rxbuf, SvFunc fcAck);
-   void SendPendings(const TreeLocker& maplk, RcClientSession& ses, svc::TreeRec& tree);
+   void SendPendings(const TreeLocker& maplk, RcClientSession& ses, svc::TreeRec& tree, bool isTabNotFound);
 
    // ConfigGvTablesStr_: 提供給 fon9::rc::SvParseGvTables() 解析使用的訊息, 分隔符號變成 EOS.
    std::string          ConfigGvTablesStr_;

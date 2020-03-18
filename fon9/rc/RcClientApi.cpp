@@ -4,6 +4,7 @@
 #include "fon9/rc/RcClientSession.hpp"
 #include "fon9/DefaultThreadPool.hpp"
 #include "fon9/LogFile.hpp"
+#include "fon9/sys/OnWindowsMainExit.hpp"
 
 namespace fon9 { namespace rc {
 
@@ -94,7 +95,11 @@ fon9_Finalize() {
    RcClientMgr_.reset();
 
    fon9::WaitDefaultThreadPoolQuit(fon9::GetDefaultThreadPool());
-   // TODO: fon9::GetDefaultTimerThread(); 如何結束?
+   #ifdef fon9_HAVE_OnWindowsMainExitHandle
+      // 讓 sys::OnWindowsMainExitHandle 的衍生者正常結束.
+      // 例如 fon9::GetDefaultTimerThread();
+      fon9::sys::OnWindowsMainExit_When_No_atexit();
+   #endif
    f9rc_St_ = f9rc_St_Finalized;
    return 0;
 }

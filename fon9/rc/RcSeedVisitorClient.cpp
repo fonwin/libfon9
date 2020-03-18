@@ -89,7 +89,7 @@ struct RcSeedVisitorClientNote::RejectRequest {
                continue;
             rpt.SeedKey_ = ToStrView(pod.first).ToCStrView();
             rpt.UserData_ = seed->Handler_.UserData_;
-            rpt.Tab_ = &tree.LayoutC_.TabList_[L];
+            rpt.Tab_ = &tree.LayoutC_.TabArray_[L];
             seed->Handler_.FnOnReport_(&ses, &rpt);
          }
       }
@@ -115,7 +115,8 @@ RcSeedVisitorClientNote::~RcSeedVisitorClientNote() {
 //--------------------------------------------------------------------------//
 void RcSeedVisitorClientNote::SendPendings(const TreeLocker& maplk,
                                            RcClientSession&  ses,
-                                           TreeRec&          tree) {
+                                           TreeRec&          tree,
+                                           bool isTabNotFound) {
    // 取得了 layout 之後, tree.PendingReqs_[0] 填入 pod(seed), 然後送出剩餘的要求.
    if (tree.PendingReqs_.empty())
       return;
@@ -141,7 +142,7 @@ void RcSeedVisitorClientNote::SendPendings(const TreeLocker& maplk,
    if (subr) {
       subr->TabIndex_ = preq->TabIndex_;
    }
-   if (preq->TabIndex_ < tree.LayoutC_.TabCount_)
+   if (preq->TabIndex_ < tree.LayoutC_.TabCount_ && !isTabNotFound)
       preq->AssignToSeed(*pod.Seeds_[preq->TabIndex_]);
    else { // f9sv_Result_NotFoundTab
       if (ses.LogFlags_ & (subr ? f9sv_ClientLogFlag_Subscribe : f9sv_ClientLogFlag_Query))
@@ -336,17 +337,22 @@ void RcSeedVisitorClientNote::OnRecvQrySubrAck(RcClientSession& ses, DcQueue& rx
          fon9_LOG_INFO("f9sv_Layout|ses=", ToPtr(static_cast<f9rc_ClientSession*>(&ses)),
                        "|path=", tree.TreePath_, "|layout=[", cfgstr, ']');
       tree.ParseLayout(cfgstr);
-      this->SendPendings(maplk, ses, tree);
    }
    // -----
+   bool isTabNotFound = false;
    if (const byte* tabi = rxbuf.Peek1()) {
       if (*tabi == fon9_BitvV_NumberNull) { // not_found_tab
          rxbuf.PopConsumed(1);
-         return;
+         isTabNotFound = true;
       }
    }
    else
       Raise<BitvNeedsMore>("OnRecvQrySubrAck: needs more");
+   // -----
+   if (HasSvFuncFlag(fcAck, SvFuncFlag::Layout))
+      this->SendPendings(maplk, ses, tree, isTabNotFound);
+   if (isTabNotFound)
+      return;
    // -----
    const bool isNeedsLogData =
       f9rc_ClientLogFlag{} != (ses.LogFlags_ & (fcCode == SvFuncCode::Subscribe
@@ -380,7 +386,7 @@ void RcSeedVisitorClientNote::OnRecvQrySubrAck(RcClientSession& ses, DcQueue& rx
       auto* subr = maplk->SubrMap_.GetObjPtr(reqKey.SubrIndex_);
       assert(!reqKey.IsAllTabs_ && subr != nullptr && subr->TabIndex_ != kTabAll);
       seed = pod.Seeds_[subr->TabIndex_].get();
-      rpt.Tab_ = &tree.LayoutC_.TabList_[subr->TabIndex_];
+      rpt.Tab_ = &tree.LayoutC_.TabArray_[subr->TabIndex_];
       auto fnOnReport = seed->Handler_.FnOnReport_;
       if (rpt.ResultCode_ != f9sv_Result_NoError) {
          seed->ClearSvFunc();
@@ -398,7 +404,7 @@ void RcSeedVisitorClientNote::OnRecvQrySubrAck(RcClientSession& ses, DcQueue& rx
       if (rpt.ResultCode_ != f9sv_Result_NoError)
          return;
       if (subr->IsStream_) {
-         svc::TabRec& rtab = tree.TabList_[subr->TabIndex_];
+         svc::TabRec& rtab = tree.TabArray_[subr->TabIndex_];
          if (rtab.StreamDecoder_.get() == nullptr) {
             auto*  fac = RcSvStreamDecoderPark::Register(RcSvGetStreamDecoderName(ToStrView(reqKey.TabName_)), nullptr);
             assert(fac != nullptr); // 因為在訂閱前已經確認過, 此時一定可以取得 fac.
@@ -424,7 +430,7 @@ void RcSeedVisitorClientNote::OnRecvQrySubrAck(RcClientSession& ses, DcQueue& rx
       BitvTo(rxbuf, tabidx);
       if (tabidx >= tree.LayoutC_.TabCount_)
          break;
-      rpt.Tab_ = &tree.LayoutC_.TabList_[tabidx];
+      rpt.Tab_ = &tree.LayoutC_.TabArray_[tabidx];
       seed = pod.Seeds_[tabidx].get();
       assert(seed != nullptr);
       auto fnOnReport = seed->Handler_.FnOnReport_;
@@ -482,7 +488,7 @@ void RcSeedVisitorClientNote::OnRecvUnsubrAck(RcClientSession& ses, DcQueue& rxb
          RevPrint(rbuf_, "|treePath=", subr->Tree_->TreePath_,
                   "|seedKey=", subr->SeedKey_,
                   "|tab=", subr->TabIndex_,
-                  ':', StrView{subr->Tree_->LayoutC_.TabList_[subr->TabIndex_].Named_.Name_});
+                  ':', StrView{subr->Tree_->LayoutC_.TabArray_[subr->TabIndex_].Named_.Name_});
       RevPrint(rbuf_, "f9sv_Unsubscribe.Ack");
       LogWrite(LogLevel::Info, std::move(rbuf_));
    }
@@ -500,7 +506,7 @@ void RcSeedVisitorClientNote::OnRecvUnsubrAck(RcClientSession& ses, DcQueue& rxb
    rpt.ResultCode_ = f9sv_Result_Unsubscribed;
    rpt.TreePath_ = ToStrView(subr->Tree_->TreePath_).ToCStrView();
    rpt.Layout_ = &subr->Tree_->LayoutC_;
-   rpt.Tab_ = &subr->Tree_->LayoutC_.TabList_[subr->TabIndex_];
+   rpt.Tab_ = &subr->Tree_->LayoutC_.TabArray_[subr->TabIndex_];
    rpt.SeedKey_ = ToStrView(subrSeedKey).ToCStrView();
    rpt.UserData_ = seed->Handler_.UserData_;
    seed->ClearSvFunc();
@@ -518,7 +524,7 @@ void RcSeedVisitorClientNote::OnRecvSubrData(RcClientSession& ses, DcQueue& rxbu
    ZeroStruct(rpt);
    rpt.TreePath_ = ToStrView(rx.SubrRec_->Tree_->TreePath_).ToCStrView();
    rpt.Layout_   = &rx.SubrRec_->Tree_->LayoutC_;
-   rpt.Tab_      = &rx.SubrRec_->Tree_->LayoutC_.TabList_[rx.SubrRec_->TabIndex_];
+   rpt.Tab_      = &rx.SubrRec_->Tree_->LayoutC_.TabArray_[rx.SubrRec_->TabIndex_];
    rpt.UserData_ = rx.SeedRec_->Handler_.UserData_;
 
    auto  fnOnReport = rx.SeedRec_->Handler_.FnOnReport_;
@@ -549,7 +555,7 @@ void RcSeedVisitorClientNote::OnRecvSubrData(RcClientSession& ses, DcQueue& rxbu
       assert(rx.SeedRec_->StreamDecoderNote_.get() != nullptr);
       rpt.SeedKey_ = rx.CheckLoadSeedKey(rxbuf).ToCStrView();
       BitvTo(rxbuf, rx.Gv_); // 將 stream data 載入, 但不寫 log, (使用 rx.LoadGv() 會自動寫入 log).
-      (rx.SubrRec_->Tree_->TabList_[rx.SubrRec_->TabIndex_].StreamDecoder_.get()
+      (rx.SubrRec_->Tree_->TabArray_[rx.SubrRec_->TabIndex_].StreamDecoder_.get()
        ->*(fnStreamDecoder))(rx, rpt);
       if (rx.NotifyKind_ == seed::SeedNotifyKind::StreamEnd)
          rx.RemoveSubscribe();

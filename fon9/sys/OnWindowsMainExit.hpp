@@ -17,6 +17,8 @@ namespace fon9 { namespace sys {
    protected:
       virtual ~OnWindowsMainExitHandle();
    };
+   /// 通常在 API 結束時呼叫, 例如: RcClientApi.cpp: fon9_Finalize();
+   void OnWindowsMainExit_When_No_atexit();
 #else
    struct OnWindowsMainExitHandle {
    };
