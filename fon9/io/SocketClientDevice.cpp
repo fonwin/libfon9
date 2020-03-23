@@ -27,7 +27,8 @@ void SocketClientDevice::OnCommonTimer(TimeStamp now) {
    }});
 }
 void SocketClientDevice::OpImpl_ConnectToNext(StrView lastError) {
-   OpThr_SetDeviceId(*this, std::string{});
+   // 為了讓 LinkError or LinkBroken 能夠從 log 訊息辨認連線位置, 所以在此不清除 DeviceId.
+   // OpThr_SetDeviceId(*this, std::string{});
    if (this->NextAddrIndex_ >= this->AddrList_.size()) {
       // 全部的 addr 都嘗試過, 才進入 LinkError 狀態.
       this->NextAddrIndex_ = 0;
@@ -37,18 +38,16 @@ void SocketClientDevice::OpImpl_ConnectToNext(StrView lastError) {
                             ? State::LinkBroken : State::LinkError, lastError);
       return;
    }
-   const SocketAddress& addr = this->AddrList_[this->NextAddrIndex_++];
-   std::string strmsg;
-   char        strbuf[SocketAddress::kMaxAddrPortStrSize];
-   if (addr.IsEmpty())
-      strmsg = "Connecting...";
-   else {
-      strmsg = "Connecting to: ";
-      strmsg.append(strbuf, addr.ToAddrPortStr(strbuf));
-   }
+
+   const SocketAddress* addrRemote = &this->AddrList_[this->NextAddrIndex_++];
+   const SocketAddress* addrLocal = this->Config_.AddrBind_.IsEmpty() ? nullptr : &this->Config_.AddrBind_;
+   char                 strbuf[kMaxTcpConnectionUID];
+   OpThr_SetDeviceId(*this, MakeTcpConnectionUID(strbuf, addrRemote, addrLocal).ToString());
+
+   std::string  strmsg = "Connecting to: " + this->OpImpl_GetDeviceId();
    Socket       soCli;
    SocketResult soRes;
-   if (this->CreateSocket(soCli, addr, soRes)
+   if (this->CreateSocket(soCli, *addrRemote, soRes)
    && soCli.SetSocketOptions(this->Config_.Options_, soRes)
    && (this->Config_.AddrBind_.IsEmpty() || soCli.Bind(this->Config_.AddrBind_, soRes))) {
       if (!lastError.empty()) {
@@ -64,7 +63,7 @@ void SocketClientDevice::OpImpl_ConnectToNext(StrView lastError) {
       this->OpImpl_SetState(State::Linking, &strmsg);
       this->StartConnectTimer();
       strmsg.clear();
-      this->RemoteAddress_ = addr;
+      this->RemoteAddress_ = *addrRemote;
       if (this->OpImpl_SocketConnect(std::move(soCli), soRes))
          return;
    }
