@@ -220,6 +220,10 @@ public:
       r.Back_ = nullptr;
       return *this;
    }
+   /// one node construct.
+   explicit SinglyLinkedList2(Node* node) : base{node, 1}, Back_{node} {
+      assert(node != nullptr && node->GetNext() == nullptr);
+   }
 
    Node* pop_front() {
       if (Node* node = base::pop_front()) {

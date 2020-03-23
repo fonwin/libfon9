@@ -112,8 +112,24 @@ public:
       Device::SendResult StartToSend(DeviceOpLocker& sc, DcQueueList& toSend) {
          IocpSocket& impl = ContainerOf(SendBuffer::StaticCast(toSend), &IocpSocket::SendBuffer_);
          impl.IocpSocketAddRef();
+         Device& dev = sc.GetDevice();
          sc.Destroy();
          toSend.push_back(std::move(*this->Src_));
+         if (fon9_LIKELY(!toSend.empty()))
+            return impl.SendAfterAddRef(toSend);
+         // 會來到此處, 必定: 原本的 this->Src_ 都是 BufferNodeVirtual, 且已經 PopConsumed();
+         // 如果此時 impl.SendBuffer_ 為空, 就不需要送出了!
+         sc.Create(dev, AQueueTaskKind::Send);
+         if (fon9_LIKELY(sc.GetALocker().IsAllowInplace_)) {
+            DcQueueList* qu = impl.SendBuffer_.OpImpl_CheckSendQueue();
+            if (fon9_LIKELY(qu == nullptr)) {
+               sc.Destroy();
+               impl.IocpSocketReleaseRef();
+               return Device::SendResult{0};
+            }
+            assert(qu == &toSend && !qu->empty());
+         }
+         sc.Destroy();
          return impl.SendAfterAddRef(toSend);
       }
    };
@@ -137,8 +153,13 @@ public:
       Device::SendResult StartToSend(DeviceOpLocker& sc, DcQueueList& toSend) {
          IocpSocket& impl = ContainerOf(SendBuffer::StaticCast(toSend), &IocpSocket::SendBuffer_);
          impl.IocpSocketAddRef();
+         // 來到此處 dev.SendBuffer_.Status_ 必定在 Sending 狀態,
+         // 在 Sending 狀態的 SendBuffer, 會將送出要求放在另一個 Queue_ (不會是這裡的 toSend),
+         // 所以這裡可以先將 sc 銷毀(解鎖), 並安全的把 this->Src_ 放到 toSend;
          sc.Destroy();
          toSend.push_back(std::move(*this->Src_));
+         // 用 emptyBuffer 讓 SendAfterAddRef() 啟動 Writable 事件,
+         // 然後在 Writable 事件裡面送出 toSend;
          DcQueueList emptyBuffer;
          return impl.SendAfterAddRef(emptyBuffer);
       }

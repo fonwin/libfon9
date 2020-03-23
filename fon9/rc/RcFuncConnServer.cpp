@@ -81,17 +81,95 @@ void RcFuncSaslServer::OnSessionLinkBroken(RcSession& ses) {
    base::OnSessionLinkBroken(ses);
 }
 //--------------------------------------------------------------------------//
+class RcSessionDeSb : public RcSession {
+   fon9_NON_COPY_NON_MOVE(RcSessionDeSb);
+   using base = RcSession;
+
+   struct DeSbNode : public BufferNodeVirtual {
+      fon9_NON_COPY_NON_MOVE(DeSbNode);
+      using base = BufferNodeVirtual;
+      friend class BufferNode;// for BufferNode::Alloc();
+   protected:
+      const intrusive_ptr<RcSessionDeSb> Session_;
+      DeSbNode(BufferNodeSize blockSize, StyleFlag style, RcSessionDeSb& ses)
+         : base(blockSize, style)
+         , Session_{&ses} {
+      }
+      void OnBufferConsumed() override {
+         this->Session_->IsDetecting_ = false;
+      }
+      void OnBufferConsumedErr(const ErrC&) override {
+      }
+   public:
+      static DeSbNode* Alloc(RcSessionDeSb& ses) {
+         return base::Alloc<DeSbNode>(0, StyleFlag::AllowCrossing, ses);
+      }
+   };
+   static void EmitDeSbTimer(TimerEntry* timer, TimeStamp now) {
+      (void)now;
+      RcSessionDeSb& rthis = ContainerOf(*static_cast<decltype(RcSessionDeSb::DeSbTimer_)*>(timer), &RcSessionDeSb::DeSbTimer_);
+      io::Device*    dev = rthis.GetDevice();
+      // 在此先做個簡單的檢查, 可以排除大部分已斷線的情況.
+      if (dev->OpImpl_GetState() != io::State::LinkReady)
+         return;
+      // 如果在 dev OpThread 要 this->DeSbTimer_.xxxAndWait();
+      // 而此時要呼叫 if (dev->IsSendBufferEmpty())
+      // 則會死結! 所以不判斷 dev->IsSendBufferEmpty(); 直接使用 DeSbNode 處理.
+      if (!rthis.IsDetecting_) {
+         rthis.IsDetecting_ = true;
+         dev->SendASAP(BufferList{DeSbNode::Alloc(rthis)});
+      }
+      else { // 超過時間還沒有將 DeSbNode 消化掉 => 送出阻塞!
+         dev->AsyncClose(RevPrintTo<std::string>(
+            "Over DeSb interval:", rthis.DeSbInterval_,
+            "|authcId=", rthis.GetUserId()));
+         return;
+      }
+      timer->RunAfter(rthis.DeSbInterval_);
+   }
+   DataMemberEmitOnTimer<&RcSessionDeSb::EmitDeSbTimer> DeSbTimer_;
+   bool IsDetecting_{};
+   char Padding____[7];
+
+   void SetApReady(StrView info) override {
+      base::SetApReady(info);
+      this->DeSbTimer_.RunAfter(this->DeSbInterval_);
+   }
+   void OnDevice_StateChanged(io::Device& dev, const io::StateChangedArgs& e) override {
+      base::OnDevice_StateChanged(dev, e);
+      if (e.After_.State_ >= io::State::Disposing)
+         this->DeSbTimer_.DisposeAndWait();
+   }
+
+public:
+   const TimeInterval   DeSbInterval_;
+
+   RcSessionDeSb(RcFunctionMgrSP mgr, RcSessionRole role, TimeInterval deSbInterval)
+      : base{std::move(mgr), role}
+      , DeSbInterval_{deSbInterval} {
+   }
+   ~RcSessionDeSb() {
+      // 如果在 EmitDeSbTimer() 正要執行 dev->SendBuffered(BufferList{DeSbNode::Alloc(rthis)});
+      // 則在此 this->DeSbTimer_.DisposeAndWait(); 會造成 this 穢土重生!
+      // 此時在 ~DeSbNode(); this 會再死一次, 造成 crash!
+      // 所以 this->DeSbTimer_.DisposeAndWait(); 必須放在 OnDevice_StateChanged() 裡面.
+   }
+};
+
 struct RcSessionServer_Factory : public SessionFactory, public RcFunctionMgr {
    fon9_NON_COPY_NON_MOVE(RcSessionServer_Factory);
-   auth::AuthMgrSP   AuthMgr_;
-   CharVector        NameVer_;
-   CharVector        Description_;
+   const auth::AuthMgrSP   AuthMgr_;
+   const CharVector        NameVer_;
+   const CharVector        Description_;
+   // 傳送阻塞偵測間隔(秒).
+   const TimeInterval      DeSbInterval_;
 
-   RcSessionServer_Factory(std::string name, auth::AuthMgrSP&& authMgr, const CharVector& nameVer, const CharVector& desp)
+   RcSessionServer_Factory(std::string name, auth::AuthMgrSP&& authMgr, const CharVector& nameVer, const CharVector& desp, TimeInterval deSbInterval)
       : SessionFactory(std::move(name))
       , AuthMgr_{authMgr}
       , NameVer_{nameVer}
-      , Description_{desp} {
+      , Description_{desp}
+      , DeSbInterval_{deSbInterval} {
       this->Add(RcFunctionAgentSP{new RcFuncConnServer("f9rcServer.0", "fon9 RcServer", authMgr)});
       this->Add(RcFunctionAgentSP{new RcFuncSaslServer{authMgr}});
    }
@@ -102,9 +180,14 @@ struct RcSessionServer_Factory : public SessionFactory, public RcFunctionMgr {
       return intrusive_ptr_release(static_cast<SessionFactory*>(this));
    }
 
+   io::SessionSP CreateRcSession() {
+      if (this->DeSbInterval_.IsNullOrZero())
+         return new RcSession(this, RcSessionRole::Host);
+      return new RcSessionDeSb(this, RcSessionRole::Host, this->DeSbInterval_);
+   }
    io::SessionSP CreateSession(IoManager& iomgr, const IoConfigItem& cfg, std::string& errReason) override {
       (void)iomgr; (void)cfg; (void)errReason;
-      return new RcSession(this, RcSessionRole::Host);
+      return this->CreateRcSession();
    }
    io::SessionServerSP CreateSessionServer(IoManager& iomgr, const IoConfigItem& cfg, std::string& errReason) override {
       (void)iomgr; (void)cfg; (void)errReason;
@@ -118,7 +201,7 @@ struct RcSessionServer_Factory : public SessionFactory, public RcFunctionMgr {
          : Owner_(owner) {
       }
       io::SessionSP OnDevice_Accepted(io::DeviceServer&) {
-         return new RcSession(this->Owner_, RcSessionRole::Host);
+         return this->Owner_->CreateRcSession();
       }
    };
 };
@@ -149,20 +232,25 @@ static bool RcSessionServer_Start(fon9::seed::PluginsHolder& holder, fon9::StrVi
    class ArgsParser : public fon9::SessionFactoryConfigWithAuthMgr {
       fon9_NON_COPY_NON_MOVE(ArgsParser);
       using base = fon9::SessionFactoryConfigWithAuthMgr;
-      fon9::CharVector  NameVer_{fon9::StrView{"f9rcServer.0"}};
-      fon9::CharVector  Description_{fon9::StrView{"fon9 RcServer"}};
+      fon9::CharVector     NameVer_{fon9::StrView{"f9rcServer.0"}};
+      fon9::CharVector     Description_{fon9::StrView{"fon9 RcServer"}};
+      fon9::TimeInterval   DeSbInterval_;
    public:
       using base::base;
       fon9::SessionFactorySP CreateSessionFactory() override {
          if (auto authMgr = this->GetAuthMgr())
-            return new fon9::rc::RcSessionServer_Factory(this->Name_, std::move(authMgr), this->NameVer_, this->Description_);
+            return new fon9::rc::RcSessionServer_Factory(
+               this->Name_, std::move(authMgr), this->NameVer_, this->Description_,
+               this->DeSbInterval_);
          return nullptr;
       }
       bool OnUnknownTag(fon9::seed::PluginsHolder& holder, fon9::StrView tag, fon9::StrView value) override {
          if (tag == "Ver")
             this->NameVer_.assign(value);
-         else if(tag == "Desp")
+         else if (tag == "Desp")
             this->Description_.assign(value);
+         else if (tag == "DeSb")
+            this->DeSbInterval_ = fon9::StrTo(value, fon9::TimeInterval{});
          else
             return base::OnUnknownTag(holder, tag, value);
          return true;

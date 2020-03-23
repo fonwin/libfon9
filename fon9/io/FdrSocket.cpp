@@ -26,7 +26,7 @@ int FdrSocket::Sendv(DeviceOpLocker& sc, DcQueueList& toSend) {
    struct iovec   bufv[IOV_MAX];
    size_t         bufCount = toSend.PeekBlockVector(bufv);
 __RETRY_WRITEV:
-   ssize_t        wrsz = writev(this->GetFD(), bufv, static_cast<int>(bufCount));
+   ssize_t        wrsz = (bufCount ? writev(this->GetFD(), bufv, static_cast<int>(bufCount)) : 0);
    if (fon9_LIKELY(wrsz >= 0)) {
       toSend.PopConsumed(static_cast<size_t>(wrsz));
       if (fon9_LIKELY(toSend.empty()))

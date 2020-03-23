@@ -149,7 +149,7 @@ protected:
    void SetSessionSt(RcSessionSt st) {
       this->SessionSt_ = st;
    }
-   void SetApReady(StrView info);
+   virtual void SetApReady(StrView info);
 
 private:
    void ResetSessionSt(RcSessionSt st);

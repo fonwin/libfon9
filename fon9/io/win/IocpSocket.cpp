@@ -142,7 +142,9 @@ __RETRY_SEND:
             goto __RETRY_SEND;
          }
          // 不用 break; 視為失敗.
-      default: // 傳送失敗, 不會產生 OnIocp_* 事件
+      default:
+         this->SendBuffer_.ForceClearBuffer(GetSysErrC(static_cast<DWORD>(eno)));
+         // 傳送失敗, 不會產生 OnIocp_* 事件, 所以這裡手動呼叫 OnIocp_Error().
          this->OnIocp_Error(&this->SendOverlapped_, static_cast<DWORD>(eno));
          return GetSocketErrC(eno);
       }

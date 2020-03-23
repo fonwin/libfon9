@@ -58,7 +58,7 @@ __FEED_BUFFER:;
       switch (TmpGetValueU(pkptr->MsgType_)) {
       case 10: // 錯誤通知訊息(010).
          dev.AsyncClose(fon9::RevPrintTo<std::string>(
-            "ExgMrRecoverSession|Rx010St=", static_cast<const ExgMrError010*>(pkptr)->StatusCode_));
+            "ExgMrRecoverSession.Rx010St|err=", static_cast<const ExgMrError010*>(pkptr)->StatusCode_));
          dev.AsyncOpen(std::string{});
          return io::RecvBufferSize::CloseRecv;
       case 30: // 期交所用此訊息回覆資訊接收端登錄結果，如有多個 ChannelID，則 030 會有多筆。
