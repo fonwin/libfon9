@@ -5,6 +5,7 @@
 #include "fon9/seed/Tab.hpp"
 #include "fon9/seed/RawRd.hpp"
 #include "fon9/Subr.hpp"
+#include "fon9/TimeInterval.hpp"
 
 namespace fon9 { namespace seed {
 
@@ -96,6 +97,8 @@ public:
 };
 fon9_WARN_POP;
 
+/// 一般訂閱成功時的通知.
+/// 不含 Stream 訂閱成功, Stream 訂閱成功, 由 Stream 提供者自行處理.
 class fon9_API SeedNotifySubscribeOK : public SeedNotifyArgs {
    fon9_NON_COPY_NON_MOVE(SeedNotifySubscribeOK);
    using base = SeedNotifyArgs;
@@ -104,6 +107,24 @@ protected:
 public:
    TreeOp&  OpTree_;
    SeedNotifySubscribeOK(TreeOp& opTree, Tab& tab, const StrView& keyText, const RawRd* rd);
+};
+
+/// SeedNotifyKind::StreamRecover, SeedNotifyKind::StreamRecoverEnd 的通知.
+/// 訂閱者可返回因「流量管制」需要延遲的時間.
+/// 訂閱者可直接使用 static_cast<SeedNotifyStreamRecoverArgs*>(&e) 轉型.
+class fon9_API SeedNotifyStreamRecoverArgs : public SeedNotifyArgs {
+   fon9_NON_COPY_NON_MOVE(SeedNotifyStreamRecoverArgs);
+   using base = SeedNotifyArgs;
+public:
+   /// 訂閱者返回前, 可設定此值, 告知發行者流量管制.
+   /// - <0 表示此次的回補無法處理, 必須延遲 (-FlowWait_) 之後再嘗試.
+   ///      發行者應「必須配合」此返回值來管制流量.
+   /// - >0 表示此次的回補已處理, 但需要先暫停回補, 延遲 (FlowWait_) 之後再嘗試.
+   ///      發行者應「盡量配合」此返回值來管制流量,
+   ///      但沒有「約束」效果, 發行者可以不遵守。
+   mutable TimeInterval FlowControlWait_;
+
+   using base::base;
 };
 
 using FnSeedSubr = std::function<void(const SeedNotifyArgs&)>;

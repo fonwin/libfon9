@@ -23,13 +23,19 @@ class PolicyAclTree : public MasterPolicyTree {
          this->DetailPolicyTree_.reset(new DetailTree{*this});
       }
       void LoadPolicy(DcQueue& buf) override {
+         // 因為 Acl 儲存打包 [MasterItem + Container(Detail)],
+         // 所以若有增減欄位, 則不適用 InArchiveClearBack<> 的方式處理;
          unsigned            ver = 0;
          DetailTable::Locker pmap{static_cast<DetailTree*>(this->DetailPolicyTree_.get())->DetailTable_};
          BitvInArchive{buf}(ver, this->Home_);
-         if (ver > 0) {
+         if (fon9_LIKELY(ver > 0)) {
             BitvTo(buf, this->MaxSubrCount_);
             BitvTo(buf, this->FcQuery_.FcCount_);
             BitvTo(buf, this->FcQuery_.FcTimeMS_);
+            if (fon9_LIKELY(ver > 1)) {
+               BitvTo(buf, this->FcRecover_.FcCount_);
+               BitvTo(buf, this->FcRecover_.FcTimeMS_);
+            }
          }
          pmap->clear();
          if (size_t sz = BitvToContainerElementCount(buf)) {
@@ -47,7 +53,7 @@ class PolicyAclTree : public MasterPolicyTree {
          }
       }
       void SavePolicy(RevBuffer& rbuf) override {
-         const unsigned           ver = 1;
+         const unsigned           ver = 2;
          DetailTable::ConstLocker pmap{static_cast<DetailTree*>(this->DetailPolicyTree_.get())->DetailTable_};
          const auto               ibeg = pmap->begin();
          for (auto i = pmap->end(); i != ibeg;) {
@@ -57,10 +63,12 @@ class PolicyAclTree : public MasterPolicyTree {
             ToBitv(rbuf, i->first);
          }
          ElementCountToBitv(rbuf, *pmap);
-         BitvOutArchive{rbuf}(ver, this->Home_,
-                              this->MaxSubrCount_,
-                              this->FcQuery_.FcCount_,
-                              this->FcQuery_.FcTimeMS_);
+         BitvOutArchive{rbuf}(ver, this->Home_,          // 何時加入的欄位?
+                              this->MaxSubrCount_,       // ver=1
+                              this->FcQuery_.FcCount_,   //
+                              this->FcQuery_.FcTimeMS_,  //
+                              this->FcRecover_.FcCount_, // ver=2
+                              this->FcRecover_.FcTimeMS_);
       }
    };
    using MasterItemSP = intrusive_ptr<MasterItem>;
@@ -73,8 +81,10 @@ class PolicyAclTree : public MasterPolicyTree {
       seed::Fields fields;
       fields.Add(fon9_MakeField (MasterItem, Home_, "HomePath"));
       fields.Add(fon9_MakeField2(MasterItem, MaxSubrCount));
-      fields.Add(fon9_MakeField (MasterItem, FcQuery_.FcCount_,  "FcQryCount"));
-      fields.Add(fon9_MakeField (MasterItem, FcQuery_.FcTimeMS_, "FcQryMS"));
+      fields.Add(fon9_MakeField (MasterItem, FcQuery_.FcCount_,    "FcQryCount"));
+      fields.Add(fon9_MakeField (MasterItem, FcQuery_.FcTimeMS_,   "FcQryMS"));
+      fields.Add(fon9_MakeField (MasterItem, FcRecover_.FcCount_,  "FcRecoverKB"));
+      fields.Add(fon9_MakeField (MasterItem, FcRecover_.FcTimeMS_, "FcRecoverMS"));
       seed::TabSP tab{new seed::Tab(Named{"Acl"}, std::move(fields), seed::MakeAclTreeLayoutWritable(),
                                     seed::TabFlag::Writable | seed::TabFlag::HasSapling)};
       return new seed::Layout1(fon9_MakeField2(PolicyItem, PolicyId),

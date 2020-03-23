@@ -19,6 +19,7 @@ void RcSeedVisitorServerAgent::OnRecvFunctionCall(RcSession& ses, RcFunctionPara
          agAcl->GetPolicy(authr, aclcfg);
          RevBufferList  rbuf{256};
          // 最後一行: "|FcQryCount/FcQryMS|MaxSubrCount"
+         // 回補流量管制, 暫時不考慮告知 Client, 因為回補流量管制由 Server 處理.
          RevPrint(rbuf, fon9_kCSTR_ROWSPL /* Path="" */ fon9_kCSTR_CELLSPL,
                   aclcfg.FcQuery_.FcCount_, '/', aclcfg.FcQuery_.FcTimeMS_, fon9_kCSTR_CELLSPL,
                   aclcfg.MaxSubrCount_);
@@ -68,7 +69,10 @@ RcSeedVisitorServerNote::RcSeedVisitorServerNote(RcSession& ses,
                                                  seed::AclConfig&& aclcfg)
    : Visitor_{new SeedVisitor(ses.GetDevice(), authr, std::move(aclcfg))}
    , FcQry_(static_cast<unsigned>(aclcfg.FcQuery_.FcCount_ * 2), // *2: for 緩衝.
-            TimeInterval_Millisecond(aclcfg.FcQuery_.FcTimeMS_)) {
+            TimeInterval_Millisecond(aclcfg.FcQuery_.FcTimeMS_))
+   , FcRecover_(aclcfg.FcRecover_.FcCount_ * 1000u,
+                TimeInterval_Millisecond(aclcfg.FcRecover_.FcTimeMS_),
+                aclcfg.FcRecover_.FcTimeMS_ /* 讓時間分割單位=1ms */) {
 }
 RcSeedVisitorServerNote::~RcSeedVisitorServerNote() {
 }
@@ -97,8 +101,7 @@ struct RcSeedVisitorServerNote::UnsubRunnerSP : public intrusive_ptr<SubrReg> {
       seed::Tab* tab = tree.LayoutSP_->GetTab(preg->TabIndex_);
 
       if (preg->SvFunc_ == SvFuncCode::Empty) { // 因 LinkBroken 的取消註冊, 不用 lock, 不用回覆.
-         if (opSubr)
-            opSubr->Unsubscribe(preg->SubConn_, *tab);
+         preg->Unsubscribe(opSubr, *tab);
          return;
       }
       assert(preg->SvFunc_ == SvFuncCode::Unsubscribe);
@@ -116,13 +119,7 @@ struct RcSeedVisitorServerNote::UnsubRunnerSP : public intrusive_ptr<SubrReg> {
             return;
          rpSubr.reset(); // 等同於: (*subrs)[preg->SubrIndex_].reset();
       }
-      if (opSubr) {
-         if (preg->IsStream_)
-            opres = opSubr->UnsubscribeStream(preg->SubConn_, *tab);
-         else
-            opres = opSubr->Unsubscribe(preg->SubConn_, *tab);
-         (void)opres; assert(opres == seed::OpResult::no_error);
-      }
+      opres = preg->Unsubscribe(opSubr, *tab);
       RevBufferList ackbuf{64};
       ToBitv(ackbuf, preg->SubrIndex_);
       PutBigEndian(ackbuf.AllocBuffer(sizeof(SvFuncCode)), SvFuncCode::Unsubscribe);
@@ -510,20 +507,31 @@ void RcSeedVisitorServerNote::OnSubscribeNotify(SubrRegSP preg, const seed::Seed
    case seed::SeedNotifyKind::TableChanged:
       ToBitv(ackbuf, e.GetGridView());
       break;
+   case seed::SeedNotifyKind::StreamRecover:
+   case seed::SeedNotifyKind::StreamRecoverEnd:
+      if (auto* note = static_cast<RcSeedVisitorServerNote*>(ses.GetNote(f9rc_FunctionCode_SeedVisitor))) {
+         const std::string& gv = e.GetGridView();
+         TimeInterval fc = note->FcRecover_.CalcUsed(UtcNow(), gv.size() + 16);
+         if (!fc.IsZero() && e.NotifyKind_ != seed::SeedNotifyKind::StreamRecoverEnd) {
+            static_cast<const seed::SeedNotifyStreamRecoverArgs*>(&e)->FlowControlWait_ = fc;
+            if (fc.GetOrigValue() < 0)
+               return;
+         }
+         ToBitv(ackbuf, gv);
+         goto __CHECK_PUT_KEY_FOR_SUBR_TREE;
+      }
+      return;
    case seed::SeedNotifyKind::StreamEnd:
       preg->IsSubjectClosed_ = true;
       // 不用 break; 繼續處理 gv 及 key 填入 ackbuf;
    case seed::SeedNotifyKind::SeedChanged:
    case seed::SeedNotifyKind::StreamData:
-   case seed::SeedNotifyKind::StreamRecover:
-   case seed::SeedNotifyKind::StreamRecoverEnd:
       ToBitv(ackbuf, e.GetGridView());
-      if (IsSubrTree(preg->SeedKey_.begin())) // 如果訂閱的是 tree, 則需要額外提供 seedKey.
-         ToBitv(ackbuf, e.KeyText_);
-      break;
+      goto __CHECK_PUT_KEY_FOR_SUBR_TREE;
    case seed::SeedNotifyKind::PodRemoved:
    case seed::SeedNotifyKind::SeedRemoved:
       preg->IsSubjectClosed_ = true;
+   __CHECK_PUT_KEY_FOR_SUBR_TREE:;
       if (IsSubrTree(preg->SeedKey_.begin())) // 如果訂閱的是 tree, 則需要額外提供 seedKey.
          ToBitv(ackbuf, e.KeyText_);
       break;

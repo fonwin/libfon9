@@ -202,12 +202,15 @@ void CheckGridView(fon9::seed::Tree& root, const char* path, const char* gvExpec
 }
 
 void CheckPoAcl(fon9::seed::Tree& root) {
-   #define kDEFAULT_MaxSubrCount          kSPL "0"
-   #define kDEFAULT_MaxSubrCount_FcQry    kDEFAULT_MaxSubrCount kSPL "0" kSPL "1000"
+   #define kDEFAULT_MaxSubrCount       kSPL "0"
+   #define kDEFAULT_MaxSubrCount_Fc    kDEFAULT_MaxSubrCount                  \
+                                       kSPL "0" kSPL "1000"  /* FcQry     */  \
+                                       kSPL "0" kSPL "1000"  /* FcRecover */
+   // -----
    CheckGridView(root, "/MaAuth/PoAcl",
-                 "admin"         kSPL "/"              kDEFAULT_MaxSubrCount_FcQry kROWSPL
-                 "test"          kSPL "/home/{UserId}" kDEFAULT_MaxSubrCount_FcQry kROWSPL
-                 "test-sync-end" kSPL "/home/{UserId}" kDEFAULT_MaxSubrCount_FcQry
+                 "admin"         kSPL "/"              kDEFAULT_MaxSubrCount_Fc kROWSPL
+                 "test"          kSPL "/home/{UserId}" kDEFAULT_MaxSubrCount_Fc kROWSPL
+                 "test-sync-end" kSPL "/home/{UserId}" kDEFAULT_MaxSubrCount_Fc
                   );
    CheckGridView(root, "/MaAuth/PoAcl/test",
                  "./{UserId}"   kSPL "xd4" kDEFAULT_MaxSubrCount kROWSPL

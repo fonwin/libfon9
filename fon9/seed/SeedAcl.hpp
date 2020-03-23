@@ -80,15 +80,21 @@ struct AclHomeConfig {
    uint32_t          MaxSubrCount_{0};
    /// 查詢的流量管制.
    FlowCounterArgs   FcQuery_;
+   /// 回補的流量管制:
+   /// FlowControlCalc.SetFlowControlArgs(FcRecover_.FcCount_ * 1000, FcRecover_.FcTimeMS_);
+   FlowCounterArgs   FcRecover_;
+   char              Padding____[4];
 
    AclHomeConfig() {
       this->FcQuery_.Clear();
+      this->FcRecover_.Clear();
    }
 
    void Clear() {
       this->Home_.clear();
       this->MaxSubrCount_ = 0;
       this->FcQuery_.Clear();
+      this->FcRecover_.Clear();
    }
 };
 

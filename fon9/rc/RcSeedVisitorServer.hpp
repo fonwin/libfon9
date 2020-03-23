@@ -7,6 +7,7 @@
 #include "fon9/io/Device.hpp"
 #include "fon9/seed/SeedVisitor.hpp"
 #include "fon9/auth/AuthMgr.hpp"
+#include "fon9/FlowControlCalc.hpp"
 
 namespace fon9 { namespace rc {
 
@@ -28,8 +29,9 @@ class RcSeedVisitorServerNote : public RcFunctionNote {
    fon9_NON_COPY_NON_MOVE(RcSeedVisitorServerNote);
    struct SeedVisitor;
    using SeedVisitorSP = intrusive_ptr<SeedVisitor>;
-   SeedVisitorSP  Visitor_;
-   FlowCounter    FcQry_;
+   SeedVisitorSP     Visitor_;
+   FlowCounter       FcQry_;
+   FlowControlCalc   FcRecover_;
 
    struct UnsubRunnerSP;
    struct TicketRunnerSubscribe;
@@ -42,6 +44,14 @@ class RcSeedVisitorServerNote : public RcFunctionNote {
          : SubrIndex_{subrIndex}
          , SeedKey_{seedKey}
          , Device_{std::move(dev)} {
+      }
+      seed::OpResult Unsubscribe(seed::SubscribableOp* opSubr, seed::Tab& tab) {
+         if (opSubr) {
+            if (this->IsStream_)
+               return opSubr->UnsubscribeStream(this->SubConn_, tab);
+            return opSubr->Unsubscribe(this->SubConn_, tab);
+         }
+         return seed::OpResult::no_subscribe;
       }
       const f9sv_SubrIndex SubrIndex_;
       f9sv_TabSize         TabIndex_;

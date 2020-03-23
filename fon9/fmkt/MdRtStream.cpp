@@ -81,13 +81,21 @@ seed::OpResult MdRtStream::SubscribeStream(SubConn*           pSubConn,
    //   - 送回補訊息前:
    //     - 鎖定 tree;
    //     - 檢查是否已取消訂閱: psub->IsUnsubscribed();
-   MdRtRecover recover(std::move(psub), this->RtStorage_.GetStream());
-   recover.EndPos_ = this->RtStorageSize_;
-   recover.Filter_ = StrToMdRtsKind(&args);
+   MdRtRecoverSP recover = MdRtRecover::Make(this->InnMgr_, psub, this->RtStorage_.GetStream());
+   if (!recover) {
+      // TODO: Stream Recover 失敗訊息? (沒有開啟 reader, 無法回補.)
+      seed::SeedNotifyStreamRecoverArgs   e(*op.Sender_, nullptr/*tab*/,
+                                            op.KeyText_, nullptr/*rd*/,
+                                            seed::SeedNotifyKind::StreamRecoverEnd);
+      psub(e);
+      return seed::OpResult::no_error;
+   }
+   recover->EndPos_ = this->RtStorageSize_;
+   recover->Filter_ = StrToMdRtsKind(&args);
    if (StrTrimHead(&args).Get1st() == ',')
       StrTrimHead(&args, args.begin() + 1);
-   recover.StartInfoTime_ = StrTo(&args, DayTime::Null());
-   this->InnMgr_.AddRecover(std::move(recover));
+   recover->StartInfoTime_ = StrTo(&args, DayTime::Null());
+   recover->RunAfter(TimeInterval{});
    return seed::OpResult::no_error;
 }
 seed::OpResult MdRtStream::UnsubscribeStream(SubConn subConn) {
