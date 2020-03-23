@@ -16,6 +16,7 @@ set(fon9src
  CountDownLatch.cpp
  CyclicBarrier.cpp
  ThreadId.cpp
+ ThreadTools.cpp
  Timer.cpp
  DefaultThreadPool.cpp
  SchTask.cpp
@@ -40,6 +41,7 @@ set(fon9src
  PkReceiver.cpp
  ObjSupplier.cpp
  FlowCounter.cpp
+ FlowControlCalc.cpp
  CtrlBreakHandler.c
 
  File.cpp
@@ -242,6 +244,9 @@ target_link_libraries(PkCont_UT fon9_s)
 
 add_executable(ObjSupplier_UT ObjSupplier_UT.cpp)
 target_link_libraries(ObjSupplier_UT fon9_s)
+
+add_executable(FlowControl_UT FlowControl_UT.cpp)
+target_link_libraries(FlowControl_UT fon9_s)
 
 # unit tests: Container / Algorithm
 add_executable(Trie_UT Trie_UT.cpp)

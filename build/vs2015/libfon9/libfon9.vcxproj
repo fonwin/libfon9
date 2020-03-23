@@ -157,6 +157,7 @@
     <ClInclude Include="..\..\..\fon9\fix\FixSession.hpp" />
     <ClInclude Include="..\..\..\fon9\fix\IoFixSender.hpp" />
     <ClInclude Include="..\..\..\fon9\fix\IoFixSession.hpp" />
+    <ClInclude Include="..\..\..\fon9\FlowControlCalc.hpp" />
     <ClInclude Include="..\..\..\fon9\FlowCounter.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\FmktTypes.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\MdRtsTypes.hpp" />
@@ -434,6 +435,7 @@
     <ClCompile Include="..\..\..\fon9\fix\FixSession.cpp" />
     <ClCompile Include="..\..\..\fon9\fix\IoFixSender.cpp" />
     <ClCompile Include="..\..\..\fon9\fix\IoFixSession.cpp" />
+    <ClCompile Include="..\..\..\fon9\FlowControlCalc.cpp" />
     <ClCompile Include="..\..\..\fon9\FlowCounter.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\MdRtsTypes.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\MdRtStream.cpp" />
@@ -563,6 +565,7 @@
     <ClCompile Include="..\..\..\fon9\sys\OnWindowsMainExit.cpp" />
     <ClCompile Include="..\..\..\fon9\ThreadId.cpp" />
     <ClCompile Include="..\..\..\fon9\DefaultThreadPool.cpp" />
+    <ClCompile Include="..\..\..\fon9\ThreadTools.cpp" />
     <ClCompile Include="..\..\..\fon9\TimedFileName.cpp" />
     <ClCompile Include="..\..\..\fon9\TimeInterval.cpp" />
     <ClCompile Include="..\..\..\fon9\Timer.cpp" />

@@ -102,6 +102,7 @@ class MessageQueue {
    }
 
    static void ThrRun(std::string thrName, MessageQueue* pthis) {
+      SetCurrentThreadName(thrName.c_str());
       fon9_LOG_ThrRun("MessageQueue.ThrRun|name=", thrName);
       MessageHandlerT   messageHandler(*pthis);
       {

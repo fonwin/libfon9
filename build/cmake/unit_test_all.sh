@@ -30,6 +30,7 @@ $OUTPUT_DIR/Bitv_UT
 $OUTPUT_DIR/ConfigLoader_UT
 $OUTPUT_DIR/PkCont_UT
 $OUTPUT_DIR/ObjSupplier_UT
+$OUTPUT_DIR/FlowControl_UT
 
 # unit tests: AlNum
 $OUTPUT_DIR/StrView_UT

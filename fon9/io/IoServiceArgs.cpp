@@ -3,6 +3,7 @@
 #include "fon9/io/IoServiceArgs.hpp"
 #include "fon9/StrTo.hpp"
 #include "fon9/Log.hpp"
+#include "fon9/ThreadTools.hpp"
 
 namespace fon9 { namespace io {
 
@@ -50,11 +51,14 @@ ConfigParser::Result IoServiceArgs::OnTagValue(StrView tag, StrView& value) {
 
 void ServiceThreadArgs::OnThrRunBegin(StrView msgHead) const {
    Result3  cpuAffinityResult = SetCpuAffinity(this->CpuAffinity_);
-   fon9_LOG_ThrRun(msgHead, ".ThrRun|name=", this->Name_,
-                   "|index=", this->ThreadPoolIndex_ + 1,
-                   "|Cpu=", this->CpuAffinity_, ':', cpuAffinityResult,
-                   "|Wait=", HowWaitToStr(this->HowWait_),
-                   "|Capacity=", this->Capacity_);
+   std::string thrName = RevPrintTo<std::string>(
+      msgHead, "|name=", this->Name_,
+      "|index=", this->ThreadPoolIndex_ + 1,
+      "|Cpu=", this->CpuAffinity_, ':', cpuAffinityResult,
+      "|Wait=", HowWaitToStr(this->HowWait_),
+      "|Capacity=", this->Capacity_);
+   fon9_LOG_ThrRun(thrName);
+   SetCurrentThreadName(thrName.c_str());
 }
 
 } } // namespaces
