@@ -9,10 +9,14 @@
 
 namespace f9twf {
 namespace f9fmkt = fon9::fmkt;
+static const fon9::TimeInterval  kMcHbInterval = fon9::TimeInterval_Second(35);
 
 ExgMcMessageConsumer::~ExgMcMessageConsumer() {
 }
 //--------------------------------------------------------------------------//
+ExgMcChannel::~ExgMcChannel() {
+   this->HbTimer_.DisposeAndWait();
+}
 void ExgMcChannel::StartupChannel(std::string logPath) {
    this->State_ = (IsEnumContainsAny(this->Style_, ExgMcChannelStyle::WaitBasic | ExgMcChannelStyle::WaitSnapshot)
                    ? ExgMcChannelState::Waiting : ExgMcChannelState::Running);
@@ -20,6 +24,7 @@ void ExgMcChannel::StartupChannel(std::string logPath) {
    this->CycleBeforeLostCount_ = 0;
    this->Pk1stPos_ = 0;
    this->Pk1stSeq_ = 0;
+   this->ReceivedCountInHb_ = 0;
    this->Clear();
    this->PkLog_.reset();
    if (IsEnumContainsAny(this->Style_, ExgMcChannelStyle::PkLog | ExgMcChannelStyle::Reload)) {
@@ -115,11 +120,33 @@ void ExgMcChannel::OnSnapshotDone(SeqT lastRtSeq) {
       this->ReloadDispatch(this->IsRealtime() ? lastRtSeq + 1 : 0);
 }
 //--------------------------------------------------------------------------//
+void ExgMcChannel::EmitHbTimer(fon9::TimerEntry* timer, fon9::TimeStamp now) {
+   (void)now;
+   // HbTimer 在 AddRecover() 增加第一個時啟動, DelRecover() 刪除最後一個時關閉.
+   // - 因為有 MrRecover 連線成功, 表示期交所行情系統已啟動, 應該開始發送行情訊息.
+   // - 若 MrRecover 無法連線, 應先檢查 MrRecover 的失敗原因.
+   // - 這樣就可以不用額外設定 HbTimer 的排程.
+   ExgMcChannel& rthis = ContainerOf(*static_cast<decltype(ExgMcChannel::HbTimer_)*>(timer), &ExgMcChannel::HbTimer_);
+   if (rthis.ReceivedCountInHb_ != 0)
+      rthis.ReceivedCountInHb_ = 0;
+   else { // 2 次 Hb 之間沒有收到任何封包, 記錄行情可能斷線的訊息.
+      fon9_LOG_WARN(rthis.ChannelMgr_->Name_, ".Hb"
+                    "|channelId=", rthis.ChannelId_,
+                    "|interval=", kMcHbInterval,
+                    "|info=No data");
+   }
+   rthis.HbTimer_.RunAfter(kMcHbInterval);
+}
+//--------------------------------------------------------------------------//
 void ExgMcChannel::AddRecover(ExgMrRecoverSessionSP svr) {
    auto rs = this->Recovers_.Lock();
-   for (auto& cur : *rs) {
-      if (cur == svr)
-         return;
+   if (rs->empty())
+      this->HbTimer_.RunAfter(kMcHbInterval);
+   else {
+      for (auto& cur : *rs) {
+         if (cur == svr)
+            return;
+      }
    }
    if (svr->Role_ == ExgMcRecoverRole::Primary)
       rs->push_front(svr);
@@ -135,6 +162,8 @@ void ExgMcChannel::DelRecover(ExgMrRecoverSessionSP svr) {
          return;
       isFront = (ifind == rs->begin());
       rs->erase(ifind);
+      if (rs->empty())
+         this->HbTimer_.StopNoWait();
    }
    if (isFront && !this->PkPendings_.Lock()->empty())
       this->StartPkContTimer();
@@ -245,6 +274,7 @@ void ExgMcChannel::PkContOnTimer(PkPendings::Locker&& pks) {
 // 收到完整封包後, 會執行到此, 尚未確定是否重複或有遺漏.
 ExgMcChannelState ExgMcChannel::OnPkReceived(const ExgMcHead& pk, unsigned pksz) {
    assert(pk.GetChannelId() == this->ChannelId_);
+   ++this->ReceivedCountInHb_;
    const SeqT seq = pk.GetChannelSeq();
    // ----- 處理特殊訊息: Hb, SeqReset...
    if (fon9_UNLIKELY(pk.TransmissionCode_ == '0')) {

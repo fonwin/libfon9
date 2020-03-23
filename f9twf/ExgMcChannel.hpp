@@ -156,6 +156,11 @@ class f9twf_API ExgMcChannel : private fon9::PkContFeeder {
       this->CycleBeforeLostCount_ = this->LostCount_;
    }
 
+   // 2 次 Hb 之間, 若沒有任何訊息, 則可能發生斷線.
+   SeqT  ReceivedCountInHb_{0};
+   static void EmitHbTimer(fon9::TimerEntry* timer, fon9::TimeStamp now);
+   fon9::DataMemberEmitOnTimer<&ExgMcChannel::EmitHbTimer> HbTimer_;
+
    void DispatchMcMessage(ExgMcMessage& e);
    void NotifyConsumersLocked(ExgMcMessage& e);
    void PkContOnReceived(const void* pk, unsigned pksz, SeqT seq) override;
@@ -182,6 +187,7 @@ class f9twf_API ExgMcChannel : private fon9::PkContFeeder {
 
 public:
    ExgMcChannel() = default;
+   ~ExgMcChannel();
    ExgMcChannelMgr* GetChannelMgr() const {
       return this->ChannelMgr_;
    }
