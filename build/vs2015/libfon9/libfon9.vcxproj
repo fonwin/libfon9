@@ -173,6 +173,12 @@
     <ClInclude Include="..\..\..\fon9\fmkt\SymbRef.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\SymbTree.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\FmktTypes.h" />
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbTwa.hpp" />
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbTwaBase.hpp" />
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbTwf.hpp" />
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbTwfBase.hpp" />
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbTws.hpp" />
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbTwsBase.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\TradingLine.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\TradingRequest.hpp" />
     <ClInclude Include="..\..\..\fon9\framework\Framework.hpp" />
@@ -447,6 +453,12 @@
     <ClCompile Include="..\..\..\fon9\fmkt\SymbHL.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\SymbRef.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\SymbTree.cpp" />
+    <ClCompile Include="..\..\..\fon9\fmkt\SymbTwa.cpp" />
+    <ClCompile Include="..\..\..\fon9\fmkt\SymbTwaBase.cpp" />
+    <ClCompile Include="..\..\..\fon9\fmkt\SymbTwf.cpp" />
+    <ClCompile Include="..\..\..\fon9\fmkt\SymbTwfBase.cpp" />
+    <ClCompile Include="..\..\..\fon9\fmkt\SymbTws.cpp" />
+    <ClCompile Include="..\..\..\fon9\fmkt\SymbTwsBase.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\TradingLine.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\TradingRequest.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\Framework.cpp" />

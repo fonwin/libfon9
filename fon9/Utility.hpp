@@ -193,6 +193,10 @@ inline int32_t DataMemberOffset(MemberT Derived::*pDataMember) {
    static_cast<size_t>(reinterpret_cast<intptr_t>(&(reinterpret_cast<Type*>(0x10000)->Member_)) \
                       - static_cast<intptr_t>(0x10000))
 
+#define fon9_OffsetOfBase(Derived, Base) \
+   static_cast<int>(reinterpret_cast<intptr_t>(static_cast<Base*>(reinterpret_cast<Derived*>(0x10000))) \
+                  - reinterpret_cast<intptr_t>(reinterpret_cast<Derived*>(0x10000)))
+
 //--------------------------------------------------------------------------//
 
 /// \ingroup Misc

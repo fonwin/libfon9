@@ -23,13 +23,6 @@ seed::Fields Symb::MakeFields() {
    flds.Add(fon9_MakeField(Symb, TradingSessionId_, "Session"));
    flds.Add(seed::FieldSP{new seed::FieldIntHx<underlying_type_t<f9fmkt_TradingSessionSt>>(
       Named("SessionSt"), fon9_OffsetOfRawPointer(Symb, TradingSessionSt_))});
-
-   flds.Add(fon9_MakeField2(Symb, ShUnit));
-   flds.Add(fon9_MakeField2(Symb, FlowGroup));
-   flds.Add(fon9_MakeField2(Symb, PriceOrigDiv));
-   flds.Add(fon9_MakeField2(Symb, StrikePriceDiv));
-   flds.Add(fon9_MakeField2(Symb, ExgSymbSeq));
-   flds.Add(fon9_MakeField (Symb, EndYYYYMMDD_, "EndDate"));
    return flds;
 }
 

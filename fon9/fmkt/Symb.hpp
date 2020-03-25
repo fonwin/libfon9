@@ -39,42 +39,23 @@ using SymbSeqNo_t = uint16_t;
 class fon9_API Symb : public SymbData, public intrusive_ref_counter<Symb> {
    fon9_NON_COPY_NON_MOVE(Symb);
 public:
-   /// 台灣證券「一張」的單位數(股數)
-   uint32_t ShUnit_{0};
-
    /// 交易日.
    uint32_t TDayYYYYMMDD_{0};
-   /// 下市日期.
-   uint32_t EndYYYYMMDD_{0};
+
+   /// 系統自訂的商品Id, 不一定等於交易所的商品Id.
+   /// 交易送出、行情解析時, 再依自訂規則轉換.
+   const CharVector  SymbId_;
 
    /// 交易市場.
    f9fmkt_TradingMarket    TradingMarket_{f9fmkt_TradingMarket_Unknown};
+
    /// 交易時段.
    /// - 台灣證券: 不提供.
    /// - 台灣期權: 在載入 P08.{SystemType} 時, 根據 SystemType 填入此值.
    f9fmkt_TradingSessionId TradingSessionId_{f9fmkt_TradingSessionId_Unknown};
    f9fmkt_TradingSessionSt TradingSessionSt_{f9fmkt_TradingSessionSt_Unknown};
 
-   /// 台灣期交所的流程群組代碼.
-   SymbFlowGroup_t   FlowGroup_{0};
-   /// 交易所的價格欄位, 若沒有定義小數位, 則使用 PriceOrigDiv_ 來處理;
-   /// - 例如: 期交所Tmp格式的下單、回報, 都需要用 PriceOrigDiv_ 來決定小數位:
-   ///   - 若 TaiFexPri = Decimal<int64_t,9>;
-   ///   - 期交所 P08 的 decimal_locator = 2;
-   ///   - 則 PriceOrigDiv_ = 10^7;
-   uint32_t PriceOrigDiv_{0};
-   /// 選擇權商品代碼, 履約價格部份之小數調整.
-   /// - 例如: "TEO03200L9" 電子 320.0 買權;
-   ///   此時商品Id的履約價:小數1位; 則 StrikePriceDiv_ = 10;
-   uint32_t StrikePriceDiv_{0};
-
-   /// 期交所定義的商品序號.
-   SymbSeqNo_t ExgSymbSeq_{0};
-   char        Filler2_____[2];
-
-   /// 系統自訂的商品Id, 不一定等於交易所的商品Id.
-   /// 交易送出、行情解析時, 再依自訂規則轉換.
-   const CharVector  SymbId_;
+   char  Filler_____[5];
 
    Symb(const StrView& symbid) : SymbId_{symbid} {
    }
@@ -85,13 +66,6 @@ public:
    static seed::Fields MakeFields();
 };
 using SymbSP = intrusive_ptr<Symb>;
-
-/// 取得台灣證券的整股交易單位, 若沒設定, 則 1張 = 1000股.
-inline uint32_t GetTwsSymbShUnit(const Symb* symb) {
-   if (symb && 0 < symb->ShUnit_)
-      return symb->ShUnit_;
-   return 1000;
-}
 
 //--------------------------------------------------------------------------//
 

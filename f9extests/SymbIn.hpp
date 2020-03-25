@@ -7,6 +7,7 @@
 #include "fon9/fmkt/SymbRef.hpp"
 #include "fon9/fmkt/SymbBS.hpp"
 #include "fon9/fmkt/SymbDeal.hpp"
+#include "fon9/fmkt/SymbTwa.hpp"
 
 namespace f9extests {
 
@@ -14,9 +15,9 @@ namespace f9extests {
 /// 所有商品資料直接集中在此:
 /// - 適用於: 追求速度(而非彈性)的系統.
 /// - 這裡僅是範例.
-class f9extests_API SymbIn : public fon9::fmkt::Symb {
+class f9extests_API SymbIn : public fon9::fmkt::SymbTwa {
    fon9_NON_COPY_NON_MOVE(SymbIn);
-   using base = fon9::fmkt::Symb;
+   using base = fon9::fmkt::SymbTwa;
 public:
    fon9::fmkt::SymbRef  Ref_;
    fon9::fmkt::SymbBS   BS_;

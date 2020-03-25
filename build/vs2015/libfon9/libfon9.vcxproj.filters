@@ -180,6 +180,18 @@
     <Filter Include="Header Files\rc\_SeedVisitorClient">
       <UniqueIdentifier>{7237f3a3-ae38-4d72-9fd1-2794dde9e76b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\fmkt\_SymbData%28BS,Deal...%29">
+      <UniqueIdentifier>{f6d75c7c-c64c-4ae2-8401-99c82057d4b1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\fmkt\_SymbBase%28Tws,Twf...%29">
+      <UniqueIdentifier>{edc9d026-9a24-4167-99a4-50a0ae04682c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\fmkt\_SymbData%28BS,Deal...%29">
+      <UniqueIdentifier>{401e8cca-5d1e-4d54-bde2-0fa8395e3175}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\fmkt\_SymbBase%28Tws,Twf...%29">
+      <UniqueIdentifier>{29261975-ea6b-438e-a00c-89013bdaebf4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\fon9\sys\Config.h">
@@ -797,9 +809,6 @@
     <ClInclude Include="..\..\..\fon9\TestTools_MemUsed.hpp">
       <Filter>Header Files\_base\_Tools / Utility</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\fon9\fmkt\Symb.hpp">
-      <Filter>Header Files\fmkt</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\fon9\fix\FixBase.hpp">
       <Filter>Header Files\fix</Filter>
     </ClInclude>
@@ -857,25 +866,13 @@
     <ClInclude Include="..\..\..\fon9\fix\IoFixSender.hpp">
       <Filter>Header Files\fix</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\fon9\fmkt\SymbDy.hpp">
-      <Filter>Header Files\fmkt</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\fon9\fmkt\SymbTree.hpp">
       <Filter>Header Files\fmkt</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\fon9\fmkt\FmktTypes.h">
       <Filter>Header Files\fmkt</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\fon9\fmkt\SymbRef.hpp">
-      <Filter>Header Files\fmkt</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\fon9\fmkt\FmktTypes.hpp">
-      <Filter>Header Files\fmkt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\fon9\fmkt\SymbBS.hpp">
-      <Filter>Header Files\fmkt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\fon9\fmkt\SymbDeal.hpp">
       <Filter>Header Files\fmkt</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\fon9\PackBcd.hpp">
@@ -989,9 +986,6 @@
     <ClInclude Include="..\..\..\fon9\CTools.h">
       <Filter>Header Files\_base\_Tools / Utility</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\fon9\fmkt\SymbHL.hpp">
-      <Filter>Header Files\fmkt</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\fon9\rc\RcSvStreamDecoder.hpp">
       <Filter>Header Files\rc\_SeedVisitorClient</Filter>
     </ClInclude>
@@ -1028,14 +1022,50 @@
     <ClInclude Include="..\..\..\fon9\rc\RcFuncConnServer.hpp">
       <Filter>Header Files\rc</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\fon9\fmkt\SymbDealData.hpp">
-      <Filter>Header Files\fmkt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\fon9\fmkt\SymbBSData.hpp">
-      <Filter>Header Files\fmkt</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\fon9\FlowControlCalc.hpp">
       <Filter>Header Files\_base\_Tools / Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\Symb.hpp">
+      <Filter>Header Files\fmkt\_SymbBase%28Tws,Twf...%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbTws.hpp">
+      <Filter>Header Files\fmkt\_SymbBase%28Tws,Twf...%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbTwf.hpp">
+      <Filter>Header Files\fmkt\_SymbBase%28Tws,Twf...%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbTwa.hpp">
+      <Filter>Header Files\fmkt\_SymbBase%28Tws,Twf...%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbTwsBase.hpp">
+      <Filter>Header Files\fmkt\_SymbBase%28Tws,Twf...%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbTwfBase.hpp">
+      <Filter>Header Files\fmkt\_SymbBase%28Tws,Twf...%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbTwaBase.hpp">
+      <Filter>Header Files\fmkt\_SymbBase%28Tws,Twf...%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbBS.hpp">
+      <Filter>Header Files\fmkt\_SymbData%28BS,Deal...%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbBSData.hpp">
+      <Filter>Header Files\fmkt\_SymbData%28BS,Deal...%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbDeal.hpp">
+      <Filter>Header Files\fmkt\_SymbData%28BS,Deal...%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbDealData.hpp">
+      <Filter>Header Files\fmkt\_SymbData%28BS,Deal...%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbDy.hpp">
+      <Filter>Header Files\fmkt\_SymbData%28BS,Deal...%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbHL.hpp">
+      <Filter>Header Files\fmkt\_SymbData%28BS,Deal...%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbRef.hpp">
+      <Filter>Header Files\fmkt\_SymbData%28BS,Deal...%29</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1489,9 +1519,6 @@
     <ClCompile Include="..\..\..\fon9\framework\IoFactoryDgram.cpp">
       <Filter>Source Files\framework</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\fon9\fmkt\Symb.cpp">
-      <Filter>Source Files\fmkt</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\fon9\fix\FixBase.cpp">
       <Filter>Source Files\fix</Filter>
     </ClCompile>
@@ -1540,19 +1567,7 @@
     <ClCompile Include="..\..\..\fon9\fix\IoFixSender.cpp">
       <Filter>Source Files\fix</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\fon9\fmkt\SymbDy.cpp">
-      <Filter>Source Files\fmkt</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\fon9\fmkt\SymbTree.cpp">
-      <Filter>Source Files\fmkt</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\fon9\fmkt\SymbRef.cpp">
-      <Filter>Source Files\fmkt</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\fon9\fmkt\SymbBS.cpp">
-      <Filter>Source Files\fmkt</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\fon9\fmkt\SymbDeal.cpp">
       <Filter>Source Files\fmkt</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\PkCont.cpp">
@@ -1645,9 +1660,6 @@
     <ClCompile Include="..\..\..\fon9\CTools.c">
       <Filter>Source Files\_base\_Tools / Utility</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\fon9\fmkt\SymbHL.cpp">
-      <Filter>Source Files\fmkt</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\fon9\rc\RcSvStreamDecoder.cpp">
       <Filter>Source Files\rc\_SeedVisitorClient</Filter>
     </ClCompile>
@@ -1692,6 +1704,42 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\FlowControlCalc.cpp">
       <Filter>Source Files\_base\_Tools / Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\Symb.cpp">
+      <Filter>Source Files\fmkt\_SymbBase%28Tws,Twf...%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\SymbTwa.cpp">
+      <Filter>Source Files\fmkt\_SymbBase%28Tws,Twf...%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\SymbTwf.cpp">
+      <Filter>Source Files\fmkt\_SymbBase%28Tws,Twf...%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\SymbTws.cpp">
+      <Filter>Source Files\fmkt\_SymbBase%28Tws,Twf...%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\SymbTwsBase.cpp">
+      <Filter>Source Files\fmkt\_SymbBase%28Tws,Twf...%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\SymbTwaBase.cpp">
+      <Filter>Source Files\fmkt\_SymbBase%28Tws,Twf...%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\SymbTwfBase.cpp">
+      <Filter>Source Files\fmkt\_SymbBase%28Tws,Twf...%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\SymbBS.cpp">
+      <Filter>Source Files\fmkt\_SymbData%28BS,Deal...%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\SymbDeal.cpp">
+      <Filter>Source Files\fmkt\_SymbData%28BS,Deal...%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\SymbDy.cpp">
+      <Filter>Source Files\fmkt\_SymbData%28BS,Deal...%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\SymbHL.cpp">
+      <Filter>Source Files\fmkt\_SymbData%28BS,Deal...%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\SymbRef.cpp">
+      <Filter>Source Files\fmkt\_SymbData%28BS,Deal...%29</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

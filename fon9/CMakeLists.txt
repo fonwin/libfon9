@@ -173,6 +173,13 @@ set(fon9src
  framework/SessionFactoryConfigWithAuthMgr.cpp
 
  fmkt/Symb.cpp
+ fmkt/SymbTws.cpp
+ fmkt/SymbTwsBase.cpp
+ fmkt/SymbTwf.cpp
+ fmkt/SymbTwfBase.cpp
+ fmkt/SymbTwa.cpp
+ fmkt/SymbTwaBase.cpp
+
  fmkt/SymbTree.cpp
  fmkt/SymbDy.cpp
  fmkt/SymbRef.cpp

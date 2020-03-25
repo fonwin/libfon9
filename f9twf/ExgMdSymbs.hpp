@@ -8,6 +8,7 @@
 #include "fon9/fmkt/SymbBS.hpp"
 #include "fon9/fmkt/SymbDeal.hpp"
 #include "fon9/fmkt/SymbHL.hpp"
+#include "fon9/fmkt/SymbTwf.hpp"
 #include "fon9/fmkt/MdRtStream.hpp"
 
 namespace f9twf {
@@ -20,9 +21,9 @@ namespace f9twf {
 /// - 在 DailyClear(tdayYYYYMMDD) 時, 會設定 this->TDayYYYYMMDD_ = tdayYYYYMMDD;
 /// - 在收到夜盤資料時會設定 this->TradingSessionId_ = f9fmkt_TradingSessionId_AfterHour;
 /// - 可使用 this->CheckSetTradingSessionId() 來檢查並設定 TradingSessionId.
-class f9twf_API ExgMdSymb : public fon9::fmkt::Symb {
+class f9twf_API ExgMdSymb : public fon9::fmkt::SymbTwf {
    fon9_NON_COPY_NON_MOVE(ExgMdSymb);
-   using base = fon9::fmkt::Symb;
+   using base = fon9::fmkt::SymbTwf;
 public:
    fon9::fmkt::SymbRef     Ref_;
    fon9::fmkt::SymbBS      BS_;

@@ -102,6 +102,11 @@ inline f9fmkt_TradingSessionId IndexTo_f9fmkt_TradingSessionId(unsigned idx) {
 
 /// 交易時段狀態.
 /// (value & 0x0f) = FIX Tag#340(TradSesStatus:State of the trading session).
+/// 這裡列出可能的狀態, 但實務上不一定會依序, 或確實更新.
+/// - 例: PreClose 狀態, 雖然「台灣證交所」有此狀態, 但系統不一定會提供.
+/// - 必定會異動的情況是:
+///   - 系統換日清盤(Clear).
+///   - 收到交易所送出的異動訊息.
 fon9_ENUM(f9fmkt_TradingSessionSt, uint8_t) {
    f9fmkt_TradingSessionSt_Unknown         = 0x00,
    f9fmkt_TradingSessionSt_RequestRejected = 0x06,
@@ -111,10 +116,18 @@ fon9_ENUM(f9fmkt_TradingSessionSt, uint8_t) {
 
    /// 開盤前可收單.
    f9fmkt_TradingSessionSt_PreOpen         = 0x34,
-   f9fmkt_TradingSessionSt_Open            = 0x42,
-   f9fmkt_TradingSessionSt_Halted          = 0x51,
-   f9fmkt_TradingSessionSt_PreClose        = 0x65,
-   f9fmkt_TradingSessionSt_Closed          = 0x73,
+   /// 不可刪單階段, 通常在開盤前 n 分鐘, 例: 台灣期交所開盤前2分鐘不可刪單.
+   f9fmkt_TradingSessionSt_NonCancelPeriod = 0x44,
+
+   /// 一般盤中.
+   f9fmkt_TradingSessionSt_Open            = 0x82,
+   /// 暫停交易, 可能會恢復, 恢復後的狀態為 f9fmkt_TradingSessionSt_Open.
+   f9fmkt_TradingSessionSt_Halted          = 0xb1,
+   /// 收盤前, 仍可收單, 但交易方式可能與盤中不同.
+   f9fmkt_TradingSessionSt_PreClose        = 0xe5,
+
+   /// 該時段收盤, 或該時段不再恢復交易.
+   f9fmkt_TradingSessionSt_Closed          = 0xf3,
 };
 inline char f9fmkt_TradingSessionSt_ToFixTradSesStatus(f9fmkt_TradingSessionSt st) {
    return (char)((st & 0x0f) + '0');
