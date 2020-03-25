@@ -120,6 +120,7 @@ struct RcSeedVisitorServerNote::UnsubRunnerSP : public intrusive_ptr<SubrReg> {
          rpSubr.reset(); // 等同於: (*subrs)[preg->SubrIndex_].reset();
       }
       opres = preg->Unsubscribe(opSubr, *tab);
+      (void)opres;
       RevBufferList ackbuf{64};
       ToBitv(ackbuf, preg->SubrIndex_);
       PutBigEndian(ackbuf.AllocBuffer(sizeof(SvFuncCode)), SvFuncCode::Unsubscribe);

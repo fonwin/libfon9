@@ -290,18 +290,36 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder {
       DayTime*                      InfoTime_;
       svc::SeedRec*                 SeedRec_;
       seed::SimpleRawWr             RawWr_;
-      DecoderAux(svc::RxSubrData& rx, f9sv_ClientReport& rpt, f9sv_TabSize tabidx)
+
+      static svc::SeedSP* GetSeedArray(f9sv_ClientReport& rpt, svc::SeedSP* seedArray) {
+         // 底下的這些 static_assert(), 是為了確定 C API 可以正確使用:
+         //    struct f9sv_ClientReport 的 const struct f9sv_Seed** SeedArray_;
+         static_assert(sizeof(svc::SeedSP) == sizeof(svc::SeedRec*), "");
+         #ifndef _MSC_VER // MSVC 哪個版本有提供底下的檢查呢?
+            static_assert(fon9_OffsetOfBase(svc::SeedRec, f9sv_Seed) == 0, "");
+         #endif
+         fon9_GCC_WARN_DISABLE("-Wold-style-cast");
+         rpt.SeedArray_ = (const f9sv_Seed**)(seedArray);
+         fon9_GCC_WARN_POP;
+         return seedArray;
+      }
+      DecoderAux(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf, f9sv_TabSize tabidx)
          : Note_{static_cast<RcSvStreamDecoderNote_MdRts*>(rx.SeedRec_->StreamDecoderNote_.get())}
          , InfoTime_{Note_->SelectInfoTime(rx)}
-         , SeedRec_{Note_->GetSeedRec(rx)[tabidx].get()}
+         , SeedRec_{GetSeedArray(rpt, Note_->GetSeedRec(rx))[tabidx].get()}
          , RawWr_{*SeedRec_} {
          assert(dynamic_cast<RcSvStreamDecoderNote_MdRts*>(rx.SeedRec_->StreamDecoderNote_.get()) != nullptr);
          rpt.Seed_ = this->SeedRec_;
          rpt.Tab_ = &rx.SubrRec_->Tree_->LayoutC_.TabArray_[tabidx];
-      }
-      DecoderAux(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf, f9sv_TabSize tabidx)
-         : DecoderAux{rx, rpt, tabidx} {
          BitvToDayTimeOrUnchange(rxbuf, *this->InfoTime_);
+      }
+      DecoderAux(DecoderAux& src, f9sv_ClientReport& rpt, f9sv_TabSize tabidx)
+         : Note_{src.Note_}
+         , InfoTime_{src.InfoTime_}
+         , SeedRec_{static_cast<svc::SeedRec*>(const_cast<f9sv_Seed*>(rpt.SeedArray_[tabidx]))}
+         , RawWr_{*SeedRec_} {
+         rpt.Seed_ = this->SeedRec_;
+         rpt.Tab_ = &(rpt.Tab_ - rpt.Tab_->Named_.Index_)[tabidx];
       }
       template <class DecT>
       void PutDecField(const seed::Field& fld, DecT val) {
@@ -554,7 +572,7 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder {
       this->FldBaseStrikePriceDiv_->PutNumber(decBase.RawWr_, static_cast<seed::FieldNumberT>(fon9::GetDecDivisor(u8StrikePriceDecimalLocator)), 0);
       this->ReportEv(rx, rpt);
 
-      DecoderAux  decRef(rx, rpt, this->TabIdxRef_);
+      DecoderAux  decRef(decBase, rpt, this->TabIdxRef_);
       this->FldPriRef_->BitvToCell(decRef.RawWr_, rxbuf);
       this->FldPriUpLmt_->BitvToCell(decRef.RawWr_, rxbuf);
       this->FldPriDnLmt_->BitvToCell(decRef.RawWr_, rxbuf);

@@ -294,6 +294,11 @@ typedef struct {
    const f9sv_Tab*    Tab_;
    /// 可透過 f9sv_GetField_*() 取得欄位內容.
    const struct f9sv_Seed* Seed_;
+   /// 由事件發行者提供, 其他 seeds 的資料.
+   /// - 例如: 某次「成交明細」異動, 此處可能提供該商品全部的資料,
+   ///   - 此時可用 SeedArray_[bsTabIdx] 取得「上次買賣報價」的內容.
+   ///   - 取得 Tab 的方式: (Tab_ - Tab_->Named_.Index_)[bsTabIdx];
+   const struct f9sv_Seed** SeedArray_;
 } f9sv_ClientReport;
 
 /// 通知收到 SeedVisitor 的: 查詢結果、訂閱結果、訂閱訊息...
