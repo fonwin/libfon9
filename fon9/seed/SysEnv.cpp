@@ -63,8 +63,17 @@ void SysEnv::Initialize(int argc, char** argv) {
    this->Add(argc, argv, cwd);
    fon9_GCC_WARN_POP;
 
-   this->Add(new SysEnvItem{fon9_kCSTR_SysEnvItem_ProcessId, RevPrintTo<std::string>(GetCurrentProcessId())});
-   this->Add(new SysEnvItem{"StartTime", RevPrintTo<std::string>(LocalNow(), FmtTS{"K-T."})});
+   // 在 SysEnv::Initialize() 階段, log file 可能尚未開啟,
+   // 如果使用 RevPrintTo<> 或 RevBufferList 則會觸動 MemBlock 機制 => 啟動 DefaultTimerThread,
+   // 這樣一來 DefaultTimerThread 的啟動訊息會沒有記錄到 log file,
+   // 所以在此使用 RevBufferFixedSize<>;
+   RevBufferFixedSize<128> rbuf;
+   RevPrint(rbuf, GetCurrentProcessId());
+   this->Add(new SysEnvItem{fon9_kCSTR_SysEnvItem_ProcessId, rbuf.ToStrT<std::string>()});
+
+   rbuf.Rewind();
+   RevPrint(rbuf, LocalNow(), FmtTS{"K-T."});
+   this->Add(new SysEnvItem{"StartTime", rbuf.ToStrT<std::string>()});
 }
 
 fon9_API StrView SysEnv_GetEnvValue(const MaTree& root, StrView envItemName, StrView sysEnvName) {

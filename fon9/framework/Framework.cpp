@@ -28,7 +28,7 @@ static void RaiseInitializeError(std::string err) {
    Raise<std::runtime_error>(err);
 }
 
-void Framework::Initialize(int argc, char** argv) {
+int Framework::Initialize(int argc, char** argv) {
    auto workDir = GetCmdArg(argc, argv, CmdArgDef{
       StrView{"WorkDir"}, //Name
       StrView{},          //DefaultValue
@@ -57,6 +57,8 @@ void Framework::Initialize(int argc, char** argv) {
    this->ConfigPath_ = FilePath::AppendPathTail(GetCmdArg(argc, argv, argConfigPath));
    sysEnv->Add(new seed::SysEnvItem(argConfigPath, this->ConfigPath_));
    sysEnv->Initialize(argc, argv);
+   if (int retval = this->OnAfterSysEnvInitialized(*sysEnv))
+      return retval;
 
 #define fon9_kCSTR_SyncerPath    "SyncerPath"
 #define fon9_kCSTR_MaAuthName    "MaAuthName"
@@ -164,6 +166,10 @@ void Framework::Initialize(int argc, char** argv) {
    LogSysEnv(sysEnv->Get(fon9_kCSTR_SysEnvItem_ExecPath).get());
    LogSysEnv(sysEnv->Get(fon9_kCSTR_SysEnvItem_ConfigPath).get());
    LogSysEnv(sysEnv->Get(fon9_kCSTR_HostId).get());
+   return 0;
+}
+int Framework::OnAfterSysEnvInitialized(seed::SysEnv&) {
+   return 0;
 }
 void Framework::OnAfterMaAuth() {
 }

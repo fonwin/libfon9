@@ -7,6 +7,8 @@
 
 namespace fon9 {
 
+namespace seed { class fon9_API SysEnv; }
+
 /// \ingroup Misc
 struct fon9_API Framework {
    std::string          ConfigPath_;
@@ -30,7 +32,10 @@ struct fon9_API Framework {
    ///   - $MaAuthName 預設 "MaAuth": 並建立(開啟) this->ConfigPath_ + $MaAuthName + ".f9dbf" 儲存 this->MaAuth_ 之下的資料表.
    ///   - $MemLock    預設 "N"
    ///   - $MaPlugins  預設 "MaPlugins.f9gv": 儲存 「plugins設定」的檔案, 實際儲存位置為: this->ConfigPath_ + $MaPlugins
-   void Initialize(int argc, char** argv);
+   int Initialize(int argc, char** argv);
+   /// 在 Initialize() 建立 sysEnv->Initialize(argc, argv); 之後呼叫; 預設 do nothing;
+   /// \retval !=0 則中斷 this->Initialize(); 後續應該結束系統.
+   virtual int OnAfterSysEnvInitialized(seed::SysEnv&);
    /// 在 Initialize() 建立 this->MaAuth_ 之後呼叫; 預設 do nothing;
    virtual void OnAfterMaAuth();
    /// 在 Initialize() 建立 this->MaPlugins_ 之後呼叫; 預設 do nothing;
