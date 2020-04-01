@@ -1,15 +1,19 @@
 set(f9tws_src
- ExgMktPkReceiver.cpp
- ExgMktPlayer.cpp
+ ExgMdPkReceiver.cpp
+ ExgMdPlayer.cpp
+ ExgMdIndices.cpp
+ ExgMdSymbs.cpp
+ ExgMdSystem.cpp
+ ExgMdFmt1Handler.cpp
+ ExgMdFmt6Handler.cpp
+ ExgMdReceiverSession.cpp
+ ExgMdReceiverFactory.cpp
 
  ExgTradingLineMgr.cpp
-
  ExgLineFactory.cpp
  ExgLineArgs.cpp
-
  ExgLineTmp.cpp
  ExgLineTmpFactory.cpp
-
  ExgTradingLineFix.cpp
  ExgTradingLineFixFactory.cpp
 )

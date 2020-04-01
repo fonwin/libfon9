@@ -14,6 +14,10 @@ struct SymbTwsBase {
    uint32_t ShUnit_{0};
    char     Padding___[4];
 
+   void DailyClear() {
+      this->ShUnit_ = 0;
+   }
+
    template <class Derived>
    static void AddFields(seed::Fields& flds) {
       AddFields(fon9_OffsetOfBase(Derived, SymbTwsBase), flds);

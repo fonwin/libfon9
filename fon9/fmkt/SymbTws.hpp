@@ -18,6 +18,11 @@ public:
    using base::base;
    ~SymbTws();
 
+   void SessionClear(f9fmkt_TradingSessionId tsesId) {
+      base::SessionClear(tsesId);
+      SymbTwsBase::DailyClear();
+   }
+
    /// base::MakeFields(); and:
    /// - ShUnit
    static seed::Fields MakeFields();

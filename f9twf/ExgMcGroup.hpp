@@ -4,52 +4,26 @@
 #define __f9twf_ExgMcGroup_hpp__
 #include "f9twf/ExgMcChannel.hpp"
 #include "fon9/framework/IoManagerTree.hpp"
+#include "fon9/fmkt/MdSystem.hpp"
 
 namespace f9twf {
 
-/// Sapling 包含:
+/// Sapling 應該包含:
+/// - Symbs (建構時自動加入)
 /// - FpSession: McReceiver, MrRecover, MiSender...
-/// - Symbs
 /// - 根據設定加入 McGroup.
-class f9twf_API ExgMcSystem : public fon9::seed::NamedMaTree {
+class f9twf_API ExgMcSystem : public fon9::fmkt::MdSystem {
    fon9_NON_COPY_NON_MOVE(ExgMcSystem);
-   using base = fon9::seed::NamedMaTree;
+   using base = fon9::fmkt::MdSystem;
 
-   unsigned TDayYYYYMMDD_{};
-   unsigned ClearHHMMSS_{60000};
-
-   static void EmitOnClearTimer(fon9::TimerEntry* timer, fon9::TimeStamp now);
-   using ClearTimer = fon9::DataMemberEmitOnTimer<&ExgMcSystem::EmitOnClearTimer>;
-   ClearTimer ClearTimer_;
-
-   /// 考慮清檔時間 this->ClearHHMMSS_, 例:
-   /// 若清檔時間為 06:00; 則在 [00:00..06:00) 之間啟動, 應視為前一日.
-   unsigned CheckTDayYYYYMMDD(fon9::TimeStamp tm) const;
-
-   bool Startup(unsigned tdayYYYYMMDD);
-
-   void OnParentTreeClear(fon9::seed::Tree& parent) override;
+protected:
+   void OnMdSystemStartup(unsigned tdayYYYYMMDD, const std::string& logPath) override;
+   void OnMdClearTimeChanged() override;
 
 public:
-   const ExgMdSymbsSP         Symbs_;
-   /// 用 Root_ 取得系統參數, 例如: SysEnv_GetLogFileFmtPath();
-   const fon9::seed::MaTreeSP Root_;
+   const ExgMdSymbsSP   Symbs_;
 
-   ExgMcSystem(fon9::seed::MaTreeSP root, std::string name);
-   ~ExgMcSystem();
-
-   unsigned GetTDayYYYYMMDD() const {
-      return this->TDayYYYYMMDD_;
-   }
-   unsigned GetClearHHMMSS() const {
-      return this->ClearHHMMSS_;
-   }
-   /// 設定清檔(檔案換日)時間.
-   void SetClearHHMMSS(unsigned clearHHMMSS);
-
-   /// 啟動(or 換日清檔).
-   /// 已根據設定建立好相關物件後, 呼叫此處啟動.
-   void StartupMcSystem();
+   ExgMcSystem(fon9::seed::MaTreeSP root, std::string name, bool useRtiForRecover);
 };
 using ExgMcSystemSP = fon9::intrusive_ptr<ExgMcSystem>;
 

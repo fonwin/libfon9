@@ -144,9 +144,8 @@ std::string TradingLineLogPathMaker::MakeLogPath(std::string& res, TimeStamp* ou
    if (tday.IsNullOrZero())
       return "|err=Unknown TDay.";
    TimedFileName  logPath(this->LogPathFmt_, TimedFileName::TimeScale::Day);
-   // log 檔名與 TDay 相關, 與 TimeZone 無關,
-   // 所以要扣除 logPath.GetTimeChecker().GetTimeZoneOffset();
-   logPath.RebuildFileName(tday - logPath.GetTimeChecker().GetTimeZoneOffset());
+   // log 檔名與 TDay 相關, 與 TimeZone 無關, 所以要排除 TimeZone;
+   logPath.RebuildFileNameExcludeTimeZone(tday);
    res = FilePath::AppendPathTail(&logPath.GetFileName());
    return std::string{};
 }

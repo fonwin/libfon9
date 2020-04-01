@@ -3,6 +3,7 @@
 #include "f9twf/ExgMdSymbs.hpp"
 #include "f9twf/ExgMdFmtBS.hpp"
 #include "fon9/seed/FieldMaker.hpp"
+#include "fon9/fmkt/SymbTabNames.h"
 
 namespace f9twf {
 
@@ -53,15 +54,13 @@ fon9::seed::LayoutSP ExgMdSymb::MakeLayout() {
    // -----
    return LayoutSP{new LayoutN(
       fon9_MakeField(Symb, SymbId_, "Id"), TreeFlag::AddableRemovable | TreeFlag::Unordered,
-      TabSP{new Tab{fon9::Named{"Base"}, MakeFields(),           TabFlag::NoSapling_NoSeedCommand_Writable}},
-      TabSP{new Tab{fon9::Named{"Ref"},  SymbRef::MakeFields(),  TabFlag::NoSapling_NoSeedCommand_Writable}},
-      TabSP{new Tab{fon9::Named{"BS"},   SymbBS::MakeFields(),   TabFlag::NoSapling_NoSeedCommand_Writable}},
-      TabSP{new Tab{fon9::Named{"Deal"}, SymbDeal::MakeFields(), TabFlag::NoSapling_NoSeedCommand_Writable}},
-      TabSP{new Tab{fon9::Named{"High"}, SymbHigh::MakeFields(), TabFlag::NoSapling_NoSeedCommand_Writable}},
-      TabSP{new Tab{fon9::Named{"Low"},  SymbLow::MakeFields(),  TabFlag::NoSapling_NoSeedCommand_Writable}},
-
-   #define kCSTR_RtTabName "Rt"
-      TabSP{new Tab{fon9::Named{kCSTR_RtTabName}, MdRtStream::MakeFields(), TabFlag::NoSapling_NoSeedCommand_Writable}}
+      TabSP{new Tab{fon9::Named{fon9_kCSTR_TabName_Base},MakeFields(),           TabFlag::NoSapling_NoSeedCommand_Writable}},
+      TabSP{new Tab{fon9::Named{fon9_kCSTR_TabName_Ref}, SymbRef::MakeFields(),  TabFlag::NoSapling_NoSeedCommand_Writable}},
+      TabSP{new Tab{fon9::Named{fon9_kCSTR_TabName_BS},  SymbBS::MakeFields(),   TabFlag::NoSapling_NoSeedCommand_Writable}},
+      TabSP{new Tab{fon9::Named{fon9_kCSTR_TabName_Deal},SymbDeal::MakeFields(), TabFlag::NoSapling_NoSeedCommand_Writable}},
+      TabSP{new Tab{fon9::Named{fon9_kCSTR_TabName_High},SymbHigh::MakeFields(), TabFlag::NoSapling_NoSeedCommand_Writable}},
+      TabSP{new Tab{fon9::Named{fon9_kCSTR_TabName_Low}, SymbLow::MakeFields(),  TabFlag::NoSapling_NoSeedCommand_Writable}},
+      TabSP{new Tab{fon9::Named{fon9_kCSTR_TabName_Rt},  MdRtStream::MakeFields(),TabFlag::NoSapling_NoSeedCommand_Writable}}
    )};
 }
 static const int32_t kExgMdSymbOffset[]{
@@ -90,10 +89,7 @@ void ExgMdSymb::DailyClear(fon9::fmkt::SymbTree& tree, unsigned tdayYYYYMMDD) {
    this->SessionClear(tree, f9fmkt_TradingSessionId_Normal);
 }
 void ExgMdSymb::SessionClear(fon9::fmkt::SymbTree& tree, f9fmkt_TradingSessionId tsesId) {
-   this->TradingSessionSt_ = f9fmkt_TradingSessionSt_Clear;
-   this->TradingSessionId_ = tsesId;
-   this->FlowGroup_ = 0;
-   this->ExgSymbSeq_ = 0;
+   base::SessionClear(tsesId);
    this->Ref_.DailyClear();
    this->Deal_.DailyClear();
    this->BS_.DailyClear();
@@ -106,62 +102,8 @@ void ExgMdSymb::BeforeRemove(fon9::fmkt::SymbTree& tree, unsigned tdayYYYYMMDD) 
    this->MdRtStream_.BeforeRemove(tree, *this);
 }
 //--------------------------------------------------------------------------//
-fon9_MSC_WARN_DISABLE(4355) // 'this': used in base member initializer list
-ExgMdSymbs::ExgMdSymbs(std::string pathFmt)
-   : base{ExgMdSymb::MakeLayout()}
-   , RtTab_{LayoutSP_->GetTab(kCSTR_RtTabName)}
-   , RtInnMgr_(*this, std::move(pathFmt)) {
-}
-fon9_MSC_WARN_POP;
-
-void ExgMdSymbs::DailyClear(unsigned tdayYYYYMMDD) {
-   auto symbs = this->SymbMap_.Lock();
-   this->RtInnMgr_.DailyClear(tdayYYYYMMDD);
-   auto iend = symbs->end();
-   for (auto ibeg = symbs->begin(); ibeg != iend;) {
-      auto& symb = *static_cast<ExgMdSymb*>(ibeg->second.get());
-      if (symb.EndYYYYMMDD_ == 0 || tdayYYYYMMDD <= symb.EndYYYYMMDD_) {
-         symb.DailyClear(*this, tdayYYYYMMDD);
-         ++ibeg;
-      }
-      else { // 移除已下市商品, 移除時需觸發 PodRemoved 事件.
-         symb.BeforeRemove(*this, tdayYYYYMMDD);
-         ibeg = symbs->erase(ibeg);
-      }
-   }
-}
 fon9::fmkt::SymbSP ExgMdSymbs::MakeSymb(const fon9::StrView& symbid) {
    return new ExgMdSymb(symbid, this->RtInnMgr_);
-}
-void ExgMdSymbs::OnTreeOp(fon9::seed::FnTreeOp fnCallback) {
-   using namespace fon9;
-   using namespace fon9::seed;
-   struct SymOp : public PodOp {
-      fon9_NON_COPY_NON_MOVE(SymOp);
-      using base = PodOp;
-      using base::base;
-      OpResult SubscribeStream(SubConn* pSubConn, Tab& tab, StrView args, FnSeedSubr subr) override {
-         if (static_cast<ExgMdSymbs*>(this->Sender_)->RtTab_ != &tab)
-            return SubscribeStreamUnsupported(pSubConn);
-         return static_cast<ExgMdSymb*>(this->Symb_.get())->MdRtStream_.SubscribeStream(
-            this->LockedMap_, pSubConn, tab, *this, args, std::move(subr));
-      }
-      OpResult UnsubscribeStream(SubConn subConn, Tab& tab) override {
-         if (static_cast<ExgMdSymbs*>(this->Sender_)->RtTab_ != &tab)
-            return OpResult::not_supported_subscribe_stream;
-         return static_cast<ExgMdSymb*>(this->Symb_.get())->MdRtStream_.UnsubscribeStream(
-            this->LockedMap_, subConn);
-      }
-   };
-   struct Op : public TreeOp {
-      fon9_NON_COPY_NON_MOVE(Op);
-      using TreeOp::TreeOp;
-      void OnSymbPodOp(const StrView& strKeyText, fmkt::SymbSP&& symb, FnPodOp&& fnCallback, const Locker& lockedMap) override {
-         SymOp op(this->Tree_, strKeyText, std::move(symb), lockedMap);
-         fnCallback(op, &op);
-      }
-   } op{*this};
-   fnCallback(TreeOpResult{this, fon9::seed::OpResult::no_error}, &op);
 }
 //--------------------------------------------------------------------------//
 f9twf_API const void* ExgMdToSnapshotBS(fon9::DayTime mdTime, unsigned mdCount, const ExgMdEntry* mdEntry,

@@ -16,6 +16,13 @@ public:
       Pri   PriRef_{};
       Pri   PriUpLmt_{};
       Pri   PriDnLmt_{};
+
+      bool operator==(const Data& rhs) const {
+         return memcmp(this, &rhs, sizeof(*this)) == 0;
+      }
+      bool operator!=(const Data& rhs) const {
+         return !this->operator==(rhs);
+      }
    };
    Data  Data_;
 

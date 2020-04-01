@@ -64,6 +64,11 @@ public:
    virtual SymbData* FetchSymbData(int tabid);
 
    static seed::Fields MakeFields();
+
+   void SessionClear(f9fmkt_TradingSessionId tsesId) {
+      this->TradingSessionId_ = tsesId;
+      this->TradingSessionSt_ = f9fmkt_TradingSessionSt_Clear;
+   }
 };
 using SymbSP = intrusive_ptr<Symb>;
 

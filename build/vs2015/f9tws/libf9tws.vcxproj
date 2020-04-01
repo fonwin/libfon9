@@ -74,8 +74,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\f9tws\ExgMktPkReceiver.cpp" />
-    <ClCompile Include="..\..\..\f9tws\ExgMktPlayer.cpp" />
+    <ClCompile Include="..\..\..\f9tws\ExgMdFmt1Handler.cpp" />
+    <ClCompile Include="..\..\..\f9tws\ExgMdFmt6Handler.cpp" />
+    <ClCompile Include="..\..\..\f9tws\ExgMdIndices.cpp" />
+    <ClCompile Include="..\..\..\f9tws\ExgMdReceiverFactory.cpp" />
+    <ClCompile Include="..\..\..\f9tws\ExgMdReceiverSession.cpp" />
+    <ClCompile Include="..\..\..\f9tws\ExgMdSymbs.cpp" />
+    <ClCompile Include="..\..\..\f9tws\ExgMdSystem.cpp" />
+    <ClCompile Include="..\..\..\f9tws\ExgMdPkReceiver.cpp" />
+    <ClCompile Include="..\..\..\f9tws\ExgMdPlayer.cpp" />
     <ClCompile Include="..\..\..\f9tws\ExgLineArgs.cpp" />
     <ClCompile Include="..\..\..\f9tws\ExgLineFactory.cpp" />
     <ClCompile Include="..\..\..\f9tws\ExgTradingLineFix.cpp" />
@@ -85,10 +92,18 @@
     <ClCompile Include="..\..\..\f9tws\ExgLineTmpFactory.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\f9tws\ExgMktPkReceiver.hpp" />
+    <ClInclude Include="..\..\..\f9tws\ExgMdFmt1.hpp" />
+    <ClInclude Include="..\..\..\f9tws\ExgMdFmt1Handler.hpp" />
+    <ClInclude Include="..\..\..\f9tws\ExgMdFmt6Handler.hpp" />
+    <ClInclude Include="..\..\..\f9tws\ExgMdIndices.hpp" />
+    <ClInclude Include="..\..\..\f9tws\ExgMdReceiverFactory.hpp" />
+    <ClInclude Include="..\..\..\f9tws\ExgMdReceiverSession.hpp" />
+    <ClInclude Include="..\..\..\f9tws\ExgMdSymbs.hpp" />
+    <ClInclude Include="..\..\..\f9tws\ExgMdSystem.hpp" />
+    <ClInclude Include="..\..\..\f9tws\ExgMdPkReceiver.hpp" />
     <ClInclude Include="..\..\..\f9tws\Config.h" />
-    <ClInclude Include="..\..\..\f9tws\ExgMktFmt.hpp" />
-    <ClInclude Include="..\..\..\f9tws\ExgMktFmt6.hpp" />
+    <ClInclude Include="..\..\..\f9tws\ExgMdFmt.hpp" />
+    <ClInclude Include="..\..\..\f9tws\ExgMdFmt6.hpp" />
     <ClInclude Include="..\..\..\f9tws\ExgLineArgs.hpp" />
     <ClInclude Include="..\..\..\f9tws\ExgLineFactory.hpp" />
     <ClInclude Include="..\..\..\f9tws\ExgTradingLineFix.hpp" />

@@ -18,6 +18,11 @@ public:
    using base::base;
    ~SymbTwf();
 
+   void SessionClear(f9fmkt_TradingSessionId tsesId) {
+      base::SessionClear(tsesId);
+      SymbTwfBase::DailyClear();
+   }
+
    /// base::MakeFields(); and:
    /// - FlowGroup, PriceOrigDiv, StrikePriceDiv, ExgSymbSeq
    /// - EndDate

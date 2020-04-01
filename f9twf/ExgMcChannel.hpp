@@ -5,7 +5,7 @@
 #include "f9twf/ExgMdFmt.hpp"
 #include "f9twf/ExgMrRecover.hpp"
 #include "f9twf/ExgMdSymbs.hpp"
-#include "fon9/FileAppender.hpp"
+#include "fon9/TsAppend.hpp"
 #include "fon9/Subr.hpp"
 #include "fon9/PkCont.hpp"
 #include <deque>
@@ -169,7 +169,8 @@ class f9twf_API ExgMcChannel : private fon9::PkContFeeder {
       if (!this->IsSkipPkLog_ && this->PkLog_) {
          if (this->Pk1stSeq_ == 0)
             this->Pk1stSeq_ = seq;
-         this->PkLog_->Append(pk, pksz);
+         fon9::TsAppend(*this->PkLog_, fon9::UtcNow(), pk, static_cast<uint16_t>(pksz));
+         static_assert(kExgMdMaxPacketSize < 0xfff0, "ExgMdHeadVerLen::BodyLength_ cannot use uint16_t.");
       }
    }
 

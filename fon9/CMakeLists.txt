@@ -37,12 +37,15 @@ set(fon9src
  ConfigParser.cpp
  ConfigUtils.cpp
  DllHandle.cpp
- PkCont.cpp
- PkReceiver.cpp
  ObjSupplier.cpp
  FlowCounter.cpp
  FlowControlCalc.cpp
  CtrlBreakHandler.c
+
+ PkCont.cpp
+ PkReceiver.cpp
+ TsAppend.cpp
+ TsReceiver.cpp
 
  File.cpp
  FilePath.cpp
@@ -191,6 +194,7 @@ set(fon9src
  fmkt/MdRtsTypes.cpp
  fmkt/MdRtStream.cpp
  fmkt/MdRtStreamInn.cpp
+ fmkt/MdSystem.cpp
 
  fix/FixBase.cpp
  fix/FixCompID.cpp

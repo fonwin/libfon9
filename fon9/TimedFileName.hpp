@@ -155,6 +155,15 @@ public:
    /// \retval true 檔名有異動.
    bool RebuildFileName(TimeStamp tm);
 
+   bool RebuildFileNameExcludeTimeZone(TimeStamp tm) {
+      return this->RebuildFileName(tm - this->GetTimeChecker().GetTimeZoneOffset());
+   }
+
+   /// 強制使用 yyyymmdd 重建檔名, 並且與 TimeZone 無關.
+   bool RebuildFileNameYYYYMMDD(unsigned yyyymmdd) {
+      return this->RebuildFileNameExcludeTimeZone(YYYYMMDDHHMMSS_ToTimeStamp(yyyymmdd, 0));
+   }
+
 private:
    bool RebuildFileName();
    FmtPre         FmtFileName_;

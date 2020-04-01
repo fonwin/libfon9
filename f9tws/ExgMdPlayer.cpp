@@ -1,6 +1,6 @@
-﻿// \file f9tws/ExgMktPlayer.cpp
+﻿// \file f9tws/ExgMdPlayer.cpp
 // \author fonwinz@gmail.com
-#include "f9tws/ExgMktPkReceiver.hpp"
+#include "f9tws/ExgMdPkReceiver.hpp"
 #include "fon9/seed/Plugins.hpp"
 #include "fon9/buffer/DcQueueList.hpp"
 #include "fon9/buffer/FwdBufferList.hpp"
@@ -10,19 +10,19 @@
 
 namespace f9tws {
 
-struct ExgMktPlayerArgs {
+struct ExgMdPlayerArgs {
    fon9::File::PosType  RdFrom_{0};
    fon9::File::PosType  RdTo_{0};
    uint64_t             RdBytes_{0};
    fon9::TimeInterval   RdInterval_{fon9::TimeInterval_Millisecond(1)};
    fon9::TimeInterval   AtEnd_;
 };
-class ExgMktPlayer : public ExgMktPkReceiver, public fon9::io::Session {
-   fon9_NON_COPY_NON_MOVE(ExgMktPlayer);
+class ExgMdPlayer : public ExgMdPkReceiver, public fon9::io::Session {
+   fon9_NON_COPY_NON_MOVE(ExgMdPlayer);
    fon9::io::Device*    Device_{nullptr};
    fon9::DcQueueList    RdBuffer_;
    fon9::File           MktFile_;
-   ExgMktPlayerArgs     Args_;
+   ExgMdPlayerArgs      Args_;
    fon9::TimeStamp      LastStTime_;
    uint64_t             SentPkCount_{0};
 
@@ -30,7 +30,7 @@ class ExgMktPlayer : public ExgMktPkReceiver, public fon9::io::Session {
       fon9_NON_COPY_NON_MOVE(NodeSend);
       using base = fon9::BufferNodeVirtual;
       friend class fon9::BufferNode;// for BufferNode::Alloc();
-      ExgMktPlayer* Player_{nullptr};
+      ExgMdPlayer* Player_{nullptr};
       using base::base;
    protected:
       void OnBufferConsumed() override {
@@ -39,13 +39,13 @@ class ExgMktPlayer : public ExgMktPkReceiver, public fon9::io::Session {
       }
       void OnBufferConsumedErr(const fon9::ErrC&) override {}
    public:
-      static void Send(ExgMktPlayer& player, const void* pk, unsigned pksz) {
+      static void Send(ExgMdPlayer& player, const void* pk, unsigned pksz) {
          fon9::BufferList buf;
          fon9::AppendToBuffer(buf, pk, pksz);
          buf.push_back(base::Alloc<NodeSend>(0, StyleFlag{}));
          player.Device_->SendBuffered(std::move(buf));
       }
-      static void Wait(ExgMktPlayer& player) {
+      static void Wait(ExgMdPlayer& player) {
          fon9::BufferList buf;
          NodeSend*        node;
          buf.push_back(node = base::Alloc<NodeSend>(0, StyleFlag{}));
@@ -127,27 +127,27 @@ class ExgMktPlayer : public ExgMktPkReceiver, public fon9::io::Session {
       return true;
    }
 public:
-   ExgMktPlayer(fon9::File&& fd, const ExgMktPlayerArgs& args)
+   ExgMdPlayer(fon9::File&& fd, const ExgMdPlayerArgs& args)
       : MktFile_{std::move(fd)}
       , Args_(args) {
    }
-   ~ExgMktPlayer() {
+   ~ExgMdPlayer() {
    }
 };
 
-class ExgMktPlayerFactory : public fon9::SessionFactory {
-   fon9_NON_COPY_NON_MOVE(ExgMktPlayerFactory);
+class ExgMdPlayerFactory : public fon9::SessionFactory {
+   fon9_NON_COPY_NON_MOVE(ExgMdPlayerFactory);
    using base = fon9::SessionFactory;
 public:
    using base::base;
 
    static fon9::io::SessionSP CreateSession(fon9::StrView cfg, std::string& errReason) {
       // cfg.SessionArgs_: fileName|From=pos|To=pos|Rd=BlockSize|Interval=ti|
-      // TODO: std::string ExgMktPlayer::SessionCommand(Device& dev, StrView cmdln);
+      // TODO: std::string ExgMdPlayer::SessionCommand(Device& dev, StrView cmdln);
       //    - pause
       //    - restart [from to speed]
       fon9::StrView     fn = fon9::StrFetchTrim(cfg, '|');
-      ExgMktPlayerArgs  args;
+      ExgMdPlayerArgs   args;
       fon9::StrView     tag, value;
       while (fon9::StrFetchTagValue(cfg, tag, value)) {
          if (tag == "From")
@@ -161,17 +161,17 @@ public:
          else if (tag == "AtEnd")
             args.AtEnd_ = fon9::StrTo(value, args.AtEnd_);
          else {
-            errReason = fon9::RevPrintTo<std::string>("Create:TwsExgMktPlayer|err=Unknown tag: ", tag);
+            errReason = fon9::RevPrintTo<std::string>("Create:TwsExgMdPlayer|err=Unknown tag: ", tag);
             return fon9::io::SessionSP{};
          }
       }
       fon9::File fd;
       auto       res = fd.Open(fn.ToString(), fon9::FileMode::Read);
       if (!res) {
-         errReason = fon9::RevPrintTo<std::string>("Create:TwsExgMktPlayer|fname=", fd.GetOpenName(), '|', res);
+         errReason = fon9::RevPrintTo<std::string>("Create:TwsExgMdPlayer|fname=", fd.GetOpenName(), '|', res);
          return fon9::io::SessionSP{};
       }
-      return fon9::io::SessionSP{new ExgMktPlayer{std::move(fd), args}};
+      return fon9::io::SessionSP{new ExgMdPlayer{std::move(fd), args}};
    }
    fon9::io::SessionSP CreateSession(fon9::IoManager& mgr, const fon9::IoConfigItem& cfg, std::string& errReason) {
       (void)mgr;
@@ -184,7 +184,7 @@ public:
       }
       fon9::io::SessionSP OnDevice_Accepted(fon9::io::DeviceServer&) override {
          std::string errReason;
-         return ExgMktPlayerFactory::CreateSession(&this->Config_, errReason);
+         return ExgMdPlayerFactory::CreateSession(&this->Config_, errReason);
       }
    };
    fon9::io::SessionServerSP CreateSessionServer(fon9::IoManager& mgr, const fon9::IoConfigItem& cfg, std::string& errReason) {
@@ -193,14 +193,14 @@ public:
    }
 };
 
-static bool TwsExgMktPlayer_Start(fon9::seed::PluginsHolder& holder, fon9::StrView args) {
-   (void)args; // plugins args: "Name=ExgMktPlayer|AddTo=FpSession"
+static bool TwsExgMdPlayer_Start(fon9::seed::PluginsHolder& holder, fon9::StrView args) {
+   (void)args; // plugins args: "Name=ExgMdPlayer|AddTo=FpSession"
    struct ArgsParser : public fon9::SessionFactoryConfigParser {
       using base = fon9::SessionFactoryConfigParser;
-      ArgsParser() : base{"TwsExgMktPlayer"} {
+      ArgsParser() : base{"TwsExgMdPlayer"} {
       }
       fon9::SessionFactorySP CreateSessionFactory() override {
-         return fon9::SessionFactorySP{new ExgMktPlayerFactory{this->Name_}};
+         return fon9::SessionFactorySP{new ExgMdPlayerFactory{this->Name_}};
       }
    };
    return ArgsParser{}.Parse(holder, args);
@@ -208,6 +208,6 @@ static bool TwsExgMktPlayer_Start(fon9::seed::PluginsHolder& holder, fon9::StrVi
 
 } // namespaces
 
-extern "C" f9tws_API fon9::seed::PluginsDesc f9p_TwsExgMktPlayer;
-fon9::seed::PluginsDesc f9p_TwsExgMktPlayer{"", &f9tws::TwsExgMktPlayer_Start, nullptr, nullptr,};
-static fon9::seed::PluginsPark f9pRegister{"TwsExgMktPlayer", &f9p_TwsExgMktPlayer};
+extern "C" f9tws_API fon9::seed::PluginsDesc f9p_TwsExgMdPlayer;
+fon9::seed::PluginsDesc f9p_TwsExgMdPlayer{"", &f9tws::TwsExgMdPlayer_Start, nullptr, nullptr,};
+static fon9::seed::PluginsPark f9pRegister{"TwsExgMdPlayer", &f9p_TwsExgMdPlayer};

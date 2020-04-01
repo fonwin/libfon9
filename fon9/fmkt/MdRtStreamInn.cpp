@@ -7,22 +7,28 @@
 
 namespace fon9 { namespace fmkt {
 
-MdRtStreamInnMgr::MdRtStreamInnMgr(SymbTree& symbTree, std::string pathFmt)
-   : RecoverThread_{new TimerThread{RevPrintTo<std::string>("MdRtsInnMgr:", pathFmt)}}
+MdRtStreamInnMgr::MdRtStreamInnMgr(SymbTree& symbTree, std::string rtiPathFmt)
+   : RecoverThread_(rtiPathFmt.empty()
+                    ? nullptr
+                    : new TimerThread{RevPrintTo<std::string>("MdRtsInnMgr:", rtiPathFmt)})
    , SymbTree_(symbTree)
-   , PathFmt_{std::move(pathFmt)} {
+   , RtiPathFmt_{std::move(rtiPathFmt)} {
 }
 MdRtStreamInnMgr::~MdRtStreamInnMgr() {
-   this->RecoverThread_->WaitForEndNow();
+   if (this->RecoverThread_)
+      this->RecoverThread_->WaitForEndNow();
 }
-void MdRtStreamInnMgr::DailyClear(unsigned tdayYYYYMMDD) {
+void MdRtStreamInnMgr::DailyClear(const unsigned tdayYYYYMMDD) {
    assert(this->TDayYYYYMMDD_ < tdayYYYYMMDD);
    this->TDayYYYYMMDD_ = tdayYYYYMMDD;
-   TimedFileName logfn(this->PathFmt_, TimedFileName::TimeScale::Day);
-   // 檔名與 TDay 相關, 與 TimeZone 無關, 所以要扣除 logfn.GetTimeChecker().GetTimeZoneOffset();
-   logfn.RebuildFileName(YYYYMMDDHHMMSS_ToTimeStamp(tdayYYYYMMDD, 0) - logfn.GetTimeChecker().GetTimeZoneOffset());
+   if (this->RtiPathFmt_.empty())
+      return;
+
+   TimedFileName logfn(this->RtiPathFmt_, TimedFileName::TimeScale::Day);
+   logfn.RebuildFileNameYYYYMMDD(tdayYYYYMMDD);
+
    const std::string    logPath = logfn.GetFileName();
-   InnApf::OpenArgs     oargs{logPath + ".rt"};
+   InnApf::OpenArgs     oargs{logPath + ".rti"};
    InnStream::OpenArgs  sargs{InnRoomType{}};
    InnApf::OpenResult   res{};
    sargs.ExpectedRoomSize_[0] = 1024 * 2;
@@ -48,7 +54,7 @@ InnApf::OpenResult MdRtStreamInnMgr::RtOpen(InnApf::StreamRW& rw, const Symb& sy
 static inline bool IsStartTime(DayTime infoTime, DayTime reqTime, DayTime dailyClearTime) {
    if (infoTime.IsNull())
       return false;
-   if (infoTime < dailyClearTime) {   // 資料時間已跨日.
+   if (infoTime < dailyClearTime) { // 資料時間已跨日.
       if (reqTime < dailyClearTime) // 回補要求,也是跨日.
          return infoTime >= reqTime;
       // 回補要求沒有跨日.

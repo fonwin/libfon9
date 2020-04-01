@@ -30,42 +30,63 @@
     <Filter Include="Header Files\_TradingLine\_TMP">
       <UniqueIdentifier>{a466f2ba-d12b-4aab-bf29-853106c2f1b8}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\_ExgLine">
+    <Filter Include="Source Files\_TradingLine">
       <UniqueIdentifier>{2cffbc2b-52e7-4c0c-8369-0a612c5aacf8}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\_ExgLine\_FIX">
+    <Filter Include="Source Files\_TradingLine\_FIX">
       <UniqueIdentifier>{5fa14701-0bdd-4ee6-9605-c519f9feb664}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\_ExgLine\_TMP">
+    <Filter Include="Source Files\_TradingLine\_TMP">
       <UniqueIdentifier>{c941393b-2e42-446b-b284-db4cf9327705}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\f9tws\ExgMktPlayer.cpp">
-      <Filter>Source Files\_MktData</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\f9tws\ExgTradingLineMgr.cpp">
-      <Filter>Source Files\_ExgLine</Filter>
+      <Filter>Source Files\_TradingLine</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\f9tws\ExgTradingLineFix.cpp">
-      <Filter>Source Files\_ExgLine\_FIX</Filter>
+      <Filter>Source Files\_TradingLine\_FIX</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\f9tws\ExgTradingLineFixFactory.cpp">
-      <Filter>Source Files\_ExgLine\_FIX</Filter>
+      <Filter>Source Files\_TradingLine\_FIX</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\f9tws\ExgLineArgs.cpp">
-      <Filter>Source Files\_ExgLine</Filter>
+      <Filter>Source Files\_TradingLine</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\f9tws\ExgLineTmp.cpp">
-      <Filter>Source Files\_ExgLine\_TMP</Filter>
+      <Filter>Source Files\_TradingLine\_TMP</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\f9tws\ExgLineTmpFactory.cpp">
-      <Filter>Source Files\_ExgLine\_TMP</Filter>
+      <Filter>Source Files\_TradingLine\_TMP</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\f9tws\ExgLineFactory.cpp">
-      <Filter>Source Files\_ExgLine</Filter>
+      <Filter>Source Files\_TradingLine</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\f9tws\ExgMktPkReceiver.cpp">
+    <ClCompile Include="..\..\..\f9tws\ExgMdSymbs.cpp">
+      <Filter>Source Files\_MktData</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\f9tws\ExgMdIndices.cpp">
+      <Filter>Source Files\_MktData</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\f9tws\ExgMdSystem.cpp">
+      <Filter>Source Files\_MktData</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\f9tws\ExgMdReceiverFactory.cpp">
+      <Filter>Source Files\_MktData</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\f9tws\ExgMdReceiverSession.cpp">
+      <Filter>Source Files\_MktData</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\f9tws\ExgMdPkReceiver.cpp">
+      <Filter>Source Files\_MktData</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\f9tws\ExgMdPlayer.cpp">
+      <Filter>Source Files\_MktData</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\f9tws\ExgMdFmt6Handler.cpp">
+      <Filter>Source Files\_MktData</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\f9tws\ExgMdFmt1Handler.cpp">
       <Filter>Source Files\_MktData</Filter>
     </ClCompile>
   </ItemGroup>
@@ -78,12 +99,6 @@
     </ClInclude>
     <ClInclude Include="..\..\..\f9tws\ExgTypes.hpp">
       <Filter>Header Files\_base</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\f9tws\ExgMktFmt.hpp">
-      <Filter>Header Files\_MktData</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\f9tws\ExgMktFmt6.hpp">
-      <Filter>Header Files\_MktData</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\f9tws\ExgTradingLineFix.hpp">
       <Filter>Header Files\_TradingLine\_FIX</Filter>
@@ -103,7 +118,37 @@
     <ClInclude Include="..\..\..\f9tws\ExgLineFactory.hpp">
       <Filter>Header Files\_TradingLine</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\f9tws\ExgMktPkReceiver.hpp">
+    <ClInclude Include="..\..\..\f9tws\ExgMdSymbs.hpp">
+      <Filter>Header Files\_MktData</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\f9tws\ExgMdIndices.hpp">
+      <Filter>Header Files\_MktData</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\f9tws\ExgMdSystem.hpp">
+      <Filter>Header Files\_MktData</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\f9tws\ExgMdReceiverFactory.hpp">
+      <Filter>Header Files\_MktData</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\f9tws\ExgMdReceiverSession.hpp">
+      <Filter>Header Files\_MktData</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\f9tws\ExgMdFmt.hpp">
+      <Filter>Header Files\_MktData</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\f9tws\ExgMdFmt6.hpp">
+      <Filter>Header Files\_MktData</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\f9tws\ExgMdPkReceiver.hpp">
+      <Filter>Header Files\_MktData</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\f9tws\ExgMdFmt6Handler.hpp">
+      <Filter>Header Files\_MktData</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\f9tws\ExgMdFmt1.hpp">
+      <Filter>Header Files\_MktData</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\f9tws\ExgMdFmt1Handler.hpp">
       <Filter>Header Files\_MktData</Filter>
     </ClInclude>
   </ItemGroup>

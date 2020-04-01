@@ -56,6 +56,8 @@ namespace fon9
 
       public override string ToString()
       {
+         if (this.Begin_ == IntPtr.Zero)
+            return string.Empty;
          // 適用於 .NET Core 3.1 3.0 2.2 2.1 2.0 1.1; .NET Standard 2.1;
          // .NET Framework 4.6 未支援
          // return Marshal.PtrToStringUTF8(this.Begin_, this.Length);

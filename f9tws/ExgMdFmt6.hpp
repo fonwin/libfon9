@@ -1,15 +1,25 @@
-﻿// \file f9tws/ExgMktFmt6.hpp
+﻿// \file f9tws/ExgMdFmt6.hpp
 // \author fonwinz@gmail.com
-#ifndef __f9tws_ExgMktFmt6_hpp__
-#define __f9tws_ExgMktFmt6_hpp__
-#include "f9tws/ExgMktFmt.hpp"
+#ifndef __f9tws_ExgMdFmt6_hpp__
+#define __f9tws_ExgMdFmt6_hpp__
+#include "f9tws/ExgMdFmt.hpp"
+#include "fon9/fmkt/SymbBSData.hpp"
 
 namespace f9tws {
 fon9_PACK(1);
 
-struct ExgMktFmt6v3 : public ExgMktHeader {
+struct ExgMdFmt6v4 : public ExgMdHeader {
    StkNo             StkNo_;
-   TimeHHMMSSu6      Time_;
+   ExgMdHHMMSSu6     Time_;
+
+   /// 股票代號 "000000" 且撮合時間 "999999999999",
+   /// 表示普通股交易末筆即時行情資料已送出.
+   /// 這裡僅檢查 Time_.HH_ == 0x99;
+   /// 因為 HH_ == 0x99 為不合理的時間, 在正常交易訊息, 不可能發生.
+   bool IsLastDealSent() const {
+      return this->Time_.HH_[0] == 0x99;
+   }
+                                  
    /// - Bit 7 成交
    ///   - 0︰無成交價、成交量，不傳送
    ///   - 1︰有成交價、成交量，而且傳送
@@ -33,22 +43,38 @@ struct ExgMktFmt6v3 : public ExgMktHeader {
    /// - Bit 7 試算狀態註記
    ///   - 若 Bit 7 為 1，表示目前即時行情:PQs_[] 為試算階段狀態；
    ///   - 若 Bit 7 為 0，表示目前為一般揭示狀態，此時 Bit 6 與 Bit 5 註記資料無任何意義。
-   /// - Bit 6 試算後延後開盤註記  0：否; 1：是
-   /// - Bit 5 試算後延後收盤註記  0：否; 1：是
-   /// - Bit 4 撮合方式註記       0：集合競價; 1：逐筆撮合
-   /// - Bit 3 開盤註記           0：否; 1：是
-   /// - Bit 2 收盤註記           0：否; 1：是
+   /// - Bit 6 試算後,延後開盤註記  0：否; 1：是
+   /// - Bit 5 試算後,延後收盤註記  0：否; 1：是
+   /// - Bit 4 撮合方式註記        0：集合競價; 1：逐筆撮合
+   /// - Bit 3 開盤註記            0：否; 1：是
+   /// - Bit 2 收盤註記            0：否; 1：是
    /// - Bit 1-0 保留
    fon9::byte        StatusMask_;
    /// 累計成交數量.
    fon9::PackBcd<8>  TotalQty_;
    /// 根據 ItemMask_ 決定 PQs_[] 有多少元素及其內涵.
-   ExgMktPriQty      PQs_[1];
+   ExgMdPriQty       PQs_[1];
 };
-static_assert(sizeof(ExgMktFmt6v3) == sizeof(ExgMktHeader) + sizeof(StkNo) + sizeof(TimeHHMMSSu6) + 3
-              + sizeof(ExgMktFmt6v3::TotalQty_) + +sizeof(ExgMktFmt6v3::PQs_),
-              "ExgMktFmt6v3 沒有 pack?");
+static_assert(sizeof(ExgMdFmt6v4)
+              == sizeof(ExgMdHeader) + sizeof(StkNo) + sizeof(ExgMdHHMMSSu6) + sizeof(ExgMdTail)
+               + sizeof(ExgMdFmt6v4::TotalQty_) + sizeof(ExgMdFmt6v4::PQs_),
+              "ExgMdFmt6v4 沒有 pack?");
 
 fon9_PACK_POP;
+
+//--------------------------------------------------------------------------//
+inline const ExgMdPriQty* AssignBS(fon9::fmkt::PriQty* dst, const ExgMdPriQty* pqs, int count) {
+   if (count > fon9::fmkt::SymbBSData::kBSCount)
+      count = fon9::fmkt::SymbBSData::kBSCount;
+   for (int L = 0; L < count; ++L) {
+      pqs->AssignTo(*dst);
+      ++dst;
+      ++pqs;
+   }
+   if (count < fon9::fmkt::SymbBSData::kBSCount)
+      memset(dst, 0, sizeof(*dst) * (fon9::fmkt::SymbBSData::kBSCount - count));
+   return pqs;
+}
+
 } // namespaces
-#endif//__f9tws_ExgMktFmt6_hpp__
+#endif//__f9tws_ExgMdFmt6_hpp__

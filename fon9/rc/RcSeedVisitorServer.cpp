@@ -133,8 +133,8 @@ void RcSeedVisitorServerNote::OnSessionLinkBroken() {
    for (SubrRegSP& preg : subrs) {
       if (preg) {
          preg->SvFunc_ = SvFuncCode::Empty; // 設定成: 因 LinkBroken 的取消註冊.
-         seed::Tree* tree = preg->Tree_.get();
-         tree->OnTreeOp(UnsubRunnerSP{std::move(preg)});
+         if (seed::Tree* tree = preg->Tree_.get())
+            tree->OnTreeOp(UnsubRunnerSP{std::move(preg)});
       }
    }
    this->Visitor_->Device_.reset();
@@ -293,7 +293,7 @@ struct RcSeedVisitorServerNote::TicketRunnerSubscribe : public seed::TicketRunne
       }
       rpSubr.reset(); // 等同於: (*subrs)[this->ReqKey_.SubrIndex_].reset();
       // 訂閱失敗 & 立即回覆的 tab(seeds) 筆數=0.
-      this->OnError(opErrC);
+      ToBitv(this->AckBuffer_, opErrC);
       RevPutBitv(this->AckBuffer_, fon9_BitvV_Number0);
    }
    void OnFoundTree(seed::TreeOp& opTree) override {
@@ -348,6 +348,9 @@ struct RcSeedVisitorServerNote::TicketRunnerSubscribe : public seed::TicketRunne
    }
    void OnError(seed::OpResult res) override {
       ToBitv(this->AckBuffer_, res);
+      auto subrs = this->SessionNote().SubrList_.Lock();
+      if (this->ReqKey_.SubrIndex_ < subrs->size())
+         (*subrs)[this->ReqKey_.SubrIndex_].reset();
    }
 };
 void RcSeedVisitorServerNote::OnRecvUnsubscribe(RcSession& ses, f9sv_SubrIndex usidx) {

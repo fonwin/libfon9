@@ -34,6 +34,11 @@ struct SymbTwfBase {
 
    char  Padding__[1];
 
+   void DailyClear() {
+      this->FlowGroup_ = 0;
+      this->ExgSymbSeq_ = 0;
+   }
+
    template <class Derived>
    static void AddFields(seed::Fields& flds) {
       AddFields(fon9_OffsetOfBase(Derived, SymbTwfBase), flds);

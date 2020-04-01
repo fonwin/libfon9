@@ -12,17 +12,11 @@
     <Filter Include="Header Files\_MktData">
       <UniqueIdentifier>{64907ac4-0eeb-4651-a4d1-89cd76f6c5e5}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\_ExgLine">
-      <UniqueIdentifier>{a2566d77-dcef-45c9-b030-5c8cda37a1f4}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\_base">
       <UniqueIdentifier>{ea8a7298-6266-491a-b3ea-2ee5fc357d31}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\_MktData">
       <UniqueIdentifier>{e068fb7f-39dd-4318-b568-95e1e9282162}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\_ExgLine">
-      <UniqueIdentifier>{14e36a26-dc54-446f-a34e-24b38cc1bddf}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\_base">
       <UniqueIdentifier>{5e5cf4db-dc62-47c2-b743-b3db27faa498}</UniqueIdentifier>
@@ -33,6 +27,12 @@
     <Filter Include="Source Files\_MktData\_ToRts">
       <UniqueIdentifier>{890ed6a2-b3b5-4938-b3e0-7aed5bdaf115}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\_TradingLine">
+      <UniqueIdentifier>{14e36a26-dc54-446f-a34e-24b38cc1bddf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\_TradingLine">
+      <UniqueIdentifier>{a2566d77-dcef-45c9-b030-5c8cda37a1f4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\..\f9twf\CMakeLists.txt" />
@@ -42,43 +42,43 @@
       <Filter>Header Files\_base</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\f9twf\ExgLineTmpArgs.hpp">
-      <Filter>Header Files\_ExgLine</Filter>
+      <Filter>Header Files\_TradingLine</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\f9twf\ExgLineTmpFactory.hpp">
-      <Filter>Header Files\_ExgLine</Filter>
+      <Filter>Header Files\_TradingLine</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\f9twf\ExgLineTmpLog.hpp">
-      <Filter>Header Files\_ExgLine</Filter>
+      <Filter>Header Files\_TradingLine</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\f9twf\ExgLineTmpSession.hpp">
-      <Filter>Header Files\_ExgLine</Filter>
+      <Filter>Header Files\_TradingLine</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\f9twf\ExgMapSessionDn.hpp">
-      <Filter>Header Files\_ExgLine</Filter>
+      <Filter>Header Files\_TradingLine</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\f9twf\ExgMapMgr.hpp">
-      <Filter>Header Files\_ExgLine</Filter>
+      <Filter>Header Files\_TradingLine</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\f9twf\ExgMapFcmId.hpp">
-      <Filter>Header Files\_ExgLine</Filter>
+      <Filter>Header Files\_TradingLine</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\f9twf\ExgTmpLinkSys.hpp">
-      <Filter>Header Files\_ExgLine</Filter>
+      <Filter>Header Files\_TradingLine</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\f9twf\ExgTmpTradingR1.hpp">
-      <Filter>Header Files\_ExgLine</Filter>
+      <Filter>Header Files\_TradingLine</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\f9twf\ExgTmpTradingR7.hpp">
-      <Filter>Header Files\_ExgLine</Filter>
+      <Filter>Header Files\_TradingLine</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\f9twf\ExgTmpTradingR9.hpp">
-      <Filter>Header Files\_ExgLine</Filter>
+      <Filter>Header Files\_TradingLine</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\f9twf\ExgTmpTypes.hpp">
-      <Filter>Header Files\_ExgLine</Filter>
+      <Filter>Header Files\_TradingLine</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\f9twf\ExgTradingLineMgr.hpp">
-      <Filter>Header Files\_ExgLine</Filter>
+      <Filter>Header Files\_TradingLine</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\f9twf\ExgTypes.hpp">
       <Filter>Header Files\_base</Filter>
@@ -143,31 +143,31 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\f9twf\ExgLineTmpArgs.cpp">
-      <Filter>Source Files\_ExgLine</Filter>
+      <Filter>Source Files\_TradingLine</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\f9twf\ExgLineTmpFactory.cpp">
-      <Filter>Source Files\_ExgLine</Filter>
+      <Filter>Source Files\_TradingLine</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\f9twf\ExgLineTmpLog.cpp">
-      <Filter>Source Files\_ExgLine</Filter>
+      <Filter>Source Files\_TradingLine</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\f9twf\ExgLineTmpSession.cpp">
-      <Filter>Source Files\_ExgLine</Filter>
+      <Filter>Source Files\_TradingLine</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\f9twf\ExgMapFcmId.cpp">
-      <Filter>Source Files\_ExgLine</Filter>
+      <Filter>Source Files\_TradingLine</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\f9twf\ExgMapMgr.cpp">
-      <Filter>Source Files\_ExgLine</Filter>
+      <Filter>Source Files\_TradingLine</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\f9twf\ExgMapSessionDn.cpp">
-      <Filter>Source Files\_ExgLine</Filter>
+      <Filter>Source Files\_TradingLine</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\f9twf\ExgTmpTypes.cpp">
-      <Filter>Source Files\_ExgLine</Filter>
+      <Filter>Source Files\_TradingLine</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\f9twf\ExgTradingLineMgr.cpp">
-      <Filter>Source Files\_ExgLine</Filter>
+      <Filter>Source Files\_TradingLine</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\f9twf\ExgMcChannel.cpp">
       <Filter>Source Files\_MktData</Filter>

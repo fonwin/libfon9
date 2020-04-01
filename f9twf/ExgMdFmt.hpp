@@ -6,14 +6,14 @@
 #ifndef __f9twf_ExgMdFmt_hpp__
 #define __f9twf_ExgMdFmt_hpp__
 #include "f9twf/Config.h"
-#include "fon9/PackBcd.hpp"
 #include "fon9/CharAry.hpp"
-#include "fon9/TimeInterval.hpp"
 #include "fon9/fmkt/FmktTypes.hpp"
+#include "fon9/fmkt/TwExgMdTime.hpp"
 
 namespace f9twf {
 fon9_PACK(1);
 
+using ExgMdHHMMSSu6 = fon9::fmkt::TwExgMdTimeHHMMSSu6;
 using ExgMdProdId20 = fon9::CharAry<20>;
 using ExgMdProdId10 = fon9::CharAry<10>;
 /// 逐筆行情: 商品行情訊息流水序號.
@@ -56,28 +56,6 @@ struct ExgMdSPrice {
       ExgMdPriceFrom(this->Value_, src, origDiv);
    }
 };
-
-fon9_MSC_WARN_DISABLE(4201); // nonstandard extension used: nameless struct/union
-/// 台灣期交所行情時間格式.
-/// HHMMSSuuuuuu 後6位為 us.
-union ExgMdHHMMSSu6 {
-   fon9::PackBcd<12>    HHMMSSu6_;
-   fon9::PackBcd<6>     HHMMSS_;
-   struct {
-      fon9::PackBcd<2>  HH_;
-      fon9::PackBcd<2>  MM_;
-      fon9::PackBcd<2>  SS_;
-      fon9::PackBcd<6>  U6_;
-   };
-   fon9::DayTime ToDayTime() const {
-      fon9::DayTime retval = fon9::TimeInterval_HHMMSS(
-         fon9::PackBcdTo<uint8_t>(this->HH_),
-         fon9::PackBcdTo<uint8_t>(this->MM_),
-         fon9::PackBcdTo<uint8_t>(this->SS_));
-      return retval + fon9::TimeInterval_Microsecond(fon9::PackBcdTo<uint32_t>(this->U6_));
-   }
-};
-fon9_MSC_WARN_POP;
 
 /// 台灣期交所行情的封包框架:
 /// - Head
@@ -196,10 +174,11 @@ struct ExgMdMessageDispatcher {
 
    void Reg(char tx, char mg, uint8_t ver, HandlerT handler) {
       assert(AlNumToIdx(tx) <= kExgMdMaxTx && AlNumToIdx(mg) <= kExgMdMaxMg && ver <= kExgMdMaxVer);
-      HandlerMap_[AlNumToIdx(tx)][AlNumToIdx(mg)][ver] = handler;
+      HandlerMap_[AlNumToIdx(tx)][AlNumToIdx(mg)][ver] = std::move(handler);
    }
+
    template <class HeadT>
-   const HandlerT& Get(const HeadT& pk) const {
+   HandlerT& Get(const HeadT& pk) {
       assert(AlNumToIdx(pk.TransmissionCode_) <= kExgMdMaxTx
              && AlNumToIdx(pk.MessageKind_) <= kExgMdMaxMg
              && fon9::PackBcdTo<uint8_t>(pk.VersionNo_) <= kExgMdMaxVer);
@@ -209,8 +188,8 @@ struct ExgMdMessageDispatcher {
          [fon9::PackBcdTo<uint8_t>(pk.VersionNo_)];
    }
    template <class HeadT>
-   HandlerT& Get(const HeadT& pk) {
-      return *const_cast<HandlerT*>(&const_cast<const ExgMdMessageDispatcher*>(this)->Get(pk));
+   const HandlerT& Get(const HeadT& pk) const {
+      return const_cast<ExgMdMessageDispatcher*>(this)->Get(pk);
    }
 };
 

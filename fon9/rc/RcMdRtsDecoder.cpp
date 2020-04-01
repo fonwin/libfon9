@@ -4,6 +4,7 @@
 #include "fon9/rc/RcMdRtsDecoder.h"
 #include "fon9/fmkt/SymbDealData.hpp"
 #include "fon9/fmkt/SymbBSData.hpp"
+#include "fon9/fmkt/SymbTabNames.h"
 #include "fon9/seed/RawWr.hpp"
 #include "fon9/BitvDecode.hpp"
 
@@ -12,12 +13,16 @@ namespace fon9 { namespace rc {
 #define STATIC_ASSERT_CHECK_ENUM(EnumTypeName, ValueName) \
    static_assert(cast_to_underlying(f9sv_##EnumTypeName##_##ValueName) == cast_to_underlying(fmkt::EnumTypeName::ValueName), "");
 // -----
-STATIC_ASSERT_CHECK_ENUM(DealFlag, Calculated);
+STATIC_ASSERT_CHECK_ENUM(DealFlag, Calculated); // f9sv_DealFlag_Calculated == fon9::fmkt::DealFlag::Calculated;
 STATIC_ASSERT_CHECK_ENUM(DealFlag, DealTimeChanged);
 STATIC_ASSERT_CHECK_ENUM(DealFlag, DealBuyCntChanged);
 STATIC_ASSERT_CHECK_ENUM(DealFlag, DealSellCntChanged);
 STATIC_ASSERT_CHECK_ENUM(DealFlag, TotalQtyLost);
-STATIC_ASSERT_CHECK_ENUM(BSFlag, Calculated);
+STATIC_ASSERT_CHECK_ENUM(DealFlag, HeldMatchMask);
+STATIC_ASSERT_CHECK_ENUM(DealFlag, HeldMatchTrendRise);
+STATIC_ASSERT_CHECK_ENUM(DealFlag, HeldMatchTrendFall);
+
+STATIC_ASSERT_CHECK_ENUM(BSFlag, Calculated); // f9sv_BSFlag_Calculated == fon9::fmkt::BSFlag::Calculated;
 STATIC_ASSERT_CHECK_ENUM(BSFlag, OrderBuy);
 STATIC_ASSERT_CHECK_ENUM(BSFlag, OrderSell);
 STATIC_ASSERT_CHECK_ENUM(BSFlag, DerivedBuy);
@@ -88,6 +93,7 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder {
    const seed::Field*   FldBaseMarket_;
    const seed::Field*   FldBaseFlowGroup_;
    const seed::Field*   FldBaseStrikePriceDiv_;
+   const seed::Field*   FldBaseShUnit_;
 
    const seed::Field*   FldPriRef_;
    const seed::Field*   FldPriUpLmt_;
@@ -116,7 +122,7 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder {
 
    RcSvStreamDecoder_MdRts(svc::TreeRec& tree) {
       // 配合 MdRts 的編碼, 從 tree 取出必要欄位(tab + field);
-      auto* tab = GetTabOrRaise(*tree.Layout_, "Deal");
+      auto* tab = GetTabOrRaise(*tree.Layout_, fon9_kCSTR_TabName_Deal);
       this->TabIdxDeal_      = static_cast<f9sv_TabSize>(tab->GetIndex());
       this->FldDealInfoTime_ = GetFieldOrRaise(*tab, "InfoTime");
       this->FldDealTime_     = GetFieldOrRaise(*tab, "DealTime");
@@ -127,7 +133,7 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder {
       this->FldDealSellCnt_  = GetFieldOrRaise(*tab, "DealSellCnt");
       this->FldDealFlags_    = GetFieldOrRaise(*tab, "Flags");
 
-      tab = GetTabOrRaise(*tree.Layout_, "BS");
+      tab = GetTabOrRaise(*tree.Layout_, fon9_kCSTR_TabName_BS);
       this->TabIdxBS_      = static_cast<f9sv_TabSize>(tab->GetIndex());
       this->FldBSInfoTime_ = GetFieldOrRaise(*tab, "InfoTime");
       this->FldBSFlags_    = GetFieldOrRaise(*tab, "Flags");
@@ -136,16 +142,17 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder {
       GetBSFields(this->FldDerivedBuys_, tab->Fields_, 'D', 'B');
       GetBSFields(this->FldDerivedSells_, tab->Fields_, 'D', 'S');
 
-      tab = GetTabOrRaise(*tree.Layout_, "Base");
+      tab = GetTabOrRaise(*tree.Layout_, fon9_kCSTR_TabName_Base);
       this->TabIdxBase_            = static_cast<f9sv_TabSize>(tab->GetIndex());
       this->FldBaseTDay_           = GetFieldOrRaise(*tab, "TDay");
       this->FldBaseSession_        = GetFieldOrRaise(*tab, "Session");
       this->FldBaseSessionSt_      = GetFieldOrRaise(*tab, "SessionSt");
       this->FldBaseMarket_         = GetFieldOrRaise(*tab, "Market");
-      this->FldBaseFlowGroup_      = GetFieldOrRaise(*tab, "FlowGroup");
-      this->FldBaseStrikePriceDiv_ = GetFieldOrRaise(*tab, "StrikePriceDiv");
+      this->FldBaseFlowGroup_      = tab->Fields_.Get("FlowGroup");
+      this->FldBaseStrikePriceDiv_ = tab->Fields_.Get("StrikePriceDiv");
+      this->FldBaseShUnit_         = tab->Fields_.Get("ShUnit");
 
-      tab = GetTabOrRaise(*tree.Layout_, "Ref");
+      tab = GetTabOrRaise(*tree.Layout_, fon9_kCSTR_TabName_Ref);
       this->TabIdxRef_   = static_cast<f9sv_TabSize>(tab->GetIndex());
       this->FldPriRef_   = GetFieldOrRaise(*tab, "PriRef");
       this->FldPriUpLmt_ = GetFieldOrRaise(*tab, "PriUpLmt");
@@ -224,17 +231,33 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder {
 
       switch (pkType) {
       case fmkt::RtsPackType::DealPack:
-         return this->DecodeDealPack(rx, rpt, rxbuf);
+      {
+         DecoderAux  dec{rx, rpt, rxbuf, this->TabIdxDeal_};
+         DecodeDealPack(dec, rx, rpt, rxbuf);
+         assert(rxbuf.empty());
+         return;
+      }
       case fmkt::RtsPackType::SnapshotBS:
-         return this->DecodeSnapshotBS(rx, rpt, rxbuf, fmkt::BSFlag{});
       case fmkt::RtsPackType::CalculatedBS:
-         return this->DecodeSnapshotBS(rx, rpt, rxbuf, fmkt::BSFlag::Calculated);
+      {
+         DecoderAux dec(rx, rpt, rxbuf, this->TabIdxBS_);
+         this->DecodeSnapshotBS(dec, rx, rpt, rxbuf,
+            (pkType == fmkt::RtsPackType::CalculatedBS
+             ? fmkt::BSFlag::Calculated : fmkt::BSFlag{}));
+         return;
+      }
       case fmkt::RtsPackType::UpdateBS:
          return this->DecodeUpdateBS(rx, rpt, rxbuf);
       case fmkt::RtsPackType::TradingSessionSt:
          return this->DecodeTradingSessionSt(rx, rpt, rxbuf);
       case fmkt::RtsPackType::BaseInfoTwf:
          return this->DecodeBaseInfoTwf(rx, rpt, rxbuf);
+      case fmkt::RtsPackType::DealBS:
+         return this->DecodeDealBS(rx, rpt, rxbuf);
+      case fmkt::RtsPackType::BaseInfoTws:
+         return this->DecodeBaseInfoTws(rx, rpt, rxbuf);
+      case fmkt::RtsPackType::Count: // 增加此 case 僅是為了避免警告.
+         break;
       }
    }
    void DecodeStreamData(svc::RxSubrData& rx, f9sv_ClientReport& rpt) {
@@ -327,9 +350,8 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder {
       }
    };
    // -----
-   void DecodeDealPack(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {
-      DecoderAux  dec{rx, rpt, rxbuf, this->TabIdxDeal_};
-      DayTime     dealTime = *dec.InfoTime_;
+   fmkt::DealFlag DecodeDealPack(DecoderAux& dec, svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {
+      DayTime  dealTime = *dec.InfoTime_;
       dec.PutDecField(*this->FldDealInfoTime_, dealTime);
 
       fmkt::DealFlag dealFlags = ReadOrRaise<fmkt::DealFlag>(rxbuf);
@@ -373,9 +395,9 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder {
       this->FldDealFlags_->PutNumber(dec.RawWr_, static_cast<seed::FieldNumberT>(dealFlags), 0);
       this->DecodeDealPQ(rxbuf, dec.RawWr_, pTotalQty);
       this->DecodeDealCnt(rxbuf, dec.RawWr_, dealFlags);
-      assert(rxbuf.empty());
       if (fnOnReport)
          fnOnReport(&rx.Session_, &rpt);
+      return dealFlags;
    }
    void DecodeDealPQ(DcQueue& rxbuf, seed::SimpleRawWr& dealwr, fmkt::Qty* pTotalQty) {
       this->FldDealPri_->BitvToCell(dealwr, rxbuf);
@@ -393,6 +415,14 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder {
       if (IsEnumContains(dealFlags, fmkt::DealFlag::DealSellCntChanged))
          this->FldDealSellCnt_->BitvToCell(dealwr, rxbuf);
    }
+   void DecodeDealBS(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {
+      DecoderAux     decDeal{rx, rpt, rxbuf, this->TabIdxDeal_};
+      fmkt::DealFlag dflag = this->DecodeDealPack(decDeal, rx, rpt, rxbuf);
+      DecoderAux     decBS{decDeal, rpt, this->TabIdxBS_};
+      this->DecodeSnapshotBS(decBS, rx, rpt, rxbuf,
+         (IsEnumContains(dflag, fmkt::DealFlag::Calculated)
+          ? fmkt::BSFlag::Calculated : fmkt::BSFlag{}));
+   }
    // -----
    static void ClearFieldValues(const seed::RawWr& wr, FieldPQList::const_iterator ibeg, FieldPQList::const_iterator iend) {
       for (; ibeg != iend; ++ibeg) {
@@ -405,8 +435,7 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder {
       RevPrint(rbuf, '*');
       fld.FldPri_->CellRevPrint(rd, nullptr, rbuf);
    }
-   void DecodeSnapshotBS(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf, fmkt::BSFlag bsFlags) {
-      DecoderAux dec(rx, rpt, rxbuf, this->TabIdxBS_);
+   void DecodeSnapshotBS(DecoderAux& dec, svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf, fmkt::BSFlag bsFlags) {
       dec.PutDecField(*this->FldBSInfoTime_, *dec.InfoTime_);
       const FieldPQList* flds;
       while (!rxbuf.empty()) {
@@ -579,6 +608,20 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder {
       assert(rxbuf.empty());
       this->ReportEv(rx, rpt);
    }
+   void DecodeBaseInfoTws(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {
+      DecoderAux  decBase(rx, rpt, rxbuf, this->TabIdxBase_);
+      char        chTradingMarket = cast_to_underlying(ReadOrRaise<f9fmkt_TradingMarket>(rxbuf));
+      this->FldBaseMarket_->StrToCell(decBase.RawWr_, StrView{&chTradingMarket, 1});
+      this->FldBaseShUnit_->BitvToCell(decBase.RawWr_, rxbuf);
+      this->ReportEv(rx, rpt);
+
+      DecoderAux  decRef(decBase, rpt, this->TabIdxRef_);
+      this->FldPriRef_->BitvToCell(decRef.RawWr_, rxbuf);
+      this->FldPriUpLmt_->BitvToCell(decRef.RawWr_, rxbuf);
+      this->FldPriDnLmt_->BitvToCell(decRef.RawWr_, rxbuf);
+      assert(rxbuf.empty());
+      this->ReportEv(rx, rpt);
+   }
 };
 
 } } // namespaces
@@ -588,12 +631,14 @@ extern "C" {
 f9sv_CAPI_FN(f9sv_Result) f9sv_AddStreamDecoder_MdRts(void) {
    using namespace fon9::rc;
    struct Factory : public RcSvStreamDecoderFactory {
+      Factory() {
+         RcSvStreamDecoderPark::Register("MdRts", this);
+      }
       RcSvStreamDecoderSP CreateStreamDecoder(svc::TreeRec& tree) override {
          return RcSvStreamDecoderSP{new RcSvStreamDecoder_MdRts{tree}};
       }
    };
    static Factory factory;
-   RcSvStreamDecoderPark::Register("MdRts", &factory);
    return f9sv_Result_NoError;
 }
 

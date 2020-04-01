@@ -152,7 +152,7 @@ void MdRtStream::PublishUpdateBS(seed::Tree& tree, const StrView& keyText,
 void MdRtStream::Publish(seed::Tree& tree, const StrView& keyText,
                          RtsPackType pkType, DayTime infoTime, RevBufferList&& rts) {
    const auto rtsKind = GetMdRtsKind(pkType);
-   if (this->InfoTimeKind_ == rtsKind && this->InfoTime_ == infoTime)
+   if ((this->InfoTimeKind_ == rtsKind && this->InfoTime_ == infoTime) || infoTime.IsNull())
       RevPutBitv(rts, fon9_BitvV_NumberNull);
    else {
       // 訂閱者可用 RtsKind 過濾所需要的封包種類,

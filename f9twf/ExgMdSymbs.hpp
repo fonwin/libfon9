@@ -3,7 +3,7 @@
 #ifndef __f9twf_ExgMdSymbs_hpp__
 #define __f9twf_ExgMdSymbs_hpp__
 #include "f9twf/Config.h"
-#include "fon9/fmkt/SymbTree.hpp"
+#include "fon9/fmkt/MdSymbs.hpp"
 #include "fon9/fmkt/SymbRef.hpp"
 #include "fon9/fmkt/SymbBS.hpp"
 #include "fon9/fmkt/SymbDeal.hpp"
@@ -66,23 +66,15 @@ public:
    static fon9::seed::LayoutSP MakeLayout();
 };
 //--------------------------------------------------------------------------//
-class f9twf_API ExgMdSymbs : public fon9::fmkt::SymbTree {
+class f9twf_API ExgMdSymbs : public fon9::fmkt::MdSymbs<ExgMdSymb> {
    fon9_NON_COPY_NON_MOVE(ExgMdSymbs);
-   using base = fon9::fmkt::SymbTree;
+   using base = fon9::fmkt::MdSymbs<ExgMdSymb>;
 
 public:
-   fon9::seed::Tab* const        RtTab_;
-   fon9::fmkt::MdRtStreamInnMgr  RtInnMgr_;
-
-   /// pathFmt = RtInnMgr 儲存檔名的路徑格式(不含副檔名),
-   /// 使用 fon9::TimedFileName 格式;
-   ExgMdSymbs(std::string pathFmt);
-
-   void DailyClear(unsigned tdayYYYYMMDD);
-
+   ExgMdSymbs(std::string rtiPathFmt)
+      : base(ExgMdSymb::MakeLayout(), std::move(rtiPathFmt)) {
+   }
    fon9::fmkt::SymbSP MakeSymb(const fon9::StrView& symbid) override;
-
-   void OnTreeOp(fon9::seed::FnTreeOp fnCallback) override;
 };
 using ExgMdSymbsSP = fon9::intrusive_ptr<ExgMdSymbs>;
 //--------------------------------------------------------------------------//

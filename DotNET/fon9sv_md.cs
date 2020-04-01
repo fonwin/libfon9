@@ -31,6 +31,13 @@ namespace f9sv
 
       /// TotalQty 不連續, 藉此判斷是否有遺漏成交明細.
       TotalQtyLost = 0x10,
+
+      /// 暫緩撮合.
+      HeldMatchMask = 0xc0,
+      /// 暫緩撮合, 瞬間價格趨漲.
+      HeldMatchTrendRise = 0x80,
+      /// 暫緩撮合, 瞬間價格趨跌.
+      HeldMatchTrendFall = 0x40,
    }
 
    [Flags]

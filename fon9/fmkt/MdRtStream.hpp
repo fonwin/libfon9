@@ -31,8 +31,18 @@ public:
    MdRtStream(MdRtStreamInnMgr& innMgr) : InnMgr_(innMgr) {
    }
 
+   void OpenRtStorage(Symb& symb) {
+      this->InnMgr_.RtOpen(this->RtStorage_, symb);
+      this->RtStorageSize_ = this->RtStorage_.Size();
+   }
+
    /// 應在設定好 symb 盤別 (TDay + TradingSessionId) 之後通知.
+   /// 執行底下工作:
+   ///   this->Publish();
+   ///   this->OpenRtStorage();
+   ///   this->Save(RtsPackType::TradingSessionSt);
    void SessionClear(SymbTree& tree, Symb& symb);
+
    /// 移除商品, 通常是因為商品下市.
    void BeforeRemove(SymbTree& tree, Symb& symb);
 

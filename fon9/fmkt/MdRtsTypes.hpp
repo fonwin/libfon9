@@ -52,6 +52,7 @@ enum class RtsPackType : uint8_t {
    SnapshotBS,
    /// 試算委託簿快照, 後續內容與 SnapshotBS 相同.
    CalculatedBS,
+
    /// 委託簿異動.
    /// - InfoTime(Bitv: Null = MdRtsDecoder.InfoTime)
    /// - first(1 byte):
@@ -81,7 +82,23 @@ enum class RtsPackType : uint8_t {
    /// - PriUpLmt(Bitv)
    /// - PriDnLmt(Bitv)
    BaseInfoTwf,
+
+   /// DealPack + SnapshotBS(無InfoTime);
+   /// 使用 f9fmkt::DealFlag::Calculated 判斷是否為試算.
+   DealBS,
+
+   /// Tws 基本資訊.
+   /// - InfoTime(Bitv: Null=Unchanged)
+   /// - TradingMarket(char)
+   /// - ShUnit(Bitv)
+   /// - PriRef(Bitv)
+   /// - PriUpLmt(Bitv)
+   /// - PriDnLmt(Bitv)
+   BaseInfoTws,
+
+   Count,
 };
+static_assert(cast_to_underlying(RtsPackType::Count) <= 0x7f, "");
 
 enum class RtBSType : uint8_t {
    // --xx ----

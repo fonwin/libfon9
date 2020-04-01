@@ -4,19 +4,19 @@
 //
 // \author fonwinz@gmail.com
 #define _CRT_SECURE_NO_WARNINGS
-#include "f9tws/ExgMktPkReceiver.hpp"
-#include "f9tws/ExgMktFmt6.hpp"
+#include "f9tws/ExgMdPkReceiver.hpp"
+#include "f9tws/ExgMdFmt6.hpp"
 #include "f9extests/ExgMktTester.hpp"
 
-struct TwsPkReceiver : public f9tws::ExgMktPkReceiver {
+struct TwsPkReceiver : public f9tws::ExgMdPkReceiver {
    fon9_NON_COPY_NON_MOVE(TwsPkReceiver);
-   using base = f9tws::ExgMktPkReceiver;
+   using base = f9tws::ExgMdPkReceiver;
    using base::ReceivedCount_;
    using base::ChkSumErrCount_;
    using base::DroppedBytes_;
-   uint32_t FmtCount_[f9tws::kExgMktMaxFmtNoSize];
-   uint32_t LastSeq_[f9tws::kExgMktMaxFmtNoSize];
-   uint32_t SeqMisCount_[f9tws::kExgMktMaxFmtNoSize];
+   uint32_t FmtCount_[f9tws::kExgMdMaxFmtNoSize];
+   uint32_t LastSeq_[f9tws::kExgMdMaxFmtNoSize];
+   uint32_t SeqMisCount_[f9tws::kExgMdMaxFmtNoSize];
 
    TwsPkReceiver() {
       this->ClearStatus();
@@ -29,7 +29,7 @@ struct TwsPkReceiver : public f9tws::ExgMktPkReceiver {
    }
    bool OnPkReceived(const void* pkptr, unsigned pksz) override {
       (void)pksz;
-      const f9tws::ExgMktHeader& pk = *reinterpret_cast<const f9tws::ExgMktHeader*>(pkptr);
+      const f9tws::ExgMdHeader& pk = *reinterpret_cast<const f9tws::ExgMdHeader*>(pkptr);
       auto fmtNo = fon9::PackBcdTo<uint32_t>(pk.FmtNo_);
       ++this->FmtCount_[fmtNo];
 
@@ -57,13 +57,13 @@ struct Fmt6Parser : public TwsPkReceiver, public fon9::fmkt::SymbTree {
    }
    bool OnPkReceived(const void* pkptr, unsigned pksz) override {
       basePkReceiver::OnPkReceived(pkptr, pksz);
-      const f9tws::ExgMktHeader& pk = *reinterpret_cast<const f9tws::ExgMktHeader*>(pkptr);
+      const f9tws::ExgMdHeader& pk = *reinterpret_cast<const f9tws::ExgMdHeader*>(pkptr);
       auto fmtNo = pk.GetFmtNo();
       if (fmtNo != 6 && fmtNo != 17)
          return true;
-      const f9tws::ExgMktFmt6v3& fmt6 = *static_cast<const f9tws::ExgMktFmt6v3*>(&pk);
-      const f9tws::ExgMktPriQty* pqs  = fmt6.PQs_;
-      unsigned                   tmHH = fon9::PackBcdTo<unsigned>(fmt6.Time_.HH_);
+      const f9tws::ExgMdFmt6v4& fmt6 = *static_cast<const f9tws::ExgMdFmt6v4*>(&pk);
+      const f9tws::ExgMdPriQty* pqs  = fmt6.PQs_;
+      unsigned                  tmHH = fon9::PackBcdTo<unsigned>(fmt6.Time_.HH_);
       if (fon9_UNLIKELY(tmHH == 99)) // 股票代號"000000"且撮合時間"999999999999",
          return true;                // 表示普通股競價交易末筆即時行情資料已送出.
       uint64_t tmu6 = (((tmHH * 60) + fon9::PackBcdTo<unsigned>(fmt6.Time_.MM_)) * 60
@@ -85,7 +85,7 @@ struct Fmt6Parser : public TwsPkReceiver, public fon9::fmkt::SymbTree {
       }
       return true;
    }
-   static const f9tws::ExgMktPriQty* AssignBS(fon9::fmkt::PriQty* dst, const f9tws::ExgMktPriQty* pqs, int count) {
+   static const f9tws::ExgMdPriQty* AssignBS(fon9::fmkt::PriQty* dst, const f9tws::ExgMdPriQty* pqs, int count) {
       if (count > fon9::fmkt::SymbBS::kBSCount)
          count = fon9::fmkt::SymbBS::kBSCount;
       for (int L = 0; L < count; ++L) {
@@ -116,7 +116,7 @@ int main(int argc, char* argv[]) {
 
    TwsPkReceiver pkReceiver;
    double        tmFull = f9extests::ExgMktFeedAll(mdf, pkReceiver);
-   for (unsigned L = 0; L < f9tws::kExgMktMaxFmtNoSize; ++L) {
+   for (unsigned L = 0; L < f9tws::kExgMdMaxFmtNoSize; ++L) {
       if (pkReceiver.FmtCount_[L]) {
          std::cout << "FmtNo=" << L
             << "|Count=" << pkReceiver.FmtCount_[L]

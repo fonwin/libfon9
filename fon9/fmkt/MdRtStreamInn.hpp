@@ -24,11 +24,12 @@ class fon9_API MdRtStreamInnMgr {
 public:
    const TimerThreadSP  RecoverThread_;
    SymbTree&            SymbTree_;
-   const std::string    PathFmt_;
+   const std::string    RtiPathFmt_;
 
-   /// - pathFmt = 儲存檔名的路徑格式(不含副檔名),
+   /// - rtiPathFmt = 儲存檔名的路徑格式(不含副檔名, 開檔時自動加上 .rti),
    ///   使用 fon9::TimedFileName 格式;
-   MdRtStreamInnMgr(SymbTree& symbTree, std::string pathFmt);
+   /// - 若 rtiPathFmt.empty() 表示不儲存;
+   MdRtStreamInnMgr(SymbTree& symbTree, std::string rtiPathFmt);
    ~MdRtStreamInnMgr();
 
    unsigned TDayYYYYMMDD() const {
@@ -36,9 +37,9 @@ public:
    }
    void DailyClear(unsigned tdayYYYYMMDD);
 
-   /// dailyClearTime 用來檢查回補時間為今日 or 跨日.
-   void SetDailyClearTime(DayTime dailyClearTime) {
-      this->DailyClearTime_ = dailyClearTime;
+   /// hhmmss = DailyClearTime 用來檢查回補時間為今日 or 跨日.
+   void SetDailyClearHHMMSS(unsigned hhmmss) {
+      this->DailyClearTime_ = TimeInterval_HHMMSS(hhmmss);
    }
    DayTime DailyClearTime() const {
       return this->DailyClearTime_;

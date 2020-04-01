@@ -5,6 +5,7 @@
 #include "f9twf/ExgMcFmtSS.hpp"
 #include "f9twf/ExgMrRecover.hpp"
 #include "fon9/FileReadAll.hpp"
+#include "fon9/TsReceiver.hpp"
 #include "fon9/Log.hpp"
 
 namespace f9twf {
@@ -31,7 +32,7 @@ void ExgMcChannel::StartupChannel(std::string logPath) {
       fon9::NumOutBuf nbuf;
       logPath.append(fon9::ToStrRev(nbuf.end(), this->ChannelId_, fon9::FmtDef{4, fon9::FmtFlag::IntPad0}),
                      nbuf.end());
-      logPath.append(".bin");
+      logPath.append(".tsbin");
       this->PkLog_ = fon9::AsyncFileAppender::Make();
       auto res = this->PkLog_->OpenImmediately(logPath, fon9::FileMode::CreatePath | fon9::FileMode::Read | fon9::FileMode::Append);
       if (res.HasResult()) {
@@ -50,7 +51,7 @@ void ExgMcChannel::StartupChannel(std::string logPath) {
 void ExgMcChannel::SetupReload() {
    if (!this->PkLog_ || !IsEnumContains(this->Style_, ExgMcChannelStyle::Reload))
       return;
-   struct McReloader : public ExgMcPkReceiver {
+   struct McReloader : public fon9::TsReceiver {
       fon9_NON_COPY_NON_MOVE(McReloader);
       ExgMcChannel&           Owner_;
       const ExgMcChannelState BfState_;
@@ -65,7 +66,8 @@ void ExgMcChannel::SetupReload() {
          this->FeedBuffer(rdbuf);
          return true;
       }
-      bool OnPkReceived(const void* pk, unsigned pksz) override {
+      bool OnPkReceived(fon9::TimeStamp pktm, const void* pk, PkszT pksz) override {
+         (void)pktm;
          this->Owner_.OnPkReceived(*static_cast<const ExgMcHead*>(pk), pksz);
          return true;
       }

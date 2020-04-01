@@ -28,6 +28,13 @@ extern "C" {
 
       /// TotalQty 不連續, 藉此判斷是否有遺漏成交明細.
       f9sv_DealFlag_TotalQtyLost = 0x10,
+
+      /// 暫緩撮合.
+      f9sv_DealFlag_HeldMatchMask = 0xc0,
+      /// 暫緩撮合, 瞬間價格趨漲.
+      f9sv_DealFlag_HeldMatchTrendRise = 0x80,
+      /// 暫緩撮合, 瞬間價格趨跌.
+      f9sv_DealFlag_HeldMatchTrendFall = 0x40,
    };
    fon9_ENUM(f9sv_BSFlag, uint8_t) {
       /// 試撮後剩餘委託簿.

@@ -163,6 +163,8 @@
     <ClInclude Include="..\..\..\fon9\fmkt\MdRtsTypes.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\MdRtStream.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\MdRtStreamInn.hpp" />
+    <ClInclude Include="..\..\..\fon9\fmkt\MdSymbs.hpp" />
+    <ClInclude Include="..\..\..\fon9\fmkt\MdSystem.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\Symb.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\SymbBS.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\SymbBSData.hpp" />
@@ -171,6 +173,7 @@
     <ClInclude Include="..\..\..\fon9\fmkt\SymbDy.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\SymbHL.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\SymbRef.hpp" />
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbTabNames.h" />
     <ClInclude Include="..\..\..\fon9\fmkt\SymbTree.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\FmktTypes.h" />
     <ClInclude Include="..\..\..\fon9\fmkt\SymbTwa.hpp" />
@@ -181,6 +184,7 @@
     <ClInclude Include="..\..\..\fon9\fmkt\SymbTwsBase.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\TradingLine.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\TradingRequest.hpp" />
+    <ClInclude Include="..\..\..\fon9\fmkt\TwExgMdTime.hpp" />
     <ClInclude Include="..\..\..\fon9\framework\Framework.hpp" />
     <ClInclude Include="..\..\..\fon9\framework\IoFactory.hpp" />
     <ClInclude Include="..\..\..\fon9\framework\IoManager.hpp" />
@@ -350,6 +354,8 @@
     <ClInclude Include="..\..\..\fon9\ToStr.hpp" />
     <ClInclude Include="..\..\..\fon9\ToStrFmt.hpp" />
     <ClInclude Include="..\..\..\fon9\Trie.hpp" />
+    <ClInclude Include="..\..\..\fon9\TsAppend.hpp" />
+    <ClInclude Include="..\..\..\fon9\TsReceiver.hpp" />
     <ClInclude Include="..\..\..\fon9\TypeName.hpp" />
     <ClInclude Include="..\..\..\fon9\Unaligned.hpp" />
     <ClInclude Include="..\..\..\fon9\Utility.hpp" />
@@ -446,6 +452,7 @@
     <ClCompile Include="..\..\..\fon9\fmkt\MdRtsTypes.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\MdRtStream.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\MdRtStreamInn.cpp" />
+    <ClCompile Include="..\..\..\fon9\fmkt\MdSystem.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\Symb.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\SymbBS.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\SymbDeal.cpp" />
@@ -585,6 +592,8 @@
     <ClCompile Include="..\..\..\fon9\Tools.cpp" />
     <ClCompile Include="..\..\..\fon9\ToStr.cpp" />
     <ClCompile Include="..\..\..\fon9\ToStrFmt.cpp" />
+    <ClCompile Include="..\..\..\fon9\TsAppend.cpp" />
+    <ClCompile Include="..\..\..\fon9\TsReceiver.cpp" />
     <ClCompile Include="..\..\..\fon9\web\HttpDate.cpp" />
     <ClCompile Include="..\..\..\fon9\web\HttpHandlerStatic.cpp" />
     <ClCompile Include="..\..\..\fon9\web\HttpMessage.cpp" />

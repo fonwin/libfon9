@@ -192,6 +192,12 @@
     <Filter Include="Source Files\fmkt\_SymbBase%28Tws,Twf...%29">
       <UniqueIdentifier>{29261975-ea6b-438e-a00c-89013bdaebf4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\_base\_Pk">
+      <UniqueIdentifier>{c8d56d95-4bee-4d93-ba75-2f6b3f29fc56}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\_base\_Pk">
+      <UniqueIdentifier>{8b191c8a-9f23-44a0-9c7d-97e1744cf62b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\fon9\sys\Config.h">
@@ -878,9 +884,6 @@
     <ClInclude Include="..\..\..\fon9\PackBcd.hpp">
       <Filter>Header Files\_base\_AlNum / StrTools</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\fon9\PkCont.hpp">
-      <Filter>Header Files\_base\_Tools / Utility</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\fon9\Assert.h">
       <Filter>Header Files\_base\_Tools / Utility</Filter>
     </ClInclude>
@@ -977,9 +980,6 @@
     <ClInclude Include="..\..\..\fon9\rc\RcSeedVisitorServer.hpp">
       <Filter>Header Files\rc</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\fon9\PkReceiver.hpp">
-      <Filter>Header Files\_base\_Tools / Utility</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\fon9\FileReadAll.hpp">
       <Filter>Header Files\_base\_File</Filter>
     </ClInclude>
@@ -1066,6 +1066,30 @@
     </ClInclude>
     <ClInclude Include="..\..\..\fon9\fmkt\SymbRef.hpp">
       <Filter>Header Files\fmkt\_SymbData%28BS,Deal...%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\MdSystem.hpp">
+      <Filter>Header Files\fmkt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\MdSymbs.hpp">
+      <Filter>Header Files\fmkt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbTabNames.h">
+      <Filter>Header Files\fmkt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\TwExgMdTime.hpp">
+      <Filter>Header Files\fmkt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\TsAppend.hpp">
+      <Filter>Header Files\_base\_Pk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\TsReceiver.hpp">
+      <Filter>Header Files\_base\_Pk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\PkCont.hpp">
+      <Filter>Header Files\_base\_Pk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\PkReceiver.hpp">
+      <Filter>Header Files\_base\_Pk</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1570,9 +1594,6 @@
     <ClCompile Include="..\..\..\fon9\fmkt\SymbTree.cpp">
       <Filter>Source Files\fmkt</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\fon9\PkCont.cpp">
-      <Filter>Source Files\_base\_Tools / Utility</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\fon9\Assert.c">
       <Filter>Source Files\_base\_Tools / Utility</Filter>
     </ClCompile>
@@ -1653,9 +1674,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\rc\RcSeedVisitorServer.cpp">
       <Filter>Source Files\rc</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\fon9\PkReceiver.cpp">
-      <Filter>Source Files\_base\_Tools / Utility</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\CTools.c">
       <Filter>Source Files\_base\_Tools / Utility</Filter>
@@ -1740,6 +1758,21 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\fmkt\SymbRef.cpp">
       <Filter>Source Files\fmkt\_SymbData%28BS,Deal...%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\MdSystem.cpp">
+      <Filter>Source Files\fmkt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\PkCont.cpp">
+      <Filter>Source Files\_base\_Pk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\PkReceiver.cpp">
+      <Filter>Source Files\_base\_Pk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\TsAppend.cpp">
+      <Filter>Source Files\_base\_Pk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\TsReceiver.cpp">
+      <Filter>Source Files\_base\_Pk</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
