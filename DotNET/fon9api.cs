@@ -67,4 +67,46 @@ namespace fon9
          }
       }
    }
+
+   class Tools
+   {
+      public const int STD_INPUT_HANDLE = -10;
+      [DllImport("kernel32.dll", SetLastError = true)]
+      public static extern IntPtr GetStdHandle(int nStdHandle);
+
+      [DllImport("kernel32.dll", SetLastError = true)]
+      public static extern bool CancelIoEx(IntPtr handle, IntPtr lpOverlapped);
+
+      [DllImport("kernel32.dll")]
+      public static extern void ExitThread(int dwExitCode);
+
+      [DllImport("Kernel32")]
+      public static extern bool SetConsoleCtrlHandler(HandlerRoutine handle, bool add);
+      public static HandlerRoutine SetConsoleCtrlHandler()
+      {
+         HandlerRoutine hrCtrl = new HandlerRoutine(CtrlHandler);
+         SetConsoleCtrlHandler(hrCtrl, true);
+         return hrCtrl;
+      }
+
+      public delegate Boolean HandlerRoutine(CtrlTypes CtrlType);
+
+      public enum CtrlTypes
+      {
+         CTRL_C_EVENT = 0,
+         CTRL_BREAK_EVENT,
+         CTRL_CLOSE_EVENT,
+         CTRL_LOGOFF_EVENT = 5,
+         CTRL_SHUTDOWN_EVENT
+      }
+
+      public static string CtrlMessage_;
+      public static bool CtrlHandler(CtrlTypes ctrlType)
+      {
+         CtrlMessage_ = ctrlType.ToString();
+         CancelIoEx(GetStdHandle(STD_INPUT_HANDLE), IntPtr.Zero);
+         ExitThread(0);
+         return true;
+      }
+   }
 }
