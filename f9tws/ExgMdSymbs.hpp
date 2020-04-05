@@ -34,22 +34,21 @@ public:
    fon9::fmkt::SymbData* GetSymbData(int tabid) override;
    fon9::fmkt::SymbData* FetchSymbData(int tabid) override;
 
-   void DailyClear(fon9::fmkt::SymbTree& tree, unsigned tdayYYYYMMDD);
-   void SessionClear(fon9::fmkt::SymbTree& tree, f9fmkt_TradingSessionId tsesId);
+   void SessionClear(fon9::fmkt::SymbTree& owner, f9fmkt_TradingSessionId tsesId) override;
    /// 移除商品, 通常是因為商品下市.
-   void BeforeRemove(fon9::fmkt::SymbTree& tree, unsigned tdayYYYYMMDD);
+   /// 預設觸發 this->MdRtStream_.BeforeRemove(owner, *this);
+   void OnBeforeRemove(fon9::fmkt::SymbTree& owner, unsigned tdayYYYYMMDD) override;
 
    static fon9::seed::LayoutSP MakeLayout();
 };
 //--------------------------------------------------------------------------//
-class f9tws_API ExgMdSymbs : public fon9::fmkt::MdSymbs<ExgMdSymb> {
+class f9tws_API ExgMdSymbs : public fon9::fmkt::MdSymbsT<ExgMdSymb> {
    fon9_NON_COPY_NON_MOVE(ExgMdSymbs);
-   using base = fon9::fmkt::MdSymbs<ExgMdSymb>;
+   using base = fon9::fmkt::MdSymbsT<ExgMdSymb>;
 
 public:
-   ExgMdSymbs(std::string rtiPathFmt)
-      : base(ExgMdSymb::MakeLayout(), std::move(rtiPathFmt)) {
-   }
+   ExgMdSymbs(std::string rtiPathFmt);
+
    fon9::fmkt::SymbSP MakeSymb(const fon9::StrView& symbid) override;
 };
 using ExgMdSymbsSP = fon9::intrusive_ptr<ExgMdSymbs>;

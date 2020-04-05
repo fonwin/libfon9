@@ -17,7 +17,11 @@ class fon9_API SymbTwa : public Symb, public SymbTwaBase {
 public:
    using base::base;
    ~SymbTwa();
-   
+
+   bool IsExpired(unsigned tdayYYYYMMDD) const override;
+
+   void SessionClear(SymbTree& owner, f9fmkt_TradingSessionId tsesId) override;
+
    static seed::Fields MakeFields();
 };
 using SymbTwaSP = intrusive_ptr<SymbTwa>;

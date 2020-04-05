@@ -34,6 +34,8 @@ struct ExgMdFmt1Parser {
           && this->PrevShUnit_ == this->Symb_->ShUnit_
           && this->PrevRefData_ == Symb_->Ref_.Data_)
          return;
+      if (mdsys.IsReloading())
+         return;
       fon9::RevBufferList rbuf{128};
       fon9::ToBitv(rbuf, this->Symb_->Ref_.Data_.PriDnLmt_);
       fon9::ToBitv(rbuf, this->Symb_->Ref_.Data_.PriUpLmt_);
@@ -41,7 +43,7 @@ struct ExgMdFmt1Parser {
       fon9::ToBitv(rbuf, this->Symb_->ShUnit_);
       *rbuf.AllocPacket<char>() = this->Symb_->TradingMarket_;
       this->Symb_->MdRtStream_.Publish(*mdsys.Symbs_, ToStrView(this->Symb_->SymbId_),
-                                       f9fmkt::RtsPackType::BaseInfoTws,
+                                       f9fmkt::RtsPackType::BaseInfoTw,
                                        fon9::DayTime::Null(),
                                        std::move(rbuf));
       // 基本資料有異動時儲存, 用在程式重啟時載入, 重建商品基本資料.
@@ -50,8 +52,20 @@ struct ExgMdFmt1Parser {
    }
 };
 
+static bool CheckIsStockEntries(ExgMdSystem& mdsys, const ExgMdFmt1_C3& fmt1, unsigned pksz) {
+   if (fmt1.StockEntries_[0] == ' ')
+      return false;
+   // 避免記錄重複的 "AL" or "NE", 需要額外處理是否有記錄過 "AL" or "NE";
+   // 為了避免無謂的工作, 在此先將此記錄功能拿掉, 如果有需要再處理.
+   // mdsys.BaseInfoPkLog(fmt1, pksz);
+   (void)mdsys; (void)pksz;
+   return true;
+}
+
 template <class Fmt1>
 static void ParseFmt1(f9fmkt_TradingMarket mkt, ExgMdHandler& handler, const Fmt1& fmt1, unsigned pksz) {
+   if (fon9_UNLIKELY(CheckIsStockEntries(handler.MdSys_, fmt1, pksz)))
+      return;
    ExgMdFmt1Parser parser{*handler.MdSys_.Symbs_, fmt1};
    parser.Symb_->TradingMarket_ = mkt;
    parser.ParseRef(fmt1);

@@ -166,6 +166,8 @@ constexpr bool IsSubscribeStream(const char* tabName) {
 constexpr bool IsSubrTree(const char* seedKey) {
    return seedKey[0] == '\t' && seedKey[1] == '\0';
 }
+#define fon9_kCSTR_SubrTree   "\t"
+static_assert(IsSubrTree(fon9_kCSTR_SubrTree), "");
 
 struct fon9_API RcSvReqKey {
    CharVector     TreePath_, SeedKey_, TabName_;

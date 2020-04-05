@@ -18,10 +18,10 @@ fon9::seed::LayoutSP ExgMdIndex::MakeLayout() {
    using namespace fon9::fmkt;
    return LayoutSP{new LayoutN(
       fon9_MakeField(Symb, SymbId_, "Id"), TreeFlag::AddableRemovable | TreeFlag::Unordered,
-      TabSP{new Tab{fon9::Named{fon9_kCSTR_TabName_Base}, MakeFields(),           TabFlag::NoSapling_NoSeedCommand_Writable}},
-      TabSP{new Tab{fon9::Named{fon9_kCSTR_TabName_Deal}, SymbDeal::MakeFields(), TabFlag::NoSapling_NoSeedCommand_Writable}},
-      TabSP{new Tab{fon9::Named{fon9_kCSTR_TabName_High}, SymbHigh::MakeFields(), TabFlag::NoSapling_NoSeedCommand_Writable}},
-      TabSP{new Tab{fon9::Named{fon9_kCSTR_TabName_Low},  SymbLow::MakeFields(),  TabFlag::NoSapling_NoSeedCommand_Writable}},
+      TabSP{new Tab{fon9::Named{fon9_kCSTR_TabName_Base}, MakeFields(),             TabFlag::NoSapling_NoSeedCommand_Writable}},
+      TabSP{new Tab{fon9::Named{fon9_kCSTR_TabName_Deal}, IndexDeal::MakeFields(),  TabFlag::NoSapling_NoSeedCommand_Writable}},
+      TabSP{new Tab{fon9::Named{fon9_kCSTR_TabName_High}, SymbHigh::MakeFields(),   TabFlag::NoSapling_NoSeedCommand_Writable}},
+      TabSP{new Tab{fon9::Named{fon9_kCSTR_TabName_Low},  SymbLow::MakeFields(),    TabFlag::NoSapling_NoSeedCommand_Writable}},
       TabSP{new Tab{fon9::Named{fon9_kCSTR_TabName_Rt},   MdRtStream::MakeFields(), TabFlag::NoSapling_NoSeedCommand_Writable}}
    )};
 }
@@ -44,20 +44,16 @@ fon9::fmkt::SymbData* ExgMdIndex::FetchSymbData(int tabid) {
    return GetExgMdIndexData(this, tabid);
 }
 //--------------------------------------------------------------------------//
-void ExgMdIndex::DailyClear(fon9::fmkt::SymbTree& tree, unsigned tdayYYYYMMDD) {
-   this->TDayYYYYMMDD_ = tdayYYYYMMDD;
-   this->SessionClear(tree, f9fmkt_TradingSessionId_Normal);
-}
-void ExgMdIndex::SessionClear(fon9::fmkt::SymbTree& tree, f9fmkt_TradingSessionId tsesId) {
-   base::SessionClear(tsesId);
+void ExgMdIndex::SessionClear(fon9::fmkt::SymbTree& owner, f9fmkt_TradingSessionId tsesId) {
+   base::SessionClear(owner, tsesId);
    this->Deal_.DailyClear();
    this->High_.DailyClear();
    this->Low_.DailyClear();
-   this->MdRtStream_.SessionClear(tree, *this);
+   this->MdRtStream_.SessionClear(owner, *this);
 }
-void ExgMdIndex::BeforeRemove(fon9::fmkt::SymbTree& tree, unsigned tdayYYYYMMDD) {
+void ExgMdIndex::OnBeforeRemove(fon9::fmkt::SymbTree& owner, unsigned tdayYYYYMMDD) {
    (void)tdayYYYYMMDD;
-   this->MdRtStream_.BeforeRemove(tree, *this);
+   this->MdRtStream_.BeforeRemove(owner, *this);
 }
 //--------------------------------------------------------------------------//
 fon9::fmkt::SymbSP ExgMdIndices::MakeSymb(const fon9::StrView& symbid) {

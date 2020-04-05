@@ -76,25 +76,28 @@ enum class RtsPackType : uint8_t {
    /// Twf 基本資訊.
    /// - InfoTime(Bitv: Null=Unchanged)
    /// - TradingMarket(char)
-   /// - FlowGroup(uint8_t)
-   /// - StrikePriceDecimalLocator(uint8_t)
+   /// - 如果有 Base.FlowGroup: FlowGroup(uint8_t)
+   /// - 如果有 Base.StrikePriceDiv: StrikePriceDecimalLocator(uint8_t)
+   /// - 如果有 Base.ShUnit: ShUnit(Bitv)
    /// - PriRef(Bitv)
    /// - PriUpLmt(Bitv)
    /// - PriDnLmt(Bitv)
-   BaseInfoTwf,
+   BaseInfoTw,
 
    /// DealPack + SnapshotBS(無InfoTime);
    /// 使用 f9fmkt::DealFlag::Calculated 判斷是否為試算.
    DealBS,
 
-   /// Tws 基本資訊.
-   /// - InfoTime(Bitv: Null=Unchanged)
-   /// - TradingMarket(char)
-   /// - ShUnit(Bitv)
-   /// - PriRef(Bitv)
-   /// - PriUpLmt(Bitv)
-   /// - PriDnLmt(Bitv)
-   BaseInfoTws,
+   /// 單一商品的全部資料, 通常用在訂閱整棵樹的商品資料回補.
+   /// - 底下內容重覆 n 次:
+   ///   - SymbId
+   ///   - SymbCellsToBitv()
+   SnapshotSymb,
+
+   /// 指數值.
+   /// - DealTime
+   /// - DealPri
+   IndexValue,
 
    Count,
 };

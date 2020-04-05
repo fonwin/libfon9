@@ -51,16 +51,15 @@ public:
    fon9::fmkt::SymbData* GetSymbData(int tabid) override;
    fon9::fmkt::SymbData* FetchSymbData(int tabid) override;
 
-   void DailyClear(fon9::fmkt::SymbTree& tree, unsigned tdayYYYYMMDD);
-   void SessionClear(fon9::fmkt::SymbTree& tree, f9fmkt_TradingSessionId tsesId);
-   void BeforeRemove(fon9::fmkt::SymbTree& tree, unsigned tdayYYYYMMDD);
+   void SessionClear(fon9::fmkt::SymbTree& owner, f9fmkt_TradingSessionId tsesId) override;
+   void OnBeforeRemove(fon9::fmkt::SymbTree& owner, unsigned tdayYYYYMMDD) override;
 
    static fon9::seed::LayoutSP MakeLayout();
 };
 //--------------------------------------------------------------------------//
-class f9tws_API ExgMdIndices : public fon9::fmkt::MdSymbs<ExgMdIndex> {
+class f9tws_API ExgMdIndices : public fon9::fmkt::MdSymbsT<ExgMdIndex> {
    fon9_NON_COPY_NON_MOVE(ExgMdIndices);
-   using base = fon9::fmkt::MdSymbs<ExgMdIndex>;
+   using base = fon9::fmkt::MdSymbsT<ExgMdIndex>;
 
 public:
    ExgMdIndices(std::string pathFmt)

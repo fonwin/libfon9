@@ -179,7 +179,7 @@ struct PluginsMgr::PluginsTree : public Tree {
       OpResult Subscribe(SubConn* pSubConn, Tab& tab, FnSeedSubr subr) override {
          assert(&tab == this->Tree_.LayoutSP_->GetTab(0));
          static_cast<PluginsTree*>(&this->Tree_)->TreeSubj_.Subscribe(pSubConn, subr);
-         subr(SeedNotifySubscribeOK{*this, tab, TextBegin(), nullptr});
+         subr(SeedNotifySubscribeOK{*this, tab});
          return OpResult::no_error;
       }
       OpResult Unsubscribe(SubConn subConn, Tab& tab) override {

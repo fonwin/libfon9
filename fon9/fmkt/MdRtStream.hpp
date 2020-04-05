@@ -11,9 +11,7 @@ namespace fon9 { namespace fmkt {
 class fon9_API MdRtStream {
    fon9_NON_COPY_NON_MOVE(MdRtStream);
 
-   using Subj = seed::UnsafeSeedSubjT<MdRtSubrSP>;
-
-   Subj              Subj_;
+   MdRtUnsafeSubj    UnsafeSubj_;
    InnApf::StreamRW  RtStorage_;
    InnApf::SizeT     RtStorageSize_;
    DayTime           InfoTime_{DayTime::Null()};
@@ -23,7 +21,9 @@ class fon9_API MdRtStream {
    void Save(RevBufferList&& rts);
 
    seed::OpResult SubscribeStream(SubConn* pSubConn, seed::Tab& tabRt, SymbPodOp& op, StrView args, seed::FnSeedSubr&& subr);
-   seed::OpResult UnsubscribeStream(SubConn subConn);
+   seed::OpResult UnsubscribeStream(SubConn subConn) {
+      return MdRtUnsafeSubj_UnsubscribeStream(this->UnsafeSubj_, subConn);
+   }
 
 public:
    MdRtStreamInnMgr& InnMgr_;
@@ -65,7 +65,7 @@ public:
    }
 
    /// 打包並發行:
-   /// rtFldId + infoTime(Bitv,Null表示InfoTime沒變) + rts;
+   /// pkType + infoTime(Bitv,Null表示InfoTime沒變) + rts;
    void Publish(seed::Tree& tree, const StrView& keyText,
                 RtsPackType pkType, DayTime infoTime, RevBufferList&& rts);
    void PublishUpdateBS(seed::Tree& tree, const StrView& keyText,

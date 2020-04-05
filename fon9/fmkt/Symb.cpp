@@ -7,9 +7,26 @@ namespace fon9 { namespace fmkt {
 
 SymbData::~SymbData() {
 }
-
 //--------------------------------------------------------------------------//
-
+Symb::~Symb() {
+}
+void Symb::DailyClear(SymbTree& owner, unsigned tdayYYYYMMDD) {
+   this->TDayYYYYMMDD_ = tdayYYYYMMDD;
+   this->SessionClear(owner, f9fmkt_TradingSessionId_Normal);
+}
+void Symb::SessionClear(SymbTree& owner, f9fmkt_TradingSessionId tsesId) {
+   (void)owner;
+   this->TradingSessionId_ = tsesId;
+   this->TradingSessionSt_ = f9fmkt_TradingSessionSt_Clear;
+}
+bool Symb::IsExpired(unsigned tdayYYYYMMDD) const {
+   (void)tdayYYYYMMDD;
+   return false;
+}
+void Symb::OnBeforeRemove(SymbTree& owner, unsigned tdayYYYYMMDD) {
+   (void)owner; (void)tdayYYYYMMDD;
+}
+//--------------------------------------------------------------------------//
 SymbData* Symb::GetSymbData(int tabid) {
    return tabid <= 0 ? this : nullptr;
 }

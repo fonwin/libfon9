@@ -83,6 +83,8 @@ class f9tws_API ExgMdSystem : public fon9::fmkt::MdSystem {
    using MdHandlers = ExgMdMessageDispatcher<ExgMdHandlerSP>;
    MdHandlers                 MdHandlers_;
    fon9::AsyncFileAppenderSP  BaseInfoPkLog_;
+   bool                       IsReloading_{false};
+   char                       Padding____[7];
 
    void OnMdClearTimeChanged() override;
    void OnMdSystemStartup(unsigned tdayYYYYMMDD, const std::string& logPath) override;
@@ -107,9 +109,19 @@ public:
       if (ExgMdHandler* handler = this->MdHandlers_.Get(pk).get())
          handler->OnPkReceived(pk, pksz);
    }
+
+   /// 可以存任意交易所格式, 並於程式重新啟動時載入,
+   /// 但通常應該只存基本資料, 例如:
+   /// - 格式  1：個股基本資料.
+   /// - 格式 14：認購(售)權證全稱資料.
+   /// - 格式 15：當日停止交易資料.
+   /// - 格式 21︰指數基本資料.
    void BaseInfoPkLog(const ExgMdHeader& pk, unsigned pksz) {
-      if (this->BaseInfoPkLog_)
+      if (this->BaseInfoPkLog_ && !this->IsReloading_)
          this->BaseInfoPkLog_->Append(&pk, pksz);
+   }
+   bool IsReloading() const {
+      return this->IsReloading_;
    }
 };
 using ExgMdSystemSP = fon9::intrusive_ptr<ExgMdSystem>;

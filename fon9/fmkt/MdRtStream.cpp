@@ -1,7 +1,7 @@
 ﻿// \file fon9/fmkt/MdRtStream.cpp
 // \author fonwinz@gmail.com
 #include "fon9/fmkt/MdRtStream.hpp"
-#include "fon9/fmkt/SymbTree.hpp"
+#include "fon9/fmkt/MdSymbs.hpp"
 #include "fon9/fmkt/SymbBS.hpp"
 #include "fon9/seed/FieldMaker.hpp"
 #include "fon9/Log.hpp"
@@ -19,48 +19,36 @@ seed::OpResult MdRtStream::SubscribeStream(SubConn*           pSubConn,
                                            SymbPodOp&         op,
                                            StrView            args,
                                            seed::FnSeedSubr&& subr) {
-   StrView decoderName = StrFetchTrim(args, ':');
+   // args = "MdRts:F:F,RecoverTime"
+   // 1st F(hex) is MdRtsKind MdRtSubr.RtFilter_;
+   // 2nd F(hex) is MdRtsKind MdRtRecover.Filter_;
+   const StrView decoderName = StrFetchTrim(args, ':');
    if (decoderName != "MdRts")
       return seed::OpResult::bad_subscribe_stream_args;
 
-   MdRtSubrSP  psub{new MdRtSubr{std::move(subr)}};
-
-   // args 分成 2 個主要部分,使用 ':' 分隔「即時:回補」
-   // - 即時
-   //   - MdRtsKind(hex): empty() or 0 表示訂閱全部的即時訊息.
-   //   - 訂閱BS快照(+Interval?)? 
-   psub->RtFilter_ = StrToMdRtsKind(&args);
-
+   MdRtSubrSP  psub{new MdRtSubr{std::move(subr), &args}};
    // 必須先加入訂閱, 因為 psub(SubscribeStreamOK{}) 呼叫時, 可能會取消訂閱!
    // 如果在 psub(SubscribeStreamOK{}) 之後才加入訂閱, 這樣的取消就無效了!
-   this->Subj_.Subscribe(pSubConn, psub);
+   this->UnsafeSubj_.Subscribe(pSubConn, psub);
 
    // 訂閱成功的通知.
-   struct SubscribeStreamOK : public seed::SeedNotifyArgs {
+   struct SubscribeStreamOK : public seed::SeedNotifySubscribeOK {
       fon9_NON_COPY_NON_MOVE(SubscribeStreamOK);
-      using base = SeedNotifyArgs;
+      using base = SeedNotifySubscribeOK;
       SymbPodOp& PodOp_;
       SubscribeStreamOK(SymbPodOp& op, seed::Tab& tabRt)
          : base(*op.Sender_, &tabRt, op.KeyText_, nullptr, seed::SeedNotifyKind::SubscribeStreamOK)
          , PodOp_(op) {
       }
-      void MakeGridView() const override {
+      BufferList GetGridViewBuffer(const std::string** ppGvStr) const override {
+         if (ppGvStr)
+            *ppGvStr = nullptr;
          RevBufferList rbuf{256};
-         size_t tabidx = this->Tree_.LayoutSP_->GetTabCount();
-         while (tabidx > 0) {
-            auto* tab = this->Tree_.LayoutSP_->GetTab(--tabidx);
-            this->PodOp_.BeginRead(*tab, [&rbuf](const seed::SeedOpResult& res, const seed::RawRd* rd) {
-               if (rd == nullptr)
-                  return;
-               auto fldidx = res.Tab_->Fields_.size();
-               while (fldidx > 0) {
-                  auto* fld = res.Tab_->Fields_.Get(--fldidx);
-                  fld->CellToBitv(*rd, rbuf);
-               }
-               ToBitv(rbuf, unsigned_cast(res.Tab_->GetIndex()));
-            });
-         }
-         this->CacheGV_ = BufferTo<std::string>(rbuf.MoveOut());
+         SymbCellsToBitv(rbuf, *this->Tree_.LayoutSP_, *this->PodOp_.Symb_);
+         return rbuf.MoveOut();
+      }
+      void MakeGridView() const override {
+         this->CacheGV_ = BufferTo<std::string>(this->GetGridViewBuffer(nullptr));
       }
    };
    psub(SubscribeStreamOK{op, tabRt});
@@ -98,14 +86,6 @@ seed::OpResult MdRtStream::SubscribeStream(SubConn*           pSubConn,
    recover->RunAfter(TimeInterval{});
    return seed::OpResult::no_error;
 }
-seed::OpResult MdRtStream::UnsubscribeStream(SubConn subConn) {
-   MdRtSubrSP psub;
-   if (!this->Subj_.MoveOutSubscriber(subConn, psub))
-      return seed::OpResult::no_subscribe;
-   assert(psub.get() != nullptr && psub->IsUnsubscribed() == false);
-   psub->SetUnsubscribed(); // 告知回補程序: 已經取消訂閱, 不用再處理回補了!
-   return seed::OpResult::no_error;
-}
 //--------------------------------------------------------------------------//
 void MdRtStream::SessionClear(SymbTree& tree, Symb& symb) {
    const void*   prevStream = this->RtStorage_.GetStream().get();
@@ -129,7 +109,8 @@ void MdRtStream::SessionClear(SymbTree& tree, Symb& symb) {
 }
 void MdRtStream::BeforeRemove(SymbTree& tree, Symb& symb) {
    seed::SeedNotifyArgs e(tree, nullptr, ToStrView(symb.SymbId_), nullptr, seed::SeedNotifyKind::PodRemoved);
-   this->Subj_.Publish(e);
+   this->UnsafeSubj_.Publish(e);
+   this->InnMgr_.MdSymbs_.UnsafePublish(RtsPackType::Count, e);
 }
 // -----
 void MdRtStream::PublishUpdateBS(seed::Tree& tree, const StrView& keyText,
@@ -162,22 +143,24 @@ void MdRtStream::Publish(seed::Tree& tree, const StrView& keyText,
       ToBitv(rts, infoTime);
    }
    *rts.AllocPacket<uint8_t>() = cast_to_underlying(pkType);
-
+   // -----
    struct NotifyArgs : public seed::SeedNotifyArgs {
       fon9_NON_COPY_NON_MOVE(NotifyArgs);
       using base = seed::SeedNotifyArgs;
       using base::base;
-
-      const BufferNode* Rts_;
-
+      const BufferNode* const RtsForGvStr_;
+      NotifyArgs(seed::Tree& tree, const StrView& keyText, MdRtsKind rtsKind, RevBufferList& rts)
+         : base(tree, nullptr/*tab*/, keyText, rtsKind)
+         , RtsForGvStr_{rts.cfront()} {
+      }
       void MakeGridView() const override {
-         this->CacheGV_ = BufferTo<std::string>(this->Rts_);
+         this->CacheGV_ = BufferTo<std::string>(this->RtsForGvStr_);
       }
    };
-   NotifyArgs e{tree, nullptr/*tab*/, keyText, rtsKind};
-   e.Rts_ = rts.cfront();
-   this->Subj_.Publish(e);
-
+   NotifyArgs  e{tree, keyText, rtsKind, rts};
+   this->UnsafeSubj_.Publish(e);
+   this->InnMgr_.MdSymbs_.UnsafePublish(pkType, e);
+   // -----
    if (IsEnumContains(rtsKind, MdRtsKind::BS)) {
       fon9_WARN_DISABLE_SWITCH;
       switch (pkType) {

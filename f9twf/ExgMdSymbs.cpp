@@ -84,22 +84,18 @@ fon9::fmkt::SymbData* ExgMdSymb::FetchSymbData(int tabid) {
    return GetExgMdSymbData(this, tabid);
 }
 //--------------------------------------------------------------------------//
-void ExgMdSymb::DailyClear(fon9::fmkt::SymbTree& tree, unsigned tdayYYYYMMDD) {
-   this->TDayYYYYMMDD_ = tdayYYYYMMDD;
-   this->SessionClear(tree, f9fmkt_TradingSessionId_Normal);
-}
-void ExgMdSymb::SessionClear(fon9::fmkt::SymbTree& tree, f9fmkt_TradingSessionId tsesId) {
-   base::SessionClear(tsesId);
+void ExgMdSymb::SessionClear(fon9::fmkt::SymbTree& owner, f9fmkt_TradingSessionId tsesId) {
+   base::SessionClear(owner, tsesId);
    this->Ref_.DailyClear();
    this->Deal_.DailyClear();
    this->BS_.DailyClear();
    this->High_.DailyClear();
    this->Low_.DailyClear();
-   this->MdRtStream_.SessionClear(tree, *this);
+   this->MdRtStream_.SessionClear(owner, *this);
 }
-void ExgMdSymb::BeforeRemove(fon9::fmkt::SymbTree& tree, unsigned tdayYYYYMMDD) {
+void ExgMdSymb::OnBeforeRemove(fon9::fmkt::SymbTree& owner, unsigned tdayYYYYMMDD) {
    (void)tdayYYYYMMDD;
-   this->MdRtStream_.BeforeRemove(tree, *this);
+   this->MdRtStream_.BeforeRemove(owner, *this);
 }
 //--------------------------------------------------------------------------//
 fon9::fmkt::SymbSP ExgMdSymbs::MakeSymb(const fon9::StrView& symbid) {

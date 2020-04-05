@@ -15,6 +15,11 @@ struct SymbTwaBase : public SymbTwsBase, public SymbTwfBase {
       SymbTwsBase::AddFields<Derived>(flds);
       SymbTwfBase::AddFields<Derived>(flds);
    }
+
+   void DailyClear() {
+      SymbTwsBase::DailyClear();
+      SymbTwfBase::DailyClear();
+   }
 };
 
 } } // namespaces

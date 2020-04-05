@@ -64,7 +64,7 @@ void ExgMdSystem::OnMdSystemStartup(const unsigned tdayYYYYMMDD, const std::stri
 
    this->BaseInfoPkLog_.reset();
    auto pkLogF = fon9::AsyncFileAppender::Make();
-   fname.append("_BaseInfo.pks");
+   fname.append("_BaseInfo.bin");
    auto resPkLog = pkLogF->OpenImmediately(
       fname, fon9::FileMode::CreatePath | fon9::FileMode::Append | fon9::FileMode::Read);
    if (resPkLog.IsError()) {
@@ -93,6 +93,10 @@ void ExgMdSystem::OnMdSystemStartup(const unsigned tdayYYYYMMDD, const std::stri
       fon9_NON_COPY_NON_MOVE(BaseInfoReloader);
       ExgMdSystem&   Owner_;
       BaseInfoReloader(ExgMdSystem& owner) : Owner_(owner) {
+         owner.IsReloading_ = true;
+      }
+      ~BaseInfoReloader() {
+         this->Owner_.IsReloading_ = false;
       }
       bool operator()(fon9::DcQueue& rdbuf, fon9::File::Result&) {
          this->FeedBuffer(rdbuf);

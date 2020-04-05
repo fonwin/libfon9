@@ -29,21 +29,33 @@ void SeedNotifyArgs::MakeGridView() const {
    FieldsCellRevPrint0NoSpl(this->Tab_->Fields_, *this->Rd_, rbuf, *fon9_kCSTR_CELLSPL);
    this->CacheGV_ = BufferTo<std::string>(rbuf.MoveOut());
 }
-
-SeedNotifySubscribeOK::SeedNotifySubscribeOK(TreeOp& opTree, Tab& tab, const StrView& keyText, const RawRd* rd)
-   : base(opTree.Tree_, &tab, keyText, rd, SeedNotifyKind::SubscribeOK)
-   , OpTree_(opTree) {
+//--------------------------------------------------------------------------//
+SeedNotifySubscribeOK::SeedNotifySubscribeOK(TreeOp& opTree, Tab& tab)
+   : base(opTree.Tree_, &tab, TextBegin(), nullptr, SeedNotifyKind::SubscribeOK)
+   , OpTree_(&opTree) {
 }
 void SeedNotifySubscribeOK::MakeGridView() const {
    if (this->Rd_)
       base::MakeGridView();
-   else
-      this->OpTree_.GridView(GridViewRequestFull{*this->Tab_},
-                             [this](GridViewResult& res) {
+   else if (this->OpTree_) {
+      this->OpTree_->GridView(GridViewRequestFull{*this->Tab_},
+                              [this](GridViewResult& res) {
          this->CacheGV_ = std::move(res.GridView_);
       });
+   }
 }
-
+BufferList SeedNotifySubscribeOK::GetGridViewBuffer(const std::string** gv) const {
+   if (gv)
+      *gv = &this->GetGridView();
+   return BufferList{};
+}
+//--------------------------------------------------------------------------//
+BufferList SeedNotifyStreamRecoverArgs::GetGridViewBuffer(const std::string** gv) const {
+   if (gv)
+      *gv = &this->GetGridView();
+   return BufferList{};
+}
+//--------------------------------------------------------------------------//
 fon9_API void SeedSubj_Notify(UnsafeSeedSubj& subj, const SeedNotifyArgs& args) {
    subj.Publish(args);
 }
@@ -65,6 +77,5 @@ fon9_API void SeedSubj_TableChanged(UnsafeSeedSubj& subj, Tree& tree, Tab& tab) 
    if (!subj.IsEmpty())
       SeedSubj_Notify(subj, SeedNotifyArgs(tree, &tab, TextEnd(), nullptr, SeedNotifyKind::TableChanged));
 }
-
 
 } } // namespaces

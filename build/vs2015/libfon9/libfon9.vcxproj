@@ -452,6 +452,7 @@
     <ClCompile Include="..\..\..\fon9\fmkt\MdRtsTypes.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\MdRtStream.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\MdRtStreamInn.cpp" />
+    <ClCompile Include="..\..\..\fon9\fmkt\MdSymbs.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\MdSystem.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\Symb.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\SymbBS.cpp" />

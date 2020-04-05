@@ -195,6 +195,7 @@ set(fon9src
  fmkt/MdRtStream.cpp
  fmkt/MdRtStreamInn.cpp
  fmkt/MdSystem.cpp
+ fmkt/MdSymbs.cpp
 
  fix/FixBase.cpp
  fix/FixCompID.cpp

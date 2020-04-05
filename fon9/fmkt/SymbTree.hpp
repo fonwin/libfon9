@@ -202,6 +202,8 @@ class fon9_API SymbTree : public SymbTreeT<SymbMap, std::mutex> {
 public:
    using SymbTreeT::SymbTreeT;
    ~SymbTree();
+
+   void LockedDailyClear(Locker& symbs, unsigned tdayYYYYMMDD);
 };
 // 使用 fon9_API_TEMPLATE_CLASS 造成 VS 2015 Debug build 失敗?!
 // fon9_API_TEMPLATE_CLASS(SymbTree, SymbTreeT, SymbMap, std::mutex);

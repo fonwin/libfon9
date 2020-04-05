@@ -59,16 +59,28 @@ public:
 
    Symb(const StrView& symbid) : SymbId_{symbid} {
    }
+   virtual ~Symb();
 
    virtual SymbData* GetSymbData(int tabid);
    virtual SymbData* FetchSymbData(int tabid);
 
    static seed::Fields MakeFields();
 
-   void SessionClear(f9fmkt_TradingSessionId tsesId) {
-      this->TradingSessionId_ = tsesId;
-      this->TradingSessionSt_ = f9fmkt_TradingSessionSt_Clear;
+   /// 每日清檔, 預設:
+   /// - 設定 this->TDayYYYYMMDD_;
+   /// - this->SessionClear(owner, f9fmkt_TradingSessionId_Normal);
+   virtual void DailyClear(SymbTree& owner, unsigned tdayYYYYMMDD);
+   virtual void SessionClear(SymbTree& owner, f9fmkt_TradingSessionId tsesId);
+
+   /// 商品是否已經下市? 預設傳回 false;
+   virtual bool IsExpired(unsigned tdayYYYYMMDD) const;
+   static bool IsSymbExpired(unsigned endYYYYMMDD, unsigned tdayYYYYMMDD) {
+      return(endYYYYMMDD != 0 && endYYYYMMDD < tdayYYYYMMDD);
    }
+   /// 在每日清檔時, 若商品已下市, 則會觸發此事件.
+   /// 衍生者應觸發 PodRemoved 事件.
+   /// 預設 do nothing.
+   virtual void OnBeforeRemove(SymbTree& owner, unsigned tdayYYYYMMDD);
 };
 using SymbSP = intrusive_ptr<Symb>;
 

@@ -475,6 +475,23 @@ void RcSeedVisitorServerNote::OnRecvFunctionCall(RcSession& ses, RcFunctionParam
          runner->OnError(runResult);
    }
 }
+//--------------------------------------------------------------------------//
+// return gv size;
+template <class SeedNotifyArgsT>
+static size_t PutGridViewBuffer(RevBufferList& rbuf, SeedNotifyArgsT& e) {
+   assert(rbuf.cfront() == nullptr);
+   const std::string* gvStr = nullptr;
+   rbuf = RevBufferList{64, e.GetGridViewBuffer(&gvStr)};
+   if (auto* cbuf = rbuf.cfront()) {
+      auto sz = CalcDataSize(cbuf);
+      return sz + ByteArraySizeToBitvT(rbuf, sz);
+   }
+   if (gvStr == nullptr || gvStr->empty())
+      return 0;
+   auto sz = gvStr->size();
+   return sz + ByteArrayToBitv_NoEmpty(rbuf, gvStr->c_str(), sz);
+}
+
 void RcSeedVisitorServerNote::OnSubscribeNotify(SubrRegSP preg, const seed::SeedNotifyArgs& e) {
    RevBufferList ackbuf{128};
    RcSession&    ses = *static_cast<RcSession*>(preg->Device_->Session_.get());
@@ -483,21 +500,24 @@ void RcSeedVisitorServerNote::OnSubscribeNotify(SubrRegSP preg, const seed::Seed
       return;
    case seed::SeedNotifyKind::SubscribeStreamOK:
    case seed::SeedNotifyKind::SubscribeOK:
+      assert(dynamic_cast<const seed::SeedNotifySubscribeOK*>(&e) != nullptr);
       if (auto* note = static_cast<RcSeedVisitorServerNote*>(ses.GetNote(f9rc_FunctionCode_SeedVisitor))) {
          assert(note->Runner_ != nullptr);
-         const std::string& gv = e.GetGridView(); // {立即回覆的 tab(seeds) 內容;}
+         // 訂閱成功 {立即回覆的 tab(seeds) 內容;}
+         const auto gvsz = PutGridViewBuffer(note->Runner_->AckBuffer_,
+                                             *static_cast<const seed::SeedNotifySubscribeOK*>(&e));
          if (e.NotifyKind_ == seed::SeedNotifyKind::SubscribeStreamOK) {
-            ToBitv(note->Runner_->AckBuffer_, gv);
+            if (gvsz == 0)
+               RevPutBitv(note->Runner_->AckBuffer_, fon9_BitvV_ByteArrayEmpty);
             goto __ACK_SUCCESS_0;
          }
-         if (gv.empty()) {
+         if (gvsz == 0) {
          __ACK_SUCCESS_0:;
             // 訂閱成功, 告知有 0 筆立即回覆的 tab(seeds) 內容.
             ToBitv(note->Runner_->AckBuffer_, seed::OpResult::no_error);
             RevPutBitv(note->Runner_->AckBuffer_, fon9_BitvV_Number0);
          }
          else { // 訂閱成功, 告知有1筆立即回覆的 tab(seeds) 內容.
-            ToBitv(note->Runner_->AckBuffer_, gv);
             ToBitv(note->Runner_->AckBuffer_, static_cast<unsigned>(e.Tab_->GetIndex()));
             ToBitv(note->Runner_->AckBuffer_, seed::OpResult::no_error);
             ToBitv(note->Runner_->AckBuffer_, 1u);
@@ -514,14 +534,16 @@ void RcSeedVisitorServerNote::OnSubscribeNotify(SubrRegSP preg, const seed::Seed
    case seed::SeedNotifyKind::StreamRecover:
    case seed::SeedNotifyKind::StreamRecoverEnd:
       if (auto* note = static_cast<RcSeedVisitorServerNote*>(ses.GetNote(f9rc_FunctionCode_SeedVisitor))) {
-         const std::string& gv = e.GetGridView();
-         TimeInterval fc = note->FcRecover_.CalcUsed(UtcNow(), gv.size() + 16);
+         assert(dynamic_cast<const seed::SeedNotifyStreamRecoverArgs*>(&e) != nullptr);
+         const auto gvsz = PutGridViewBuffer(ackbuf, *static_cast<const seed::SeedNotifyStreamRecoverArgs*>(&e));
+         TimeInterval fc = note->FcRecover_.CalcUsed(UtcNow(), gvsz + 16);
          if (!fc.IsZero() && e.NotifyKind_ != seed::SeedNotifyKind::StreamRecoverEnd) {
             static_cast<const seed::SeedNotifyStreamRecoverArgs*>(&e)->FlowControlWait_ = fc;
             if (fc.GetOrigValue() < 0)
                return;
          }
-         ToBitv(ackbuf, gv);
+         if (gvsz == 0) // gvsz > 0 已在 PutGridViewBuffer() 填好了;
+            RevPutBitv(ackbuf, fon9_BitvV_ByteArrayEmpty);
          goto __CHECK_PUT_KEY_FOR_SUBR_TREE;
       }
       return;
@@ -536,7 +558,7 @@ void RcSeedVisitorServerNote::OnSubscribeNotify(SubrRegSP preg, const seed::Seed
    case seed::SeedNotifyKind::SeedRemoved:
       preg->IsSubjectClosed_ = true;
    __CHECK_PUT_KEY_FOR_SUBR_TREE:;
-      if (IsSubrTree(preg->SeedKey_.begin())) // 如果訂閱的是 tree, 則需要額外提供 seedKey.
+      if (IsSubrTree(preg->SeedKey_.begin()))  // 如果訂閱的是 tree, 則需要額外提供 seedKey.
          ToBitv(ackbuf, e.KeyText_);
       break;
    case seed::SeedNotifyKind::ParentSeedClear:

@@ -1,17 +1,21 @@
 ﻿// \file fon9/fmkt/MdRtStreamInn.cpp
 // \author fonwinz@gmail.com
 #include "fon9/fmkt/MdRtStreamInn.hpp"
+#include "fon9/fmkt/MdSymbs.hpp"
 #include "fon9/TimedFileName.hpp"
 #include "fon9/Log.hpp"
 #include "fon9/BitvDecode.hpp"
 
 namespace fon9 { namespace fmkt {
 
-MdRtStreamInnMgr::MdRtStreamInnMgr(SymbTree& symbTree, std::string rtiPathFmt)
+MdRtSubr::~MdRtSubr() {
+}
+//--------------------------------------------------------------------------//
+MdRtStreamInnMgr::MdRtStreamInnMgr(MdSymbsBase& symbs, std::string rtiPathFmt)
    : RecoverThread_(rtiPathFmt.empty()
                     ? nullptr
                     : new TimerThread{RevPrintTo<std::string>("MdRtsInnMgr:", rtiPathFmt)})
-   , SymbTree_(symbTree)
+   , MdSymbs_(symbs)
    , RtiPathFmt_{std::move(rtiPathFmt)} {
 }
 MdRtStreamInnMgr::~MdRtStreamInnMgr() {
@@ -78,7 +82,7 @@ void MdRtRecover::OnTimer(TimeStamp now) {
       using base::CacheGV_;
       PosT  Pos_;
    };
-   NotifyArgs  nargs(this->Mgr_.SymbTree_, nullptr/*tab*/,
+   NotifyArgs  nargs(this->Mgr_.MdSymbs_, nullptr/*tab*/,
                      ToStrView(this->Reader_->Key()),
                      nullptr/*rd*/, seed::SeedNotifyKind::StreamRecover);
 
@@ -159,8 +163,8 @@ void MdRtRecover::OnTimer(TimeStamp now) {
          nargs.CacheGV_.append(pchk + sizeof(chkValue), reinterpret_cast<const char*>(dcq.Peek1() + pksz));
          // 回補通知. 多筆打包一次(增加回補效率).
          if (nargs.CacheGV_.size() > 1024) { // MTU = 1500?
-            {  // lock tree.
-               auto  treelk{this->Mgr_.SymbTree_.SymbMap_.ConstLock()};
+            {  // lock tree: 確保可以安全的使用 this->RtSubr_;
+               auto  treelk{this->Mgr_.MdSymbs_.SymbMap_.ConstLock()};
                if (this->RtSubr_->IsUnsubscribed())
                   return;
                this->RtSubr_(nargs);
@@ -213,17 +217,20 @@ void MdRtRecover::OnTimer(TimeStamp now) {
    // - e.CacheGV_ 可能還有一些「未使用 StreamRecover 通知」的回補訊息,
    //   在此會使用 StreamRecoverEnd 送出.
    // - 可參考 fon9/rc/RcMdRtsDecoder.cpp: DecodeStreamRecoverEnd() 的做法.
-   auto  treelk{this->Mgr_.SymbTree_.SymbMap_.ConstLock()};
-   if (this->RtSubr_->IsUnsubscribed())
-      return;
-   if (nextReadPos >= this->EndPos_)
-      nargs.NotifyKind_ = seed::SeedNotifyKind::StreamRecoverEnd;
-   else if (nargs.CacheGV_.empty()) {
-      this->RunAfter(TimeInterval_Millisecond(1));
-      return;
-   }
+   { // lock tree: 確保可以安全的使用 this->RtSubr_;
+      auto  treelk{this->Mgr_.MdSymbs_.SymbMap_.ConstLock()};
+      if (this->RtSubr_->IsUnsubscribed())
+         return;
+      if (nextReadPos >= this->EndPos_)
+         nargs.NotifyKind_ = seed::SeedNotifyKind::StreamRecoverEnd;
+      else if (nargs.CacheGV_.empty()) {
+         treelk.unlock();
+         this->RunAfter(TimeInterval_Millisecond(1));
+         return;
+      }
+      this->RtSubr_(nargs);
+   } // unlock tree.
 
-   this->RtSubr_(nargs);
    if (fon9_LIKELY(nargs.FlowControlWait_.IsNullOrZero())) {
       if (nargs.NotifyKind_ != seed::SeedNotifyKind::StreamRecoverEnd)
          this->RunAfter(TimeInterval_Millisecond(1));

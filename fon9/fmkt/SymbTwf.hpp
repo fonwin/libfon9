@@ -18,10 +18,9 @@ public:
    using base::base;
    ~SymbTwf();
 
-   void SessionClear(f9fmkt_TradingSessionId tsesId) {
-      base::SessionClear(tsesId);
-      SymbTwfBase::DailyClear();
-   }
+   bool IsExpired(unsigned tdayYYYYMMDD) const override;
+
+   void SessionClear(SymbTree& owner, f9fmkt_TradingSessionId tsesId) override;
 
    /// base::MakeFields(); and:
    /// - FlowGroup, PriceOrigDiv, StrikePriceDiv, ExgSymbSeq

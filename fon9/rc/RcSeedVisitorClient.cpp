@@ -556,7 +556,7 @@ void RcSeedVisitorClientNote::OnRecvSubrData(RcClientSession& ses, DcQueue& rxbu
       rpt.SeedKey_ = rx.CheckLoadSeedKey(rxbuf).ToCStrView();
       BitvTo(rxbuf, rx.Gv_); // 將 stream data 載入, 但不寫 log, (使用 rx.LoadGv() 會自動寫入 log).
       (rx.SubrRec_->Tree_->TabArray_[rx.SubrRec_->TabIndex_].StreamDecoder_.get()
-       ->*(fnStreamDecoder))(rx, rpt);
+         ->*(fnStreamDecoder))(rx, rpt);
       if (rx.NotifyKind_ == seed::SeedNotifyKind::StreamEnd)
          rx.RemoveSubscribe();
       return;

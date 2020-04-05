@@ -10,6 +10,8 @@
 
 namespace fon9 { namespace fmkt {
 
+class fon9_API MdSymbsBase;
+
 /// MdRtStream 的儲存機制;
 /// - 即時儲存.
 /// - 歷史回補.
@@ -23,13 +25,13 @@ class fon9_API MdRtStreamInnMgr {
 
 public:
    const TimerThreadSP  RecoverThread_;
-   SymbTree&            SymbTree_;
+   MdSymbsBase&         MdSymbs_;
    const std::string    RtiPathFmt_;
 
    /// - rtiPathFmt = 儲存檔名的路徑格式(不含副檔名, 開檔時自動加上 .rti),
    ///   使用 fon9::TimedFileName 格式;
    /// - 若 rtiPathFmt.empty() 表示不儲存;
-   MdRtStreamInnMgr(SymbTree& symbTree, std::string rtiPathFmt);
+   MdRtStreamInnMgr(MdSymbsBase& symbs, std::string rtiPathFmt);
    ~MdRtStreamInnMgr();
 
    unsigned TDayYYYYMMDD() const {
@@ -47,12 +49,18 @@ public:
 
    InnApf::OpenResult RtOpen(InnApf::StreamRW& rw, const Symb& symb);
 };
-
-struct MdRtSubr : public intrusive_ref_counter<MdRtSubr> {
+//--------------------------------------------------------------------------//
+struct fon9_API MdRtSubr : public intrusive_ref_counter<MdRtSubr> {
    MdRtsKind         RtFilter_{MdRtsKind::All};
    seed::FnSeedSubr  Callback_;
-   MdRtSubr(seed::FnSeedSubr&& sub) : Callback_{std::move(sub)} {
+   /// 從 args 取出 RtFiller_ = MdRtsKind(hex): empty() or 0 表示訂閱全部的即時訊息;
+   /// 並移動 args->begin() 到後面的參數位置.
+   MdRtSubr(seed::FnSeedSubr&& sub, StrView* args)
+      : RtFilter_{StrToMdRtsKind(args)}
+      , Callback_{std::move(sub)} {
    }
+   virtual ~MdRtSubr();
+
    bool IsUnsubscribed() const {
       return this->RtFilter_ == MdRtsKind{};
    }
@@ -63,13 +71,26 @@ struct MdRtSubr : public intrusive_ref_counter<MdRtSubr> {
 struct MdRtSubrSP : public intrusive_ptr<MdRtSubr> {
    using base = intrusive_ptr<MdRtSubr>;
    using base::base;
-   /// 送出前必須 lock tree, 檢查 IsUnsubscribed();
+   /// 呼叫前必須: lock tree, 檢查 IsUnsubscribed();
    void operator()(const seed::SeedNotifyArgs& e) const {
       assert(static_cast<SymbTree*>(&e.Tree_)->SymbMap_.IsLocked());
       assert(!this->get()->IsUnsubscribed());
       this->get()->Callback_(e);
    }
 };
+using MdRtUnsafeSubj = seed::UnsafeSeedSubjT<MdRtSubrSP>;
+
+template <class UnsafeSubj>
+inline seed::OpResult MdRtUnsafeSubj_UnsubscribeStream(UnsafeSubj& subj, SubConn subConn) {
+   typename UnsafeSubj::Subscriber psub;
+   if (!subj.MoveOutSubscriber(subConn, psub))
+      return seed::OpResult::no_subscribe;
+   assert(psub.get() != nullptr && psub->IsUnsubscribed() == false);
+   psub->SetUnsubscribed(); // 告知回補程序: 已經取消訂閱, 不用再處理回補了!
+   return seed::OpResult::no_error;
+}
+
+//--------------------------------------------------------------------------//
 struct MdRtRecover : public TimerEntry {
    fon9_NON_COPY_NON_MOVE(MdRtRecover);
    using PosT = InnApf::SizeT;

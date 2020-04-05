@@ -30,5 +30,19 @@ void SymbPodOp::BeginWrite(seed::Tab& tab, seed::FnWriteOp fnCallback) {
 //--------------------------------------------------------------------------//
 SymbTree::~SymbTree() {
 }
+void SymbTree::LockedDailyClear(Locker& symbs, unsigned tdayYYYYMMDD) {
+   auto iend = symbs->end();
+   for (auto ibeg = symbs->begin(); ibeg != iend;) {
+      auto& symb = *ibeg->second;
+      if (!symb.IsExpired(tdayYYYYMMDD)) {
+         symb.DailyClear(*this, tdayYYYYMMDD);
+         ++ibeg;
+      }
+      else { // 移除已下市商品, 移除時需觸發 PodRemoved 事件.
+         symb.OnBeforeRemove(*this, tdayYYYYMMDD);
+         ibeg = symbs->erase(ibeg);
+      }
+   }
+}
 
 } } // namespaces

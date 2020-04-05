@@ -18,10 +18,7 @@ public:
    using base::base;
    ~SymbTws();
 
-   void SessionClear(f9fmkt_TradingSessionId tsesId) {
-      base::SessionClear(tsesId);
-      SymbTwsBase::DailyClear();
-   }
+   void SessionClear(SymbTree& owner, f9fmkt_TradingSessionId tsesId) override;
 
    /// base::MakeFields(); and:
    /// - ShUnit

@@ -48,6 +48,18 @@ struct SeedRec : public f9sv_Seed {
 };
 using SeedSP = std::unique_ptr<SeedRec>;
 using Seeds = std::vector<SeedSP>;
+
+inline const f9sv_Seed** ToSeedArray(SeedSP* seedArray) {
+   // 底下的這些 static_assert(), 是為了確定 C API 可以正確使用:
+   //    struct f9sv_ClientReport 的 const struct f9sv_Seed** SeedArray_;
+   static_assert(sizeof(svc::SeedSP) == sizeof(svc::SeedRec*), "");
+   #ifndef _MSC_VER // MSVC 哪個版本有提供底下的檢查呢?
+      static_assert(fon9_OffsetOfBase(svc::SeedRec, f9sv_Seed) == 0, "");
+   #endif
+   fon9_GCC_WARN_DISABLE("-Wold-style-cast");
+   return (const f9sv_Seed**)(seedArray);
+   fon9_GCC_WARN_POP;
+}
 // -----
 struct PodRec {
    fon9_NON_COPY_NON_MOVE(PodRec);

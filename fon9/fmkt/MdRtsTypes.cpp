@@ -15,7 +15,8 @@ fon9_API MdRtsKind GetMdRtsKind(RtsPackType pkType) {
       MdRtsKind::TradingSessionSt,
       MdRtsKind::Base | MdRtsKind::Ref,
       MdRtsKind::Deal | MdRtsKind::BS,
-      MdRtsKind::Base | MdRtsKind::Ref,
+      MdRtsKind::All,   // SnapshotSymb
+      MdRtsKind::Deal,  // IndexValue
    };
    static_assert(numofele(RtsPackType2MdRtsKind) == cast_to_underlying(RtsPackType::Count), "");
    static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::DealPack)] == MdRtsKind::Deal, "");
@@ -23,9 +24,10 @@ fon9_API MdRtsKind GetMdRtsKind(RtsPackType pkType) {
    static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::CalculatedBS)] == MdRtsKind::BS, "");
    static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::UpdateBS)] == MdRtsKind::BS, "");
    static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::TradingSessionSt)] == MdRtsKind::TradingSessionSt, "");
-   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::BaseInfoTwf)] == (MdRtsKind::Base | MdRtsKind::Ref), "");
+   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::BaseInfoTw)] == (MdRtsKind::Base | MdRtsKind::Ref), "");
    static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::DealBS)] == (MdRtsKind::Deal | MdRtsKind::BS), "");
-   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::BaseInfoTws)] == (MdRtsKind::Base | MdRtsKind::Ref), "");
+   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::SnapshotSymb)] == MdRtsKind::All, "");
+   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::IndexValue)] == MdRtsKind::Deal, "");
 
    return RtsPackType2MdRtsKind[cast_to_underlying(pkType)];
 }

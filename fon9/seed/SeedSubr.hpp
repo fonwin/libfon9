@@ -6,12 +6,14 @@
 #include "fon9/seed/RawRd.hpp"
 #include "fon9/Subr.hpp"
 #include "fon9/TimeInterval.hpp"
+#include "fon9/buffer/BufferList.hpp"
 
 namespace fon9 { namespace seed {
 
 enum class SeedNotifyKind {
    /// 訂閱成功返回前的通知.
    /// 若在訂閱成功後, 有立即取得資料的需求, 則需處理此通知. 
+   /// SeedNotifyArgs 必定使用 SeedNotifySubscribeOK 或其衍生者;
    SubscribeOK = 0,
    SeedChanged = 1,
    PodRemoved = 2,
@@ -23,6 +25,7 @@ enum class SeedNotifyKind {
 
    /// SubscribableOp::SubscribeStream() 訂閱成功時的通知.
    /// - 此時 GetGridView() 返回的是自訂格式的內容.
+   /// - SeedNotifyArgs 必定使用 SeedNotifySubscribeOK 或其衍生者;
    SubscribeStreamOK = 6,
    /// 由「Stream 發行者」提供的自訂格式.
    /// - 此時 GetGridView() 返回的是自訂格式的內容.
@@ -54,7 +57,7 @@ public:
    ///     因為 GetGridView() 為自訂格式,
    ///     可提供 Pod 裡面任意一個 Seed 的內容, 提供 Tab_ 意義不大.
    Tab* const     Tab_;
-   /// - IsTextBegin(args.KeyText_): ParentSeedClear 的事件通知.
+   /// - IsTextBegin(args.KeyText_): ParentSeedClear or SubscribeOK(訂閱tree) 的事件通知.
    /// - IsTextEnd(args.KeyText_):   TableChanged 的事件通知, 例如: Apply 之後的通知.
    const StrView  KeyText_;
    /// - 不為 nullptr:
@@ -96,19 +99,42 @@ public:
    }
 };
 fon9_WARN_POP;
-
-/// 一般訂閱成功時的通知.
-/// 不含 Stream 訂閱成功, Stream 訂閱成功, 由 Stream 提供者自行處理.
+//--------------------------------------------------------------------------//
+/// 訂閱成功時的通知(包含訂閱Stream成功 或 一般訂閱成功).
 class fon9_API SeedNotifySubscribeOK : public SeedNotifyArgs {
    fon9_NON_COPY_NON_MOVE(SeedNotifySubscribeOK);
    using base = SeedNotifyArgs;
 protected:
+   /// 預設行為:
+   /// - 訂閱 Tree 使用 this->OpTree_->GridView();
+   /// - 訂閱 Seed 使用 base::MakeGridView();
+   ///   => FieldsCellRevPrint0NoSpl(this->Tab_->Fields_, *this->Rd_, rbuf, *fon9_kCSTR_CELLSPL);
    void MakeGridView() const override;
-public:
-   TreeOp&  OpTree_;
-   SeedNotifySubscribeOK(TreeOp& opTree, Tab& tab, const StrView& keyText, const RawRd* rd);
-};
 
+   /// 由衍生者處理訂閱返回值 MakeGridView() 或 GetGridViewBuffer().
+   using base::base;
+
+public:
+   TreeOp* const  OpTree_{nullptr};
+
+   /// 訂閱 Tree;
+   SeedNotifySubscribeOK(TreeOp& opTree, Tab& tab);
+   /// 訂閱單一 Seed;
+   /// rd 有可能為 nullptr, 因為由衍生者自行提供 MakeGridView(); 或 GetGridViewBuffer();
+   SeedNotifySubscribeOK(Tree& tree, Tab& tab, const StrView& keyText, const RawRd& rd)
+      : base{tree, &tab, keyText, &rd, SeedNotifyKind::SubscribeOK} {
+   }
+
+   /// 因為是訂閱成功的通知,
+   /// 所以可以返回一個專屬的 BufferList 給訂閱者使用, 而不會影響其他訂閱者.
+   /// - 如果訂閱者支援直接使用 BufferList, 則可呼叫此處.
+   /// - 預設返回 BufferList{}; 然後 *gv = this->GetGridView();
+   /// - 衍生者可返回 BufferList, 在返回前 *gv = nullptr;
+   /// - GetGridViewBuffer()的呼叫者, 必須理解如何處理 retval 及 gv;
+   /// - 此函式只能呼叫一次, 因為會將 buffer 移出返回, 重複呼叫會取得空白.
+   virtual BufferList GetGridViewBuffer(const std::string** gv) const;
+};
+//--------------------------------------------------------------------------//
 /// SeedNotifyKind::StreamRecover, SeedNotifyKind::StreamRecoverEnd 的通知.
 /// 訂閱者可返回因「流量管制」需要延遲的時間.
 /// 訂閱者可直接使用 static_cast<SeedNotifyStreamRecoverArgs*>(&e) 轉型.
@@ -125,8 +151,13 @@ public:
    mutable TimeInterval FlowControlWait_;
 
    using base::base;
-};
 
+   /// 回補成功的通知, 可以返回一個專屬的 BufferList 給訂閱者使用, 而不會影響其他訂閱者.
+   /// - 預設返回 BufferList{}; 然後 *gv = this->GetGridView();
+   /// - 此函式只能呼叫一次, 因為會將 buffer 移出返回, 重複呼叫會取得空白.
+   virtual BufferList GetGridViewBuffer(const std::string** gv) const;
+};
+//--------------------------------------------------------------------------//
 using FnSeedSubr = std::function<void(const SeedNotifyArgs&)>;
 
 template <class FnSubrT>
@@ -141,7 +172,7 @@ public:
    OpResult SafeSubscribe(const Locker& lk, TreeOp& opTree, SubConn* pSubConn, Tab& tab, const FnSeedSubr& subr) {
       (void)lk; assert(lk.owns_lock());
       this->Subscribe(pSubConn, subr);
-      subr(SeedNotifySubscribeOK{opTree, tab, TextBegin(), nullptr});
+      subr(SeedNotifySubscribeOK{opTree, tab});
       return OpResult::no_error;
    }
    template<class Locker>
@@ -151,7 +182,7 @@ public:
    }
 };
 using UnsafeSeedSubj = UnsafeSeedSubjT<FnSeedSubr>;
-
+//--------------------------------------------------------------------------//
 fon9_API void SeedSubj_NotifyPodRemoved(UnsafeSeedSubj& subj, Tree& tree, StrView keyText);
 fon9_API void SeedSubj_NotifySeedRemoved(UnsafeSeedSubj& subj, Tree& tree, Tab& tab, StrView keyText);
 fon9_API void SeedSubj_ParentSeedClear(UnsafeSeedSubj& subj, Tree& tree);

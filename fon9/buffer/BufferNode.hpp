@@ -114,6 +114,15 @@ public:
    BufferNodeSize GetDataSize() const {
       return this->DataEndOffset_ - this->DataBeginOffset_;
    }
+   /// 取得此節點前方剩餘空間(無資料的).
+   BufferNodeSize GetFrontSpaces() const {
+      return static_cast<BufferNodeSize>(this->GetDataBegin() - this->GetMemBegin());
+   }
+   /// 取得此節點尾端剩餘空間(無資料的).
+   BufferNodeSize GetBackSpaces() const {
+      return static_cast<BufferNodeSize>(this->GetMemEnd() - this->GetDataEnd());
+   }
+
    BufferNodeType GetNodeType() const {
       if (this->DataBeginOffset_ >= GetMemBeginOffset())
          return BufferNodeType::Data;
