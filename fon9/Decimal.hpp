@@ -161,7 +161,7 @@ public:
    /// **不檢查** 結果是否 underflow 或 overflow.
    template <typename F>
    void AssignRound (F value) {
-      this->Value_ = this->RoundToOrgI(value);
+      this->Value_ = this->RoundToOrigInt(value);
    }
 
    /// 取出整數部分數字, **沒有** 四捨五入.

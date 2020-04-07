@@ -177,17 +177,29 @@ void ExgMcChannel::OnRecoverErr(SeqT beginSeqNo, unsigned recoverNum, ExgMrStatu
       isNoRecover = (rs->empty() || rs->front()->Role_ != ExgMcRecoverRole::Primary);
    }
    auto pks = this->PkPendings_.Lock();
-   if (!pks->empty()) {
-      SeqT endSeq = beginSeqNo + recoverNum;
-      if (this->NextSeq_ < endSeq)
-         this->NextSeq_ = endSeq;
-      if (isNoRecover) {
-         this->base::PkContOnTimer(std::move(pks));
-         return;
-      }
-      pks.unlock();
-      this->StartPkContTimer();
+   if (pks->empty())
+      return;
+   SeqT endSeq = beginSeqNo + recoverNum;
+   if (isNoRecover) {
+      this->base::PkContOnTimer(std::move(pks));
+      this->ResetBiggerNextSeq(endSeq);
+      return;
    }
+   auto i = pks->begin();
+   while(i->Seq_ <= endSeq) {
+      this->LostCount_ += (i->Seq_ - this->NextSeq_);
+      do {
+         this->CallOnReceived(i->data(), static_cast<unsigned>(i->size()), i->Seq_);
+         if (++i == pks->end()) {
+            pks->clear();
+            return;
+         }
+      } while (this->NextSeq_ == i->Seq_);
+   }
+   pks->erase(i, pks->begin());
+   this->ResetBiggerNextSeq(endSeq);
+   pks.unlock();
+   this->StartPkContTimer();
 }
 void ExgMcChannel::OnRecoverEnd(ExgMrRecoverSession* svr) {
    fon9_LOG_INFO(this->ChannelMgr_->Name_, ".RecoverEnd"

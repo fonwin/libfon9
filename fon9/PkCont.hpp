@@ -84,6 +84,13 @@ protected:
       this->NextSeq_ = this->AfterNextSeq_;
       ++this->ReceivedCount_;
    }
+
+   void ResetBiggerNextSeq(SeqT newNextSeq) {
+      if (this->NextSeq_ < newNextSeq) {
+         this->LostCount_ += (newNextSeq - this->NextSeq_);
+         this->NextSeq_ = newNextSeq;
+      }
+   }
 };
 
 } // namespaces
