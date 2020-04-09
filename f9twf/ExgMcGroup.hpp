@@ -15,15 +15,18 @@ namespace f9twf {
 class f9twf_API ExgMcSystem : public fon9::fmkt::MdSystem {
    fon9_NON_COPY_NON_MOVE(ExgMcSystem);
    using base = fon9::fmkt::MdSystem;
+   std::string LogPath_;
 
 protected:
    void OnMdSystemStartup(unsigned tdayYYYYMMDD, const std::string& logPath) override;
    void OnMdClearTimeChanged() override;
+   void OnParentTreeClear(fon9::seed::Tree& parent);
 
 public:
    const ExgMdSymbsSP   Symbs_;
 
    ExgMcSystem(fon9::seed::MaTreeSP root, std::string name, bool useRtiForRecover);
+   ~ExgMcSystem();
 };
 using ExgMcSystemSP = fon9::intrusive_ptr<ExgMcSystem>;
 

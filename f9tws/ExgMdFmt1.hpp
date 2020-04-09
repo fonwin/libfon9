@@ -52,7 +52,8 @@ struct ExgMdFmt1_C3Ref {
    char  IsSecuritiesLendingSale_BelowPriRef_;
    /// 撮合循環秒數: 集合競價交易之撮合循環秒數, 0=採用逐筆撮合方式交易。
    fon9::PackBcd<6>   MatchingCycleSeconds_;
-   /// 權證識別碼: Y=表示有權證資料, SPACE=權證資料欄位皆為 0。
+
+   /// 權證識別碼: Y=表示有權證資料, SPACE=權證資料欄位皆為 0。
    char  HasWarrantData_;
    /// 履約價格: 最新權證履約價格 9(6)V9(4)。
    fon9::PackBcd<10>  WarrantPriStrikeV4_;

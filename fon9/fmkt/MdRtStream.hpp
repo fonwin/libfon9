@@ -71,6 +71,18 @@ public:
    void PublishUpdateBS(seed::Tree& tree, const StrView& keyText,
                         SymbBS& symbBS, RevBufferList&& rts);
 };
+//--------------------------------------------------------------------------//
+class fon9_API MdRtsNotifyArgs : public seed::SeedNotifyArgs {
+   fon9_NON_COPY_NON_MOVE(MdRtsNotifyArgs);
+   using base = seed::SeedNotifyArgs;
+public:
+   const BufferNode* const RtsForGvStr_;
+   MdRtsNotifyArgs(seed::Tree& tree, const StrView& keyText, MdRtsKind rtsKind, RevBufferList& rts)
+      : base(tree, nullptr/*tab*/, keyText, rtsKind)
+      , RtsForGvStr_{rts.cfront()} {
+   }
+   void MakeGridView() const override;
+};
 
 } } // namespaces
 #endif//__fon9_fmkt_MdRtStream_hpp__

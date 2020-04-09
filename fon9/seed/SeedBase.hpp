@@ -129,5 +129,27 @@ static constexpr bool IsTextBeginOrEnd(const StrView& k) {
    return IsTextBegin(k) || IsTextEnd(k);
 }
 
+//--------------------------------------------------------------------------//
+
+/// 如果 seedKey == "\t" 則表示訂閱 tree; 否則為訂閱指定的 key.
+constexpr bool IsSubrTree(const char* seedKey) {
+   return seedKey[0] == '\t' && seedKey[1] == '\0';
+}
+#define fon9_kCSTR_SubrTree   "\t"
+static_assert(IsSubrTree(fon9_kCSTR_SubrTree), "");
+
+/// 如果 tabName == "*" 則為 all tabs.
+constexpr bool IsTabAll(const char* tabName) {
+   return (tabName && tabName[0] == '*' && tabName[1] == '\0');
+}
+/// 如果 tabName.Get1st() == '$' 則為 SubscribeStream 的訂閱格式:
+/// - "$TabName:StreamDecoderName:Args";
+constexpr bool IsSubscribeStream(const StrView& tabName) {
+   return (tabName.Get1st() == '$');
+}
+constexpr bool IsSubscribeStream(const char* tabName) {
+   return (tabName && tabName[0] == '$');
+}
+
 } } // namespaces
 #endif//__fon9_seed_SeedBase_hpp__

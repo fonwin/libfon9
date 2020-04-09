@@ -92,16 +92,33 @@ enum class RtsPackType : uint8_t {
    /// - 底下內容重覆 n 次:
    ///   - SymbId
    ///   - SymbCellsToBitv()
-   SnapshotSymb,
+   SnapshotSymbList,
 
    /// 指數值.
+   /// - Bitv(DealTime): YesterdayIndexTime()=昨天收盤指數, ClosedIndexTime()=今日收盤指數, else=指數統計時間.
+   /// - Bitv(DealPri * 100): 「* 100」之後,通常為整數值.
+   IndexValueV2,
+   /// 一次多筆指數.
    /// - DealTime
-   /// - DealPri
-   IndexValue,
+   /// - 底下內容重覆 n 次:
+   ///   - IndexId;
+   ///   - Bitv(DealPri * 100);
+   IndexValueV2List,
 
    Count,
 };
 static_assert(cast_to_underlying(RtsPackType::Count) <= 0x7f, "");
+
+/// static_assert(ClosedIndexTime().GetOrigValue() == 99 * 24 * 60 * 60 * DayTime::Divisor, "");
+/// = 8553600000000
+constexpr DayTime ClosedIndexTime() {
+   return fon9::TimeInterval_Day(99);
+}
+/// static_assert(YesterdayIndexTime().GetOrigValue() == -1 * 24 * 60 * 60 * DayTime::Divisor, "");
+/// = -86400000000
+constexpr DayTime YesterdayIndexTime() {
+   return fon9::TimeInterval_Day(-1);
+}
 
 enum class RtBSType : uint8_t {
    // --xx ----

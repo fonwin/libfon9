@@ -1,7 +1,10 @@
 ﻿// \file fon9/fmkt/MdSymbs.cpp
 // \author fonwinz@gmail.com
 #include "fon9/fmkt/MdSymbs.hpp"
+#include "fon9/FileReadAll.hpp"
 #include "fon9/Log.hpp"
+#include "fon9/BitvDecode.hpp"
+#include "fon9/seed/RawWr.hpp"
 
 namespace fon9 { namespace fmkt {
 
@@ -39,7 +42,13 @@ struct MdSymbsBase::Recover : public TimerEntry {
          mutable RevBufferList AckBuf_{1024*2};
          using base = seed::SeedNotifyStreamRecoverArgs;
          NotifyArgs(MdSymbsBase& mdSymbs)
-            : base(mdSymbs, nullptr/*tab*/, seed::TextBegin()/*key*/, nullptr/*rd*/,
+            : base(mdSymbs, nullptr/*tab*/,
+                   // key: 因為用 RtsPackType::SnapshotSymbList 打包, 所以這裡為 don't care.
+                   // 但在 rc 送出時, 因為是 IsSubrTree() 所以會將這裡的 key 傳給 rc.client,
+                   // 可參閱: fon9/rc/RcSeedVisitorServer.cpp,
+                   // 為了減少資料量, 所以用 TextBegin(), 這樣就只需 1 byte 來打包 key.
+                   seed::TextBegin()/*key*/,
+                   nullptr/*rd*/,
                    seed::SeedNotifyKind::StreamRecover) {
          }
          BufferList GetGridViewBuffer(const std::string** gvStr) const override {
@@ -65,7 +74,7 @@ struct MdSymbsBase::Recover : public TimerEntry {
          if (keepi >= numofele(keeps))
             break;
       }
-      *nargs.AckBuf_.AllocPacket<uint8_t>() = cast_to_underlying(RtsPackType::SnapshotSymb);
+      *nargs.AckBuf_.AllocPacket<uint8_t>() = cast_to_underlying(RtsPackType::SnapshotSymbList);
       // SeedNotifyKind::StreamRecover, 在 RtsPackType 之前, 必須加上長度:
       // SeedNotifyKind::StreamRecover + [RtsLength + RtsPackType  + RtsPackData] * N
       // SeedNotifyKind::StreamRecover + [RtsLength + SnapshotSymb + (Snapshot * N)] * 1
@@ -107,12 +116,27 @@ void MdSymbsBase::DailyClear(unsigned tdayYYYYMMDD) {
    this->IsDailyClearing_ = true;
    this->RtInnMgr_.DailyClear(tdayYYYYMMDD);
    this->LockedDailyClear(symbs, tdayYYYYMMDD);
-   if (0);// 發行 dailyClear 訊息. 給 this->UnsafeSubj_;
    this->IsDailyClearing_ = false;
+   if (this->UnsafeSubj_.IsEmpty())
+      return;
+   // 發行 dailyClear 訊息;
+   RevBufferList rts{64};
+   *rts.AllocPacket<uint8_t>() = f9fmkt_TradingSessionSt_Clear;
+   *rts.AllocPacket<char>() = f9fmkt_TradingSessionId_Normal;
+   PutBigEndian(rts.AllocPacket<uint32_t>(), tdayYYYYMMDD);
+   RevPutBitv(rts, fon9_BitvV_NumberNull); // DayTime::Null();
+   *rts.AllocPacket<uint8_t>() = cast_to_underlying(RtsPackType::TradingSessionSt);
+   MdRtsNotifyArgs  e{*this, fon9_kCSTR_SubrTree, GetMdRtsKind(RtsPackType::TradingSessionSt), rts};
+   this->UnsafeSubj_.Publish(e);
 }
 void MdSymbsBase::UnsafePublish(RtsPackType pkType, seed::SeedNotifyArgs& e) {
    assert(this->SymbMap_.IsLocked());
+   // IsDailyClearing_ 時, 有可能 RtsPackType::TradingSessionSt 或 PodRemoved(商品過期被移除)
+   // 所以這裡要讓 PodRemoved 送給 tree 的訂閱者,
+   // 但 TradingSessionSt 由 MdSymbsBase::DailyClear() 送出一次, 不要每個商品都送一次.
    if (this->IsDailyClearing_ && pkType == RtsPackType::TradingSessionSt)
+      return;
+   if (this->IsBlockPublish_)
       return;
    // 訂閱時, 若沒有提供 'S' = get all SnapshotSymb;
    // 則不保證底下資料的正確:
@@ -148,42 +172,7 @@ seed::OpResult MdSymbsBase::SubscribeStream(SubConn* pSubConn, seed::Tab& tab, S
    this->UnsafeSubj_.Subscribe(pSubConn, psub);
    // -----
    // 訂閱成功的通知.
-   // struct SubscribeStreamOK : public seed::SeedNotifySubscribeOK {
-   //    fon9_NON_COPY_NON_MOVE(SubscribeStreamOK);
-   //    using base = seed::SeedNotifySubscribeOK;
-   //    const SymbMap::ConstLocker*   SymbsLk_;
-   //    SubscribeStreamOK(MdSymbsBase& tree, const SymbMap::ConstLocker* symbslk)
-   //       : base{tree, nullptr/*tab*/, seed::TextBegin(), nullptr/*rd*/, seed::SeedNotifyKind::SubscribeStreamOK}
-   //       , SymbsLk_(symbslk) {
-   //    }
-   //    BufferList GetGridViewBuffer(const std::string** ppGvStr) const override {
-   //       if (this->SymbsLk_ == nullptr) {
-   //          this->CacheGV_.clear();
-   //          *ppGvStr = &this->CacheGV_;
-   //          return BufferList{};
-   //       }
-   //       TimeStamp tmbeg = UtcNow();
-   //       if (ppGvStr)
-   //          *ppGvStr = nullptr;
-   //       RevBufferList rbuf{256};
-   //       for (const auto& isymb : **this->SymbsLk_) {
-   //          SymbCellsToBitv(rbuf, *this->Tree_.LayoutSP_, *isymb.second);
-   //          ToBitv(rbuf, isymb.first); // SymbId;
-   //       }
-   //       auto tmSpend = UtcNow() - tmbeg;
-   //       auto szTot = CalcDataSize(rbuf.cfront());
-   //       fon9_LOG_INFO("MdSymbs.SubrTree|spend=", tmSpend,
-   //                     "|pksz=", szTot,
-   //                     "|count=", (*this->SymbsLk_)->size());
-   //       return rbuf.MoveOut();
-   //    }
-   //    void MakeGridView() const override {
-   //       this->CacheGV_ = BufferTo<std::string>(this->GetGridViewBuffer(nullptr));
-   //    }
-   // };
-   // psub(SubscribeStreamOK{*this, isSubrGetAll ? &symbslk : nullptr});
    psub(seed::SeedNotifySubscribeOK{*this, nullptr/*tab*/, seed::TextBegin(), nullptr/*rd*/, seed::SeedNotifyKind::SubscribeStreamOK});
-
    if (isSubrGetAll) {
       TimeStamp tmbeg = UtcNow();
       psub->SymbsRecovering_ = *symbslk;
@@ -199,6 +188,63 @@ seed::OpResult MdSymbsBase::UnsubscribeStream(SubConn subConn, seed::Tab& tab) {
       return seed::OpResult::not_supported_subscribe_stream;
    auto   symbslk = this->SymbMap_.ConstLock();
    return MdRtUnsafeSubj_UnsubscribeStream(this->UnsafeSubj_, subConn);
+}
+//--------------------------------------------------------------------------//
+void MdSymbsBase::SaveTo(std::string fname) {
+   File fd;
+   auto res = fd.Open(fname, FileMode::CreatePath | FileMode::Trunc | FileMode::Append);
+   if (res.IsError()) {
+      fon9_LOG_ERROR("MdSymbs.SaveTo|fname=", fname, '|', res);
+      return;
+   }
+   std::string                wrbuf;
+   RevBufferFixedSize<2048>   rbuf;
+   auto symbs = this->SymbMap_.ConstLock();
+   for (const auto& isymb : *symbs) {
+      rbuf.Rewind();
+      SymbCellsToBitv(rbuf, *this->LayoutSP_, *isymb.second);
+      ToBitv(rbuf, isymb.first); // SymbId;
+      ByteArraySizeToBitvT(rbuf, rbuf.GetUsedSize());
+      wrbuf.append(rbuf.GetCurrent(), rbuf.GetMemEnd());
+   }
+   fd.Append(ToStrView(wrbuf));
+}
+void MdSymbsBase::LoadFrom(std::string fname) {
+   File fd;
+   auto res = fd.Open(fname, FileMode::Read);
+   if (res.IsError()) {
+      if (res.GetError() != ErrC{std::errc::no_such_file_or_directory})
+         fon9_LOG_ERROR("MdSymbs.LoadFrom|fname=", fname, '|', res);
+      return;
+   }
+   try {
+      File::PosType fpos = 0;
+      CharVector    rdbuf;
+      CharVector    keyText;
+      auto          symbsLk = this->SymbMap_.Lock();
+      FileReadAll(fd, fpos, [&rdbuf, &keyText, this, &symbsLk](DcQueueList& dcq, File::Result&) -> bool {
+         size_t barySize;
+         while (PopBitvByteArraySize(dcq, barySize)) {
+            dcq.Read(rdbuf.alloc(barySize), barySize);
+            DcQueueFixedMem rds{rdbuf.begin(), barySize};
+            BitvTo(rds, keyText);
+            Symb& symb = *this->FetchSymb(symbsLk, ToStrView(keyText));
+            for (auto tabCount = this->LayoutSP_->GetTabCount(); tabCount > 0; --tabCount) {
+               size_t tabidx;
+               BitvTo(rds, tabidx);
+               auto* tab = this->LayoutSP_->GetTab(tabidx);
+               seed::SimpleRawWr wr{*symb.GetSymbData(static_cast<int>(tabidx))};
+               const auto fldCount = tab->Fields_.size();
+               for (size_t fldidx = 0; fldidx < fldCount; ++fldidx)
+                  tab->Fields_.Get(fldidx)->BitvToCell(wr, rds);
+            }
+         }
+         return true;
+      });
+   }
+   catch (std::runtime_error& e) {
+      fon9_LOG_ERROR("MdSymbs.LoadFrom|fname=", fname, "|Read.err=", e.what());
+   }
 }
 
 } } // namespaces

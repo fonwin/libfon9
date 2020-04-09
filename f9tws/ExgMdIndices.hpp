@@ -62,9 +62,7 @@ class f9tws_API ExgMdIndices : public fon9::fmkt::MdSymbsT<ExgMdIndex> {
    using base = fon9::fmkt::MdSymbsT<ExgMdIndex>;
 
 public:
-   ExgMdIndices(std::string pathFmt)
-      : base(ExgMdIndex::MakeLayout(), std::move(pathFmt)) {
-   }
+   ExgMdIndices(std::string pathFmt);
    fon9::fmkt::SymbSP MakeSymb(const fon9::StrView& symbid) override;
 };
 using ExgMdIndicesSP = fon9::intrusive_ptr<ExgMdIndices>;

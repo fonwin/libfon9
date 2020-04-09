@@ -6,7 +6,7 @@ namespace fon9 { namespace rc {
 
 seed::Tab* RcSvGetTabStreamArgs(seed::Layout& layout, StrView& tabNameAndStreamArgs) {
    StrView tabName = tabNameAndStreamArgs;
-   if (!IsSubscribeStream(tabName))
+   if (!seed::IsSubscribeStream(tabName))
       tabNameAndStreamArgs.Reset(nullptr);
    else {
       tabNameAndStreamArgs.SetBegin(tabName.begin() + 1);
@@ -15,7 +15,7 @@ seed::Tab* RcSvGetTabStreamArgs(seed::Layout& layout, StrView& tabNameAndStreamA
    return layout.GetTab(tabName);
 }
 StrView RcSvGetStreamDecoderName(StrView tabNameAndStreamArgs) {
-   if (!IsSubscribeStream(tabNameAndStreamArgs))
+   if (!seed::IsSubscribeStream(tabNameAndStreamArgs))
       return nullptr;
    StrFetchNoTrim(tabNameAndStreamArgs, ':'); // 移除 TabName;
    return StrFetchNoTrim(tabNameAndStreamArgs, ':'); // 取出 StreamDecoderName;
@@ -30,7 +30,7 @@ RcSvClientRequest::RcSvClientRequest(RcClientSession& ses, bool isNeedsLogInfo,
    , OrigTabName_{StrView_cstr(seedName.TabName_)}
    , OrigSeedKey_{StrView_cstr(seedName.SeedKey_)}
    , TabIndex_(seedName.TabName_ == nullptr ? seedName.TabIndex_
-               : IsTabAll(seedName.TabName_) ? kTabAll
+               : seed::IsTabAll(seedName.TabName_) ? kTabAll
                : 0) // tabName=="" 使用 0; 或 layout->GetTab(tabName);
    , FuncName_{funcName}
    , IsNeedsLogInfo_{isNeedsLogInfo}

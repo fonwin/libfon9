@@ -89,6 +89,12 @@
     <ClCompile Include="..\..\..\f9tws\ExgMdFmt1Handler.cpp">
       <Filter>Source Files\_MktData</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\f9tws\ExgMdFmtIxHandler.cpp">
+      <Filter>Source Files\_MktData</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\f9tws\ExgMdFmtIxNoList.cpp">
+      <Filter>Source Files\_MktData</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\f9tws\ExgTradingLineMgr.hpp">
@@ -149,6 +155,15 @@
       <Filter>Header Files\_MktData</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\f9tws\ExgMdFmt1Handler.hpp">
+      <Filter>Header Files\_MktData</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\f9tws\ExgMdFmtIxHandler.hpp">
+      <Filter>Header Files\_MktData</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\f9tws\ExgMdFmtIx.hpp">
+      <Filter>Header Files\_MktData</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\f9tws\ExgMdFmtIxNoList.hpp">
       <Filter>Header Files\_MktData</Filter>
     </ClInclude>
   </ItemGroup>

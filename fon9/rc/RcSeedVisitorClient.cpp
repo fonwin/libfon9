@@ -128,7 +128,7 @@ void RcSeedVisitorClientNote::SendPendings(const TreeLocker& maplk,
       subr->TabIndex_ = kTabAll;
    }
    if (!preq->TabName_.empty()) {
-      if (IsTabAll(preq->TabName_.begin())) {
+      if (seed::IsTabAll(preq->TabName_.begin())) {
          for (f9sv_TabSize L = tree.LayoutC_.TabCount_; L > 0;)
             preq->AssignToSeed(*pod.Seeds_[--L]);
          goto __POP_FRONT_AND_SEND_REQS;
@@ -469,7 +469,7 @@ void RcSeedVisitorClientNote::OnRecvQrySubrAck(RcClientSession& ses, DcQueue& rx
          rpt.Seed_ = seed;
          NotifySeeds(fnOnReport, &ses, &rpt, &fldValues,
                      seed::SimpleRawWr{seed}, tab->Fields_,
-                     IsSubrTree(reqKey.SeedKey_.begin()));
+                     seed::IsSubrTree(reqKey.SeedKey_.begin()));
       }
    }
 }
@@ -525,9 +525,9 @@ void RcSeedVisitorClientNote::OnRecvSubrData(RcClientSession& ses, DcQueue& rxbu
    rpt.TreePath_ = ToStrView(rx.SubrRec_->Tree_->TreePath_).ToCStrView();
    rpt.Layout_   = &rx.SubrRec_->Tree_->LayoutC_;
    rpt.Tab_      = &rx.SubrRec_->Tree_->LayoutC_.TabArray_[rx.SubrRec_->TabIndex_];
-   rpt.UserData_ = rx.SeedRec_->Handler_.UserData_;
+   rpt.UserData_ = rx.SubrSeedRec_->Handler_.UserData_;
 
-   auto  fnOnReport = rx.SeedRec_->Handler_.FnOnReport_;
+   auto  fnOnReport = rx.SubrSeedRec_->Handler_.FnOnReport_;
    void (RcSvStreamDecoder::*fnStreamDecoder)(svc::RxSubrData& rx, f9sv_ClientReport& rpt);
    switch (rx.NotifyKind_) {
    case seed::SeedNotifyKind::SubscribeOK:
@@ -552,7 +552,7 @@ void RcSeedVisitorClientNote::OnRecvSubrData(RcClientSession& ses, DcQueue& rxbu
    case seed::SeedNotifyKind::StreamData:
       fnStreamDecoder = &RcSvStreamDecoder::DecodeStreamData;
    __DECODE_STREAM:;
-      assert(rx.SeedRec_->StreamDecoderNote_.get() != nullptr);
+      assert(rx.SubrSeedRec_->StreamDecoderNote_.get() != nullptr);
       rpt.SeedKey_ = rx.CheckLoadSeedKey(rxbuf).ToCStrView();
       BitvTo(rxbuf, rx.Gv_); // 將 stream data 載入, 但不寫 log, (使用 rx.LoadGv() 會自動寫入 log).
       (rx.SubrRec_->Tree_->TabArray_[rx.SubrRec_->TabIndex_].StreamDecoder_.get()
@@ -563,7 +563,7 @@ void RcSeedVisitorClientNote::OnRecvSubrData(RcClientSession& ses, DcQueue& rxbu
    // ------------------------------------
    case seed::SeedNotifyKind::TableChanged:
       // 只有訂閱 tree 才會收到此通知, 此時應更新整個 tree 的內容.
-      assert(IsSubrTree(rx.SubrRec_->SeedKey_.begin()));
+      assert(seed::IsSubrTree(rx.SubrRec_->SeedKey_.begin()));
       rpt.SeedKey_ = ToStrView(rx.SubrRec_->SeedKey_).ToCStrView();
       rx.LoadGv(rxbuf);
       rx.FlushLog();
@@ -573,21 +573,21 @@ void RcSeedVisitorClientNote::OnRecvSubrData(RcClientSession& ses, DcQueue& rxbu
       rpt.ResultCode_ = f9sv_Result_SubrNotifyTableChanged;
       fnOnReport(&ses, &rpt);
       // TableChanged 之後, 再通知 seed 內容.
-      rpt.Seed_ = rx.SeedRec_;
-      NotifySeeds(fnOnReport, &ses, &rpt, &rx.Gv_, seed::SimpleRawWr{rx.SeedRec_}, rx.Tab_->Fields_, true);
+      rpt.Seed_ = rx.SubrSeedRec_;
+      NotifySeeds(fnOnReport, &ses, &rpt, &rx.Gv_, seed::SimpleRawWr{rx.SubrSeedRec_}, rx.SubrTab_->Fields_, true);
       return;
    // ------------------------------------
    case seed::SeedNotifyKind::SeedChanged:
       rpt.SeedKey_ = rx.CheckLoadSeedKey(rxbuf).ToCStrView();
       rx.LoadGv(rxbuf);
-      ParseStrValuesToSeed(&rx.Gv_, seed::SimpleRawWr{rx.SeedRec_}, rx.Tab_->Fields_);
-      rpt.Seed_ = rx.SeedRec_;
+      ParseStrValuesToSeed(&rx.Gv_, seed::SimpleRawWr{rx.SubrSeedRec_}, rx.SubrTab_->Fields_);
+      rpt.Seed_ = rx.SubrSeedRec_;
       break;
    // ------------------------------------
    case seed::SeedNotifyKind::PodRemoved:
    case seed::SeedNotifyKind::SeedRemoved:
       rpt.SeedKey_ = rx.CheckLoadSeedKey(rxbuf).ToCStrView();
-      if (IsSubrTree(rx.SubrRec_->SeedKey_.begin())) {
+      if (seed::IsSubrTree(rx.SubrRec_->SeedKey_.begin())) {
          rpt.ResultCode_ = (rx.NotifyKind_ == seed::SeedNotifyKind::PodRemoved
                             ? f9sv_Result_SubrNotifyPodRemoved
                             : f9sv_Result_SubrNotifySeedRemoved);

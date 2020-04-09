@@ -36,8 +36,9 @@ class fon9_API MdSymbsBase : public SymbTree {
    UnsafeSubj  UnsafeSubj_;
 
 protected:
-   char  IsDailyClearing_{false};
-   char  Padding____[3];
+   bool  IsDailyClearing_{false};
+   bool  IsBlockPublish_{false};
+   char  Padding____[2];
 
 public:
    enum EnAllow {
@@ -75,6 +76,39 @@ public:
    void UnsafePublish(RtsPackType pkType, seed::SeedNotifyArgs& e);
 
    void DailyClear(unsigned tdayYYYYMMDD);
+
+   /// 儲存現在的全部商品資料, 通常在程式結束前呼叫.
+   void SaveTo(std::string fname);
+   /// 載入商品資料, 通常在程式啟動時呼叫.
+   void LoadFrom(std::string fname);
+
+   /// 在某些情況下, 可以先暫停「整棵樹」的發行.
+   /// 例如: 行情資料來源一個封包, 包含多筆商品資料,
+   ///       此時可以先暫停, 避免每個商品都發行一次,
+   ///       統一在整個封包都處理完畢後發行一次即可.
+   struct BlockPublish {
+      fon9_NON_COPY_NON_MOVE(BlockPublish);
+      MdSymbsBase&   Owner_;
+      RevBufferList  AckBuf_;
+      BlockPublish(MdSymbsBase& owner, BufferNodeSize newAllocReserved)
+         : Owner_(owner)
+         , AckBuf_{newAllocReserved} {
+         assert(owner.SymbMap_.IsLocked() && owner.IsBlockPublish_ == false);
+         owner.IsBlockPublish_ = true;
+      }
+      ~BlockPublish() {
+         assert(this->Owner_.SymbMap_.IsLocked());
+         this->Owner_.IsBlockPublish_ = false;
+      }
+      RevBufferList* GetPublishBuffer() {
+         return this->Owner_.UnsafeSubj_.IsEmpty() ? nullptr : &this->AckBuf_;
+      }
+      void UnsafePublish(RtsPackType pkType, seed::SeedNotifyArgs& e) {
+         assert(this->Owner_.SymbMap_.IsLocked());
+         this->Owner_.IsBlockPublish_ = false;
+         this->Owner_.UnsafePublish(pkType, e);
+      }
+   };
 };
 //--------------------------------------------------------------------------//
 /// MdSymbs 提供:

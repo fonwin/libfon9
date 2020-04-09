@@ -86,7 +86,7 @@ struct RcSeedVisitorServerNote::UnsubRunnerSP : public intrusive_ptr<SubrReg> {
    }
    void operator()(const seed::TreeOpResult& res, seed::TreeOp* opTree) {
       SubrReg* reg = this->get();
-      if (IsSubrTree(reg->SeedKey_.begin()))
+      if (seed::IsSubrTree(reg->SeedKey_.begin()))
          this->Unsubscribe(*res.Sender_, res.OpResult_, opTree);
       else
          opTree->Get(ToStrView(reg->SeedKey_), UnsubRunnerSP{*this});
@@ -248,7 +248,7 @@ struct RcSeedVisitorServerNote::TicketRunnerSubscribe : public seed::TicketRunne
    StrView           SubscribeStreamArgs_{nullptr};
    TicketRunnerSubscribe(seed::SeedVisitor& visitor, RcSvReqKey&& reqKey)
       : base(visitor, ToStrView(reqKey.TreePath_),
-             IsSubrTree(reqKey.SeedKey_.begin()) ? seed::AccessRight::SubrTree : seed::AccessRight::Read)
+             seed::IsSubrTree(reqKey.SeedKey_.begin()) ? seed::AccessRight::SubrTree : seed::AccessRight::Read)
       , ReqKey_(std::move(reqKey)) {
    }
    ~TicketRunnerSubscribe() {
@@ -299,7 +299,7 @@ struct RcSeedVisitorServerNote::TicketRunnerSubscribe : public seed::TicketRunne
    void OnFoundTree(seed::TreeOp& opTree) override {
       this->CheckAckLayout(opTree);
       StrView tabName = ToStrView(this->ReqKey_.TabName_);
-      if (IsSubscribeStream(tabName)) {
+      if (seed::IsSubscribeStream(tabName)) {
          // "$TabName:StreamDecoderName:Args";  例如: "$Rt:MdRts:args"
          // SubscribeStream 的額外參數 = "StreamDecoderName:Args";
          this->SubscribeStreamArgs_.Reset(tabName.begin() + 1, tabName.end());
@@ -317,7 +317,7 @@ struct RcSeedVisitorServerNote::TicketRunnerSubscribe : public seed::TicketRunne
          (*subrs)[this->ReqKey_.SubrIndex_].reset();
          return;
       }
-      if (IsSubrTree(this->ReqKey_.SeedKey_.begin()))
+      if (seed::IsSubrTree(this->ReqKey_.SeedKey_.begin()))
          this->Subscribe(opTree.Tree_, *tab, opTree);
       else {
          opTree.Get(ToStrView(this->ReqKey_.SeedKey_),
@@ -558,7 +558,11 @@ void RcSeedVisitorServerNote::OnSubscribeNotify(SubrRegSP preg, const seed::Seed
    case seed::SeedNotifyKind::SeedRemoved:
       preg->IsSubjectClosed_ = true;
    __CHECK_PUT_KEY_FOR_SUBR_TREE:;
-      if (IsSubrTree(preg->SeedKey_.begin()))  // 如果訂閱的是 tree, 則需要額外提供 seedKey.
+      // 如果訂閱的是 tree, 則回報時, 一律額外提供 seedKey.
+      // 在 fon9/rc/RcSvc.cpp 裡面的 RxSubrData::CheckLoadSeedKey(); 會取出此 seedKey;
+      // 如果回覆的訊息與 seedKey 無關, 仍須提供此值,
+      // 此時可用 seed::TextBegin() 來減少資料量: 只需 1 byte 就可打包 seed::TextBegin().
+      if (seed::IsSubrTree(preg->SeedKey_.begin()))
          ToBitv(ackbuf, e.KeyText_);
       break;
    case seed::SeedNotifyKind::ParentSeedClear:

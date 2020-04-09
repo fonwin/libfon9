@@ -88,12 +88,14 @@ class f9tws_API ExgMdSystem : public fon9::fmkt::MdSystem {
 
    void OnMdClearTimeChanged() override;
    void OnMdSystemStartup(unsigned tdayYYYYMMDD, const std::string& logPath) override;
+   void OnParentTreeClear(fon9::seed::Tree& parent);
 
 public:
    const ExgMdSymbsSP   Symbs_;
    const ExgMdIndicesSP Indices_;
 
    ExgMdSystem(fon9::seed::MaTreeSP root, std::string name, bool useRtiForRecover);
+   ~ExgMdSystem();
 
    /// "./logs/yyyymmdd/" + this->Name_;
    /// this->Name_ 通常為 "TwsMd", "TwseMd", "TpexMd"... 之類;
@@ -102,7 +104,7 @@ public:
       return *this->LogPath_.ConstLock();
    }
 
-   void RegMdMessageHandler(uint8_t mkt, uint8_t fmt, uint8_t ver, ExgMdHandlerSP handler) {
+   void RegMdMessageHandler(ExgMdMarket mkt, uint8_t fmt, uint8_t ver, ExgMdHandlerSP handler) {
       this->MdHandlers_.Reg(mkt, fmt, ver, std::move(handler));
    }
    void OnPkReceived(const ExgMdHeader& pk, unsigned pksz) {

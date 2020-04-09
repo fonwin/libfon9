@@ -150,25 +150,6 @@ fon9_API void SvParseGvTablesC(f9sv_GvTables& cTables, SvGvTables& dst, std::str
 constexpr f9sv_TabSize     kTabAll = std::numeric_limits<f9sv_TabSize>::max();
 constexpr f9sv_SubrIndex   kSubrIndexNull = std::numeric_limits<f9sv_SubrIndex>::max();
 
-/// 如果 tabName == "*" 則為 all tabs.
-constexpr bool IsTabAll(const char* tabName) {
-   return (tabName && tabName[0] == '*' && tabName[1] == '\0');
-}
-/// 如果 tabName.Get1st() == '$' 則為 SubscribeStream 的訂閱格式:
-/// - "$TabName:StreamDecoderName:Args";
-constexpr bool IsSubscribeStream(const StrView& tabName) {
-   return (tabName.Get1st() == '$');
-}
-constexpr bool IsSubscribeStream(const char* tabName) {
-   return (tabName && tabName[0] == '$');
-}
-/// 如果 seedKey == "\t" 則表示訂閱 tree; 否則為訂閱指定的 key.
-constexpr bool IsSubrTree(const char* seedKey) {
-   return seedKey[0] == '\t' && seedKey[1] == '\0';
-}
-#define fon9_kCSTR_SubrTree   "\t"
-static_assert(IsSubrTree(fon9_kCSTR_SubrTree), "");
-
 struct fon9_API RcSvReqKey {
    CharVector     TreePath_, SeedKey_, TabName_;
    /// 當 IsAllTabs_ 時, 不應理會 TabName_ 的內容.

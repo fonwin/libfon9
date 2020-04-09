@@ -144,20 +144,7 @@ void MdRtStream::Publish(seed::Tree& tree, const StrView& keyText,
    }
    *rts.AllocPacket<uint8_t>() = cast_to_underlying(pkType);
    // -----
-   struct NotifyArgs : public seed::SeedNotifyArgs {
-      fon9_NON_COPY_NON_MOVE(NotifyArgs);
-      using base = seed::SeedNotifyArgs;
-      using base::base;
-      const BufferNode* const RtsForGvStr_;
-      NotifyArgs(seed::Tree& tree, const StrView& keyText, MdRtsKind rtsKind, RevBufferList& rts)
-         : base(tree, nullptr/*tab*/, keyText, rtsKind)
-         , RtsForGvStr_{rts.cfront()} {
-      }
-      void MakeGridView() const override {
-         this->CacheGV_ = BufferTo<std::string>(this->RtsForGvStr_);
-      }
-   };
-   NotifyArgs  e{tree, keyText, rtsKind, rts};
+   MdRtsNotifyArgs e{tree, keyText, rtsKind, rts};
    this->UnsafeSubj_.Publish(e);
    this->InnMgr_.MdSymbs_.UnsafePublish(pkType, e);
    // -----
@@ -190,6 +177,10 @@ void MdRtStream::Save(RevBufferList&& rts) {
    else {
       rts.MoveOut();
    }
+}
+//--------------------------------------------------------------------------//
+void MdRtsNotifyArgs::MakeGridView() const {
+   this->CacheGV_ = BufferTo<std::string>(this->RtsForGvStr_);
 }
 
 } } // namespaces

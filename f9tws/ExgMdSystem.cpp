@@ -54,6 +54,14 @@ ExgMdSystem::ExgMdSystem(fon9::seed::MaTreeSP root, std::string name, bool useRt
    this->Symbs_->SetDailyClearHHMMSS(this->GetClearHHMMSS());
    this->Indices_->SetDailyClearHHMMSS(this->GetClearHHMMSS());
 }
+ExgMdSystem::~ExgMdSystem() {
+}
+void ExgMdSystem::OnParentTreeClear(fon9::seed::Tree& parent) {
+   std::string logpath = this->LogPath();
+   this->Symbs_->SaveTo(logpath + "_Symbs.mds");
+   this->Indices_->SaveTo(logpath + "_Indices.mds");
+   base::OnParentTreeClear(parent);
+}
 void ExgMdSystem::OnMdClearTimeChanged() {
    this->Symbs_->SetDailyClearHHMMSS(this->GetClearHHMMSS());
    this->Indices_->SetDailyClearHHMMSS(this->GetClearHHMMSS());
@@ -86,9 +94,7 @@ void ExgMdSystem::OnMdSystemStartup(const unsigned tdayYYYYMMDD, const std::stri
       if (pph.get())
          pph->DailyClear();
    }
-
-   if (!pkLogF)
-      return;
+   // ----------------------------------------
    struct BaseInfoReloader : public ExgMdPkReceiver {
       fon9_NON_COPY_NON_MOVE(BaseInfoReloader);
       ExgMdSystem&   Owner_;
@@ -107,12 +113,18 @@ void ExgMdSystem::OnMdSystemStartup(const unsigned tdayYYYYMMDD, const std::stri
          return true;
       }
    };
-   BaseInfoReloader     reloader{*this};
-   fon9::File::SizeType fpos = 0;
-   resPkLog = fon9::FileReadAll(*pkLogF, fpos, reloader);
-   if (resPkLog.IsError())
-      fon9_LOG_ERROR("Tws.ExgMdSystem.PkLog.Read|fname=", fname, '|', resPkLog);
-   this->BaseInfoPkLog_ = std::move(pkLogF);
+   if (pkLogF) {
+      BaseInfoReloader     reloader{*this};
+      fon9::File::SizeType fpos = 0;
+      resPkLog = fon9::FileReadAll(*pkLogF, fpos, reloader);
+      if (resPkLog.IsError())
+         fon9_LOG_ERROR("Tws.ExgMdSystem.PkLog.Read|fname=", fname, '|', resPkLog);
+      this->BaseInfoPkLog_ = std::move(pkLogF);
+   }
+   // ----------------------------------------
+   std::string logpath = this->LogPath();
+   this->Symbs_->LoadFrom(logpath + "_Symbs.mds");
+   this->Indices_->LoadFrom(logpath + "_Indices.mds");
 }
 
 } // namespaces

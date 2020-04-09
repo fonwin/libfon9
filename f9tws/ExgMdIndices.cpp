@@ -56,6 +56,9 @@ void ExgMdIndex::OnBeforeRemove(fon9::fmkt::SymbTree& owner, unsigned tdayYYYYMM
    this->MdRtStream_.BeforeRemove(owner, *this);
 }
 //--------------------------------------------------------------------------//
+ExgMdIndices::ExgMdIndices(std::string pathFmt)
+   : base(ExgMdIndex::MakeLayout(), std::move(pathFmt), EnAllowSubrSnapshotSymb) {
+}
 fon9::fmkt::SymbSP ExgMdIndices::MakeSymb(const fon9::StrView& symbid) {
    return new ExgMdIndex(symbid, this->RtInnMgr_);
 }

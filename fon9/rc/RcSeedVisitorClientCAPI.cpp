@@ -13,7 +13,7 @@ f9sv_Result RcSeedVisitorClientNote::AddSubr(const TreeLocker& locker, RcSvClien
    }
    req.SubrIndex_ = static_cast<f9sv_SubrIndex>(locker->SubrMap_.Alloc());
    svc::SubrRec*  subr = locker->SubrMap_.GetObjPtr(req.SubrIndex_);
-   subr->IsStream_ = IsSubscribeStream(req.OrigTabName_);
+   subr->IsStream_ = seed::IsSubscribeStream(req.OrigTabName_);
    subr->SvFunc_ = GetSvFuncCode(req.SvFunc_);
    assert(subr->SvFunc_ == SvFuncCode::Subscribe);
    subr->Tree_ = req.Tree_;

@@ -11,10 +11,17 @@ ExgMcSystem::ExgMcSystem(fon9::seed::MaTreeSP root, std::string name, bool useRt
    this->Sapling_->AddNamedSapling(this->Symbs_, "Symbs");
    this->Symbs_->SetDailyClearHHMMSS(this->GetClearHHMMSS());
 }
+ExgMcSystem::~ExgMcSystem() {
+}
+void ExgMcSystem::OnParentTreeClear(fon9::seed::Tree& parent) {
+   this->Symbs_->SaveTo(this->LogPath_ + "_Symbs.mds");
+   base::OnParentTreeClear(parent);
+}
 void ExgMcSystem::OnMdClearTimeChanged() {
    this->Symbs_->SetDailyClearHHMMSS(this->GetClearHHMMSS());
 }
 void ExgMcSystem::OnMdSystemStartup(const unsigned tdayYYYYMMDD, const std::string& logPath) {
+   this->LogPath_ = logPath + this->Name_;
    base::OnMdSystemStartup(tdayYYYYMMDD, logPath);
    this->Symbs_->DailyClear(tdayYYYYMMDD);
 
@@ -32,6 +39,7 @@ void ExgMcSystem::OnMdSystemStartup(const unsigned tdayYYYYMMDD, const std::stri
          if (mcGroup->ChannelMgr_->TradingSessionId_ != f9fmkt_TradingSessionId_AfterHour)
             mcGroup->StartupMcGroup(*this, logPath);
    }
+   this->Symbs_->LoadFrom(this->LogPath_ + "_Symbs.mds");
 }
 //--------------------------------------------------------------------------//
 ExgMcGroup::ExgMcGroup(ExgMcSystem* mdsys, std::string name, f9fmkt_TradingSessionId tsesId)

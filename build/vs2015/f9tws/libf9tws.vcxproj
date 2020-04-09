@@ -76,6 +76,8 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\f9tws\ExgMdFmt1Handler.cpp" />
     <ClCompile Include="..\..\..\f9tws\ExgMdFmt6Handler.cpp" />
+    <ClCompile Include="..\..\..\f9tws\ExgMdFmtIxHandler.cpp" />
+    <ClCompile Include="..\..\..\f9tws\ExgMdFmtIxNoList.cpp" />
     <ClCompile Include="..\..\..\f9tws\ExgMdIndices.cpp" />
     <ClCompile Include="..\..\..\f9tws\ExgMdReceiverFactory.cpp" />
     <ClCompile Include="..\..\..\f9tws\ExgMdReceiverSession.cpp" />
@@ -95,6 +97,9 @@
     <ClInclude Include="..\..\..\f9tws\ExgMdFmt1.hpp" />
     <ClInclude Include="..\..\..\f9tws\ExgMdFmt1Handler.hpp" />
     <ClInclude Include="..\..\..\f9tws\ExgMdFmt6Handler.hpp" />
+    <ClInclude Include="..\..\..\f9tws\ExgMdFmtIx.hpp" />
+    <ClInclude Include="..\..\..\f9tws\ExgMdFmtIxHandler.hpp" />
+    <ClInclude Include="..\..\..\f9tws\ExgMdFmtIxNoList.hpp" />
     <ClInclude Include="..\..\..\f9tws\ExgMdIndices.hpp" />
     <ClInclude Include="..\..\..\f9tws\ExgMdReceiverFactory.hpp" />
     <ClInclude Include="..\..\..\f9tws\ExgMdReceiverSession.hpp" />

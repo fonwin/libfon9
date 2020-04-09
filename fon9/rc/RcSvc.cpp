@@ -111,29 +111,31 @@ static f9sv_SubrIndex LoadSubrIndex(DcQueue& rxbuf) {
 }
 RxSubrData::RxSubrData(f9rc_ClientSession& ses, SvFunc fcAck, TreeLocker&& maplk, DcQueue& rxbuf)
    : Session_(ses)
-   , IsNeedsLog_(f9rc_ClientLogFlag{} != (ses.LogFlags_ & f9sv_ClientLogFlag_SubscribeData)
-                 && LogLevel::Info >= LogLevel_)
    , NotifyKind_{GetSvFuncSubscribeDataNotifyKind(fcAck)}
    , SubrIndex_{LoadSubrIndex(rxbuf)}
    , SubrRec_{maplk->SubrMap_.GetObjPtr(SubrIndex_)}
-   , Tab_{SubrRec_ ? SubrRec_->Tree_->Layout_->GetTab(SubrRec_->TabIndex_) : nullptr}
-   , SeedRec_{SubrRec_ ? SubrRec_->Seeds_[SubrRec_->TabIndex_].get() : nullptr}
-   , LockedMap_{std::move(maplk)} {
+   , SubrSeedRec_{SubrRec_ ? SubrRec_->Seeds_[SubrRec_->TabIndex_].get() : nullptr}
+   , SubrTab_{SubrRec_ ? SubrRec_->Tree_->Layout_->GetTab(SubrRec_->TabIndex_) : nullptr}
+   , LockedMap_{std::move(maplk)}
+   , IsNeedsLog_(f9rc_ClientLogFlag{} != (ses.LogFlags_ & f9sv_ClientLogFlag_SubscribeData)
+                 && LogLevel::Info >= LogLevel_)
+   , IsSubrTree_{SubrRec_ && seed::IsSubrTree(SubrRec_->SeedKey_.begin())} {
    if (this->IsNeedsLog_) {
       RevPutChar(this->LogBuf_, '\n');
       if (this->SubrRec_ == nullptr)
          RevPrint(this->LogBuf_, "|err=Bad subrIndex.");
    }
-   assert(this->SeedRec_ == nullptr || (this->SeedRec_->SubrIndex_ == this->SubrIndex_));
+   assert(this->SubrSeedRec_ == nullptr || (this->SubrSeedRec_->SubrIndex_ == this->SubrIndex_));
 }
 RxSubrData::RxSubrData(RxSubrData& src)
    : Session_(src.Session_)
-   , IsNeedsLog_{src.IsNeedsLog_}
    , NotifyKind_{src.NotifyKind_}
    , SubrIndex_{src.SubrIndex_}
    , SubrRec_{src.SubrRec_}
-   , Tab_{src.Tab_}
-   , SeedRec_{src.SeedRec_} {
+   , SubrSeedRec_{src.SubrSeedRec_}
+   , SubrTab_{src.SubrTab_}
+   , IsNeedsLog_{src.IsNeedsLog_}
+   , IsSubrTree_{src.IsSubrTree_} {
    if (this->IsNeedsLog_)
       RevPutChar(this->LogBuf_, '\n');
 }
@@ -151,16 +153,16 @@ void RxSubrData::LogSubrRec() {
    if (!this->IsNeedsLog_ || this->SubrRec_ == nullptr || this->IsSubrLogged_)
       return;
    this->IsSubrLogged_ = true;
-   if (IsSubrTree(this->SubrRec_->SeedKey_.begin()))
+   if (this->IsSubrTree_)
       RevPrint(this->LogBuf_, "|rxSeedKey=", this->SeedKey_);
    RevPrint(this->LogBuf_,
             "|treePath=", this->SubrRec_->Tree_->TreePath_,
             "|seedKey=", this->SubrRec_->SeedKey_,
             "|tab=", this->SubrRec_->TabIndex_,
-            ':', this->Tab_->Name_);
+            ':', this->SubrTab_->Name_);
 }
 StrView RxSubrData::CheckLoadSeedKey(DcQueue& rxbuf) {
-   if (IsSubrTree(this->SubrRec_->SeedKey_.begin()))
+   if (this->IsSubrTree_)
       BitvTo(rxbuf, this->SeedKey_);
    else
       this->SeedKey_ = this->SubrRec_->SeedKey_;
@@ -174,7 +176,7 @@ void RxSubrData::LoadGv(DcQueue& rxbuf) {
 void RxSubrData::RemoveSubscribe() {
    this->LogSubrRec();
    this->SubrRec_->ClearSvFunc();
-   this->SeedRec_->ClearSvFunc();
+   this->SubrSeedRec_->ClearSvFunc();
    this->LockedMap_->SubrMap_.RemoveObjPtr(this->SubrIndex_, this->SubrRec_);
 }
 

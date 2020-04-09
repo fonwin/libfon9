@@ -65,20 +65,27 @@ static void BitvToDayTimeOrUnchange(DcQueue& rxbuf, DayTime& dst) {
       dst = val;
 }
 //--------------------------------------------------------------------------//
-struct RcSvStreamDecoderNote_MdRts : public RcSvStreamDecoderNote {
+class RcSvStreamDecoderNote_MdRts : public RcSvStreamDecoderNote {
    fon9_NON_COPY_NON_MOVE(RcSvStreamDecoderNote_MdRts);
-   RcSvStreamDecoderNote_MdRts() = default;
-
    DayTime     RtInfoTime_{DayTime::Null()};
    DayTime     ReInfoTime_{DayTime::Null()};
    svc::PodRec RePod_;
-
-   svc::SeedSP* GetSeedRec(svc::RxSubrData& rx) {
-      if (rx.NotifyKind_ == seed::SeedNotifyKind::StreamData)
-         return rx.SubrRec_->Seeds_;
+   svc::SeedSP* GetRptSeedArray(svc::RxSubrData& rx) {
+      if (rx.NotifyKind_ == seed::SeedNotifyKind::StreamData) {
+         if (!rx.IsSubrTree_ || rx.SeedKey_.empty() || seed::IsSubrTree(rx.SeedKey_.begin()))
+            return rx.SubrRec_->Seeds_;
+         return rx.SubrRec_->Tree_->FetchPod(ToStrView(rx.SeedKey_)).Seeds_;
+      }
       if (this->RePod_.Seeds_ == nullptr)
          rx.SubrRec_->Tree_->MakePod(this->RePod_);
       return this->RePod_.Seeds_;
+   }
+public:
+   RcSvStreamDecoderNote_MdRts() = default;
+   svc::SeedSP* SetRptSeedArray(f9sv_ClientReport& rpt, svc::RxSubrData& rx) {
+      auto retval = this->GetRptSeedArray(rx);
+      rpt.SeedArray_ = ToSeedArray(retval);
+      return retval;
    }
    DayTime* SelectInfoTime(svc::RxSubrData& rx) {
       return (rx.NotifyKind_ == seed::SeedNotifyKind::StreamData
@@ -211,23 +218,25 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder {
          fnOnHandler(&ses, &rpt);
       }
    }
+   static void FetchSeedKey(svc::SubrRec& subr, DcQueue& dcq, CharVector& tempKeyText, f9sv_ClientReport& rpt) {
+      BitvTo(dcq, tempKeyText);
+      rpt.SeedKey_.Begin_ = tempKeyText.begin();
+      rpt.SeedKey_.End_ = tempKeyText.end();
+      rpt.SeedArray_ = svc::ToSeedArray(subr.Tree_->FetchPod(rpt.SeedKey_).Seeds_);
+   }
    void DecodeSnapshotSymb(svc::SubrRec& subr, DcQueue& dcq,
                            f9rc_ClientSession& ses, f9sv_ClientReport& rpt,
                            bool isNeedsLogResult) {
       if (!rpt.SeedArray_)
          rpt.SeedArray_ = svc::ToSeedArray(subr.Seeds_);
       auto            fnOnHandler = subr.Seeds_[subr.TabIndex_]->Handler_.FnOnReport_;
-      const bool      isSubrTree = IsSubrTree(rpt.SeedKey_.Begin_);
-      CharVector      keyText; // 在 isSubrTree==true 時使用.
+      const bool      isSubrTree = seed::IsSubrTree(rpt.SeedKey_.Begin_);
+      CharVector      tempKeyText; // 在 isSubrTree==true 時使用.
       const size_t    lastTabIdx = subr.Tree_->LayoutC_.TabCount_ - 1;
       size_t          tabidx = lastTabIdx;
       while (!dcq.empty()) {
-         if (isSubrTree && tabidx == lastTabIdx) {
-            BitvTo(dcq, keyText);
-            rpt.SeedKey_.Begin_ = keyText.begin();
-            rpt.SeedKey_.End_ = keyText.end();
-            rpt.SeedArray_ = svc::ToSeedArray(subr.Tree_->FetchPod(rpt.SeedKey_).Seeds_);
-         }
+         if (isSubrTree && tabidx == lastTabIdx)
+            this->FetchSeedKey(subr, dcq, tempKeyText, rpt);
          BitvTo(dcq, tabidx);
          auto* tab = subr.Tree_->Layout_->GetTab(tabidx);
          assert(tab != nullptr);
@@ -252,7 +261,7 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder {
             fnOnHandler(&ses, &rpt);
       }
    }
-   void DecodeSnapshotSymb(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {
+   void DecodeSnapshotSymbList(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {
       bool isNeedsLog = rx.IsNeedsLog_;
       rx.FlushLog();
       rpt.SeedKey_.Begin_ = fon9_kCSTR_SubrTree;
@@ -291,10 +300,12 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder {
          return this->DecodeBaseInfoTw(rx, rpt, rxbuf);
       case fmkt::RtsPackType::DealBS:
          return this->DecodeDealBS(rx, rpt, rxbuf);
-      case fmkt::RtsPackType::SnapshotSymb:
-         return this->DecodeSnapshotSymb(rx, rpt, rxbuf);
-      case fmkt::RtsPackType::IndexValue:
-         return this->DecodeIndexValue(rx, rpt, rxbuf);
+      case fmkt::RtsPackType::SnapshotSymbList:
+         return this->DecodeSnapshotSymbList(rx, rpt, rxbuf);
+      case fmkt::RtsPackType::IndexValueV2:
+         return this->DecodeIndexValueV2(rx, rpt, rxbuf);
+      case fmkt::RtsPackType::IndexValueV2List:
+         return this->DecodeIndexValueV2List(rx, rpt, rxbuf);
       case fmkt::RtsPackType::Count: // 增加此 case 僅是為了避免警告.
          break;
       }
@@ -350,29 +361,25 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder {
       fon9_NON_COPY_NON_MOVE(DecoderAux);
       RcSvStreamDecoderNote_MdRts*  Note_;
       DayTime*                      InfoTime_;
-      svc::SeedRec*                 SeedRec_;
+      svc::SeedRec*                 RptSeedRec_;
       seed::SimpleRawWr             RawWr_;
 
-      static svc::SeedSP* GetSeedArray(f9sv_ClientReport& rpt, svc::SeedSP* seedArray) {
-         rpt.SeedArray_ = ToSeedArray(seedArray);
-         return seedArray;
-      }
       DecoderAux(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf, f9sv_TabSize tabidx)
-         : Note_{static_cast<RcSvStreamDecoderNote_MdRts*>(rx.SeedRec_->StreamDecoderNote_.get())}
+         : Note_{static_cast<RcSvStreamDecoderNote_MdRts*>(rx.SubrSeedRec_->StreamDecoderNote_.get())}
          , InfoTime_{Note_->SelectInfoTime(rx)}
-         , SeedRec_{GetSeedArray(rpt, Note_->GetSeedRec(rx))[tabidx].get()}
-         , RawWr_{*SeedRec_} {
-         assert(dynamic_cast<RcSvStreamDecoderNote_MdRts*>(rx.SeedRec_->StreamDecoderNote_.get()) != nullptr);
-         rpt.Seed_ = this->SeedRec_;
+         , RptSeedRec_{Note_->SetRptSeedArray(rpt, rx)[tabidx].get()}
+         , RawWr_{*RptSeedRec_} {
+         assert(dynamic_cast<RcSvStreamDecoderNote_MdRts*>(rx.SubrSeedRec_->StreamDecoderNote_.get()) != nullptr);
+         rpt.Seed_ = this->RptSeedRec_;
          rpt.Tab_ = &rx.SubrRec_->Tree_->LayoutC_.TabArray_[tabidx];
          BitvToDayTimeOrUnchange(rxbuf, *this->InfoTime_);
       }
       DecoderAux(DecoderAux& src, f9sv_ClientReport& rpt, f9sv_TabSize tabidx)
          : Note_{src.Note_}
          , InfoTime_{src.InfoTime_}
-         , SeedRec_{static_cast<svc::SeedRec*>(const_cast<f9sv_Seed*>(rpt.SeedArray_[tabidx]))}
-         , RawWr_{*SeedRec_} {
-         rpt.Seed_ = this->SeedRec_;
+         , RptSeedRec_{static_cast<svc::SeedRec*>(const_cast<f9sv_Seed*>(rpt.SeedArray_[tabidx]))}
+         , RawWr_{*RptSeedRec_} {
+         rpt.Seed_ = this->RptSeedRec_;
          rpt.Tab_ = &(rpt.Tab_ - rpt.Tab_->Named_.Index_)[tabidx];
       }
       template <class DecT>
@@ -400,7 +407,7 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder {
             this->FldDealTotalQty_->PutNumber(dec.RawWr_, static_cast<seed::FieldNumberT>(totalQty), 0);
       }
 
-      auto     fnOnReport = rx.SeedRec_->Handler_.FnOnReport_;
+      auto     fnOnReport = rx.SubrSeedRec_->Handler_.FnOnReport_;
       unsigned count = ReadOrRaise<byte>(rxbuf);
       if (rx.IsNeedsLog_) {
          RevPrint(rx.LogBuf_, "|rtDeal=", ToHex(dealFlags), "|count=", count + 1);
@@ -522,9 +529,9 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder {
       this->FldBSFlags_->PutNumber(wr, static_cast<seed::FieldNumberT>(bsFlags), 0);
       this->ReportEv(rx, rpt);
    }
-   void ReportEv(svc::RxSubrData& rx, f9sv_ClientReport& rpt) {
+   static void ReportEv(svc::RxSubrData& rx, f9sv_ClientReport& rpt) {
       rx.FlushLog();
-      if (auto fnOnReport = rx.SeedRec_->Handler_.FnOnReport_)
+      if (auto fnOnReport = rx.SubrSeedRec_->Handler_.FnOnReport_)
          fnOnReport(&rx.Session_, &rpt);
    }
    // -----
@@ -610,18 +617,50 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder {
       this->ReportBS(rx, rpt, dec.RawWr_, bsFlags);
    }
    // -----
-   void DecodeIndexValue(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {
+   static void BitvToIndexValue(const seed::Field& fld, seed::RawWr& wr, DcQueue& rxbuf) {
+      fon9_BitvNumR numr;
+      BitvToNumber(rxbuf, numr);
+      if (numr.Type_ == fon9_BitvNumT_Null)
+         fld.SetNull(wr);
+      else
+         fld.PutNumber(wr, signed_cast(numr.Num_), static_cast<DecScaleT>(numr.Scale_ + 2));
+   }
+   void DecodeIndexValueV2(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {
       DecoderAux  dec{rx, rpt, rxbuf, this->TabIdxDeal_};
       DayTime     dealTime = *dec.InfoTime_;
       dec.PutDecField(*this->FldDealTime_, dealTime);
-      this->FldDealPri_->BitvToCell(dec.RawWr_, rxbuf);
+      BitvToIndexValue(*this->FldDealPri_, dec.RawWr_, rxbuf);
       if (rx.IsNeedsLog_) {
          this->FldDealPri_->CellRevPrint(dec.RawWr_, nullptr, rx.LogBuf_);
-         RevPrint(rx.LogBuf_, "|ix=", rpt.SeedKey_, "|infoTime=", dealTime, "|indexValue=");
+         RevPrint(rx.LogBuf_, "|infoTime=", dealTime, "|value=");
          rx.FlushLog();
       }
-      if (auto fnOnReport = rx.SeedRec_->Handler_.FnOnReport_)
+      if (auto fnOnReport = rx.SubrSeedRec_->Handler_.FnOnReport_)
          fnOnReport(&rx.Session_, &rpt);
+      assert(rxbuf.empty());
+   }
+   void DecodeIndexValueV2List(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {
+      auto        fnOnReport = rx.SubrSeedRec_->Handler_.FnOnReport_;
+      DecoderAux  dec{rx, rpt, rxbuf, this->TabIdxDeal_};
+      DayTime     dealTime = *dec.InfoTime_;
+      dec.PutDecField(*this->FldDealTime_, dealTime);
+      CharVector  tempKeyText;
+      while (!rxbuf.empty()) {
+         this->FetchSeedKey(*rx.SubrRec_, rxbuf, tempKeyText, rpt);
+         rpt.Tab_ = &rx.SubrRec_->Tree_->LayoutC_.TabArray_[this->TabIdxDeal_];
+         rpt.Seed_ = rpt.SeedArray_[this->TabIdxDeal_];
+         seed::SimpleRawWr wr{static_cast<svc::SeedRec*>(const_cast<f9sv_Seed*>(rpt.Seed_))};
+         this->FldDealTime_->PutNumber(wr, dealTime.GetOrigValue(), dealTime.Scale);
+         BitvToIndexValue(*this->FldDealPri_, wr, rxbuf);
+         if (rx.IsNeedsLog_) {
+            this->FldDealPri_->CellRevPrint(wr, nullptr, rx.LogBuf_);
+            RevPrint(rx.LogBuf_, '|', tempKeyText, '=');
+         }
+         if (fnOnReport)
+            fnOnReport(&rx.Session_, &rpt);
+      }
+      if (rx.IsNeedsLog_)
+         RevPrint(rx.LogBuf_, "|infoTime=", dealTime);
    }
    // -----
    void DecodeTradingSessionSt(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {

@@ -88,7 +88,7 @@ void RcSvReqKey::LoadSeedName(DcQueue& rxbuf) {
    default:
       if ((*tabi & fon9_BitvT_Mask) != fon9_BitvT_IntegerPos) {
          BitvTo(rxbuf, this->TabName_);
-         this->IsAllTabs_ = IsTabAll(this->TabName_.begin());
+         this->IsAllTabs_ = seed::IsTabAll(this->TabName_.begin());
          break;
       }
       // 不用 break; bitv = fon9_BitvT_IntegerPos: 取出 tabidx;

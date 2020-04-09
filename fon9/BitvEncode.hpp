@@ -167,16 +167,19 @@ ToBitv(RevBuffer& rbuf, const std::array<T,arysz>& ary) {
 inline size_t ToBitv(RevBuffer& rbuf, const StrView& str) {
    return ByteArrayToBitv(rbuf, str.begin(), str.size());
 }
+inline size_t StrViewToBitv(RevBuffer& rbuf, const StrView& str) {
+   return ByteArrayToBitv(rbuf, str.begin(), str.size());
+}
 
 inline void ToBitv(RevBuffer& rbuf, const ByteVector& bvec) {
-   ToBitv(rbuf, CastToStrView(bvec));
+   StrViewToBitv(rbuf, CastToStrView(bvec));
 }
 
 /// 若有提供 ToStrView(str) 則透過這裡處理.
 /// std::string, CharAry, CharVector...
 template <class StrT>
 inline auto ToBitv(RevBuffer& rbuf, StrT&& str) -> decltype(ToStrView(str), size_t()) {
-   return ToBitv(rbuf, ToStrView(str));
+   return StrViewToBitv(rbuf, ToStrView(str));
 }
 
 //--------------------------------------------------------------------------//

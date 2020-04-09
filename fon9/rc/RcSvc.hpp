@@ -181,18 +181,23 @@ struct RxSubrData {
    RxSubrData& operator=(RxSubrData&&) = delete;
 
    f9rc_ClientSession&  Session_;
-   char                 Padding___[6];
-   bool                 IsSubrLogged_{false};
-   bool                 IsNeedsLog_;
    seed::SeedNotifyKind NotifyKind_;
    const f9sv_SubrIndex SubrIndex_;
    SubrRec* const       SubrRec_;
-   seed::Tab* const     Tab_;
-   SeedRec* const       SeedRec_;
+   /// 必定為 SubrRec_->Seeds_[SubrRec_->TabIndex_];
+   SeedRec* const       SubrSeedRec_;
+   /// 必定為 SubrRec_->Tree_->Layout_->GetTab(SubrRec_->TabIndex_);
+   seed::Tab* const     SubrTab_;
    RevBufferList        LogBuf_{kLogBlockNodeSize};
    const TreeLocker     LockedMap_;
+   /// 當 this->IsSubrTree_ 時, this->SeedKey_ 為主機端傳遞過來的 key;
+   /// 當 !this->IsSubrTree_, 則 this->SeedKey_ = this->SubrRec_->SeedKey_;
    CharVector           SeedKey_;
    std::string          Gv_;
+   bool                 IsSubrLogged_{false};
+   bool                 IsNeedsLog_;
+   const bool           IsSubrTree_;
+   char                 Padding___[5];
 
    RxSubrData(f9rc_ClientSession& ses, SvFunc fcAck, TreeLocker&& maplk, DcQueue& rxbuf);
    /// src = StreamRecover; 建立 StreamData;

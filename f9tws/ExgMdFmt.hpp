@@ -20,6 +20,12 @@ fon9_PACK(1);
 
 using ExgMdHHMMSSu6 = fon9::fmkt::TwExgMdTimeHHMMSSu6;
 
+enum ExgMdMarket : uint8_t {
+   ExgMdMarket_TwTSE = 1,
+   ExgMdMarket_TwOTC = 2,
+   ExgMdMarket_MaxNo = 2,
+};
+
 /// 每個封包的基本框架:
 /// - Esc: 1 byte = 27;
 /// - fon9::PackBcd<4> Length_; 包含: Esc, 及 ExgMdTail.
@@ -32,10 +38,10 @@ struct ExgMdHeader {
    fon9::PackBcd<2>  VerNo_;
    fon9::PackBcd<8>  SeqNo_;
 
-   uint8_t GetMarket() const {
+   ExgMdMarket GetMarket() const {
       assert((this->Market_[0] & 0xf0) == 0);
       static_assert(sizeof(this->Market_) == 1, "");
-      return static_cast<uint8_t>(this->Market_[0]);
+      return static_cast<ExgMdMarket>(this->Market_[0]);
    }
    unsigned GetLength() const { return fon9::PackBcdTo<unsigned>(this->Length_); }
    uint8_t  GetFmtNo() const { return fon9::PackBcdTo<uint8_t>(this->FmtNo_); }
@@ -72,7 +78,6 @@ fon9_PACK_POP;
 //--------------------------------------------------------------------------//
 
 enum {
-   kExgMdMaxMkt = 2,
    kExgMdMaxFmtNo = 21,
    kExgMdMaxVer = 8,
 };
@@ -82,15 +87,15 @@ template <class HandlerT>
 class ExgMdMessageDispatcher {
    fon9_NON_COPY_NON_MOVE(ExgMdMessageDispatcher);
 
-   HandlerT HandlerMap_[kExgMdMaxMkt + 1][kExgMdMaxFmtNo + 1][kExgMdMaxVer + 1];
+   HandlerT HandlerMap_[ExgMdMarket_MaxNo + 1][kExgMdMaxFmtNo + 1][kExgMdMaxVer + 1];
 
 public:
    ExgMdMessageDispatcher() {
       memset(this->HandlerMap_, 0, sizeof(this->HandlerMap_));
    }
 
-   void Reg(uint8_t mkt, uint8_t fmt, uint8_t ver, HandlerT handler) {
-      assert(mkt <= kExgMdMaxMkt && fmt <= kExgMdMaxFmtNo && ver <= kExgMdMaxVer);
+   void Reg(ExgMdMarket mkt, uint8_t fmt, uint8_t ver, HandlerT handler) {
+      assert(mkt <= ExgMdMarket_MaxNo && fmt <= kExgMdMaxFmtNo && ver <= kExgMdMaxVer);
       this->HandlerMap_[mkt][fmt][ver] = std::move(handler);
    }
    const HandlerT* begin() const {
@@ -102,7 +107,7 @@ public:
 
    template <class HeadT>
    HandlerT& Get(const HeadT& pk) {
-      assert(pk.GetMarket() <= kExgMdMaxMkt
+      assert(pk.GetMarket() <= ExgMdMarket_MaxNo
              && pk.GetFmtNo() <= kExgMdMaxFmtNo
              && pk.GetVerNo() <= kExgMdMaxVer);
       return this->HandlerMap_[pk.GetMarket()][pk.GetFmtNo()][pk.GetVerNo()];
