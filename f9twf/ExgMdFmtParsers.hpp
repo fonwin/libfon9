@@ -26,6 +26,7 @@ struct ExgMdLocker {
 
 f9twf_API bool I010BasicInfoLockedParser(ExgMcMessage& e, const ExgMdLocker&);
 f9twf_API void I010BasicInfoParser(ExgMcMessage& e);
+f9twf_API void I011ContractParser(ExgMcMessage& e);
 f9twf_API void I081BSParser(ExgMcMessage& e);
 f9twf_API void I083BSParser(ExgMcMessage& e);
 f9twf_API void I084SSParser(ExgMcMessage& e);

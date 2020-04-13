@@ -217,20 +217,20 @@ void MdSymbsBase::LoadFrom(std::string fname) {
          fon9_LOG_ERROR("MdSymbs.LoadFrom|fname=", fname, '|', res);
       return;
    }
+   auto  symbsLk = this->SymbMap_.Lock();
    try {
       File::PosType fpos = 0;
       CharVector    rdbuf;
       CharVector    keyText;
-      auto          symbsLk = this->SymbMap_.Lock();
       FileReadAll(fd, fpos, [&rdbuf, &keyText, this, &symbsLk](DcQueueList& dcq, File::Result&) -> bool {
          size_t barySize;
          while (PopBitvByteArraySize(dcq, barySize)) {
             dcq.Read(rdbuf.alloc(barySize), barySize);
             DcQueueFixedMem rds{rdbuf.begin(), barySize};
             BitvTo(rds, keyText);
-            Symb& symb = *this->FetchSymb(symbsLk, ToStrView(keyText));
+            Symb&  symb = *this->FetchSymb(symbsLk, ToStrView(keyText));
+            size_t tabidx = 0;
             for (auto tabCount = this->LayoutSP_->GetTabCount(); tabCount > 0; --tabCount) {
-               size_t tabidx;
                BitvTo(rds, tabidx);
                auto* tab = this->LayoutSP_->GetTab(tabidx);
                seed::SimpleRawWr wr{*symb.GetSymbData(static_cast<int>(tabidx))};
@@ -245,6 +245,10 @@ void MdSymbsBase::LoadFrom(std::string fname) {
    catch (std::runtime_error& e) {
       fon9_LOG_ERROR("MdSymbs.LoadFrom|fname=", fname, "|Read.err=", e.what());
    }
+   this->OnAfterLoadFrom(std::move(symbsLk));
+}
+void MdSymbsBase::OnAfterLoadFrom(Locker&& symbsLk) {
+   (void)symbsLk;
 }
 
 } } // namespaces

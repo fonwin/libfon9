@@ -7,7 +7,7 @@ namespace f9twf {
 
 ExgMcSystem::ExgMcSystem(fon9::seed::MaTreeSP root, std::string name, bool useRtiForRecover)
    : base(root, name)
-   , Symbs_{new ExgMdSymbs{useRtiForRecover ? (fon9::seed::SysEnv_GetLogFileFmtPath(*root) + name) : std::string{}}} {
+   , Symbs_{new ExgMdSymbs(useRtiForRecover ? (fon9::seed::SysEnv_GetLogFileFmtPath(*root) + name) : std::string{})} {
    this->Sapling_->AddNamedSapling(this->Symbs_, "Symbs");
    this->Symbs_->SetDailyClearHHMMSS(this->GetClearHHMMSS());
 }

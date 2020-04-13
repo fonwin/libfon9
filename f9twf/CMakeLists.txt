@@ -11,6 +11,7 @@ set(f9twf_src
 
  ExgMdPkReceiver.cpp
  ExgMdSymbs.cpp
+ ExgMdContracts.cpp
  ExgMcReceiver.cpp
  ExgMcReceiverFactory.cpp
  ExgMcChannel.cpp
@@ -20,6 +21,7 @@ set(f9twf_src
  ExgMdFmtParsers.cpp
  ExgMdFmtMatchToRts.cpp
  ExgMdFmtBSToRts.cpp
+ ExgMcFmtSSToRts.cpp
  ExgMdFmtBasicInfoToRts.cpp
 )
 add_library(f9twf_s STATIC ${f9twf_src})

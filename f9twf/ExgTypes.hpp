@@ -21,6 +21,10 @@ using OrdNo = fon9::CharAryF<5>;
 using SymbolId = fon9::CharAryL<sizeof(ExgProdIdL) * 2>; // 因應複式單, 所以長度應*2;
 static_assert(sizeof(SymbolId) == 41, "SymbolId must pack?");
 
+/// 契約代號.
+using ContractId = fon9::CharAryP<4, 3, char, ' '>;
+using StkNo = fon9::CharAryP<6, 4, char, ' '>;
+
 using FcmId = uint16_t;
 using SessionId = uint16_t;
 

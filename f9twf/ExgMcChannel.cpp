@@ -285,51 +285,63 @@ void ExgMcChannel::PkContOnTimer(PkPendings::Locker&& pks) {
       base::PkContOnTimer(std::move(pks));
 }
 // -----
+ExgMcChannelState ExgMcChannel::OnPkHb(const ExgMcHead& pk, unsigned pksz) {
+   if (this->IsSnapshot()) // 快照更新: 使用 (A:Refresh Begin .. Z:Refresh Complete) 判斷 CycledClose.
+      return this->State_;
+   const SeqT seq = pk.GetChannelSeq();
+   // Heartbeat: CHANNEL-SEQ 欄位會為該傳輸群組之末筆序號訊息。
+   if (this->NextSeq_ != seq + 1) // 序號不正確的 Hb, 不處理.
+      return this->State_;
+   this->PkLogAppend(&pk, pksz, seq);
+   // 檢查 Channel 是否已符合 Cycled 條件.
+   if (seq == 0 // 期交所系統已啟動, 但尚未開始發送輪播訊息.
+       || this->CycleStartSeq_ == seq + 1) // 兩次輪播循環之間的 Hb: 不用理會.
+      return this->State_;
+   if (IsEnumContainsAny(this->Style_, ExgMcChannelStyle::CycledClose | ExgMcChannelStyle::CycledNotify)
+       && this->CycleStartSeq_
+       && this->State_ < ExgMcChannelState::Cycled // ChannelCycled() 事件只觸發一次.
+       && this->LostCount_ - this->CycleBeforeLostCount_ == 0) { // 沒有遺漏, 才算是 Cycled 完成.
+      this->State_ = (IsEnumContains(this->Style_, ExgMcChannelStyle::CycledClose)
+                      ? ExgMcChannelState::CanBeClosed : ExgMcChannelState::Cycled);
+      this->ChannelMgr_->ChannelCycled(*this);
+   }
+   this->OnCycleStart(seq + 1);
+   return this->State_;
+}
+ExgMcChannelState ExgMcChannel::OnPkSeqReset() {
+   if (0); // SeqReset 之後, API 商品訂閱者的序號要怎麼處理呢?
+   fon9_LOG_WARN(this->ChannelMgr_->Name_, ".I002.SeqReset|channelId=", this->ChannelId_);
+   RecoversImpl rs{std::move(*this->Recovers_.Lock())};
+   for (auto& cur : rs) {
+      cur->GetDevice()->AsyncClose("I002.SeqReset");
+      cur->GetDevice()->WaitGetDeviceId(); // 等候 AsyncClose() 完成.
+      cur->GetDevice()->AsyncOpen(std::string{});
+   }
+   auto pks = this->PkPendings_.Lock();
+   pks->clear();
+   this->NextSeq_ = 0;
+   return this->State_;
+}
 // 收到完整封包後, 會執行到此, 尚未確定是否重複或有遺漏.
 ExgMcChannelState ExgMcChannel::OnPkReceived(const ExgMcHead& pk, unsigned pksz) {
    assert(pk.GetChannelId() == this->ChannelId_);
    ++this->ReceivedCountInHb_;
-   const SeqT seq = pk.GetChannelSeq();
    // ----- 處理特殊訊息: Hb, SeqReset...
    if (fon9_UNLIKELY(pk.TransmissionCode_ == '0')) {
       switch (pk.MessageKind_) {
-      case '1':
-         if (this->IsSnapshot()) // 快照更新: 使用 (A:Refresh Begin .. Z:Refresh Complete) 判斷 CycledClose.
-            return this->State_;
-         // Heartbeat: CHANNEL-SEQ 欄位會為該傳輸群組之末筆序號訊息。
-         if (this->NextSeq_ != seq + 1) // 序號不正確的 Hb, 不處理.
-            return this->State_;
-         this->PkLogAppend(&pk, pksz, seq);
-         // 檢查 Channel 是否已符合 Cycled 條件.
-         if (seq == 0 // 期交所系統已啟動, 但尚未開始發送輪播訊息.
-             || this->CycleStartSeq_ == seq + 1) // 兩次輪播循環之間的 Hb: 不用理會.
-            return this->State_;
-         if (IsEnumContainsAny(this->Style_, ExgMcChannelStyle::CycledClose | ExgMcChannelStyle::CycledNotify)
-             && this->CycleStartSeq_
-             && this->State_ < ExgMcChannelState::Cycled // ChannelCycled() 事件只觸發一次.
-             && this->LostCount_ - this->CycleBeforeLostCount_ == 0) { // 沒有遺漏, 才算是 Cycled 完成.
-            this->State_ = (IsEnumContains(this->Style_, ExgMcChannelStyle::CycledClose)
-                            ? ExgMcChannelState::CanBeClosed : ExgMcChannelState::Cycled);
-            this->ChannelMgr_->ChannelCycled(*this);
-         }
-         this->OnCycleStart(seq + 1);
-         return this->State_;
+      case '1': // I001.Hb.
+         return this->OnPkHb(pk, pksz);
       case '2': // I002.SeqReset.
-         if (0);//SeqReset 之後, API 商品訂閱者的序號要怎麼處理呢?
-         fon9_LOG_WARN(this->ChannelMgr_->Name_, ".I002.SeqReset|channelId=", this->ChannelId_);
-         RecoversImpl rs{std::move(*this->Recovers_.Lock())};
-         for (auto& cur : rs) {
-            cur->GetDevice()->AsyncClose("I002.SeqReset");
-            cur->GetDevice()->WaitGetDeviceId(); // 等候 AsyncClose() 完成.
-            cur->GetDevice()->AsyncOpen(std::string{});
-         }
-         {
-            auto pks = this->PkPendings_.Lock();
-            pks->clear();
-            this->NextSeq_ = 0;
-         }
-         return this->State_;
+         return this->OnPkSeqReset();
       }
+   }
+   // ----- 處理特殊序號.
+   const SeqT seq = pk.GetChannelSeq();
+   if (fon9_UNLIKELY(seq == 1)) {
+      // 快照更新訊息序號於每輪啟始時會重置，
+      // 故該輪快照啟始訊息 Refresh Begin 表頭 CHANNEL-SEQ 序號固定為 1。
+      if (this->IsSnapshot())
+         this->NextSeq_ = 1;
    }
    // ----- 如果允許任意順序, 則可先直接處理 DispatchMcMessage().
    if (IsEnumContains(this->Style_, ExgMcChannelStyle::AnySeq)) {
@@ -351,75 +363,14 @@ ExgMcChannelState ExgMcChannel::OnPkReceived(const ExgMcHead& pk, unsigned pksz)
 void ExgMcChannel::PkContOnReceived(const void* pk, unsigned pksz, SeqT seq) {
    if (fon9_UNLIKELY(IsEnumContains(this->Style_, ExgMcChannelStyle::AnySeq))) {
       // AnySeq 在收到封包的第一時間, 就已觸發 this->DispatchMcMessage(e);
-      // 所以在確定連續時, 不用再處理了!
-   }
-   else if (fon9_UNLIKELY(this->IsSnapshot())) {
-      if (this->State_ == ExgMcChannelState::CanBeClosed) // 已收過一輪, 不用再收.
-         return;
-      if (static_cast<const ExgMcHead*>(pk)->MessageKind_ != 'C')
-         return; // 不認識的快照訊息?!
-      switch (static_cast<const ExgMcHead*>(pk)->TransmissionCode_) {
-      case '2': // I084.Fut.
-      case '5': // I084.Opt.
-         break;
-      default: // 不認識的快照訊息?!
-         return;
-      }
-      SeqT lastRtSeq;
-      switch (static_cast<const ExgMcI084*>(pk)->MessageType_) {
-      case 'A':
-         lastRtSeq = fon9::PackBcdTo<SeqT>(static_cast<const ExgMcI084*>(pk)->_A_RefreshBegin_.LastSeq_);
-         if (this->IsSkipPkLog_) {
-            // 檢查是否可以開始接收新的一輪: 判斷即時行情的 Pk1stSeq_ 是否符合要求?
-            auto rtseq = this->ChannelMgr_->GetRealtimeChannel(*this).Pk1stSeq_;
-            // if (lastRtSeq == 0)  // 即時行情開始之前的快照.
-            // if (rtseq == 0)      // 尚未收到即時行情.
-            if (rtseq > lastRtSeq)
-               return;
-            this->IsSkipPkLog_ = false;
-            this->OnCycleStart(lastRtSeq);
-         }
-         else { // 還沒收一輪, 但又收到 'A', 表示前一輪接收失敗(至少有漏 'Z') => 重收.
-            this->OnCycleStart(lastRtSeq);
-            if (this->PkLog_) {
-               auto res = this->PkLog_->GetFileSize();
-               if (res.HasResult())
-                  this->Pk1stPos_ = res.GetResult();
-               this->Pk1stSeq_ = seq;
-            }
-         }
-         break;
-      case 'Z':
-         if (this->IsSkipPkLog_) { // 尚未開始.
-            this->AfterNextSeq_ = 0;
-            return;
-         }
-         lastRtSeq = fon9::PackBcdTo<SeqT>(static_cast<const ExgMcI084*>(pk)->_Z_RefreshComplete_.LastSeq_);
-         if (lastRtSeq == this->CycleStartSeq_) {
-            auto rtseq = this->ChannelMgr_->GetRealtimeChannel(*this).Pk1stSeq_;
-            // 檢查是否有遺漏? 有遺漏則重收.
-            // 沒遺漏則觸發 OnSnapshotDone() 事件.
-            if ((rtseq == 1 || rtseq <= lastRtSeq) && this->LostCount_ - this->CycleBeforeLostCount_ == 0) {
-               this->State_ = ExgMcChannelState::CanBeClosed;
-               if (this->ChannelMgr_->IsBasicInfoCycled(*this))
-                  this->ChannelMgr_->OnSnapshotDone(*this, lastRtSeq);
-            }
-         }
-         if (this->State_ != ExgMcChannelState::CanBeClosed) {
-            // 收到 'Z' 之後, 若下一個循環的 lastRtSeq 沒變, 則 ChannelSeq 會回頭使用 'A' 的 ChannelSeq.
-            // 所以在收到 'Z' 之後, 需要重設 NextSeq_; 因為在漏封包時, 必須可以重收下一次的循環.
-            this->AfterNextSeq_ = 0;
-         }
-         break;
-      default:
-         if (this->IsSkipPkLog_) // 尚未開始.
-            return;
-         break;
-      }
-      goto __DISPATCH_AND_PkLog;
+      // 所以在確定連續時, 不用再 this->DispatchMcMessage(e);
+      // 但會來到這裡, 則是因為需要: 依序記錄 PkLog.
    }
    else {
-   __DISPATCH_AND_PkLog:
+      if (fon9_UNLIKELY(this->IsSnapshot())) {
+         if (!this->OnPkContSnapshot(*static_cast<const ExgMcHead*>(pk)))
+            return;
+      }
       if (fon9_LIKELY(this->State_ != ExgMcChannelState::Waiting)) {
          ExgMcMessage e(*static_cast<const ExgMcHead*>(pk), pksz, *this, seq);
          this->DispatchMcMessage(e);
@@ -445,6 +396,73 @@ void ExgMcChannel::NotifyConsumersLocked(ExgMcMessage& e) {
       }
    } combiner;
    this->UnsafeConsumers_.Combine(combiner, e);
+}
+bool ExgMcChannel::OnPkContSnapshot(const ExgMcHead& pk) {
+   assert(this->IsSnapshot());
+   if (this->State_ == ExgMcChannelState::CanBeClosed) // 已收過一輪, 不用再收.
+      return false;
+   if (pk.MessageKind_ != 'C') // 不認識的快照訊息?!
+      return false;
+   switch (pk.TransmissionCode_) {
+   case '2': // I084.Fut.
+   case '5': // I084.Opt.
+      break;
+   default: // 不認識的快照訊息?!
+      return false;
+   }
+   SeqT currSeq = pk.GetChannelSeq();
+   SeqT lastRtSeq;
+   switch (static_cast<const ExgMcI084*>(&pk)->MessageType_) {
+   case 'A':
+      lastRtSeq = fon9::PackBcdTo<SeqT>(static_cast<const ExgMcI084*>(&pk)->_A_RefreshBegin_.LastSeq_);
+      if (this->IsSkipPkLog_) {
+         // 檢查是否可以開始接收新的一輪: 判斷即時行情的 Pk1stSeq_ 是否符合要求?
+         auto rtseq = this->ChannelMgr_->GetRealtimeChannel(*this).Pk1stSeq_;
+         // if (lastRtSeq == 0)  // 即時行情開始之前的快照.
+         // if (rtseq == 0)      // 尚未收到即時行情.
+         if (rtseq > lastRtSeq)
+            return false;
+         this->IsSkipPkLog_ = false;
+         this->OnCycleStart(lastRtSeq);
+      }
+      else { // 還沒收一輪, 但又收到 'A', 表示前一輪接收失敗(至少有漏 'Z') => 重收.
+         this->OnCycleStart(lastRtSeq);
+         if (this->PkLog_) {
+            auto res = this->PkLog_->GetFileSize();
+            if (res.HasResult())
+               this->Pk1stPos_ = res.GetResult();
+            this->Pk1stSeq_ = currSeq; // 必定為 1;
+         }
+      }
+      break;
+   case 'Z':
+      if (this->IsSkipPkLog_) { // 尚未開始.
+         this->AfterNextSeq_ = 0;
+         return false;
+      }
+      lastRtSeq = fon9::PackBcdTo<SeqT>(static_cast<const ExgMcI084*>(&pk)->_Z_RefreshComplete_.LastSeq_);
+      if (lastRtSeq == this->CycleStartSeq_) {
+         auto rtseq = this->ChannelMgr_->GetRealtimeChannel(*this).Pk1stSeq_;
+         // 檢查是否有遺漏? 有遺漏則重收.
+         // 沒遺漏則觸發 OnSnapshotDone() 事件.
+         if ((rtseq == 1 || rtseq <= lastRtSeq) && this->LostCount_ - this->CycleBeforeLostCount_ == 0) {
+            this->State_ = ExgMcChannelState::CanBeClosed;
+            if (this->ChannelMgr_->IsBasicInfoCycled(*this))
+               this->ChannelMgr_->OnSnapshotDone(*this, lastRtSeq);
+         }
+      }
+      if (this->State_ != ExgMcChannelState::CanBeClosed) {
+         // 收到 'Z' 之後, 若下一個循環的 lastRtSeq 沒變, 則 ChannelSeq 會回頭使用 'A' 的 ChannelSeq.
+         // 所以在收到 'Z' 之後, 需要重設 NextSeq_; 因為在漏封包時, 必須可以重收下一次的循環.
+         this->AfterNextSeq_ = 0;
+      }
+      break;
+   default:
+      if (this->IsSkipPkLog_) // 尚未開始.
+         return false;
+      break;
+   }
+   return true;
 }
 //--------------------------------------------------------------------------//
 // 即時行情接收流程: (必須區分 Fut or Opt)

@@ -2,7 +2,7 @@
 // \author fonwinz@gmail.com
 #ifndef __f9twf_ExgMdSymbs_hpp__
 #define __f9twf_ExgMdSymbs_hpp__
-#include "f9twf/Config.h"
+#include "f9twf/ExgMdContracts.hpp"
 #include "fon9/fmkt/MdSymbs.hpp"
 #include "fon9/fmkt/SymbRef.hpp"
 #include "fon9/fmkt/SymbBS.hpp"
@@ -13,6 +13,23 @@
 
 namespace f9twf {
 
+/// 檢查並設定 symb 的 TradingSessionId.
+/// \retval true 應繼續處理 rxTradingSessionId 的其他資料.
+///   - 現在的 symb.TradingSession_ 正確: symb.TradingSessionId_ == rxTradingSessionId;
+///   - 設定了新的 rxTradingSessionId (例: 日盤 => 夜盤).
+///   - 返回後, 必定 symb.TradingSessionId_ == rxTradingSessionId;
+/// \retval false 應拋棄 rxTradingSessionId 的其他資料.
+///   - 現在 symb 所在的盤別較新, 不變動 symb.TradingSessionId_;
+inline bool CheckSymbTradingSessionId(fon9::fmkt::SymbTree& tree, fon9::fmkt::Symb& symb,
+                                      f9fmkt_TradingSessionId rxTradingSessionId) {
+   if (fon9_LIKELY(symb.TradingSessionId_ == rxTradingSessionId))
+      return true;
+   if (symb.TradingSessionId_ == f9fmkt_TradingSessionId_AfterHour)
+      return false;
+   symb.SessionClear(tree, rxTradingSessionId);
+   return true;
+}
+//--------------------------------------------------------------------------//
 /// TDayYYYYMMDD_ + TradingSessionId_ 用來判斷資料的新舊.
 /// - 無法使用 I011.END-SESSION 來判斷商品的日夜盤狀態, 因為:
 ///   - 日盤的 I011.END-SESSION 永遠是 '0'一般交易時段;
@@ -31,37 +48,18 @@ public:
    fon9::fmkt::SymbHigh    High_;
    fon9::fmkt::SymbLow     Low_;
    fon9::fmkt::MdRtStream  MdRtStream_;
+   ExgMdContract&          Contract_;
 
-   ExgMdSymb(const fon9::StrView& symbid, fon9::fmkt::MdRtStreamInnMgr& innMgr)
-      : base{symbid}
-      , MdRtStream_{innMgr} {
-      this->TDayYYYYMMDD_ = innMgr.TDayYYYYMMDD();
-   }
+   ExgMdSymb(const fon9::StrView& symbid, ExgMdSymbs& owner);
 
    fon9::fmkt::SymbData* GetSymbData(int tabid) override;
    fon9::fmkt::SymbData* FetchSymbData(int tabid) override;
 
    void SessionClear(fon9::fmkt::SymbTree& owner, f9fmkt_TradingSessionId tsesId) override;
-   /// 移除商品, 通常是因為商品下市.
-   /// 預設觸發 this->MdRtStream_.BeforeRemove(owner, *this);
+   /// 移除商品, 通常是因為商品下市, 預設觸發:
+   /// - this->MdRtStream_.BeforeRemove(owner, *this);
+   /// - this->Contract_->OnSymbRemove(*this);
    void OnBeforeRemove(fon9::fmkt::SymbTree& owner, unsigned tdayYYYYMMDD) override;
-
-   /// 檢查並設定 TradingSessionId.
-   /// \retval true
-   ///   - 現在的 TradingSessionId == tsesId, 表示現在的 TradingSession 正確.
-   ///   - 可以設定為新的 tsesId (日盤 => 夜盤).
-   ///   - 返回後, 必定 this->TradingSessionId_ == tsesId;
-   /// \retval false
-   ///   - 現在 symb 所在的盤別較新, 不變動 this->TradingSessionId_;
-   ///   - 應拋棄 tsesId 的資料.
-   bool CheckSetTradingSessionId(fon9::fmkt::SymbTree& tree, f9fmkt_TradingSessionId tsesId) {
-      if (fon9_LIKELY(this->TradingSessionId_ == tsesId))
-         return true;
-      if (this->TradingSessionId_ == f9fmkt_TradingSessionId_AfterHour)
-         return false;
-      this->SessionClear(tree, tsesId);
-      return true;
-   }
 
    static fon9::seed::LayoutSP MakeLayout();
 };
@@ -69,12 +67,26 @@ public:
 class f9twf_API ExgMdSymbs : public fon9::fmkt::MdSymbsT<ExgMdSymb> {
    fon9_NON_COPY_NON_MOVE(ExgMdSymbs);
    using base = fon9::fmkt::MdSymbsT<ExgMdSymb>;
+   ExgMdContracts Contracts_;
+
+   void OnAfterLoadFrom(Locker&& symbsLk) override;
 
 public:
-   ExgMdSymbs(std::string rtiPathFmt)
-      : base(ExgMdSymb::MakeLayout(), std::move(rtiPathFmt)) {
-   }
+   ExgMdSymbs(std::string rtiPathFmt);
    fon9::fmkt::SymbSP MakeSymb(const fon9::StrView& symbid) override;
+
+   ExgMdContract& FetchContract(ExgMdSymb& symb) {
+      assert(this->SymbMap_.IsLocked());
+      return this->Contracts_.FetchContract(symb);
+   }
+   ExgMdContract& FetchContract(ContractId conId) {
+      assert(this->SymbMap_.IsLocked());
+      return this->Contracts_.FetchContract(conId);
+   }
+   ExgMdContract& FetchContract(fon9::StrView symbid) {
+      assert(this->SymbMap_.IsLocked());
+      return this->Contracts_.FetchContract(symbid);
+   }
 };
 using ExgMdSymbsSP = fon9::intrusive_ptr<ExgMdSymbs>;
 //--------------------------------------------------------------------------//

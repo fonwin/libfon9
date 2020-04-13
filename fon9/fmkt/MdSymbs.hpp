@@ -35,6 +35,10 @@ class fon9_API MdSymbsBase : public SymbTree {
    using UnsafeSubj = seed::UnsafeSeedSubjT<SymbsSubrSP>;
    UnsafeSubj  UnsafeSubj_;
 
+   /// 在 LoadFrom() 成功開啟, 且檔案載入完畢後的通知.
+   /// 預設 do nothing.
+   virtual void OnAfterLoadFrom(Locker&& symbsLk);
+
 protected:
    bool  IsDailyClearing_{false};
    bool  IsBlockPublish_{false};

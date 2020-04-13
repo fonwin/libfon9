@@ -26,7 +26,8 @@ struct ExgMdBasicInfo {
    fon9::PackBcd<8>  EndDateYYYYMMDD_;
    fon9::PackBcd<2>  FlowGroup_;
    fon9::PackBcd<8>  DeliveryDateYYYYMMDD_;
-   char              DynamicBanding_;
+   /// 適用動態價格穩定:Y, 不適用動態價格穩定:N;
+   char              DynamicBandingYN_;
 };
 //--------------------------------------------------------------------------//
 /// 逐筆行情 商品漲跌幅及基本資料訊息: Fut:(Tx='1'; Mg='1'); Opt:(Tx='4'; Mg='1'); Ver=7;

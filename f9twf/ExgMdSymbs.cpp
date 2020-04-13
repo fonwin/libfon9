@@ -1,6 +1,7 @@
 ﻿// \file f9twf/ExgMdSymbs.cpp
 // \author fonwinz@gmail.com
 #include "f9twf/ExgMdSymbs.hpp"
+#include "f9twf/ExgMdContracts.hpp"
 #include "f9twf/ExgMdFmtBS.hpp"
 #include "fon9/seed/FieldMaker.hpp"
 #include "fon9/fmkt/SymbTabNames.h"
@@ -16,6 +17,7 @@ fon9::seed::LayoutSP ExgMdSymb::MakeLayout() {
    // [Tab:Ref] Add fields:
    // - PriUpLmt2_; PriUpLmt3_; int8_t LvUpLmt_; // =0使用PriUpLmt_, <0(-2,-3)預告, >0(2,3)已實施.
    //   PriDnLmt2_; PriDnLmt3_; int8_t LvDnLmt_;
+   // [Tab:St]
    // - 暫停(恢復)交易: BreakTime_, RestartTime_, ReopenTime_; Reason_;
    // - TradingSessionSt = 參照流程組 or 開始收單, 開盤, 不可刪單階段 Non-cancel Period;
    // - 也許要增加 flag: 告知最後異動的欄位;
@@ -36,19 +38,6 @@ fon9::seed::LayoutSP ExgMdSymb::MakeLayout() {
    //    結算價(SETTLEMENT PRICE);
    //    未平倉合約數(OPEN INTEREST);
    //    鉅額交易總成交量(BLOCK TRADE QTY);
-   // -----
-   // Add tree: Contract; from I011; I020;
-   // 期貨價差複式單(例: TXFB0/C0), 沒有基本資料(I010)
-   // 所以沒有 ExgMdSymb::PriceOrigDiv_;
-   // 此時應該參考第1腳(或用前3碼取得 Contract:契約基本資料: I011).
-   // ExgMdSymb 應增加 ContractSP Contract_; 並在 ExgMdSymb 建構時設定好;
-   // - Contract:契約基本資料 應包含:
-   //   - I011:
-   //     - PriceOrigDiv_; StrikePriceDiv_;
-   //     - CONTRACT-SIZE;
-   //     - ACCEPT-QUOTE-FLAG;
-   //   - I020:
-   //     - INDEX-NUMBER 股票代碼;
    // -----
    // 新增解析的格式, 要在建立 ExgMcChannelMgr 之後, 透過 ExgMcChannelMgr::RegMcMessageParser() 註冊;
    // -----
@@ -84,6 +73,15 @@ fon9::fmkt::SymbData* ExgMdSymb::FetchSymbData(int tabid) {
    return GetExgMdSymbData(this, tabid);
 }
 //--------------------------------------------------------------------------//
+fon9_MSC_WARN_DISABLE(4355); // 'this': used in base member initializer list
+ExgMdSymb::ExgMdSymb(const fon9::StrView& symbid, ExgMdSymbs& owner)
+   : base{symbid}
+   , MdRtStream_{owner.RtInnMgr_}
+   , Contract_{owner.FetchContract(*this)} {
+   this->TDayYYYYMMDD_ = owner.RtInnMgr_.TDayYYYYMMDD();
+}
+fon9_MSC_WARN_POP;
+
 void ExgMdSymb::SessionClear(fon9::fmkt::SymbTree& owner, f9fmkt_TradingSessionId tsesId) {
    base::SessionClear(owner, tsesId);
    this->Ref_.DailyClear();
@@ -96,10 +94,19 @@ void ExgMdSymb::SessionClear(fon9::fmkt::SymbTree& owner, f9fmkt_TradingSessionI
 void ExgMdSymb::OnBeforeRemove(fon9::fmkt::SymbTree& owner, unsigned tdayYYYYMMDD) {
    (void)tdayYYYYMMDD;
    this->MdRtStream_.BeforeRemove(owner, *this);
+   this->Contract_.OnSymbRemove(*this);
 }
 //--------------------------------------------------------------------------//
+ExgMdSymbs::ExgMdSymbs(std::string rtiPathFmt)
+   : base(ExgMdSymb::MakeLayout(), std::move(rtiPathFmt)) {
+}
 fon9::fmkt::SymbSP ExgMdSymbs::MakeSymb(const fon9::StrView& symbid) {
-   return new ExgMdSymb(symbid, this->RtInnMgr_);
+   assert(this->SymbMap_.IsLocked());
+   return new ExgMdSymb(symbid, *this);
+}
+void ExgMdSymbs::OnAfterLoadFrom(Locker&& symbsLk) {
+   (void)symbsLk;
+   this->Contracts_.OnSymbsReload();
 }
 //--------------------------------------------------------------------------//
 f9twf_API const void* ExgMdToSnapshotBS(fon9::DayTime mdTime, unsigned mdCount, const ExgMdEntry* mdEntry,

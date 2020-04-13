@@ -86,11 +86,14 @@
     <ClInclude Include="..\..\..\f9twf\ExgMapMgr.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgMapSessionDn.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgMcChannel.hpp" />
+    <ClInclude Include="..\..\..\f9twf\ExgMcFmtSSToRts.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgMcGroup.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgMcReceiver.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgMcReceiverFactory.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgMcToMiConv.hpp" />
+    <ClInclude Include="..\..\..\f9twf\ExgMdContracts.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgMdFmt.hpp" />
+    <ClInclude Include="..\..\..\f9twf\ExgMdFmtBaseContract.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgMdFmtBasicInfo.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgMdFmtBasicInfoToRts.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgMdFmtBS.hpp" />
@@ -121,10 +124,12 @@
     <ClCompile Include="..\..\..\f9twf\ExgMapMgr.cpp" />
     <ClCompile Include="..\..\..\f9twf\ExgMapSessionDn.cpp" />
     <ClCompile Include="..\..\..\f9twf\ExgMcChannel.cpp" />
+    <ClCompile Include="..\..\..\f9twf\ExgMcFmtSSToRts.cpp" />
     <ClCompile Include="..\..\..\f9twf\ExgMcGroup.cpp" />
     <ClCompile Include="..\..\..\f9twf\ExgMcReceiver.cpp" />
     <ClCompile Include="..\..\..\f9twf\ExgMcReceiverFactory.cpp" />
     <ClCompile Include="..\..\..\f9twf\ExgMcToMiConv.cpp" />
+    <ClCompile Include="..\..\..\f9twf\ExgMdContracts.cpp" />
     <ClCompile Include="..\..\..\f9twf\ExgMdFmtBasicInfoToRts.cpp" />
     <ClCompile Include="..\..\..\f9twf\ExgMdFmtBSToRts.cpp" />
     <ClCompile Include="..\..\..\f9twf\ExgMdFmtParsers.cpp" />

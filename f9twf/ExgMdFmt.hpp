@@ -57,6 +57,18 @@ struct ExgMdSPrice {
    }
 };
 
+template <typename Pk>
+inline uint32_t ToPriceOrigDiv(const Pk& pk) {
+   return static_cast<uint32_t>(fon9::GetDecDivisor(
+      static_cast<uint8_t>(fon9::fmkt::Pri::Scale - fon9::PackBcdTo<uint8_t>(pk.DecimalLocator_))));
+}
+template <typename Pk>
+inline uint32_t ToStrikePriceDiv(const Pk& pk) {
+   return static_cast<uint32_t>(fon9::GetDecDivisor(
+      fon9::PackBcdTo<uint8_t>(pk.StrikePriceDecimalLocator_)));
+}
+
+//--------------------------------------------------------------------------//
 /// 台灣期交所行情的封包框架:
 /// - Head
 ///   - Head0

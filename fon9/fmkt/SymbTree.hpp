@@ -104,9 +104,6 @@ public:
       (void)symb; (void)tab; (void)symbs;
    }
 
-   /// 衍生者必須傳回有效的 SymbSP;
-   virtual SymbSP MakeSymb(const StrView& symbid) = 0;
-
    SymbSP FetchSymb(const Locker& symbs, const StrView& symbid) {
       auto ifind = symbs->find(symbid);
       if (ifind != symbs->end())
@@ -126,6 +123,9 @@ public:
    }
 
 protected:
+   /// 此時必定在 SymbMap locked 狀態下, 衍生者必須傳回有效的 SymbSP;
+   virtual SymbSP MakeSymb(const StrView& symbid) = 0;
+
    class PodOp : public SymbPodOp {
       fon9_NON_COPY_NON_MOVE(PodOp);
       using base = SymbPodOp;

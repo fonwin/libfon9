@@ -5,6 +5,7 @@
 #include "f9twf/ExgMdFmt.hpp"
 #include "f9twf/ExgMrRecover.hpp"
 #include "f9twf/ExgMdSymbs.hpp"
+#include "f9twf/ExgMdContracts.hpp"
 #include "fon9/TsAppend.hpp"
 #include "fon9/Subr.hpp"
 #include "fon9/PkCont.hpp"
@@ -174,6 +175,10 @@ class f9twf_API ExgMcChannel : private fon9::PkContFeeder {
       }
    }
 
+   bool OnPkContSnapshot(const ExgMcHead& pk);
+   ExgMcChannelState OnPkHb(const ExgMcHead& pk, unsigned pksz);
+   ExgMcChannelState OnPkSeqReset();
+
    void Ctor(ExgMcChannelMgr* mgr, ExgMrChannelId_t channelId, ExgMcChannelStyle style) {
       assert(this->ChannelMgr_ == nullptr && this->ChannelId_ == 0);
       this->ChannelMgr_ = mgr;
@@ -323,7 +328,7 @@ public:
    void OnSnapshotDone(ExgMcChannel& src, uint64_t lastRtSeq);
 
    bool CheckSymbTradingSessionId(ExgMdSymb& symb) {
-      return symb.CheckSetTradingSessionId(*this->Symbs_, this->TradingSessionId_);
+      return f9twf::CheckSymbTradingSessionId(*this->Symbs_, symb, this->TradingSessionId_);
    }
 
 private:
