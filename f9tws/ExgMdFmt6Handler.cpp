@@ -32,9 +32,14 @@ void ExgMdFmt6Handler::PkContOnReceived(const void* pkptr, unsigned pksz, SeqT s
       ++mdPQs;
       // fmt6.TotalQty_ 包含此次成交, 試算階段 DealQty = TotalQty, 所以不更新 TotalQty.
       if (!isCalc) {
+         // 若有「暫緩撮合」, 則: DealQty=0, 並提供「瞬間價格趨勢」.
+         // 此時不應改變 High/Low, 但仍應「發行 & 儲存」此訊息,
+         // 訂閱者如果有回補成交明細, 則會收到此訊息(DealQty=0), 處理時要注意。
+         if (symb->Deal_.Data_.Deal_.Qty_ > 0) {
+            symb->High_.CheckHigh(symb->Deal_.Data_.Deal_.Pri_, dealTime);
+            symb->Low_.CheckLow(symb->Deal_.Data_.Deal_.Pri_, dealTime);
+         }
          const f9fmkt::Qty pkTotalQty = fon9::PackBcdTo<uint32_t>(fmt6.TotalQty_);
-         symb->High_.CheckHigh(symb->Deal_.Data_.Deal_.Pri_, dealTime);
-         symb->Low_.CheckLow(symb->Deal_.Data_.Deal_.Pri_, dealTime);
          if (symb->Deal_.Data_.TotalQty_ + symb->Deal_.Data_.Deal_.Qty_ != pkTotalQty)
             symb->Deal_.Data_.Flags_ |= f9fmkt::DealFlag::TotalQtyLost;
          symb->Deal_.Data_.TotalQty_ = pkTotalQty;
