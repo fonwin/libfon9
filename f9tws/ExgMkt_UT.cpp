@@ -69,7 +69,7 @@ struct Fmt6Parser : public TwsPkReceiver, public fon9::fmkt::SymbTree {
       uint64_t tmu6 = (((tmHH * 60) + fon9::PackBcdTo<unsigned>(fmt6.Time_.MM_)) * 60
                        + fon9::PackBcdTo<unsigned>(fmt6.Time_.SS_));
       tmu6 = (tmu6 * 1000000) + fon9::PackBcdTo<unsigned>(fmt6.Time_.U6_);
-      fon9::StrView        stkno{f9tws::ToStrView(fmt6.StkNo_)};
+      fon9::StrView        stkno{ToStrView(fmt6.StkNo_)};
       SymbMap::Locker      symbs{this->SymbMap_};
       f9extests::SymbIn&   symb = *static_cast<f9extests::SymbIn*>(this->FetchSymb(symbs, stkno).get());
       if (fmt6.ItemMask_ & 0x80) {

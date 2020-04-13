@@ -151,5 +151,30 @@ public:
    inline friend bool operator>=(const CharAryF& lhs, const CharAryF& rhs) { return !(lhs < rhs);  }
 };
 
+/// \ingroup AlNum
+/// 使用 CharAryF<> 但 ToStrView() 時, 將尾端的 kChFiller 移除, 但長度最少保留 minPayload;
+template <size_t arysz, size_t minPayload, typename CharT = char, CharT kChFiller = 0>
+class CharAryP : public CharAryF<arysz, CharT, kChFiller> {
+   using base = CharAryF<arysz, CharT, kChFiller>;
+
+   constexpr size_t CheckLength(size_t sz = arysz) const {
+      return sz <= minPayload ? minPayload
+         : (this->Chars_[sz - 1] != kChFiller ? sz : this->CheckLength(sz - 1));
+   }
+
+public:
+   using base::base;
+   CharAryP() = default;
+
+   /// 移除尾端的 kChFiller, 剩餘有效資料的長度, 但必定 >= minPayload;
+   constexpr size_t Length() const {
+      return this->CheckLength();
+   }
+
+   friend constexpr StrView ToStrView(const CharAryP& value) {
+      return StrView{value.Chars_, value.Length()};
+   }
+};
+
 } // namespace fon9
 #endif//__fon9_CharAry_hpp__

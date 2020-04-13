@@ -7,20 +7,7 @@
 
 namespace f9tws {
 
-struct StkNo : public fon9::CharAryF<6, char, ' '> {
-   using base = fon9::CharAryF<6, char, ' '>;
-   using base::base;
-   StkNo() = default;
-};
-constexpr fon9::StrView ToStrView(const StkNo& stkno) {
-   return fon9::StrView{stkno.Chars_,
-      stkno.Chars_[stkno.size() - 1] != ' ' ? stkno.size()
-      : stkno.Chars_[stkno.size() - 2] != ' ' ? stkno.size() - 1
-      : stkno.size() - 2};
-}
-
-//--------------------------------------------------------------------------//
-
+using StkNo = fon9::CharAryP<6, 4, char, ' '>;
 using BrkId = fon9::CharAryF<4>;
 using OrdNo = fon9::CharAryF<5>;
 
