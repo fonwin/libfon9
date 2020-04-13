@@ -76,6 +76,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\f9tws\ExgMdFmt1Handler.cpp" />
     <ClCompile Include="..\..\..\f9tws\ExgMdFmt6Handler.cpp" />
+    <ClCompile Include="..\..\..\f9tws\ExgMdFmt9Handler.cpp" />
     <ClCompile Include="..\..\..\f9tws\ExgMdFmtIxHandler.cpp" />
     <ClCompile Include="..\..\..\f9tws\ExgMdFmtIxNoList.cpp" />
     <ClCompile Include="..\..\..\f9tws\ExgMdIndices.cpp" />
@@ -97,6 +98,8 @@
     <ClInclude Include="..\..\..\f9tws\ExgMdFmt1.hpp" />
     <ClInclude Include="..\..\..\f9tws\ExgMdFmt1Handler.hpp" />
     <ClInclude Include="..\..\..\f9tws\ExgMdFmt6Handler.hpp" />
+    <ClInclude Include="..\..\..\f9tws\ExgMdFmt9.hpp" />
+    <ClInclude Include="..\..\..\f9tws\ExgMdFmt9Handler.hpp" />
     <ClInclude Include="..\..\..\f9tws\ExgMdFmtIx.hpp" />
     <ClInclude Include="..\..\..\f9tws\ExgMdFmtIxHandler.hpp" />
     <ClInclude Include="..\..\..\f9tws\ExgMdFmtIxNoList.hpp" />

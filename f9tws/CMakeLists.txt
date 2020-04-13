@@ -6,6 +6,7 @@ set(f9tws_src
  ExgMdSystem.cpp
  ExgMdFmt1Handler.cpp
  ExgMdFmt6Handler.cpp
+ ExgMdFmt9Handler.cpp
  ExgMdFmtIxHandler.cpp
  ExgMdFmtIxNoList.cpp
  ExgMdReceiverSession.cpp
