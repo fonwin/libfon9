@@ -200,7 +200,9 @@ void TicketRunner::Run() {
    if (this->Root_)
       StartSeedSearch(*this->Root_, this);
    else
-      this->OnError(OpResult::not_found_sapling);
+      this->OnError(this->OpResult_ == OpResult::no_error
+                    ? OpResult::not_found_sapling
+                    : this->OpResult_);
 }
 
 } } // namespaces
