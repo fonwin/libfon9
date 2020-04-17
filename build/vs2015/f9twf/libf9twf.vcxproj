@@ -103,7 +103,10 @@
     <ClInclude Include="..\..\..\f9twf\ExgMdFmtMatchToRts.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgMcFmtSS.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgMdFmtParsers.hpp" />
+    <ClInclude Include="..\..\..\f9twf\ExgMdFmtSysInfo.hpp" />
+    <ClInclude Include="..\..\..\f9twf\ExgMdFmtSysInfoToRts.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgMdPkReceiver.hpp" />
+    <ClInclude Include="..\..\..\f9twf\TwfSymbRef.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgMdSymbs.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgMrFmt.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgMrRecover.hpp" />
@@ -133,7 +136,9 @@
     <ClCompile Include="..\..\..\f9twf\ExgMdFmtBasicInfoToRts.cpp" />
     <ClCompile Include="..\..\..\f9twf\ExgMdFmtBSToRts.cpp" />
     <ClCompile Include="..\..\..\f9twf\ExgMdFmtParsers.cpp" />
+    <ClCompile Include="..\..\..\f9twf\ExgMdFmtSysInfoToRts.cpp" />
     <ClCompile Include="..\..\..\f9twf\ExgMdPkReceiver.cpp" />
+    <ClCompile Include="..\..\..\f9twf\TwfSymbRef.cpp" />
     <ClCompile Include="..\..\..\f9twf\ExgMdSymbs.cpp" />
     <ClCompile Include="..\..\..\f9twf\ExgMdFmtMatchToRts.cpp" />
     <ClCompile Include="..\..\..\f9twf\ExgMrRecover.cpp" />

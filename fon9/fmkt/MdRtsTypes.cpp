@@ -12,24 +12,28 @@ fon9_API MdRtsKind GetMdRtsKind(RtsPackType pkType) {
       MdRtsKind::BS,
       MdRtsKind::BS,
       MdRtsKind::BS,
-      MdRtsKind::TradingSessionSt,
+      MdRtsKind::TradingSession,
       MdRtsKind::Base | MdRtsKind::Ref,
       MdRtsKind::Deal | MdRtsKind::BS,
       MdRtsKind::All,   // SnapshotSymbList
       MdRtsKind::Deal,  // IndexValueV2
       MdRtsKind::Deal,  // IndexValueV2List
+      MdRtsKind::All,   // FieldValue: 因為不確定要更新哪個欄位, 所以只好視為全部都有可能.
+      MdRtsKind::All,   // TabValues:  因為不確定要更新哪個Tab, 所以只好視為全部都有可能.
    };
    static_assert(numofele(RtsPackType2MdRtsKind) == cast_to_underlying(RtsPackType::Count), "");
    static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::DealPack)] == MdRtsKind::Deal, "");
    static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::SnapshotBS)] == MdRtsKind::BS, "");
    static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::CalculatedBS)] == MdRtsKind::BS, "");
    static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::UpdateBS)] == MdRtsKind::BS, "");
-   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::TradingSessionSt)] == MdRtsKind::TradingSessionSt, "");
+   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::TradingSessionId)] == MdRtsKind::TradingSession, "");
    static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::BaseInfoTw)] == (MdRtsKind::Base | MdRtsKind::Ref), "");
    static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::DealBS)] == (MdRtsKind::Deal | MdRtsKind::BS), "");
    static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::SnapshotSymbList)] == MdRtsKind::All, "");
    static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::IndexValueV2)] == MdRtsKind::Deal, "");
    static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::IndexValueV2List)] == MdRtsKind::Deal, "");
+   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::FieldValue)] == MdRtsKind::All, "");
+   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::TabValues)] == MdRtsKind::All, "");
 
    return RtsPackType2MdRtsKind[cast_to_underlying(pkType)];
 }
@@ -47,7 +51,7 @@ static bool MdRtsPackSingleBS(RevBuffer& rbuf, RtBSType bsType, const PriQty& pq
 /// 將委託簿「買方 or 賣方」的 pqs[SymbBS::kBSCount] 填入 rbuf;
 static bool MdRtsPackOrderBS(RevBuffer& rbuf, RtBSType bsType, const PriQty* pqs) {
    unsigned bsCount = 0;
-   for (bsCount = 0; bsCount < SymbBS::kBSCount; ++bsCount) {
+   for (bsCount = 0; bsCount < SymbBSData::kBSCount; ++bsCount) {
       if (pqs->Qty_ == 0)
          break;
       ToBitv(rbuf, pqs->Qty_);
@@ -61,16 +65,25 @@ static bool MdRtsPackOrderBS(RevBuffer& rbuf, RtBSType bsType, const PriQty* pqs
    return true;
 }
 
-fon9_API void MdRtsPackSnapshotBS(RevBuffer& rbuf, const SymbBS& symbBS) {
-   const auto  curFlags = symbBS.Data_.Flags_;
+fon9_API void MdRtsPackSnapshotBS(RevBuffer& rbuf, const SymbBSData& symbBS) {
+   const auto  curFlags = symbBS.Flags_;
    if (IsEnumContains(curFlags, BSFlag::DerivedSell))
-      MdRtsPackSingleBS(rbuf, RtBSType::DerivedSell, symbBS.Data_.DerivedSell_);
+      MdRtsPackSingleBS(rbuf, RtBSType::DerivedSell, symbBS.DerivedSell_);
    if (IsEnumContains(curFlags, BSFlag::DerivedBuy))
-      MdRtsPackSingleBS(rbuf, RtBSType::DerivedBuy, symbBS.Data_.DerivedBuy_);
+      MdRtsPackSingleBS(rbuf, RtBSType::DerivedBuy, symbBS.DerivedBuy_);
    if (IsEnumContains(curFlags, BSFlag::OrderSell))
-      MdRtsPackOrderBS(rbuf, RtBSType::OrderSell, symbBS.Data_.Sells_);
+      MdRtsPackOrderBS(rbuf, RtBSType::OrderSell, symbBS.Sells_);
    if (IsEnumContains(curFlags, BSFlag::OrderBuy))
-      MdRtsPackOrderBS(rbuf, RtBSType::OrderBuy, symbBS.Data_.Buys_);
+      MdRtsPackOrderBS(rbuf, RtBSType::OrderBuy, symbBS.Buys_);
+}
+
+fon9_API void MdRtsPackTabValues(RevBuffer& rbuf, const seed::Tab& tab, const SymbData& dat) {
+   assert(unsigned_cast(tab.GetIndex()) <= 0xff);
+   seed::SimpleRawRd rd{dat};
+   auto fldidx = tab.Fields_.size();
+   while (fldidx > 0)
+      tab.Fields_.Get(--fldidx)->CellToBitv(rd, rbuf);
+   *rbuf.AllocPacket<uint8_t>() = static_cast<uint8_t>(tab.GetIndex());
 }
 
 } } // namespaces

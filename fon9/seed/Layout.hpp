@@ -49,6 +49,7 @@ public:
    Tab* GetTab(StrView name) const;
    virtual Tab* GetTab(size_t index) const = 0;
    virtual size_t GetTabCount() const = 0;
+   int GetTabIndex(const StrView& name) const;
 
    /// 若 tabName.empty(): return this->GetTab(0);
    /// 否則使用 tabName 尋找: return this->GetTab(tabName);

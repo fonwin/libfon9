@@ -3,6 +3,7 @@
 #ifndef __fon9_fmkt_MdRtsTypes_hpp__
 #define __fon9_fmkt_MdRtsTypes_hpp__
 #include "fon9/fmkt/FmktTypes.hpp"
+#include "fon9/seed/Tab.hpp"
 #include "fon9/TimeStamp.hpp"
 
 namespace fon9 { namespace fmkt {
@@ -16,16 +17,16 @@ enum class MdRtsKind : uint32_t {
    Deal = 0x04,
    BS = 0x08,
    /// 交易時段狀態.
-   TradingSessionSt = 0x80,
+   TradingSession = 0x80,
 };
 fon9_ENABLE_ENUM_BITWISE_OP(MdRtsKind);
-
+//--------------------------------------------------------------------------//
 /// \ingroup fmkt
 /// - 預期 RtsPackType 應在 0..0x7f 之間.
 ///   若超過 0x7f, 則應思考編碼端及解碼端應如何處理.
 /// - 封包基本格式:
 ///   - RtsPackType(1 byte)
-///   - InfoTime(Bitv:DayTime, 可能為 Null, 表示 InfoTime 與前一個封包相同)
+///   - 大部分接著 InfoTime(Bitv:DayTime, 可能為 Null, 表示 InfoTime 與前一個封包相同)
 ///   - 後續內容由各 RtsPackType 自行定義.
 enum class RtsPackType : uint8_t {
    /// 打包成交明細.
@@ -66,12 +67,12 @@ enum class RtsPackType : uint8_t {
    /// - Action == RtBSAction::New, 則先將原本檔為往後移動, 然後填入該檔位的 Pri, Qty;
    UpdateBS,
 
-   /// 盤別狀態通知.
+   /// 盤別(日盤、夜盤...)切換通知.
    /// - InfoTime(Bitv: Null=清盤 or Unchanged)
    /// - TDayYYYYMMDD(uint32_t BigEndian)
-   /// - f9fmkt_TradingSessionId(char)
-   /// - f9fmkt_TradingSessionSt(uint8_t)
-   TradingSessionSt,
+   /// - f9fmkt_TradingSessionId(char): Normal, OddLot, FixedPrice, AfterHour...
+   /// - f9fmkt_TradingSessionSt(uint8_t): Clear, PreOpen, NonCancelPeriod, Open...
+   TradingSessionId,
 
    /// Twf 基本資訊.
    /// - InfoTime(Bitv: Null=Unchanged)
@@ -84,31 +85,50 @@ enum class RtsPackType : uint8_t {
    /// - PriDnLmt(Bitv)
    BaseInfoTw,
 
-   /// DealPack + SnapshotBS(無InfoTime);
+   /// DealPack(有InfoTime) + SnapshotBS(無InfoTime);
    /// 使用 f9fmkt::DealFlag::Calculated 判斷是否為試算.
    DealBS,
 
    /// 單一商品的全部資料, 通常用在訂閱整棵樹的商品資料回補.
+   /// - RtsPackType::SnapshotSymbList 之後, 沒有緊接著的 InfoTime.
    /// - 底下內容重覆 n 次:
    ///   - SymbId
    ///   - SymbCellsToBitv()
    SnapshotSymbList,
 
    /// 指數值.
-   /// - Bitv(DealTime): YesterdayIndexTime()=昨天收盤指數, ClosedIndexTime()=今日收盤指數, else=指數統計時間.
+   /// - DealTime = Bitv(InfoTime)
+   /// - DealTime: YesterdayIndexTime()=昨天收盤指數, ClosedIndexTime()=今日收盤指數, else=指數統計時間.
    /// - Bitv(DealPri * 100): 「* 100」之後,通常為整數值.
    IndexValueV2,
    /// 一次多筆指數.
-   /// - DealTime
-   /// - 底下內容重覆 n 次:
+   /// - DealTime = Bitv(InfoTime)
+   /// - 底下內容重覆 1..N 次:
    ///   - IndexId;
    ///   - Bitv(DealPri * 100);
    IndexValueV2List,
 
+   /// 更新單一欄位.
+   /// - 僅適用於: tabidx=0..15; fldidx=0..15;
+   /// - RtsPackType::FieldValue 之後, 沒有緊接著的 InfoTime.
+   /// - 底下內容重複 1..N 次:
+   ///   - uint8_t nTabFld;
+   ///     - tabidx = (nTabFld >> 4);
+   ///     - fldidx = (nTabFld & 0x0f);
+   ///   - fld->BitvToCell();
+   FieldValue,
+
+   /// 更新 Tab 的全部欄位.
+   /// - RtsPackType::TabValues 之後, 沒有緊接著的 InfoTime.
+   /// - 底下內容重複 1..N 次:
+   ///   - uint8_t tabidx;
+   ///   - tabs[tabidx].(all fields)->BitvToCell();
+   TabValues,
+
    Count,
 };
 static_assert(cast_to_underlying(RtsPackType::Count) <= 0x7f, "");
-
+//--------------------------------------------------------------------------//
 /// static_assert(ClosedIndexTime().GetOrigValue() == 99 * 24 * 60 * 60 * DayTime::Divisor, "");
 /// = 8553600000000
 constexpr DayTime ClosedIndexTime() {
@@ -119,7 +139,7 @@ constexpr DayTime ClosedIndexTime() {
 constexpr DayTime YesterdayIndexTime() {
    return fon9::TimeInterval_Day(-1);
 }
-
+//--------------------------------------------------------------------------//
 enum class RtBSType : uint8_t {
    // --xx ----
    Mask = 0x30,
@@ -136,8 +156,9 @@ enum class RtBSAction : uint8_t {
    ChangePQ = 0x80,
    ChangeQty = 0xc0,
 };
-
 //--------------------------------------------------------------------------//
+class SymbData;
+struct SymbBSData;
 
 inline MdRtsKind StrToMdRtsKind(StrView* args) {
    MdRtsKind res = static_cast<MdRtsKind>(HexStrTo(args));
@@ -145,8 +166,24 @@ inline MdRtsKind StrToMdRtsKind(StrView* args) {
 }
 fon9_API MdRtsKind GetMdRtsKind(RtsPackType pkType);
 
-class SymbBS;
-fon9_API void MdRtsPackSnapshotBS(RevBuffer& rbuf, const SymbBS& symbBS);
+fon9_API void MdRtsPackSnapshotBS(RevBuffer& rbuf, const SymbBSData& symbBS);
+
+/// 用 RtsPackType::TabValues 格式打包 dat.
+/// - 「不包含」最後的 *rbuf.AllocPacket<uint8_t>() = cast_to_underlying(RtsPackType::TabValues);
+/// - 可以呼叫多次 MdRtsPackTabValues() 打包不同的 tab;
+fon9_API void MdRtsPackTabValues(RevBuffer& rbuf, const seed::Tab& tab, const SymbData& dat);
+
+inline void MdRtsPackFieldValueNid(RevBuffer& rbuf, const seed::Tab& tab, const seed::Field& fld) {
+   assert(unsigned_cast(tab.GetIndex()) <= 0x0f && unsigned_cast(fld.GetIndex()) <= 0x0f);
+   *rbuf.AllocPacket<uint8_t>() = static_cast<uint8_t>((tab.GetIndex() << 4) | fld.GetIndex());
+}
+// inline void MdRtsPackFieldValue(RevBuffer& rbuf,
+//                                 const seed::Tab& tab,
+//                                 const seed::Field& fld,
+//                                 const SymbData& dat) {
+//    fld.CellToBitv(seed::SimpleRawRd{dat}, rbuf);
+//    MdRtsPackFieldValueNid(rbuf, tab, fld);
+// }
 
 } } // namespaces
 #endif//__fon9_fmkt_MdRtsTypes_hpp__

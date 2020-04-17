@@ -16,9 +16,13 @@ struct SymbTwaBase : public SymbTwsBase, public SymbTwfBase {
       SymbTwfBase::AddFields<Derived>(flds);
    }
 
-   void DailyClear() {
-      SymbTwsBase::DailyClear();
-      SymbTwfBase::DailyClear();
+   void SymbTwaBaseDailyClear() {
+      this->SymbTwsBaseDailyClear();
+      this->SymbTwfBaseDailyClear();
+   }
+   void SymbTwaBaseSessionClear() {
+      this->SymbTwsBaseSessionClear();
+      this->SymbTwfBaseSessionClear();
    }
 };
 

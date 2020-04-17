@@ -5,26 +5,26 @@
 #include "f9twf/ExgTypes.hpp"
 #include "fon9/ConfigUtils.hpp"
 #include "fon9/SortedVector.hpp"
-
-fon9_BEFORE_INCLUDE_STD
-#include <vector>
-#include <memory>
-fon9_AFTER_INCLUDE_STD
+#include "fon9/fmkt/SymbTwfBase.hpp"
 
 namespace f9twf {
 
 class f9twf_API ExgMdSymb;
 class f9twf_API ExgMdSymbs;
 using ContractSize = fon9::Decimal<uint64_t, 4>;
+using SymbFlowGroup_t = fon9::fmkt::SymbFlowGroup_t;
 //--------------------------------------------------------------------------//
 class f9twf_API ExgMdContract {
    fon9_NON_COPY_NON_MOVE(ExgMdContract);
 
-   bool AssignBaseFromSymb(const ExgMdSymb& symb);
-
 public:
    const ContractId  ContractId_;
-   char              Padding___[5];
+
+   f9fmkt_TradingMarket TradingMarket_{f9fmkt_TradingMarket_Unknown};
+   SymbFlowGroup_t      FlowGroup_{0};
+
+   char  Padding___[3];
+
    /// 現貨標的.
    StkNo             StkNo_;
    /// 是否可報價.
@@ -50,7 +50,8 @@ public:
    /// - 如果 Contract 尚未收到基本資料, 則可從 symb 取得部分基本資料.
    ///   例如: StrikePriceDiv_; PriceOrigDiv_;
    void OnSymbBaseChanged(const ExgMdSymb& symb);
-   void SetBaseValues(uint32_t priceOrigDiv, uint32_t strikePriceDiv);
+   void SetBaseValues(f9fmkt_TradingMarket mkt, SymbFlowGroup_t flowGroup,
+                      uint32_t priceOrigDiv, uint32_t strikePriceDiv);
    /// 在建立新的商品時, 將 Contract 的基本資料填入 symb;
    void AssignBaseToSymb(ExgMdSymb& symb) const;
 };
@@ -90,6 +91,10 @@ public:
          symbid.SetEnd(symbid.begin() + 3);
       return this->FetchContract(ContractId{symbid});
    }
+
+   using iterator = ContractMap::const_iterator;
+   iterator begin() const { return this->ContractMap_.begin(); }
+   iterator end() const { return this->ContractMap_.end(); }
 };
 
 } // namespaces

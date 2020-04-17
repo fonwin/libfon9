@@ -51,6 +51,18 @@ struct SymbDealData {
    Qty      DealSellCnt_{};
    DealFlag Flags_{};
    char     Padding___[7];
+
+   SymbDealData() {
+      this->Clear();
+   }
+   void Clear() {
+      memset(this, 0, sizeof(*this));
+      this->InfoTime_.AssignNull();
+      this->DealTime_.AssignNull();
+   }
+   DayTime DealTime() const {
+      return this->DealTime_.IsNull() ? this->InfoTime_ : this->DealTime_;
+   }
 };
 
 } } // namespaces

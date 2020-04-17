@@ -34,9 +34,15 @@ struct SymbTwfBase {
 
    char  Padding__[1];
 
-   void DailyClear() {
+   void SymbTwfBaseClear() {
       this->FlowGroup_ = 0;
       this->ExgSymbSeq_ = 0;
+   }
+   void SymbTwfBaseDailyClear() {
+      this->SymbTwfBaseClear();
+   }
+   void SymbTwfBaseSessionClear() {
+      this->SymbTwfBaseClear();
    }
 
    template <class Derived>

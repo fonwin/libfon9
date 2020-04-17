@@ -14,8 +14,9 @@ struct SymbTwsBase {
    uint32_t ShUnit_{0};
    char     Padding___[4];
 
-   void DailyClear() {
-      this->ShUnit_ = 0;
+   void SymbTwsBaseDailyClear() {
+   }
+   void SymbTwsBaseSessionClear() {
    }
 
    template <class Derived>

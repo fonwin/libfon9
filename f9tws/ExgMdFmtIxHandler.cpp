@@ -58,21 +58,19 @@ struct ExgMdIndexUpdater {
    }
    ExgMdIndex* Update(const IdxNo& idxNo, const IdxValueV2& valueV2, fon9::RevBuffer* gbuf = nullptr) {
       ExgMdIndex& ix = *static_cast<ExgMdIndex*>(this->Indicas_.FetchSymb(this->IxsLk_, ToStrView(idxNo)).get());
-      if (this->IdxTime_ < ix.Deal_.Data_.DealTime_)
+      if (this->IdxTime_ < ix.Deal_.Data_.Time_)
          return nullptr;
-      const auto        idxValueV2 = fon9::PackBcdTo<uint32_t>(valueV2);
+      const auto        idxValueV2  = fon9::PackBcdTo<uint32_t>(valueV2);
       const f9fmkt::Pri idxValuePri = f9fmkt::Pri::Make<2>(idxValueV2);
-      if (this->IdxTime_ == ix.Deal_.Data_.DealTime_ && idxValuePri == ix.Deal_.Data_.DealPri_)
+      if (this->IdxTime_ == ix.Deal_.Data_.Time_ && idxValuePri == ix.Deal_.Data_.Pri_)
          return nullptr;
-      ix.Deal_.Data_.DealTime_ = this->IdxTime_;
-      ix.Deal_.Data_.DealPri_ = idxValuePri;
-      if (this->IdxTime_ != f9fmkt::YesterdayIndexTime()) {
-         ix.High_.CheckHigh(idxValuePri, this->IdxTime_);
-         ix.Low_.CheckLow(idxValuePri, this->IdxTime_);
-      }
+      ix.Deal_.Data_.Time_ = this->IdxTime_;
+      ix.Deal_.Data_.Pri_  = idxValuePri;
+      if (this->IdxTime_ != f9fmkt::YesterdayIndexTime())
+         ix.CheckOHL(idxValuePri, this->IdxTime_);
       fon9::RevBufferList rts{128};
       fon9::ToBitv(rts, idxValueV2);
-      ix.MdRtStream_.Publish(this->Indicas_, ToStrView(ix.SymbId_),
+      ix.MdRtStream_.Publish(ToStrView(ix.SymbId_),
                              f9fmkt::RtsPackType::IndexValueV2,
                              this->IdxTime_,
                              std::move(rts));

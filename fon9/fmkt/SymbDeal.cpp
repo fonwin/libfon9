@@ -5,7 +5,7 @@
 
 namespace fon9 { namespace fmkt {
 
-seed::Fields SymbDeal::MakeFields() {
+seed::Fields SymbDeal_MakeFields() {
    seed::Fields flds;
    flds.Add(fon9_MakeField(SymbDeal, Data_.InfoTime_,    "InfoTime"));
    flds.Add(fon9_MakeField(SymbDeal, Data_.DealTime_,    "DealTime"));

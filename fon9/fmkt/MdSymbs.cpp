@@ -125,16 +125,16 @@ void MdSymbsBase::DailyClear(unsigned tdayYYYYMMDD) {
    *rts.AllocPacket<char>() = f9fmkt_TradingSessionId_Normal;
    PutBigEndian(rts.AllocPacket<uint32_t>(), tdayYYYYMMDD);
    RevPutBitv(rts, fon9_BitvV_NumberNull); // DayTime::Null();
-   *rts.AllocPacket<uint8_t>() = cast_to_underlying(RtsPackType::TradingSessionSt);
-   MdRtsNotifyArgs  e{*this, fon9_kCSTR_SubrTree, GetMdRtsKind(RtsPackType::TradingSessionSt), rts};
+   *rts.AllocPacket<uint8_t>() = cast_to_underlying(RtsPackType::TradingSessionId);
+   MdRtsNotifyArgs  e{*this, fon9_kCSTR_SubrTree, GetMdRtsKind(RtsPackType::TradingSessionId), rts};
    this->UnsafeSubj_.Publish(e);
 }
 void MdSymbsBase::UnsafePublish(RtsPackType pkType, seed::SeedNotifyArgs& e) {
    assert(this->SymbMap_.IsLocked());
-   // IsDailyClearing_ 時, 有可能 RtsPackType::TradingSessionSt 或 PodRemoved(商品過期被移除)
+   // IsDailyClearing_ 時, 有可能 RtsPackType::TradingSessionId 或 PodRemoved(商品過期被移除)
    // 所以這裡要讓 PodRemoved 送給 tree 的訂閱者,
-   // 但 TradingSessionSt 由 MdSymbsBase::DailyClear() 送出一次, 不要每個商品都送一次.
-   if (this->IsDailyClearing_ && pkType == RtsPackType::TradingSessionSt)
+   // 但 TradingSessionId 由 MdSymbsBase::DailyClear() 送出一次, 不要每個商品都送一次.
+   if (this->IsDailyClearing_ && pkType == RtsPackType::TradingSessionId)
       return;
    if (this->IsBlockPublish_)
       return;

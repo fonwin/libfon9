@@ -86,15 +86,15 @@ struct Fmt6Parser : public TwsPkReceiver, public fon9::fmkt::SymbTree {
       return true;
    }
    static const f9tws::ExgMdPriQty* AssignBS(fon9::fmkt::PriQty* dst, const f9tws::ExgMdPriQty* pqs, int count) {
-      if (count > fon9::fmkt::SymbBS::kBSCount)
-         count = fon9::fmkt::SymbBS::kBSCount;
+      if (count > fon9::fmkt::SymbBSData::kBSCount)
+         count = fon9::fmkt::SymbBSData::kBSCount;
       for (int L = 0; L < count; ++L) {
          pqs->AssignTo(*dst);
          ++dst;
          ++pqs;
       }
-      if (count < fon9::fmkt::SymbBS::kBSCount)
-         memset(dst, 0, sizeof(*dst) * (fon9::fmkt::SymbBS::kBSCount - count));
+      if (count < fon9::fmkt::SymbBSData::kBSCount)
+         memset(dst, 0, sizeof(*dst) * (fon9::fmkt::SymbBSData::kBSCount - count));
       return pqs;
    }
 };

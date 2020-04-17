@@ -13,11 +13,17 @@ struct ExgMdLocker {
    fon9_NON_COPY_NON_MOVE(ExgMdLocker);
    ExgMdSymbs&          Symbs_;
    ExgMdSymbs::Locker   SymbsLocker_;
-   ExgMdLocker(ExgMcMessage& e, fon9::StrView symbId)
+
+   ExgMdLocker(ExgMcMessage& e)
       : Symbs_(*e.Channel_.GetChannelMgr()->Symbs_)
       , SymbsLocker_{Symbs_.SymbMap_.Lock()} {
+   }
+
+   ExgMdLocker(ExgMcMessage& e, fon9::StrView symbId)
+      : ExgMdLocker(e) {
       e.Symb_ = static_cast<ExgMdSymb*>(this->Symbs_.FetchSymb(this->SymbsLocker_, symbId).get());
    }
+
    template <class ProdId>
    ExgMdLocker(ExgMcMessage& e, const ProdId& prodId)
       : ExgMdLocker{e, fon9::StrView_eos_or_all(prodId.Chars_, ' ')} {

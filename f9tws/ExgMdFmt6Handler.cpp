@@ -35,10 +35,8 @@ void ExgMdFmt6Handler::PkContOnReceived(const void* pkptr, unsigned pksz, SeqT s
          // 若有「暫緩撮合」, 則: DealQty=0, 並提供「瞬間價格趨勢」.
          // 此時不應改變 High/Low, 但仍應「發行 & 儲存」此訊息,
          // 訂閱者如果有回補成交明細, 則會收到此訊息(DealQty=0), 處理時要注意。
-         if (symb->Deal_.Data_.Deal_.Qty_ > 0) {
-            symb->High_.CheckHigh(symb->Deal_.Data_.Deal_.Pri_, dealTime);
-            symb->Low_.CheckLow(symb->Deal_.Data_.Deal_.Pri_, dealTime);
-         }
+         if (symb->Deal_.Data_.Deal_.Qty_ > 0)
+            symb->CheckOHL(symb->Deal_.Data_.Deal_.Pri_, dealTime);
          const f9fmkt::Qty pkTotalQty = fon9::PackBcdTo<uint32_t>(fmt6.TotalQty_);
          if (symb->Deal_.Data_.TotalQty_ + symb->Deal_.Data_.Deal_.Qty_ != pkTotalQty)
             symb->Deal_.Data_.Flags_ |= f9fmkt::DealFlag::TotalQtyLost;
@@ -61,12 +59,12 @@ void ExgMdFmt6Handler::PkContOnReceived(const void* pkptr, unsigned pksz, SeqT s
       mdPQs = f9tws::AssignBS(symb->BS_.Data_.Sells_, mdPQs, (fmt6.ItemMask_ & 0x0e) >> 1);
       if (hasDeal) {
          rtsPackType = f9fmkt::RtsPackType::DealBS;
-         MdRtsPackSnapshotBS(rts, symb->BS_);
+         MdRtsPackSnapshotBS(rts, symb->BS_.Data_);
          goto __ASSIGN_DEAL_TO_RTS;
       }
       else {
          rtsPackType = isCalc ? f9fmkt::RtsPackType::CalculatedBS : f9fmkt::RtsPackType::SnapshotBS;
-         MdRtsPackSnapshotBS(rts, symb->BS_);
+         MdRtsPackSnapshotBS(rts, symb->BS_.Data_);
       }
    }
    else if (hasDeal) {
@@ -84,8 +82,7 @@ void ExgMdFmt6Handler::PkContOnReceived(const void* pkptr, unsigned pksz, SeqT s
    else { // none Deal, none BS?
       return;
    }
-   symb->MdRtStream_.Publish(*this->MdSys_.Symbs_, ToStrView(symb->SymbId_),
-                             rtsPackType, dealTime, std::move(rts));
+   symb->MdRtStream_.Publish(ToStrView(symb->SymbId_), rtsPackType, dealTime, std::move(rts));
 }
 
 } // namespaces

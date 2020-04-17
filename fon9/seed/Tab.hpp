@@ -118,6 +118,12 @@ public:
    virtual ~Tab();
 };
 
+inline int Layout::GetTabIndex(const StrView& name) const {
+   if (Tab* tab = this->GetTab(name))
+      return tab->GetIndex();
+   return -1;
+}
+
 //--------------------------------------------------------------------------//
 
 /// \ingroup seed

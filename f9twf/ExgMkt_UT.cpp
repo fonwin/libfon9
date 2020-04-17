@@ -188,7 +188,7 @@ struct RtParser : public TwfPkReceiver, public fon9::fmkt::SymbTree {
       fon9::StrView        symbid = fon9::StrView_eos_or_all(pk.ProdId_.Chars_, ' ');
       SymbMap::Locker      symbs{dst.SymbMap_};
       f9extests::SymbIn&   symb = *static_cast<f9extests::SymbIn*>(dst.FetchSymb(symbs, symbid).get());
-      static_assert(fon9::fmkt::SymbBS::kBSCount == sizeof(pk.BuyOrderBook_)/sizeof(pk.BuyOrderBook_[0]),
+      static_assert(fon9::fmkt::SymbBSData::kBSCount == sizeof(pk.BuyOrderBook_)/sizeof(pk.BuyOrderBook_[0]),
                     "fon9::fmkt::SymbBS::kBSCount must equal to numofele(pk.BuyOrderBook_)");
       AssignBS(symb.BS_.Data_.Buys_, pk.BuyOrderBook_, symb.PriceOrigDiv_);
       AssignBS(symb.BS_.Data_.Sells_, pk.SellOrderBook_, symb.PriceOrigDiv_);
@@ -207,7 +207,7 @@ struct RtParser : public TwfPkReceiver, public fon9::fmkt::SymbTree {
       }
    }
    static void AssignBS(fon9::fmkt::PriQty* dst, const f9twf::ExgMdOrderPQ* pqs, uint32_t origDiv) {
-      for (unsigned L = 0; L < fon9::fmkt::SymbBS::kBSCount; ++L) {
+      for (unsigned L = 0; L < fon9::fmkt::SymbBSData::kBSCount; ++L) {
          pqs->Price_.AssignTo(dst->Pri_, origDiv);
          dst->Qty_ = fon9::PackBcdTo<uint32_t>(pqs->Qty_);
          ++pqs;
@@ -230,7 +230,7 @@ struct RtParser : public TwfPkReceiver, public fon9::fmkt::SymbTree {
       fon9::StrView      symbid = fon9::StrView_eos_or_all(static_cast<const f9twf::ExgMcI083*>(&pk)->ProdId_.Chars_, ' ');
       SymbMap::Locker    symbs{rthis.SymbMap_};
       f9extests::SymbIn& symb = *static_cast<f9extests::SymbIn*>(rthis.FetchSymb(symbs, symbid).get());
-      symb.BS_.Clear();
+      symb.BS_.Data_.Clear();
       const void* entryEnd = f9twf::ExgMdToSnapshotBS(pk.InformationTime_.ToDayTime(),
          fon9::PackBcdTo<unsigned>(static_cast<const f9twf::ExgMcI083*>(&pk)->NoMdEntries_),
          static_cast<const f9twf::ExgMcI083*>(&pk)->MdEntry_,

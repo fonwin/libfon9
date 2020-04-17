@@ -5,41 +5,20 @@
 #include "f9tws/Config.h"
 #include "fon9/fmkt/MdSymbs.hpp"
 #include "fon9/fmkt/SymbDeal.hpp"
-#include "fon9/fmkt/SymbHL.hpp"
+#include "fon9/fmkt/SymbTimePri.hpp"
 #include "fon9/fmkt/MdRtStream.hpp"
 
 namespace f9tws {
 
-class f9tws_API IndexDeal : public fon9::fmkt::SymbData {
-   fon9_NON_COPY_NON_MOVE(IndexDeal);
-public:
-   struct Data {
-      /// 交易所的指數統計時間.
-      fon9::DayTime  DealTime_{fon9::DayTime::Null()};
-      /// 指數值.
-      fon9::fmkt::Pri   DealPri_{};
-   };
-   Data  Data_;
-
-   IndexDeal(const Data& rhs) : Data_{rhs} {
-   }
-   IndexDeal() = default;
-
-   void DailyClear() {
-      memset(&this->Data_, 0, sizeof(this->Data_));
-      this->Data_.DealTime_.AssignNull();
-   }
-
-   static fon9::seed::Fields MakeFields();
-};
+/// 交易所的指數資料, 只有時間 & 指數值.
+using IndexDeal = fon9::fmkt::SymbTimePri;
+f9tws_API fon9::seed::Fields IndexDeal_MakeFields();
 //--------------------------------------------------------------------------//
-class f9tws_API ExgMdIndex : public fon9::fmkt::Symb {
+class f9tws_API ExgMdIndex : public fon9::fmkt::Symb, public fon9::fmkt::SymbDataOHL {
    fon9_NON_COPY_NON_MOVE(ExgMdIndex);
    using base = fon9::fmkt::Symb;
 public:
    IndexDeal               Deal_;
-   fon9::fmkt::SymbHigh    High_;
-   fon9::fmkt::SymbLow     Low_;
    fon9::fmkt::MdRtStream  MdRtStream_;
 
    ExgMdIndex(const fon9::StrView& id, fon9::fmkt::MdRtStreamInnMgr& innMgr)
@@ -47,10 +26,15 @@ public:
       , MdRtStream_{innMgr} {
       this->TDayYYYYMMDD_ = innMgr.TDayYYYYMMDD();
    }
+   ~ExgMdIndex();
 
    fon9::fmkt::SymbData* GetSymbData(int tabid) override;
    fon9::fmkt::SymbData* FetchSymbData(int tabid) override;
 
+   /// 台灣證券指數的換盤, 不應清除 SymbData(Open/High/Low...);
+   /// - 設定 this->TradingSessionId_ = tsesId;
+   /// - 設定 this->TradingSessionSt_ = f9fmkt_TradingSessionSt_Clear;
+   /// - 不會觸發 this->GetSymbData(tabid=0..N)->OnSymbSessionClear();
    void SessionClear(fon9::fmkt::SymbTree& owner, f9fmkt_TradingSessionId tsesId) override;
    void OnBeforeRemove(fon9::fmkt::SymbTree& owner, unsigned tdayYYYYMMDD) override;
 

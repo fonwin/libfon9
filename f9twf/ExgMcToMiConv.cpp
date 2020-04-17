@@ -79,7 +79,7 @@ struct ExgMcToMiConv::HandlerFns {
       fon9::ToPackBcd(miPk->BodyLength_, miPkSz - sizeof(ExgMiNoBody));
       miPk->ProdId_ = static_cast<const ExgMcI081*>(&e.Pk_)->ProdId_;
       //-----
-      static_assert(fon9::fmkt::SymbBS::kBSCount == sizeof(miPk->BuyOrderBook_) / sizeof(miPk->BuyOrderBook_[0]),
+      static_assert(fon9::fmkt::SymbBSData::kBSCount == sizeof(miPk->BuyOrderBook_) / sizeof(miPk->BuyOrderBook_[0]),
                     "BSCount not equal.");
       AssignBS(miPk->BuyOrderBook_, e.Symb_->BS_.Data_.Buys_, e.Symb_->PriceOrigDiv_);
       AssignBS(miPk->SellOrderBook_, e.Symb_->BS_.Data_.Sells_, e.Symb_->PriceOrigDiv_);
@@ -96,7 +96,7 @@ struct ExgMcToMiConv::HandlerFns {
       conv.FinalMiMessageSeq(*miPk, miPkSz, buf.MoveOut());
    }
    static void AssignBS(f9twf::ExgMdOrderPQ* dst, const fon9::fmkt::PriQty* src, uint32_t origDiv) {
-      for (unsigned L = 0; L < fon9::fmkt::SymbBS::kBSCount; ++L) {
+      for (unsigned L = 0; L < fon9::fmkt::SymbBSData::kBSCount; ++L) {
          dst->Price_.AssignFrom(src->Pri_, origDiv);
          fon9::ToPackBcd(dst->Qty_, src->Qty_);
          ++src;

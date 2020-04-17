@@ -20,8 +20,12 @@ f9twf_API bool I010BasicInfoLockedParser(ExgMcMessage& e, const ExgMdLocker&) {
    symb.PriceOrigDiv_ = ToPriceOrigDiv(pk);
    symb.StrikePriceDiv_ = ToStrikePriceDiv(pk);
    ExgMdPriceTo(symb.Ref_.Data_.PriRef_, pk.ReferencePrice_, symb.PriceOrigDiv_);
-   ExgMdPriceTo(symb.Ref_.Data_.PriUpLmt_, pk.RiseLimitPrice1_, symb.PriceOrigDiv_);
-   ExgMdPriceTo(symb.Ref_.Data_.PriDnLmt_, pk.FallLimitPrice1_, symb.PriceOrigDiv_);
+   ExgMdPriceTo(symb.Ref_.Data_.PriLmts_[0].Up_, pk.RiseLimitPrice1_, symb.PriceOrigDiv_);
+   ExgMdPriceTo(symb.Ref_.Data_.PriLmts_[0].Dn_, pk.FallLimitPrice1_, symb.PriceOrigDiv_);
+   ExgMdPriceTo(symb.Ref_.Data_.PriLmts_[1].Up_, pk.RiseLimitPrice2_, symb.PriceOrigDiv_);
+   ExgMdPriceTo(symb.Ref_.Data_.PriLmts_[1].Dn_, pk.FallLimitPrice2_, symb.PriceOrigDiv_);
+   ExgMdPriceTo(symb.Ref_.Data_.PriLmts_[2].Up_, pk.RiseLimitPrice3_, symb.PriceOrigDiv_);
+   ExgMdPriceTo(symb.Ref_.Data_.PriLmts_[2].Dn_, pk.FallLimitPrice3_, symb.PriceOrigDiv_);
    return true;
 }
 f9twf_API void I010BasicInfoParser(ExgMcMessage& e) {
@@ -36,7 +40,8 @@ f9twf_API void I011ContractParser(ExgMcMessage& e) {
    con.AcceptQuote_ = (i011.AcceptQuoteFlagYN_ == 'Y' ? fon9::EnabledYN::Yes : fon9::EnabledYN{});
    con.ContractSize_.Assign<4>(fon9::PackBcdTo<uint64_t>(i011.ContractSizeV4_));
    con.StkNo_ = i011.StkNo_;
-   con.SetBaseValues(ToPriceOrigDiv(i011), ToStrikePriceDiv(i011));
+   con.SetBaseValues((i011.TransmissionCode_ == '1' ? f9fmkt_TradingMarket_TwFUT : f9fmkt_TradingMarket_TwOPT),
+                     con.FlowGroup_, ToPriceOrigDiv(i011), ToStrikePriceDiv(i011));
    //puts(RevPrintTo<std::string>(
    //   '[', i011.ContractId_, "]"
    //   "[", i011.StkNo_, "]"

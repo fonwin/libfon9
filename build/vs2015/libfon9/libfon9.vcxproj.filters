@@ -198,6 +198,24 @@
     <Filter Include="Source Files\_base\_Pk">
       <UniqueIdentifier>{8b191c8a-9f23-44a0-9c7d-97e1744cf62b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\fmkt\_Md">
+      <UniqueIdentifier>{7990c1b1-7198-41f2-b7bc-ec4e47db43ae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\fmkt\_Base">
+      <UniqueIdentifier>{e07f4f65-8904-43f1-9871-3f58ae573e43}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\fmkt\_Trading">
+      <UniqueIdentifier>{dd37ed3d-0f36-449d-b594-842921b20750}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\fmkt\_Trading">
+      <UniqueIdentifier>{d5e36d83-982a-4e3e-954d-f2e41ece1088}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\fmkt\_Base">
+      <UniqueIdentifier>{8987b5f1-a35e-4d01-8867-5813d08f6935}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\fmkt\_Md">
+      <UniqueIdentifier>{c65d0558-193f-4dcd-af73-a69cb4610de1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\fon9\sys\Config.h">
@@ -872,15 +890,6 @@
     <ClInclude Include="..\..\..\fon9\fix\IoFixSender.hpp">
       <Filter>Header Files\fix</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\fon9\fmkt\SymbTree.hpp">
-      <Filter>Header Files\fmkt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\fon9\fmkt\FmktTypes.h">
-      <Filter>Header Files\fmkt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\fon9\fmkt\FmktTypes.hpp">
-      <Filter>Header Files\fmkt</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\fon9\PackBcd.hpp">
       <Filter>Header Files\_base\_AlNum / StrTools</Filter>
     </ClInclude>
@@ -934,12 +943,6 @@
     </ClInclude>
     <ClInclude Include="..\..\..\fon9\rc\Rc.h">
       <Filter>Header Files\rc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\fon9\fmkt\TradingRequest.hpp">
-      <Filter>Header Files\fmkt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\fon9\fmkt\TradingLine.hpp">
-      <Filter>Header Files\fmkt</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\fon9\ConsoleIO.h">
       <Filter>Header Files\_base\_Tools / Utility</Filter>
@@ -1004,15 +1007,6 @@
     <ClInclude Include="..\..\..\fon9\rc\RcSvc.hpp">
       <Filter>Header Files\rc\_SeedVisitorClient</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\fon9\fmkt\MdRtsTypes.hpp">
-      <Filter>Header Files\fmkt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\fon9\fmkt\MdRtStream.hpp">
-      <Filter>Header Files\fmkt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\fon9\fmkt\MdRtStreamInn.hpp">
-      <Filter>Header Files\fmkt</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\fon9\auth\PolicySocketFrom.hpp">
       <Filter>Header Files\auth</Filter>
     </ClInclude>
@@ -1061,23 +1055,8 @@
     <ClInclude Include="..\..\..\fon9\fmkt\SymbDy.hpp">
       <Filter>Header Files\fmkt\_SymbData%28BS,Deal...%29</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\fon9\fmkt\SymbHL.hpp">
-      <Filter>Header Files\fmkt\_SymbData%28BS,Deal...%29</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\fon9\fmkt\SymbRef.hpp">
       <Filter>Header Files\fmkt\_SymbData%28BS,Deal...%29</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\fon9\fmkt\MdSystem.hpp">
-      <Filter>Header Files\fmkt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\fon9\fmkt\MdSymbs.hpp">
-      <Filter>Header Files\fmkt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\fon9\fmkt\SymbTabNames.h">
-      <Filter>Header Files\fmkt</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\fon9\fmkt\TwExgMdTime.hpp">
-      <Filter>Header Files\fmkt</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\fon9\TsAppend.hpp">
       <Filter>Header Files\_base\_Pk</Filter>
@@ -1090,6 +1069,57 @@
     </ClInclude>
     <ClInclude Include="..\..\..\fon9\PkReceiver.hpp">
       <Filter>Header Files\_base\_Pk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbTimePri.hpp">
+      <Filter>Header Files\fmkt\_SymbData%28BS,Deal...%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbDynBand.hpp">
+      <Filter>Header Files\fmkt\_SymbData%28BS,Deal...%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbBreakSt.hpp">
+      <Filter>Header Files\fmkt\_SymbData%28BS,Deal...%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\MdRtStream.hpp">
+      <Filter>Header Files\fmkt\_Md</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\MdRtStreamInn.hpp">
+      <Filter>Header Files\fmkt\_Md</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\MdRtsTypes.hpp">
+      <Filter>Header Files\fmkt\_Md</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\MdSymbs.hpp">
+      <Filter>Header Files\fmkt\_Md</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\MdSystem.hpp">
+      <Filter>Header Files\fmkt\_Md</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\FmktTypes.h">
+      <Filter>Header Files\fmkt\_Base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\FmktTypes.hpp">
+      <Filter>Header Files\fmkt\_Base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbTabNames.h">
+      <Filter>Header Files\fmkt\_Base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbTree.hpp">
+      <Filter>Header Files\fmkt\_Base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\TwExgMdTime.hpp">
+      <Filter>Header Files\fmkt\_Md</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\TradingLine.hpp">
+      <Filter>Header Files\fmkt\_Trading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\TradingRequest.hpp">
+      <Filter>Header Files\fmkt\_Trading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbQuoteReq.hpp">
+      <Filter>Header Files\fmkt\_SymbData%28BS,Deal...%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbFuoClosed.hpp">
+      <Filter>Header Files\fmkt\_SymbData%28BS,Deal...%29</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1591,9 +1621,6 @@
     <ClCompile Include="..\..\..\fon9\fix\IoFixSender.cpp">
       <Filter>Source Files\fix</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\fon9\fmkt\SymbTree.cpp">
-      <Filter>Source Files\fmkt</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\fon9\Assert.c">
       <Filter>Source Files\_base\_Tools / Utility</Filter>
     </ClCompile>
@@ -1629,12 +1656,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\seed\FieldCharsL.cpp">
       <Filter>Source Files\seed\_fields</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\fon9\fmkt\TradingRequest.cpp">
-      <Filter>Source Files\fmkt</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\fon9\fmkt\TradingLine.cpp">
-      <Filter>Source Files\fmkt</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\Tools.cpp">
       <Filter>Source Files\_base\_Tools / Utility</Filter>
@@ -1696,15 +1717,6 @@
     <ClCompile Include="..\..\..\fon9\rc\RcSvc.cpp">
       <Filter>Source Files\rc\_SeedVisitorClient</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\fon9\fmkt\MdRtsTypes.cpp">
-      <Filter>Source Files\fmkt</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\fon9\fmkt\MdRtStream.cpp">
-      <Filter>Source Files\fmkt</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\fon9\fmkt\MdRtStreamInn.cpp">
-      <Filter>Source Files\fmkt</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\fon9\framework\IoFactoryTcpServerAB.cpp">
       <Filter>Source Files\framework</Filter>
     </ClCompile>
@@ -1753,14 +1765,8 @@
     <ClCompile Include="..\..\..\fon9\fmkt\SymbDy.cpp">
       <Filter>Source Files\fmkt\_SymbData%28BS,Deal...%29</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\fon9\fmkt\SymbHL.cpp">
-      <Filter>Source Files\fmkt\_SymbData%28BS,Deal...%29</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\fon9\fmkt\SymbRef.cpp">
       <Filter>Source Files\fmkt\_SymbData%28BS,Deal...%29</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\fon9\fmkt\MdSystem.cpp">
-      <Filter>Source Files\fmkt</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\PkCont.cpp">
       <Filter>Source Files\_base\_Pk</Filter>
@@ -1774,8 +1780,44 @@
     <ClCompile Include="..\..\..\fon9\TsReceiver.cpp">
       <Filter>Source Files\_base\_Pk</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\SymbTimePri.cpp">
+      <Filter>Source Files\fmkt\_SymbData%28BS,Deal...%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\SymbDynBand.cpp">
+      <Filter>Source Files\fmkt\_SymbData%28BS,Deal...%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\MdRtStream.cpp">
+      <Filter>Source Files\fmkt\_Md</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\MdRtStreamInn.cpp">
+      <Filter>Source Files\fmkt\_Md</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\MdRtsTypes.cpp">
+      <Filter>Source Files\fmkt\_Md</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\fon9\fmkt\MdSymbs.cpp">
-      <Filter>Source Files\fmkt</Filter>
+      <Filter>Source Files\fmkt\_Md</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\MdSystem.cpp">
+      <Filter>Source Files\fmkt\_Md</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\SymbBreakSt.cpp">
+      <Filter>Source Files\fmkt\_SymbData%28BS,Deal...%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\SymbTree.cpp">
+      <Filter>Source Files\fmkt\_Base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\TradingLine.cpp">
+      <Filter>Source Files\fmkt\_Trading</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\TradingRequest.cpp">
+      <Filter>Source Files\fmkt\_Trading</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\SymbQuoteReq.cpp">
+      <Filter>Source Files\fmkt\_SymbData%28BS,Deal...%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\SymbFuoClosed.cpp">
+      <Filter>Source Files\fmkt\_SymbData%28BS,Deal...%29</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

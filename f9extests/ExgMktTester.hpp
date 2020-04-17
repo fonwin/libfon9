@@ -177,17 +177,17 @@ void ExgMktTestParser(const char* msgHead, const MktDataFile& mdf, int argc, cha
                   symi->BS_.Data_.DerivedSell_.Pri_, fmtPri, " / ", symi->BS_.Data_.DerivedSell_.Qty_, fmtQty, '\n',
                   symi->BS_.Data_.DerivedBuy_.Pri_, fmtPri, " / ", symi->BS_.Data_.DerivedBuy_.Qty_, fmtQty, '\n');
       }
-      for (int L = fon9::fmkt::SymbBS::kBSCount; L > 0;) {
+      for (int L = fon9::fmkt::SymbBSData::kBSCount; L > 0;) {
          --L;
          RevPrint(rbuf, symi->BS_.Data_.Buys_[L].Pri_, fmtPri, " / ", symi->BS_.Data_.Buys_[L].Qty_, fmtQty, '\n');
       }
       RevPrint(rbuf, "---\n");
-      for (int L = 0; L < fon9::fmkt::SymbBS::kBSCount; ++L) {
+      for (int L = 0; L < fon9::fmkt::SymbBSData::kBSCount; ++L) {
          RevPrint(rbuf, symi->BS_.Data_.Sells_[L].Pri_, fmtPri, " / ", symi->BS_.Data_.Sells_[L].Qty_, fmtQty, '\n');
       }
       fon9::RevPrint(rbuf,
                      "SymbId=", symi->SymbId_, "\n"
-                     "Last deal: ", symi->Deal_.DealTime(), "\n"
+                     "Last deal: ", symi->Deal_.Data_.DealTime(), "\n"
                      "      Pri: ", symi->Deal_.Data_.Deal_.Pri_, fmtPri, "\n"
                      "      Qty: ", symi->Deal_.Data_.Deal_.Qty_, fmtQty, "\n"
                      " TotalQty: ", symi->Deal_.Data_.TotalQty_, fmtQty, "\n"

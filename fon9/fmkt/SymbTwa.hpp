@@ -19,7 +19,10 @@ public:
    ~SymbTwa();
 
    bool IsExpired(unsigned tdayYYYYMMDD) const override;
-
+   void OnSymbDailyClear(SymbTree& tree, const Symb& symb) override;
+   void OnSymbSessionClear(SymbTree& tree, const Symb& symb) override;
+   /// 台灣證券的換盤, 不應清除 SymbData(Open/High/Low...);
+   /// 台灣期權的換盤, 需要清除 SymbData(Open/High/Low...);
    void SessionClear(SymbTree& owner, f9fmkt_TradingSessionId tsesId) override;
 
    static seed::Fields MakeFields();

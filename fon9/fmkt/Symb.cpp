@@ -1,6 +1,7 @@
 ﻿// \file fon9/fmkt/Symb.cpp
 // \author fonwinz@gmail.com
 #include "fon9/fmkt/Symb.hpp"
+#include "fon9/fmkt/SymbTree.hpp"
 #include "fon9/seed/FieldMaker.hpp"
 
 namespace fon9 { namespace fmkt {
@@ -10,14 +11,24 @@ SymbData::~SymbData() {
 //--------------------------------------------------------------------------//
 Symb::~Symb() {
 }
+
+static void OnSymbEv(SymbTree& tree, Symb& symb, void (SymbData::*fnEv)(SymbTree&, const Symb&)) {
+   const int tabCount = static_cast<int>(tree.LayoutSP_->GetTabCount());
+   for (int tabid = 0; tabid < tabCount; ++tabid) {
+      if (auto* dat = symb.GetSymbData(tabid))
+         (dat->*fnEv)(tree, symb);
+   }
+}
 void Symb::DailyClear(SymbTree& owner, unsigned tdayYYYYMMDD) {
    this->TDayYYYYMMDD_ = tdayYYYYMMDD;
-   this->SessionClear(owner, f9fmkt_TradingSessionId_Normal);
+   this->TradingSessionId_ = f9fmkt_TradingSessionId_Normal;
+   this->TradingSessionSt_ = f9fmkt_TradingSessionSt_Clear;
+   OnSymbEv(owner, *this, &SymbData::OnSymbDailyClear);
 }
 void Symb::SessionClear(SymbTree& owner, f9fmkt_TradingSessionId tsesId) {
-   (void)owner;
    this->TradingSessionId_ = tsesId;
    this->TradingSessionSt_ = f9fmkt_TradingSessionSt_Clear;
+   OnSymbEv(owner, *this, &SymbData::OnSymbSessionClear);
 }
 bool Symb::IsExpired(unsigned tdayYYYYMMDD) const {
    (void)tdayYYYYMMDD;

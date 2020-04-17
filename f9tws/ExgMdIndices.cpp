@@ -6,30 +6,30 @@
 
 namespace f9tws {
 
-fon9::seed::Fields IndexDeal::MakeFields() {
+f9tws_API fon9::seed::Fields IndexDeal_MakeFields() {
    fon9::seed::Fields flds;
-   flds.Add(fon9_MakeField(IndexDeal, Data_.DealTime_, "DealTime"));
-   flds.Add(fon9_MakeField(IndexDeal, Data_.DealPri_,  "DealPri"));
+   flds.Add(fon9_MakeField(IndexDeal, Data_.Time_, "DealTime"));
+   flds.Add(fon9_MakeField(IndexDeal, Data_.Pri_,  "DealPri"));
    return flds;
 }
 //--------------------------------------------------------------------------//
 fon9::seed::LayoutSP ExgMdIndex::MakeLayout() {
+   using namespace fon9;
    using namespace fon9::seed;
    using namespace fon9::fmkt;
+   constexpr auto kTabFlag = TabFlag::NoSapling_NoSeedCommand_Writable;
    return LayoutSP{new LayoutN(
       fon9_MakeField(Symb, SymbId_, "Id"), TreeFlag::AddableRemovable | TreeFlag::Unordered,
-      TabSP{new Tab{fon9::Named{fon9_kCSTR_TabName_Base}, MakeFields(),             TabFlag::NoSapling_NoSeedCommand_Writable}},
-      TabSP{new Tab{fon9::Named{fon9_kCSTR_TabName_Deal}, IndexDeal::MakeFields(),  TabFlag::NoSapling_NoSeedCommand_Writable}},
-      TabSP{new Tab{fon9::Named{fon9_kCSTR_TabName_High}, SymbHigh::MakeFields(),   TabFlag::NoSapling_NoSeedCommand_Writable}},
-      TabSP{new Tab{fon9::Named{fon9_kCSTR_TabName_Low},  SymbLow::MakeFields(),    TabFlag::NoSapling_NoSeedCommand_Writable}},
-      TabSP{new Tab{fon9::Named{fon9_kCSTR_TabName_Rt},   MdRtStream::MakeFields(), TabFlag::NoSapling_NoSeedCommand_Writable}}
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_Base}, MakeFields(),             kTabFlag}},
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_Deal}, IndexDeal_MakeFields(),   kTabFlag}},
+      f9fmkt_MAKE_TABS_OpenHighLow(),
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_Rt},   MdRtStream::MakeFields(), kTabFlag}}
    )};
 }
 static const int32_t kExgMdIndexOffset[]{
    0, // Base
    fon9_OffsetOf(ExgMdIndex, Deal_),
-   fon9_OffsetOf(ExgMdIndex, High_),
-   fon9_OffsetOf(ExgMdIndex, Low_),
+   f9fmkt_MAKE_OFFSET_OpenHighLow(ExgMdIndex),
    fon9_OffsetOf(ExgMdIndex, MdRtStream_),
 };
 static inline fon9::fmkt::SymbData* GetExgMdIndexData(ExgMdIndex* pthis, int tabid) {
@@ -44,12 +44,12 @@ fon9::fmkt::SymbData* ExgMdIndex::FetchSymbData(int tabid) {
    return GetExgMdIndexData(this, tabid);
 }
 //--------------------------------------------------------------------------//
+ExgMdIndex::~ExgMdIndex() {
+}
 void ExgMdIndex::SessionClear(fon9::fmkt::SymbTree& owner, f9fmkt_TradingSessionId tsesId) {
-   base::SessionClear(owner, tsesId);
-   this->Deal_.DailyClear();
-   this->High_.DailyClear();
-   this->Low_.DailyClear();
-   this->MdRtStream_.SessionClear(owner, *this);
+   this->TradingSessionId_ = tsesId;
+   this->TradingSessionSt_ = f9fmkt_TradingSessionSt_Clear;
+   this->MdRtStream_.OnSymbSessionClear(owner, *this);
 }
 void ExgMdIndex::OnBeforeRemove(fon9::fmkt::SymbTree& owner, unsigned tdayYYYYMMDD) {
    (void)tdayYYYYMMDD;

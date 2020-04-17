@@ -15,6 +15,7 @@ namespace fon9 { namespace fmkt {
 
 class fon9_API SymbPodOp;
 class fon9_API SymbTree;
+class fon9_API Symb;
 
 /// \ingroup fmkt
 /// 為了讓 SymbTree::PodOp 裡面的 seed::SimpleRawRd{*symbdata} 可以正確運作,
@@ -25,10 +26,35 @@ class fon9_API SymbData {
 public:
    SymbData() = default;
    virtual ~SymbData();
+
+   /// 在 Symb::DailyClear() 填妥相關欄位之後,
+   /// 會觸發該 Symb 所有的 SymbData 的 OnSymbDailyClear() 事件.
+   virtual void OnSymbDailyClear(SymbTree& tree, const Symb& symb) = 0;
+   /// 在 Symb::SessionClear() 填妥相關欄位之後,
+   /// 會觸發該 Symb 所有的 SymbData 的 OnSymbSessionClear() 事件.
+   virtual void OnSymbSessionClear(SymbTree& tree, const Symb& symb) = 0;
 };
 
-using SymbFlowGroup_t = uint8_t;
-using SymbSeqNo_t = uint16_t;
+template <class DataT>
+class SimpleSymbData : public SymbData {
+   fon9_NON_COPY_NON_MOVE(SimpleSymbData);
+public:
+   using Data = DataT;
+   DataT Data_;
+   SimpleSymbData(const Data& rhs) : Data_(rhs) {
+   }
+   SimpleSymbData() = default;
+
+   void OnSymbDailyClear(SymbTree& tree, const Symb& symb) override {
+      (void)tree; (void)symb;
+      this->Data_.Clear();
+   }
+   void OnSymbSessionClear(SymbTree& tree, const Symb& symb) override {
+      (void)tree; (void)symb;
+      this->Data_.Clear();
+   }
+};
+
 
 /// \ingroup fmkt
 /// 可擴充的商品資料.
@@ -38,6 +64,15 @@ using SymbSeqNo_t = uint16_t;
 ///   - 成交價量.
 class fon9_API Symb : public SymbData, public intrusive_ref_counter<Symb> {
    fon9_NON_COPY_NON_MOVE(Symb);
+
+protected:
+   void OnSymbDailyClear(SymbTree& tree, const Symb& symb) override {
+      (void)tree; (void)symb; assert(this == &symb);
+   }
+   void OnSymbSessionClear(SymbTree& tree, const Symb& symb) override {
+      (void)tree; (void)symb; assert(this == &symb);
+   }
+
 public:
    /// 交易日.
    uint32_t TDayYYYYMMDD_{0};
@@ -68,8 +103,15 @@ public:
 
    /// 每日清檔, 預設:
    /// - 設定 this->TDayYYYYMMDD_;
-   /// - this->SessionClear(owner, f9fmkt_TradingSessionId_Normal);
+   /// - 設定 this->TradingSessionId_ = f9fmkt_TradingSessionId_Normal;
+   /// - 設定 this->TradingSessionSt_ = f9fmkt_TradingSessionSt_Clear;
+   /// - 觸發 this->GetSymbData(tabid=0..N)->OnSymbDailyClear();
+   /// - 不會再觸發 this->SessionClear() 事件.
    virtual void DailyClear(SymbTree& owner, unsigned tdayYYYYMMDD);
+   /// 換盤(例: 日盤=>夜盤; 盤中=>定價...)清檔, 預設:
+   /// - 設定 this->TradingSessionId_ = tsesId;
+   /// - 設定 this->TradingSessionSt_ = f9fmkt_TradingSessionSt_Clear;
+   /// - 觸發 this->GetSymbData(tabid=0..N)->OnSymbSessionClear();
    virtual void SessionClear(SymbTree& owner, f9fmkt_TradingSessionId tsesId);
 
    /// 商品是否已經下市? 預設傳回 false;

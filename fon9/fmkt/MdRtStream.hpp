@@ -8,7 +8,7 @@ namespace fon9 { namespace fmkt {
 
 /// \ingroup fmkt
 /// 每個 symbol 擁有自己的 MdRtStream;
-class fon9_API MdRtStream {
+class fon9_API MdRtStream : public SymbData {
    fon9_NON_COPY_NON_MOVE(MdRtStream);
 
    MdRtUnsafeSubj    UnsafeSubj_;
@@ -25,26 +25,30 @@ class fon9_API MdRtStream {
       return MdRtUnsafeSubj_UnsubscribeStream(this->UnsafeSubj_, subConn);
    }
 
+   /// 在設定好 symb 盤別 (TDay + TradingSessionId) 之後通知.
+   /// - 可能是 DailyClear, 或是 SessionClear; 都會來到此處.
+   /// - 執行底下工作:
+   ///   this->Publish();
+   ///   this->OpenRtStorage();
+   ///   this->Save(RtsPackType::TradingSessionId);
+   void OnSessionChanged(const Symb& symb);
+
 public:
    MdRtStreamInnMgr& InnMgr_;
 
    MdRtStream(MdRtStreamInnMgr& innMgr) : InnMgr_(innMgr) {
    }
+   ~MdRtStream();
 
    void OpenRtStorage(Symb& symb) {
       this->InnMgr_.RtOpen(this->RtStorage_, symb);
       this->RtStorageSize_ = this->RtStorage_.Size();
    }
 
-   /// 應在設定好 symb 盤別 (TDay + TradingSessionId) 之後通知.
-   /// 執行底下工作:
-   ///   this->Publish();
-   ///   this->OpenRtStorage();
-   ///   this->Save(RtsPackType::TradingSessionSt);
-   void SessionClear(SymbTree& tree, Symb& symb);
-
    /// 移除商品, 通常是因為商品下市.
    void BeforeRemove(SymbTree& tree, Symb& symb);
+   void OnSymbDailyClear(SymbTree& tree, const Symb& symb) override;
+   void OnSymbSessionClear(SymbTree& tree, const Symb& symb) override;
 
    DayTime InfoTime() const {
       return this->InfoTime_;
@@ -66,10 +70,12 @@ public:
 
    /// 打包並發行:
    /// pkType + infoTime(Bitv,Null表示InfoTime沒變) + rts;
-   void Publish(seed::Tree& tree, const StrView& keyText,
-                RtsPackType pkType, DayTime infoTime, RevBufferList&& rts);
-   void PublishUpdateBS(seed::Tree& tree, const StrView& keyText,
-                        SymbBS& symbBS, RevBufferList&& rts);
+   void Publish(const StrView& keyText, RtsPackType pkType, DayTime infoTime, RevBufferList&& rts);
+   void PublishUpdateBS(const StrView& keyText, SymbBSData& symbBS, RevBufferList&& rts);
+
+   /// 先把 pkType 打包進 rts: *rts.AllocPacket<uint8_t>() = cast_to_underlying(pkType);
+   /// 然後: 發行 & 儲存.
+   void PublishAndSave(const StrView& keyText, RtsPackType pkType, RevBufferList&& rts);
 };
 //--------------------------------------------------------------------------//
 class fon9_API MdRtsNotifyArgs : public seed::SeedNotifyArgs {

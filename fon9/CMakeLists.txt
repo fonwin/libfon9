@@ -188,9 +188,13 @@ set(fon9src
  fmkt/SymbRef.cpp
  fmkt/SymbBS.cpp
  fmkt/SymbDeal.cpp
+ fmkt/SymbTimePri.cpp
+ fmkt/SymbBreakSt.cpp
+ fmkt/SymbDynBand.cpp
+ fmkt/SymbFuoClosed.cpp
+ fmkt/SymbQuoteReq.cpp
  fmkt/TradingRequest.cpp
  fmkt/TradingLine.cpp
- fmkt/SymbHL.cpp
  fmkt/MdRtsTypes.cpp
  fmkt/MdRtStream.cpp
  fmkt/MdRtStreamInn.cpp

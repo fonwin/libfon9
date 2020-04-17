@@ -39,6 +39,11 @@ struct SymbBSData {
    PriQty   DerivedBuy_;
    BSFlag   Flags_{};
    char     Padding___[7];
+
+   void Clear(DayTime tm = DayTime::Null()) {
+      memset(this, 0, sizeof(*this));
+      this->InfoTime_ = tm;
+   }
 };
 
 } } // namespaces

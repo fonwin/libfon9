@@ -11,15 +11,16 @@ using namespace fon9::seed;
 using namespace fon9::fmkt;
 
 LayoutSP ExgMdSymb::MakeLayout() {
+   constexpr auto kTabFlag = TabFlag::NoSapling_NoSeedCommand_Writable;
    return LayoutSP{new LayoutN(
       fon9_MakeField(Symb, SymbId_, "Id"), TreeFlag::AddableRemovable | TreeFlag::Unordered,
-      TabSP{new Tab{Named{fon9_kCSTR_TabName_Base}, MakeFields(),             TabFlag::NoSapling_NoSeedCommand_Writable}},
-      TabSP{new Tab{Named{fon9_kCSTR_TabName_Ref},  SymbRef::MakeFields(),    TabFlag::NoSapling_NoSeedCommand_Writable}},
-      TabSP{new Tab{Named{fon9_kCSTR_TabName_BS},   SymbBS::MakeFields(),     TabFlag::NoSapling_NoSeedCommand_Writable}},
-      TabSP{new Tab{Named{fon9_kCSTR_TabName_Deal}, SymbDeal::MakeFields(),   TabFlag::NoSapling_NoSeedCommand_Writable}},
-      TabSP{new Tab{Named{fon9_kCSTR_TabName_High}, SymbHigh::MakeFields(),   TabFlag::NoSapling_NoSeedCommand_Writable}},
-      TabSP{new Tab{Named{fon9_kCSTR_TabName_Low},  SymbLow::MakeFields(),    TabFlag::NoSapling_NoSeedCommand_Writable}},
-      TabSP{new Tab{Named{fon9_kCSTR_TabName_Rt},   MdRtStream::MakeFields(), TabFlag::NoSapling_NoSeedCommand_Writable}}
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_Base},    MakeFields(),          kTabFlag}},
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_Ref},     SymbRef_MakeFields(),  kTabFlag}},
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_BS},      SymbBS_MakeFields(),   kTabFlag}},
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_Deal},    SymbDeal_MakeFields(), kTabFlag}},
+      f9fmkt_MAKE_TABS_OpenHighLow(),
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_BreakSt}, SymbBreakSt_MakeFieldsTws(), kTabFlag}},
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_Rt},      MdRtStream::MakeFields(),    kTabFlag}}
    )};
 }
 static const int32_t kExgMdSymbOffset[]{
@@ -27,8 +28,8 @@ static const int32_t kExgMdSymbOffset[]{
    fon9_OffsetOf(ExgMdSymb, Ref_),
    fon9_OffsetOf(ExgMdSymb, BS_),
    fon9_OffsetOf(ExgMdSymb, Deal_),
-   fon9_OffsetOf(ExgMdSymb, High_),
-   fon9_OffsetOf(ExgMdSymb, Low_),
+   f9fmkt_MAKE_OFFSET_OpenHighLow(ExgMdSymb),
+   fon9_OffsetOf(ExgMdSymb, BreakSt_),
    fon9_OffsetOf(ExgMdSymb, MdRtStream_),
 };
 static inline SymbData* GetExgMdSymbData(ExgMdSymb* pthis, int tabid) {
@@ -43,14 +44,12 @@ SymbData* ExgMdSymb::FetchSymbData(int tabid) {
    return GetExgMdSymbData(this, tabid);
 }
 //--------------------------------------------------------------------------//
-void ExgMdSymb::SessionClear(SymbTree& owner, f9fmkt_TradingSessionId tsesId) {
-   base::SessionClear(owner, tsesId);
-   this->Ref_.DailyClear();
-   this->Deal_.DailyClear();
-   this->BS_.DailyClear();
-   this->High_.DailyClear();
-   this->Low_.DailyClear();
-   this->MdRtStream_.SessionClear(owner, *this);
+ExgMdSymb::~ExgMdSymb() {
+}
+void ExgMdSymb::SessionClear(fon9::fmkt::SymbTree& owner, f9fmkt_TradingSessionId tsesId) {
+   this->TradingSessionId_ = tsesId;
+   this->TradingSessionSt_ = f9fmkt_TradingSessionSt_Clear;
+   this->MdRtStream_.OnSymbSessionClear(owner, *this);
 }
 void ExgMdSymb::OnBeforeRemove(SymbTree& owner, unsigned tdayYYYYMMDD) {
    (void)tdayYYYYMMDD;
@@ -58,7 +57,8 @@ void ExgMdSymb::OnBeforeRemove(SymbTree& owner, unsigned tdayYYYYMMDD) {
 }
 //--------------------------------------------------------------------------//
 ExgMdSymbs::ExgMdSymbs(std::string rtiPathFmt)
-   : base(ExgMdSymb::MakeLayout(), std::move(rtiPathFmt), EnAllowSubrSnapshotSymb) {
+   : base(ExgMdSymb::MakeLayout(), std::move(rtiPathFmt), EnAllowSubrSnapshotSymb)
+   , TabBreakSt_{LayoutSP_->GetTab(fon9_kCSTR_TabName_BreakSt)} {
 }
 SymbSP ExgMdSymbs::MakeSymb(const StrView& symbid) {
    return new ExgMdSymb(symbid, this->RtInnMgr_);

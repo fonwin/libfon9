@@ -9,27 +9,11 @@
 namespace f9twf {
 
 fon9::seed::LayoutSP ExgMdSymb::MakeLayout() {
+   using namespace fon9;
    using namespace fon9::seed;
    using namespace fon9::fmkt;
    // -----
    // TODO:
-   // -----
-   // [Tab:Ref] Add fields:
-   // - PriUpLmt2_; PriUpLmt3_; int8_t LvUpLmt_; // =0使用PriUpLmt_, <0(-2,-3)預告, >0(2,3)已實施.
-   //   PriDnLmt2_; PriDnLmt3_; int8_t LvDnLmt_;
-   // [Tab:St]
-   // - 暫停(恢復)交易: BreakTime_, RestartTime_, ReopenTime_; Reason_;
-   // - TradingSessionSt = 參照流程組 or 開始收單, 開盤, 不可刪單階段 Non-cancel Period;
-   // - 也許要增加 flag: 告知最後異動的欄位;
-   // -----
-   // Add tree:「流程群組狀態tree」, 可訂閱tree, 期貨、選擇權各一個 tree;
-   // - I140; 市場狀態通知
-   //   - TradingSessionSt = 開始收單, 開盤, 不可刪單階段 Non-cancel Period, 收盤或不再恢復交易;
-   //   - Reason;
-   // -----
-   // Add [Tab:價穩措施]:
-   // I010: DYNAMIC BANDING: 商品是否適用動態價格穩定
-   // I140: Unknown, 暫停、恢復、調整範圍
    // -----
    // Add [Tab:詢價]:
    //    詢價揭示時間(DISCLOSURE TIME), 詢價持續時間(999 秒: DURATION TIME);
@@ -41,15 +25,19 @@ fon9::seed::LayoutSP ExgMdSymb::MakeLayout() {
    // -----
    // 新增解析的格式, 要在建立 ExgMcChannelMgr 之後, 透過 ExgMcChannelMgr::RegMcMessageParser() 註冊;
    // -----
+   constexpr auto kTabFlag = TabFlag::NoSapling_NoSeedCommand_Writable;
    return LayoutSP{new LayoutN(
       fon9_MakeField(Symb, SymbId_, "Id"), TreeFlag::AddableRemovable | TreeFlag::Unordered,
-      TabSP{new Tab{fon9::Named{fon9_kCSTR_TabName_Base},MakeFields(),           TabFlag::NoSapling_NoSeedCommand_Writable}},
-      TabSP{new Tab{fon9::Named{fon9_kCSTR_TabName_Ref}, SymbRef::MakeFields(),  TabFlag::NoSapling_NoSeedCommand_Writable}},
-      TabSP{new Tab{fon9::Named{fon9_kCSTR_TabName_BS},  SymbBS::MakeFields(),   TabFlag::NoSapling_NoSeedCommand_Writable}},
-      TabSP{new Tab{fon9::Named{fon9_kCSTR_TabName_Deal},SymbDeal::MakeFields(), TabFlag::NoSapling_NoSeedCommand_Writable}},
-      TabSP{new Tab{fon9::Named{fon9_kCSTR_TabName_High},SymbHigh::MakeFields(), TabFlag::NoSapling_NoSeedCommand_Writable}},
-      TabSP{new Tab{fon9::Named{fon9_kCSTR_TabName_Low}, SymbLow::MakeFields(),  TabFlag::NoSapling_NoSeedCommand_Writable}},
-      TabSP{new Tab{fon9::Named{fon9_kCSTR_TabName_Rt},  MdRtStream::MakeFields(),TabFlag::NoSapling_NoSeedCommand_Writable}}
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_Base}, MakeFields(),            kTabFlag}},
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_Ref},  TwfSymbRef_MakeFields(), kTabFlag}},
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_BS},   SymbBS_MakeFields(),     kTabFlag}},
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_Deal}, SymbDeal_MakeFields(),   kTabFlag}},
+      f9fmkt_MAKE_TABS_OpenHighLow(),
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_BreakSt}, SymbBreakSt_MakeFieldsTwf(),kTabFlag}},
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_Closed},  SymbFuoClosed_MakeFields(), kTabFlag}},
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_DynBand}, SymbDynBand_MakeFields(),   kTabFlag}},
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_QuoteReq},SymbQuoteReq_MakeFields(),  kTabFlag}},
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_Rt},      MdRtStream::MakeFields(),   kTabFlag}}
    )};
 }
 static const int32_t kExgMdSymbOffset[]{
@@ -57,8 +45,11 @@ static const int32_t kExgMdSymbOffset[]{
    fon9_OffsetOf(ExgMdSymb, Ref_),
    fon9_OffsetOf(ExgMdSymb, BS_),
    fon9_OffsetOf(ExgMdSymb, Deal_),
-   fon9_OffsetOf(ExgMdSymb, High_),
-   fon9_OffsetOf(ExgMdSymb, Low_),
+   f9fmkt_MAKE_OFFSET_OpenHighLow(ExgMdSymb),
+   fon9_OffsetOf(ExgMdSymb, BreakSt_),
+   fon9_OffsetOf(ExgMdSymb, FuoClosed_),
+   fon9_OffsetOf(ExgMdSymb, DynBand_),
+   fon9_OffsetOf(ExgMdSymb, QuoteReq_),
    fon9_OffsetOf(ExgMdSymb, MdRtStream_),
 };
 static inline fon9::fmkt::SymbData* GetExgMdSymbData(ExgMdSymb* pthis, int tabid) {
@@ -82,14 +73,7 @@ ExgMdSymb::ExgMdSymb(const fon9::StrView& symbid, ExgMdSymbs& owner)
 }
 fon9_MSC_WARN_POP;
 
-void ExgMdSymb::SessionClear(fon9::fmkt::SymbTree& owner, f9fmkt_TradingSessionId tsesId) {
-   base::SessionClear(owner, tsesId);
-   this->Ref_.DailyClear();
-   this->Deal_.DailyClear();
-   this->BS_.DailyClear();
-   this->High_.DailyClear();
-   this->Low_.DailyClear();
-   this->MdRtStream_.SessionClear(owner, *this);
+ExgMdSymb::~ExgMdSymb() {
 }
 void ExgMdSymb::OnBeforeRemove(fon9::fmkt::SymbTree& owner, unsigned tdayYYYYMMDD) {
    (void)tdayYYYYMMDD;
@@ -111,19 +95,19 @@ void ExgMdSymbs::OnAfterLoadFrom(Locker&& symbsLk) {
 //--------------------------------------------------------------------------//
 f9twf_API const void* ExgMdToSnapshotBS(fon9::DayTime mdTime, unsigned mdCount, const ExgMdEntry* mdEntry,
                                         fon9::fmkt::SymbBS& symbBS, uint32_t priceOrigDiv) {
-   symbBS.Clear(mdTime);
+   symbBS.Data_.Clear(mdTime);
    for (unsigned mdL = 0; mdL < mdCount; ++mdL, ++mdEntry) {
       unsigned lv = fon9::PackBcdTo<unsigned>(mdEntry->Level_) - 1;
       fon9::fmkt::PriQty* dst;
       switch (mdEntry->EntryType_) {
       case '0':
-         if (lv >= symbBS.kBSCount)
+         if (lv >= symbBS.Data_.kBSCount)
             continue;
          dst = symbBS.Data_.Buys_ + lv;
          symbBS.Data_.Flags_ |= fon9::fmkt::BSFlag::OrderBuy;
          break;
       case '1':
-         if (lv >= symbBS.kBSCount)
+         if (lv >= symbBS.Data_.kBSCount)
             continue;
          dst = symbBS.Data_.Sells_ + lv;
          symbBS.Data_.Flags_ |= fon9::fmkt::BSFlag::OrderSell;
@@ -156,12 +140,12 @@ f9twf_API void ExgMdToUpdateBS(fon9::DayTime mdTime, unsigned mdCount, const Exg
       case '0':
          symbBS.Data_.Flags_ |= fon9::fmkt::BSFlag::OrderBuy;
          dst = symbBS.Data_.Buys_;
-         dstCount = symbBS.kBSCount;
+         dstCount = symbBS.Data_.kBSCount;
          break;
       case '1':
          symbBS.Data_.Flags_ |= fon9::fmkt::BSFlag::OrderSell;
          dst = symbBS.Data_.Sells_;
-         dstCount = symbBS.kBSCount;
+         dstCount = symbBS.Data_.kBSCount;
          break;
       case 'E':
          symbBS.Data_.Flags_ |= fon9::fmkt::BSFlag::DerivedBuy;

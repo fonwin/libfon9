@@ -44,13 +44,13 @@ f9twf_API void I081BSParserToRts(ExgMcMessage& e) {
          bsType = cast_to_underlying(RtBSType::OrderBuy);
          symbBS.Data_.Flags_ |= BSFlag::OrderBuy;
          dst = symbBS.Data_.Buys_;
-         dstCount = symbBS.kBSCount;
+         dstCount = symbBS.Data_.kBSCount;
          break;
       case '1':
          bsType = cast_to_underlying(RtBSType::OrderSell);
          symbBS.Data_.Flags_ |= BSFlag::OrderSell;
          dst = symbBS.Data_.Sells_;
-         dstCount = symbBS.kBSCount;
+         dstCount = symbBS.Data_.kBSCount;
          break;
       case 'E':
          bsType = cast_to_underlying(RtBSType::DerivedBuy);
@@ -115,8 +115,7 @@ f9twf_API void I081BSParserToRts(ExgMcMessage& e) {
    if (uCount <= 0)
       return;
    *rbuf.AllocPacket<uint8_t>() = static_cast<uint8_t>(uCount - 1);
-   e.Symb_->MdRtStream_.PublishUpdateBS(lk.Symbs_, ToStrView(e.Symb_->SymbId_),
-                                        symbBS, std::move(rbuf));
+   e.Symb_->MdRtStream_.PublishUpdateBS(ToStrView(e.Symb_->SymbId_), symbBS.Data_, std::move(rbuf));
 }
 //--------------------------------------------------------------------------//
 f9twf_API void I083BSParserToRts(ExgMcMessage& e) {
@@ -130,9 +129,8 @@ f9twf_API void I083BSParserToRts(ExgMcMessage& e) {
    if (pkType == RtsPackType::CalculatedBS)
       symbBS.Data_.Flags_ |= BSFlag::Calculated;
    RevBufferList rbuf{128};
-   MdRtsPackSnapshotBS(rbuf, symbBS);
-   e.Symb_->MdRtStream_.Publish(lk.Symbs_, ToStrView(e.Symb_->SymbId_),
-                                pkType, symbBS.Data_.InfoTime_, std::move(rbuf));
+   MdRtsPackSnapshotBS(rbuf, symbBS.Data_);
+   e.Symb_->MdRtStream_.Publish(ToStrView(e.Symb_->SymbId_), pkType, symbBS.Data_.InfoTime_, std::move(rbuf));
 }
 
 } // namespaces

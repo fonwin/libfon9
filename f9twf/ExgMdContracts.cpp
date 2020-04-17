@@ -15,28 +15,31 @@ void ExgMdContract::OnSymbRemove(ExgMdSymb& symb) {
 }
 
 void ExgMdContract::AssignBaseToSymb(ExgMdSymb& symb) const {
+   symb.TradingMarket_ = this->TradingMarket_;
+   symb.FlowGroup_ = this->FlowGroup_;
    symb.StrikePriceDiv_ = this->StrikePriceDiv_;
    symb.PriceOrigDiv_ = this->PriceOrigDiv_;
 }
-
 inline bool IsContractBaseChanged(const ExgMdContract& con, const ExgMdSymb& symb) {
-   return con.PriceOrigDiv_ != symb.PriceOrigDiv_
+   return con.TradingMarket_ != symb.TradingMarket_
+      || con.FlowGroup_ != symb.FlowGroup_
+      || con.PriceOrigDiv_ != symb.PriceOrigDiv_
       || con.StrikePriceDiv_ != symb.StrikePriceDiv_;
 }
-bool ExgMdContract::AssignBaseFromSymb(const ExgMdSymb& symb) {
-   if (fon9_LIKELY(!IsContractBaseChanged(*this, symb)))
-      return false;
-   this->StrikePriceDiv_ = symb.StrikePriceDiv_;
-   this->PriceOrigDiv_ = symb.PriceOrigDiv_;
-   return true;
-}
 void ExgMdContract::OnSymbBaseChanged(const ExgMdSymb& src) {
-   this->SetBaseValues(src.PriceOrigDiv_, src.StrikePriceDiv_);
+   this->SetBaseValues(src.TradingMarket_, src.FlowGroup_, src.PriceOrigDiv_, src.StrikePriceDiv_);
 }
-void ExgMdContract::SetBaseValues(uint32_t priceOrigDiv, uint32_t strikePriceDiv) {
-   if (this->PriceOrigDiv_ == priceOrigDiv
+void ExgMdContract::SetBaseValues(f9fmkt_TradingMarket mkt,
+                                  SymbFlowGroup_t flowGroup,
+                                  uint32_t priceOrigDiv,
+                                  uint32_t strikePriceDiv) {
+   if (this->TradingMarket_ == mkt
+       && this->FlowGroup_ == flowGroup
+       && this->PriceOrigDiv_ == priceOrigDiv
        && this->StrikePriceDiv_ == strikePriceDiv)
       return;
+   this->TradingMarket_ = mkt;
+   this->FlowGroup_ = flowGroup;
    this->PriceOrigDiv_ = priceOrigDiv;
    this->StrikePriceDiv_ = strikePriceDiv;
    for (ExgMdSymb* psymb : this->Symbs_) {
@@ -44,7 +47,7 @@ void ExgMdContract::SetBaseValues(uint32_t priceOrigDiv, uint32_t strikePriceDiv
          this->AssignBaseToSymb(*psymb);
          // TODO: 通知 this->Symbs_ 的 Contract 基本資料有異動?
          // - 會來到這裡的情況, 只有: (1)「期貨價差」商品; (2)遺漏I010基本資料的商品;
-         // - 目前只有 StrikePriceDiv_, PriceOrigDiv_ 兩個欄位;
+         // - 目前只有 StrikePriceDiv_, PriceOrigDiv_, TradingMarket_, FlowGroup_;
          // - 所以還不需要額外產生事件通知.
       }
    }

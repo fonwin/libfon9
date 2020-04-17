@@ -149,6 +149,15 @@
     <ClInclude Include="..\..\..\f9twf\ExgMdFmtBaseContract.hpp">
       <Filter>Header Files\_MktData</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\f9twf\ExgMdFmtSysInfo.hpp">
+      <Filter>Header Files\_MktData</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\f9twf\TwfSymbRef.hpp">
+      <Filter>Header Files\_MktData</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\f9twf\ExgMdFmtSysInfoToRts.hpp">
+      <Filter>Header Files\_MktData\_ToRts</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\f9twf\ExgLineTmpArgs.cpp">
@@ -219,6 +228,12 @@
     </ClCompile>
     <ClCompile Include="..\..\..\f9twf\ExgMdContracts.cpp">
       <Filter>Source Files\_MktData</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\f9twf\TwfSymbRef.cpp">
+      <Filter>Source Files\_MktData</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\f9twf\ExgMdFmtSysInfoToRts.cpp">
+      <Filter>Source Files\_MktData\_ToRts</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

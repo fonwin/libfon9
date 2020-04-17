@@ -19,8 +19,8 @@ public:
    ~SymbTwf();
 
    bool IsExpired(unsigned tdayYYYYMMDD) const override;
-
-   void SessionClear(SymbTree& owner, f9fmkt_TradingSessionId tsesId) override;
+   void OnSymbDailyClear(SymbTree& tree, const Symb& symb) override;
+   void OnSymbSessionClear(SymbTree& tree, const Symb& symb) override;
 
    /// base::MakeFields(); and:
    /// - FlowGroup, PriceOrigDiv, StrikePriceDiv, ExgSymbSeq

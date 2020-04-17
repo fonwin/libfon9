@@ -42,7 +42,7 @@ struct ExgMdFmt1Parser {
       fon9::ToBitv(rbuf, this->Symb_->Ref_.Data_.PriRef_);
       fon9::ToBitv(rbuf, this->Symb_->ShUnit_);
       *rbuf.AllocPacket<char>() = this->Symb_->TradingMarket_;
-      this->Symb_->MdRtStream_.Publish(*mdsys.Symbs_, ToStrView(this->Symb_->SymbId_),
+      this->Symb_->MdRtStream_.Publish(ToStrView(this->Symb_->SymbId_),
                                        f9fmkt::RtsPackType::BaseInfoTw,
                                        fon9::DayTime::Null(),
                                        std::move(rbuf));

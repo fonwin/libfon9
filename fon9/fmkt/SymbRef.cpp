@@ -5,7 +5,7 @@
 
 namespace fon9 { namespace fmkt {
 
-seed::Fields SymbRef::MakeFields() {
+seed::Fields SymbRef_MakeFields() {
    seed::Fields flds;
    flds.Add(fon9_MakeField(SymbRef, Data_.PriRef_,   "PriRef"));
    flds.Add(fon9_MakeField(SymbRef, Data_.PriUpLmt_, "PriUpLmt"));

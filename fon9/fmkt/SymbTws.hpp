@@ -18,6 +18,11 @@ public:
    using base::base;
    ~SymbTws();
 
+   void OnSymbDailyClear(SymbTree& tree, const Symb& symb) override;
+   /// 台灣證券的換盤, 不應清除 SymbData(Open/High/Low...);
+   /// - 設定 this->TradingSessionId_ = tsesId;
+   /// - 設定 this->TradingSessionSt_ = f9fmkt_TradingSessionSt_Clear;
+   /// - 不會觸發 this->GetSymbData(tabid=0..N)->OnSymbSessionClear();
    void SessionClear(SymbTree& owner, f9fmkt_TradingSessionId tsesId) override;
 
    /// base::MakeFields(); and:

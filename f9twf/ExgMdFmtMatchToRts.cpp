@@ -20,13 +20,9 @@ struct RtsMdMatchParser {
       , Symb_(symb)
       , Flags_{isCalc ? f9fmkt::DealFlag::Calculated : f9fmkt::DealFlag{}} {
    }
-   void CheckDealToHL(f9fmkt::Pri pri) {
-      this->Symb_.High_.CheckHigh(pri, this->Symb_.Deal_.Data_.DealTime_);
-      this->Symb_.Low_.CheckLow(pri, this->Symb_.Deal_.Data_.DealTime_);
-   }
    void OnParsedAMatch(const f9fmkt::PriQty& dst) {
       if (!IsEnumContains(this->Flags_, f9fmkt::DealFlag::Calculated))
-         this->CheckDealToHL(dst.Pri_);
+         this->Symb_.CheckOHL(dst.Pri_, this->Symb_.Deal_.Data_.DealTime_);
       fon9::ToBitv(this->Rts_, dst.Qty_);
       fon9::ToBitv(this->Rts_, dst.Pri_);
       this->SumQty_ += static_cast<MdQty>(dst.Qty_);
@@ -98,8 +94,8 @@ f9twf_API void I024MatchParserToRts(ExgMcMessage& e) {
          fon9::ToBitv(parser.Rts_, symb.Deal_.Data_.DealTime_);
    }
    *parser.Rts_.AllocPacket<uint8_t>() = fon9::cast_to_underlying(parser.Flags_);
-   symb.MdRtStream_.Publish(lk.Symbs_, ToStrView(symb.SymbId_),
-      f9fmkt::RtsPackType::DealPack, symb.Deal_.Data_.InfoTime_, std::move(parser.Rts_));
+   symb.MdRtStream_.Publish(ToStrView(symb.SymbId_), f9fmkt::RtsPackType::DealPack,
+                            symb.Deal_.Data_.InfoTime_, std::move(parser.Rts_));
 }
 
 } // namespaces
