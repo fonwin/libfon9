@@ -158,6 +158,18 @@
     <ClInclude Include="..\..\..\f9twf\ExgMdFmtSysInfoToRts.hpp">
       <Filter>Header Files\_MktData\_ToRts</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\f9twf\ExgMdFmtQuoteReq.hpp">
+      <Filter>Header Files\_MktData</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\f9twf\ExgMdFmtQuoteReqToRts.hpp">
+      <Filter>Header Files\_MktData\_ToRts</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\f9twf\ExgMdFmtClosingToRts.hpp">
+      <Filter>Header Files\_MktData\_ToRts</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\f9twf\ExgMdFmtClosing.hpp">
+      <Filter>Header Files\_MktData</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\f9twf\ExgLineTmpArgs.cpp">
@@ -233,6 +245,12 @@
       <Filter>Source Files\_MktData</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\f9twf\ExgMdFmtSysInfoToRts.cpp">
+      <Filter>Source Files\_MktData\_ToRts</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\f9twf\ExgMdFmtQuoteReqToRts.cpp">
+      <Filter>Source Files\_MktData\_ToRts</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\f9twf\ExgMdFmtClosingToRts.cpp">
       <Filter>Source Files\_MktData\_ToRts</Filter>
     </ClCompile>
   </ItemGroup>

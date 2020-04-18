@@ -173,7 +173,7 @@
     <ClInclude Include="..\..\..\fon9\fmkt\SymbDealData.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\SymbDy.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\SymbDynBand.hpp" />
-    <ClInclude Include="..\..\..\fon9\fmkt\SymbFuoClosed.hpp" />
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbFuoClosing.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\SymbQuoteReq.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\SymbTimePri.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\SymbRef.hpp" />
@@ -464,7 +464,7 @@
     <ClCompile Include="..\..\..\fon9\fmkt\SymbDeal.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\SymbDy.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\SymbDynBand.cpp" />
-    <ClCompile Include="..\..\..\fon9\fmkt\SymbFuoClosed.cpp" />
+    <ClCompile Include="..\..\..\fon9\fmkt\SymbFuoClosing.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\SymbQuoteReq.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\SymbTimePri.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\SymbRef.cpp" />

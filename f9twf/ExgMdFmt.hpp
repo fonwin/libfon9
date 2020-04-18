@@ -161,6 +161,14 @@ using ExgMiI000 = ExgMiNoBody;
 fon9_PACK_POP;
 
 //--------------------------------------------------------------------------//
+
+/// 如果 Md, Mc 只有 Head 不同, 則可用此 template 協助定義.
+template <class MdHead, class MdBody>
+struct ExgMdBodyDefineT : public MdHead, public MdBody, public ExgMdTail {
+};
+
+//--------------------------------------------------------------------------//
+
 constexpr uint8_t AlNumToIdx(char ch) {
    return fon9::unsigned_cast(ch) <= '9' ? static_cast<uint8_t>(ch - '0')
       : fon9::unsigned_cast(ch) <= 'Z' ? static_cast<uint8_t>(ch - 'A' + 10)

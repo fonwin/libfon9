@@ -191,7 +191,7 @@ set(fon9src
  fmkt/SymbTimePri.cpp
  fmkt/SymbBreakSt.cpp
  fmkt/SymbDynBand.cpp
- fmkt/SymbFuoClosed.cpp
+ fmkt/SymbFuoClosing.cpp
  fmkt/SymbQuoteReq.cpp
  fmkt/TradingRequest.cpp
  fmkt/TradingLine.cpp

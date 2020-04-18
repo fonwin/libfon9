@@ -34,7 +34,7 @@ fon9::seed::LayoutSP ExgMdSymb::MakeLayout() {
       TabSP{new Tab{Named{fon9_kCSTR_TabName_Deal}, SymbDeal_MakeFields(),   kTabFlag}},
       f9fmkt_MAKE_TABS_OpenHighLow(),
       TabSP{new Tab{Named{fon9_kCSTR_TabName_BreakSt}, SymbBreakSt_MakeFieldsTwf(),kTabFlag}},
-      TabSP{new Tab{Named{fon9_kCSTR_TabName_Closed},  SymbFuoClosed_MakeFields(), kTabFlag}},
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_Closing}, SymbFuoClosing_MakeFields(),kTabFlag}},
       TabSP{new Tab{Named{fon9_kCSTR_TabName_DynBand}, SymbDynBand_MakeFields(),   kTabFlag}},
       TabSP{new Tab{Named{fon9_kCSTR_TabName_QuoteReq},SymbQuoteReq_MakeFields(),  kTabFlag}},
       TabSP{new Tab{Named{fon9_kCSTR_TabName_Rt},      MdRtStream::MakeFields(),   kTabFlag}}
@@ -47,7 +47,7 @@ static const int32_t kExgMdSymbOffset[]{
    fon9_OffsetOf(ExgMdSymb, Deal_),
    f9fmkt_MAKE_OFFSET_OpenHighLow(ExgMdSymb),
    fon9_OffsetOf(ExgMdSymb, BreakSt_),
-   fon9_OffsetOf(ExgMdSymb, FuoClosed_),
+   fon9_OffsetOf(ExgMdSymb, FuoClosing_),
    fon9_OffsetOf(ExgMdSymb, DynBand_),
    fon9_OffsetOf(ExgMdSymb, QuoteReq_),
    fon9_OffsetOf(ExgMdSymb, MdRtStream_),

@@ -10,7 +10,7 @@
 #include "fon9/fmkt/SymbDeal.hpp"
 #include "fon9/fmkt/SymbTimePri.hpp"
 #include "fon9/fmkt/SymbBreakSt.hpp"
-#include "fon9/fmkt/SymbFuoClosed.hpp"
+#include "fon9/fmkt/SymbFuoClosing.hpp"
 #include "fon9/fmkt/SymbDynBand.hpp"
 #include "fon9/fmkt/SymbQuoteReq.hpp"
 #include "fon9/fmkt/MdRtStream.hpp"
@@ -50,7 +50,7 @@ public:
    fon9::fmkt::SymbBS         BS_;
    fon9::fmkt::SymbDeal       Deal_;
    fon9::fmkt::SymbBreakSt    BreakSt_;
-   fon9::fmkt::SymbFuoClosed  FuoClosed_;
+   fon9::fmkt::SymbFuoClosing FuoClosing_;
    fon9::fmkt::SymbDynBand    DynBand_;
    fon9::fmkt::SymbQuoteReq   QuoteReq_;
    fon9::fmkt::MdRtStream     MdRtStream_;

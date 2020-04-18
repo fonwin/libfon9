@@ -26,6 +26,8 @@ set(f9twf_src
  ExgMcFmtSSToRts.cpp
  ExgMdFmtBasicInfoToRts.cpp
  ExgMdFmtSysInfoToRts.cpp
+ ExgMdFmtQuoteReqToRts.cpp
+ ExgMdFmtClosingToRts.cpp
 )
 add_library(f9twf_s STATIC ${f9twf_src})
 target_link_libraries(f9twf_s pthread rt dl fon9_s)

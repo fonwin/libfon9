@@ -1118,7 +1118,7 @@
     <ClInclude Include="..\..\..\fon9\fmkt\SymbQuoteReq.hpp">
       <Filter>Header Files\fmkt\_SymbData%28BS,Deal...%29</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\fon9\fmkt\SymbFuoClosed.hpp">
+    <ClInclude Include="..\..\..\fon9\fmkt\SymbFuoClosing.hpp">
       <Filter>Header Files\fmkt\_SymbData%28BS,Deal...%29</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1816,7 +1816,7 @@
     <ClCompile Include="..\..\..\fon9\fmkt\SymbQuoteReq.cpp">
       <Filter>Source Files\fmkt\_SymbData%28BS,Deal...%29</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\fon9\fmkt\SymbFuoClosed.cpp">
+    <ClCompile Include="..\..\..\fon9\fmkt\SymbFuoClosing.cpp">
       <Filter>Source Files\fmkt\_SymbData%28BS,Deal...%29</Filter>
     </ClCompile>
   </ItemGroup>

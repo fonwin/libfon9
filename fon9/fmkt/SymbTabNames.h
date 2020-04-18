@@ -15,7 +15,7 @@ extern "C" {
 #define fon9_kCSTR_TabName_High     "High"
 #define fon9_kCSTR_TabName_Low      "Low"
 #define fon9_kCSTR_TabName_BreakSt  "BreakSt"
-#define fon9_kCSTR_TabName_Closed   "Closed"
+#define fon9_kCSTR_TabName_Closing  "Closing"
 #define fon9_kCSTR_TabName_DynBand  "DynBand"
 #define fon9_kCSTR_TabName_QuoteReq "QuoteReq"
 #define fon9_kCSTR_TabName_Rt       "Rt"

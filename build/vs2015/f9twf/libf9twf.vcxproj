@@ -98,11 +98,15 @@
     <ClInclude Include="..\..\..\f9twf\ExgMdFmtBasicInfoToRts.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgMdFmtBS.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgMdFmtBSToRts.hpp" />
+    <ClInclude Include="..\..\..\f9twf\ExgMdFmtClosing.hpp" />
+    <ClInclude Include="..\..\..\f9twf\ExgMdFmtClosingToRts.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgMdFmtHL.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgMdFmtMatch.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgMdFmtMatchToRts.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgMcFmtSS.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgMdFmtParsers.hpp" />
+    <ClInclude Include="..\..\..\f9twf\ExgMdFmtQuoteReq.hpp" />
+    <ClInclude Include="..\..\..\f9twf\ExgMdFmtQuoteReqToRts.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgMdFmtSysInfo.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgMdFmtSysInfoToRts.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgMdPkReceiver.hpp" />
@@ -135,7 +139,9 @@
     <ClCompile Include="..\..\..\f9twf\ExgMdContracts.cpp" />
     <ClCompile Include="..\..\..\f9twf\ExgMdFmtBasicInfoToRts.cpp" />
     <ClCompile Include="..\..\..\f9twf\ExgMdFmtBSToRts.cpp" />
+    <ClCompile Include="..\..\..\f9twf\ExgMdFmtClosingToRts.cpp" />
     <ClCompile Include="..\..\..\f9twf\ExgMdFmtParsers.cpp" />
+    <ClCompile Include="..\..\..\f9twf\ExgMdFmtQuoteReqToRts.cpp" />
     <ClCompile Include="..\..\..\f9twf\ExgMdFmtSysInfoToRts.cpp" />
     <ClCompile Include="..\..\..\f9twf\ExgMdPkReceiver.cpp" />
     <ClCompile Include="..\..\..\f9twf\TwfSymbRef.cpp" />
