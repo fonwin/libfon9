@@ -30,6 +30,8 @@ static void PublishSymbolList(const ExgMdSymbs::Locker& lk, I140_CheckPublish& d
       fon9::StrView symbId{pProdId, peos ? peos : (pProdId + szProdId)};
       if (auto symb = static_cast<ExgMdSymb*>(ExgMdSymbs::GetSymb(lk, symbId).get()))
          dst.CheckPublish(*symb);
+      pProdId += szProdId;
+      --count;
    }
 }
 static void PublishContractList(ExgMdSymbs& symbs, I140_CheckPublish& dst,
