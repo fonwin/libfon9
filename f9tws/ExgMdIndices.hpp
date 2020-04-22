@@ -25,6 +25,7 @@ public:
       : base{id}
       , MdRtStream_{innMgr} {
       this->TDayYYYYMMDD_ = innMgr.TDayYYYYMMDD();
+      this->MdRtStream_.OpenRtStorage(*this);
    }
    ~ExgMdIndex();
 
