@@ -19,6 +19,18 @@ void ExgMdFmt6Handler::PkContOnReceived(const void* pkptr, unsigned pksz, SeqT s
    auto        symblk = this->MdSys_.Symbs_->SymbMap_.Lock();
    auto        symb = fon9::static_pointer_cast<ExgMdSymb>(
                         this->MdSys_.Symbs_->FetchSymb(symblk, ToStrView(fmt6.StkNo_)));
+
+// #define DEBUG_FMT6
+#ifdef DEBUG_FMT6
+   const bool kDebugPrint = (ToStrView(symb->SymbId_) == "2330");
+   if (kDebugPrint) {
+      printf("\n[%s]%06u/%02x.%02x.%02x/Total=%u/",
+             symb->SymbId_.begin(),
+             fon9::PackBcdTo<unsigned>(fmt6.Time_.HHMMSS_),
+             fmt6.ItemMask_, fmt6.LmtMask_, fmt6.StatusMask_,
+             fon9::PackBcdTo<unsigned>(fmt6.TotalQty_));
+   }
+#endif
    const bool  isCalc = ((fmt6.StatusMask_ & 0x80) != 0);
    const bool  hasDeal = ((fmt6.ItemMask_ & 0x80) != 0);
    const ExgMdPriQty* mdPQs = fmt6.PQs_;
@@ -28,6 +40,13 @@ void ExgMdFmt6Handler::PkContOnReceived(const void* pkptr, unsigned pksz, SeqT s
          symb->Deal_.Data_.DealTime_ = symb->Deal_.Data_.InfoTime_ = dealTime;
          symb->Deal_.Data_.Flags_ |= f9fmkt::DealFlag::DealTimeChanged;
       }
+   #ifdef DEBUG_FMT6
+      if (kDebugPrint) {
+         printf("Deal=%u*%u/",
+                static_cast<unsigned>(fon9::PackBcdTo<uint64_t>(mdPQs->PriV4_)),
+                fon9::PackBcdTo<unsigned>(mdPQs->Qty_));
+      }
+   #endif
       mdPQs->AssignTo(symb->Deal_.Data_.Deal_);
       ++mdPQs;
       // fmt6.TotalQty_ 包含此次成交, 試算階段 DealQty = TotalQty, 所以不更新 TotalQty.
@@ -42,12 +61,19 @@ void ExgMdFmt6Handler::PkContOnReceived(const void* pkptr, unsigned pksz, SeqT s
             symb->Deal_.Data_.Flags_ |= f9fmkt::DealFlag::TotalQtyLost;
          symb->Deal_.Data_.TotalQty_ = pkTotalQty;
       }
-      // - Bit 1-0 瞬間價格趨勢   00：一般揭示; 01：暫緩撮合且瞬間趨跌; 10：暫緩撮合且瞬間趨漲; 11：（保留）
+      // - Bit 1-0 瞬間價格趨勢 00：一般揭示; 11：（保留）
+      //   - 01：暫緩撮合且瞬間趨跌; 10：暫緩撮合且瞬間趨漲;
+      //     - 此時 DealPri=上次成交價; DealQty=0; TotalQty=不變;
+      //     - 然後該股票的 Fmt6 就是大約2分鐘的「試算」揭示, 且沒有再提供「瞬間價格趨勢」.
       switch (fmt6.LmtMask_ & 0x03) {
       case 1: symb->Deal_.Data_.Flags_ |= f9fmkt::DealFlag::HeldMatchTrendFall; break;
       case 2: symb->Deal_.Data_.Flags_ |= f9fmkt::DealFlag::HeldMatchTrendRise; break;
       }
    }
+#ifdef DEBUG_FMT6
+   if (kDebugPrint)
+      printf("%02x/", symb->Deal_.Data_.Flags_);
+#endif
 
    fon9::RevBufferList rts{pksz};
    f9fmkt::RtsPackType rtsPackType;

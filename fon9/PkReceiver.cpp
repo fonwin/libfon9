@@ -11,7 +11,7 @@ bool PkReceiver::FeedBuffer(DcQueue& rxbuf) {
    while (const void* pkptr = rxbuf.Peek(peekbuf, this->PkHeadSize_)) {
       if (fon9_LIKELY(*static_cast<const char*>(pkptr) == this->kPkHeadLeader)) {
          const unsigned  pksz = this->GetPkSize(pkptr);
-         if (fon9_LIKELY(pksz < kMaxPacketSize)) {
+         if (fon9_LIKELY(this->PkHeadSize_ + 2 < pksz && pksz < kMaxPacketSize)) {
             pkptr = rxbuf.Peek(peekbuf, pksz);
             if (fon9_UNLIKELY(pkptr == nullptr)) // rxbuf 資料不足 Length_
                break;

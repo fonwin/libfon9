@@ -106,7 +106,7 @@ struct MdRtsDecoderAuxBase {
       : Note_{src.Note_}
       , RptSeedRec_{static_cast<svc::SeedRec*>(const_cast<f9sv_Seed*>(rpt.SeedArray_[tabidx]))} {
       rpt.Seed_ = this->RptSeedRec_;
-      rpt.Tab_ += (tabidx - rpt.Tab_->Named_.Index_);
+      rpt.Tab_ += static_cast<int>(tabidx - rpt.Tab_->Named_.Index_);
    }
    svc::SeedRec* SetRptTabSeed(svc::RxSubrData& rx, f9sv_ClientReport& rpt, f9sv_TabSize tabidx) {
       rpt.Tab_ = &rx.SubrRec_->Tree_->LayoutC_.TabArray_[tabidx];
