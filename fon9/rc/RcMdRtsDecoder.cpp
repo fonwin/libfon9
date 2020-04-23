@@ -381,16 +381,20 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder, public RcSvStreamDeco
          return this->DecodeBaseInfoTw(rx, rpt, rxbuf);
       case fmkt::RtsPackType::DealBS:
          return this->DecodeDealBS(rx, rpt, rxbuf);
-      case fmkt::RtsPackType::SnapshotSymbList:
+      case fmkt::RtsPackType::SnapshotSymbList_NoInfoTime:
          return this->DecodeSnapshotSymbList(rx, rpt, rxbuf);
       case fmkt::RtsPackType::IndexValueV2:
          return this->DecodeIndexValueV2(rx, rpt, rxbuf);
       case fmkt::RtsPackType::IndexValueV2List:
          return this->DecodeIndexValueV2List(rx, rpt, rxbuf);
-      case fmkt::RtsPackType::FieldValue:
-         return this->DecodeFieldValue(rx, rpt, rxbuf);
-      case fmkt::RtsPackType::TabValues:
-         return this->DecodeTabValues(rx, rpt, rxbuf);
+      case fmkt::RtsPackType::FieldValue_NoInfoTime:
+         return this->DecodeFieldValue_NoInfoTime(rx, rpt, rxbuf);
+      case fmkt::RtsPackType::FieldValue_AndInfoTime:
+         return this->DecodeFieldValue_AndInfoTime(rx, rpt, rxbuf);
+      case fmkt::RtsPackType::TabValues_NoInfoTime:
+         return this->DecodeTabValues_NoInfoTime(rx, rpt, rxbuf);
+      case fmkt::RtsPackType::TabValues_AndInfoTime:
+         return this->DecodeTabValues_AndInfoTime(rx, rpt, rxbuf);
       case fmkt::RtsPackType::Count: // 增加此 case 僅是為了避免警告.
          break;
       }
@@ -767,7 +771,7 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder, public RcSvStreamDeco
          RevPrint(rx.LogBuf_, '|', fld->Name_, '=');
       }
    }
-   void DecodeFieldValue(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {
+   void DecodeFieldValue_NoInfoTime(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {
       auto     fnOnReport = rx.SubrSeedRec_->Handler_.FnOnReport_;
       BaseAux  dec{rx};
       auto     nTabFld = ReadOrRaise<uint8_t>(rxbuf);
@@ -791,7 +795,12 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder, public RcSvStreamDeco
             fnOnReport(&rx.Session_, &rpt);
       }
    }
-   void DecodeTabValues(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {
+   void DecodeFieldValue_AndInfoTime(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {
+      auto* note = static_cast<RcSvStreamDecoderNote_MdRts*>(rx.SubrSeedRec_->StreamDecoderNote_.get());
+      BitvToDayTimeOrUnchange(rxbuf, *note->SelectInfoTime(rx));
+      DecodeFieldValue_NoInfoTime(rx, rpt, rxbuf);
+   }
+   void DecodeTabValues_NoInfoTime(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {
       auto     fnOnReport = rx.SubrSeedRec_->Handler_.FnOnReport_;
       BaseAux  dec{rx};
       while (!rxbuf.empty()) {
@@ -809,6 +818,11 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder, public RcSvStreamDeco
          if (fnOnReport)
             fnOnReport(&rx.Session_, &rpt);
       }
+   }
+   void DecodeTabValues_AndInfoTime(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {
+      auto* note = static_cast<RcSvStreamDecoderNote_MdRts*>(rx.SubrSeedRec_->StreamDecoderNote_.get());
+      BitvToDayTimeOrUnchange(rxbuf, *note->SelectInfoTime(rx));
+      DecodeFieldValue_NoInfoTime(rx, rpt, rxbuf);
    }
 };
 

@@ -36,7 +36,9 @@ void ExgMdFmt19Handler::OnPkReceived(const ExgMdHeader& pkhdr, unsigned pksz) {
       return;
    fon9::RevBufferList rts{pksz};
    f9fmkt::MdRtsPackTabValues(rts, *tabBreakSt, symb->BreakSt_);
-   symb->MdRtStream_.PublishAndSave(ToStrView(symb->SymbId_), f9fmkt::RtsPackType::TabValues, std::move(rts));
+   symb->MdRtStream_.PublishAndSave(ToStrView(symb->SymbId_),
+                                    f9fmkt::RtsPackType::TabValues_NoInfoTime,
+                                    std::move(rts));
 }
 
 } // namespaces

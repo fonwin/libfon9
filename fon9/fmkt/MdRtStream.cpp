@@ -141,6 +141,7 @@ void MdRtStream::PublishUpdateBS(const StrView& keyText, SymbBSData& symbBS, Rev
 }
 void MdRtStream::Publish(const StrView& keyText, RtsPackType pkType, const DayTime infoTime, RevBufferList&& rts) {
    const auto rtsKind = GetMdRtsKind(pkType);
+   assert(!IsEnumContains(rtsKind, MdRtsKind::NoInfoTime));
    if ((this->InfoTimeKind_ == rtsKind && this->InfoTime_ == infoTime) || infoTime.IsNull())
       RevPutBitv(rts, fon9_BitvV_NumberNull);
    else {

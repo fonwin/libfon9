@@ -43,10 +43,11 @@ struct MdSymbsBase::Recover : public TimerEntry {
          using base = seed::SeedNotifyStreamRecoverArgs;
          NotifyArgs(MdSymbsBase& mdSymbs)
             : base(mdSymbs, nullptr/*tab*/,
-                   // key: 因為用 RtsPackType::SnapshotSymbList 打包, 所以這裡為 don't care.
-                   // 但在 rc 送出時, 因為是 IsSubrTree() 所以會將這裡的 key 傳給 rc.client,
-                   // 可參閱: fon9/rc/RcSeedVisitorServer.cpp,
-                   // 為了減少資料量, 所以用 TextBegin(), 這樣就只需 1 byte 來打包 key.
+                   // key: 因為用 RtsPackType::SnapshotSymbList_NoInfoTime 打包,
+                   // - 所以 key 為 don't care.
+                   // - 但在 rc 送出時, 因為是 IsSubrTree() 所以會將這裡的 key 傳給 rc.client,
+                   //   可參閱: fon9/rc/RcSeedVisitorServer.cpp,
+                   //   為了減少資料量, 所以用 TextBegin(), 這樣就只需 1 byte 來打包 key.
                    seed::TextBegin()/*key*/,
                    nullptr/*rd*/,
                    seed::SeedNotifyKind::StreamRecover) {
@@ -74,7 +75,7 @@ struct MdSymbsBase::Recover : public TimerEntry {
          if (keepi >= numofele(keeps))
             break;
       }
-      *nargs.AckBuf_.AllocPacket<uint8_t>() = cast_to_underlying(RtsPackType::SnapshotSymbList);
+      *nargs.AckBuf_.AllocPacket<uint8_t>() = cast_to_underlying(RtsPackType::SnapshotSymbList_NoInfoTime);
       // SeedNotifyKind::StreamRecover, 在 RtsPackType 之前, 必須加上長度:
       // SeedNotifyKind::StreamRecover + [RtsLength + RtsPackType  + RtsPackData] * N
       // SeedNotifyKind::StreamRecover + [RtsLength + SnapshotSymb + (Snapshot * N)] * 1

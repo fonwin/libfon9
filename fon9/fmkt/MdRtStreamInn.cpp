@@ -147,8 +147,14 @@ void MdRtRecover::OnTimer(TimeStamp now) {
             continue;
          // 檢查是否需要回補: pkRtsKind, infoTime.
          const MdRtsKind pkRtsKind = GetMdRtsKind(static_cast<RtsPackType>(*dcq.Peek1()));
-         DcQueueFixedMem pk{dcq.Peek1() + 1, pksz - 1};
-         BitvTo(pk, this->LastInfoTime_);
+         if (IsEnumContains(pkRtsKind, MdRtsKind::NoInfoTime)) {
+            if (!this->IsStarted_)
+               goto __SKIP_PK;
+         }
+         else {
+            DcQueueFixedMem pk{dcq.Peek1() + 1, pksz - 1};
+            BitvTo(pk, this->LastInfoTime_);
+         }
          if (!this->IsStarted_) {
             if (!IsStartTime(this->LastInfoTime_, this->StartInfoTime_, this->Mgr_.DailyClearTime()))
                goto __SKIP_PK;

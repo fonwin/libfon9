@@ -23,7 +23,7 @@ static void I071ClosingToRts(ExgMcMessage& e, const ExgMdClosing071& pk) {
    auto* tabClosing = lk.Symbs_.LayoutSP_->GetTab(fon9_kCSTR_TabName_Closing);
    f9fmkt::MdRtsPackTabValues(rbuf, *tabClosing, symb.FuoClosing_);
    symb.MdRtStream_.Publish(ToStrView(symb.SymbId_),
-                            f9fmkt::RtsPackType::TabValues,
+                            f9fmkt::RtsPackType::TabValues_AndInfoTime,
                             e.Pk_.InformationTime_.ToDayTime(),
                             std::move(rbuf));
 }

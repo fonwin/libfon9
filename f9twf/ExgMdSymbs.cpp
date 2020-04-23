@@ -70,6 +70,7 @@ ExgMdSymb::ExgMdSymb(const fon9::StrView& symbid, ExgMdSymbs& owner)
    , MdRtStream_{owner.RtInnMgr_}
    , Contract_{owner.FetchContract(*this)} {
    this->TDayYYYYMMDD_ = owner.RtInnMgr_.TDayYYYYMMDD();
+   this->MdRtStream_.OpenRtStorage(*this);
 }
 fon9_MSC_WARN_POP;
 

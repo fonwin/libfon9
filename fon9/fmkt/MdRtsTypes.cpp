@@ -7,7 +7,7 @@
 namespace fon9 { namespace fmkt {
 
 fon9_API MdRtsKind GetMdRtsKind(RtsPackType pkType) {
-   constexpr MdRtsKind RtsPackType2MdRtsKind[] = {
+   static constexpr MdRtsKind RtsPackType2MdRtsKind[] = {
       MdRtsKind::Deal,
       MdRtsKind::BS,
       MdRtsKind::BS,
@@ -15,11 +15,13 @@ fon9_API MdRtsKind GetMdRtsKind(RtsPackType pkType) {
       MdRtsKind::TradingSession,
       MdRtsKind::Base | MdRtsKind::Ref,
       MdRtsKind::Deal | MdRtsKind::BS,
-      MdRtsKind::All,   // SnapshotSymbList
+      MdRtsKind::All,   // SnapshotSymbList_NoInfoTime
       MdRtsKind::Deal,  // IndexValueV2
       MdRtsKind::Deal,  // IndexValueV2List
-      MdRtsKind::All,   // FieldValue: 因為不確定要更新哪個欄位, 所以只好視為全部都有可能.
-      MdRtsKind::All,   // TabValues:  因為不確定要更新哪個Tab, 所以只好視為全部都有可能.
+      MdRtsKind::All,   // FieldValue_NoInfoTime: 因為不確定要更新哪個欄位, 所以只好視為全部都有可能.
+      MdRtsKind::All - MdRtsKind::NoInfoTime,
+      MdRtsKind::All,   // TabValues_NoInfoTime:  因為不確定要更新哪個Tab, 所以只好視為全部都有可能.
+      MdRtsKind::All - MdRtsKind::NoInfoTime,
    };
    static_assert(numofele(RtsPackType2MdRtsKind) == cast_to_underlying(RtsPackType::Count), "");
    static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::DealPack)] == MdRtsKind::Deal, "");
@@ -29,11 +31,13 @@ fon9_API MdRtsKind GetMdRtsKind(RtsPackType pkType) {
    static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::TradingSessionId)] == MdRtsKind::TradingSession, "");
    static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::BaseInfoTw)] == (MdRtsKind::Base | MdRtsKind::Ref), "");
    static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::DealBS)] == (MdRtsKind::Deal | MdRtsKind::BS), "");
-   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::SnapshotSymbList)] == MdRtsKind::All, "");
+   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::SnapshotSymbList_NoInfoTime)] == MdRtsKind::All, "");
    static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::IndexValueV2)] == MdRtsKind::Deal, "");
    static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::IndexValueV2List)] == MdRtsKind::Deal, "");
-   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::FieldValue)] == MdRtsKind::All, "");
-   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::TabValues)] == MdRtsKind::All, "");
+   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::FieldValue_NoInfoTime)] == MdRtsKind::All, "");
+   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::FieldValue_AndInfoTime)] == MdRtsKind::All - MdRtsKind::NoInfoTime, "");
+   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::TabValues_NoInfoTime)] == MdRtsKind::All, "");
+   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::TabValues_AndInfoTime)] == MdRtsKind::All - MdRtsKind::NoInfoTime, "");
 
    return RtsPackType2MdRtsKind[cast_to_underlying(pkType)];
 }

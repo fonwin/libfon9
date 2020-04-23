@@ -92,8 +92,9 @@ struct I140_BreakSt_PreparePk : public I140_CheckPublish {
    fon9::StrView                 PkBreakSt_;
    const f9fmkt_TradingSessionSt TSessionSt_;
    char                          Padding___[7];
-   I140_BreakSt_PreparePk(const fon9::seed::Layout& layout, f9fmkt_TradingSessionSt st)
-      : TSessionSt_{st} {
+   const fon9::DayTime           InfoTime_;
+   I140_BreakSt_PreparePk(const fon9::seed::Layout& layout, f9fmkt_TradingSessionSt st, fon9::DayTime infoTime)
+      : TSessionSt_{st}, InfoTime_{infoTime} {
       const auto* tabBase = layout.GetTab(fon9_kCSTR_TabName_Base);
       const auto* fldSessionSt = tabBase->Fields_.Get("SessionSt");
       fon9::ToBitv(this->Rts_, st);
@@ -127,14 +128,16 @@ struct I140_BreakSt_PreparePk : public I140_CheckPublish {
             symb.BreakSt_.Data_ = this->BreakSt_.Data_;
          }
       }
-      symb.MdRtStream_.PublishAndSave(ToStrView(symb.SymbId_), f9fmkt::RtsPackType::FieldValue, std::move(rts));
+      symb.MdRtStream_.Publish(ToStrView(symb.SymbId_),
+                               f9fmkt::RtsPackType::FieldValue_AndInfoTime,
+                               this->InfoTime_, std::move(rts));
    }
 };
 static void I140_200_TradingSessionSt(ExgMcMessage& e) {
    const auto& i200 = I140CastTo<ExgMdSysInfo200>(*static_cast<const ExgMcI140*>(&e.Pk_));
    auto&       symbs = *e.Channel_.GetChannelMgr()->Symbs_;
 
-   I140_BreakSt_PreparePk  ppk{*symbs.LayoutSP_, f9fmkt_TradingSessionSt_Halted};
+   I140_BreakSt_PreparePk  ppk{*symbs.LayoutSP_, f9fmkt_TradingSessionSt_Halted, e.Pk_.InformationTime_.ToDayTime()};
    ppk.BreakSt_.Data_.Reason_ = i200.Reason_;
    ppk.BreakSt_.Data_.BreakHHMMSS_ = fon9::PackBcdTo<uint32_t>(i200.BreakHHMMSS_);
    ppk.SetupBreakSt(*symbs.LayoutSP_);
@@ -144,7 +147,7 @@ static void I140_201_TradingSessionSt(ExgMcMessage& e) {
    const auto& i201 = I140CastTo<ExgMdSysInfo201>(*static_cast<const ExgMcI140*>(&e.Pk_));
    auto&       symbs = *e.Channel_.GetChannelMgr()->Symbs_;
 
-   I140_BreakSt_PreparePk  ppk{*symbs.LayoutSP_, f9fmkt_TradingSessionSt_Open};
+   I140_BreakSt_PreparePk  ppk{*symbs.LayoutSP_, f9fmkt_TradingSessionSt_Open, e.Pk_.InformationTime_.ToDayTime()};
    ppk.BreakSt_.Data_.Reason_ = i201.Reason_;
    ppk.BreakSt_.Data_.ReopenHHMMSS_ = fon9::PackBcdTo<uint32_t>(i201.ReopenHHMMSS_);
    ppk.BreakSt_.Data_.RestartHHMMSS_ = fon9::PackBcdTo<uint32_t>(i201.StartHHMMSS_);
@@ -156,7 +159,7 @@ static void I140_30x_TradingSessionSt(ExgMcMessage& e, f9fmkt_TradingSessionSt s
    const auto& i30x = I140CastTo<ExgMdSysInfo30x>(*static_cast<const ExgMcI140*>(&e.Pk_));
    auto&       symbs = *e.Channel_.GetChannelMgr()->Symbs_;
 
-   I140_BreakSt_PreparePk  ppk{*symbs.LayoutSP_, st};
+   I140_BreakSt_PreparePk  ppk{*symbs.LayoutSP_, st, e.Pk_.InformationTime_.ToDayTime()};
    ppk.BreakSt_.Data_.Reason_ = i30x.Reason_;
    ppk.SetupBreakSt(*symbs.LayoutSP_);
 
@@ -216,7 +219,7 @@ static void I140_40r_DynRange(ExgMcMessage& e, f9fmkt_DynBandSt st) {
 
    struct PreparePk : public I140_DynBand_PreparePk {
       fon9_NON_COPY_NON_MOVE(PreparePk);
-      PreparePk(const fon9::seed::Layout& layout, f9fmkt_DynBandSt st, const ExgMdSysInfo40r& i40r) {
+      PreparePk(const fon9::seed::Layout& layout, f9fmkt_DynBandSt st, const ExgMdSysInfo40r& i40r, fon9::DayTime infoTime) {
          const auto* tab = layout.GetTab(fon9_kCSTR_TabName_DynBand);
          const auto* fld = tab->Fields_.Get("St");
          ToBitv(this->Rts_, this->DynBand_.Data_.DynBandSt_ = st);
@@ -254,6 +257,7 @@ static void I140_40r_DynRange(ExgMcMessage& e, f9fmkt_DynBandSt st) {
             f9fmkt::MdRtsPackFieldValueNid(this->Rts_, *tab, *fld);
             break;
          }
+         ToBitv(this->Rts_, infoTime);
       }
       void CheckPublish(ExgMdSymb& symb) override {
          if (this->DynBand_.Data_.IsEqualExcludeRange(symb.DynBand_.Data_)) {
@@ -292,10 +296,13 @@ static void I140_40r_DynRange(ExgMcMessage& e, f9fmkt_DynBandSt st) {
          }
          fon9::RevBufferList  rts{64};
          fon9::RevPutMem(rts, this->Rts_.GetCurrent(), this->Rts_.GetMemEnd());
-         symb.MdRtStream_.PublishAndSave(ToStrView(symb.SymbId_), f9fmkt::RtsPackType::FieldValue, std::move(rts));
+         // 在建構時, this->Rts_ 有填入 InfoTime, 所以這裡使用 FieldValue_AndInfoTime;
+         symb.MdRtStream_.PublishAndSave(ToStrView(symb.SymbId_),
+                                         f9fmkt::RtsPackType::FieldValue_AndInfoTime,
+                                         std::move(rts));
       }
    };
-   PreparePk ppk{*symbs.LayoutSP_, st, i40r};
+   PreparePk ppk{*symbs.LayoutSP_, st, i40r, e.Pk_.InformationTime_.ToDayTime()};
    ppk.CheckList(symbs, i40r.ListType_, i40r.List_, GetPkMarket(e.Pk_));
 };
 static void I140_40x_DynBand(ExgMcMessage& e, f9fmkt_DynBandSt st) {
@@ -304,7 +311,7 @@ static void I140_40x_DynBand(ExgMcMessage& e, f9fmkt_DynBandSt st) {
 
    struct PreparePk : public I140_DynBand_PreparePk {
       fon9_NON_COPY_NON_MOVE(PreparePk);
-      PreparePk(const fon9::seed::Layout& layout, f9fmkt_DynBandSt st, const ExgMdSysInfo40x& i40x) {
+      PreparePk(const fon9::seed::Layout& layout, f9fmkt_DynBandSt st, const ExgMdSysInfo40x& i40x, fon9::DayTime infoTime) {
          const auto* tab = layout.GetTab(fon9_kCSTR_TabName_DynBand);
          const auto* fld = tab->Fields_.Get("St");
          ToBitv(this->Rts_, this->DynBand_.Data_.DynBandSt_ = st);
@@ -317,6 +324,8 @@ static void I140_40x_DynBand(ExgMcMessage& e, f9fmkt_DynBandSt st) {
          fld = tab->Fields_.Get("Reason");
          ToBitv(this->Rts_, this->DynBand_.Data_.Reason_ = i40x.Reason_);
          f9fmkt::MdRtsPackFieldValueNid(this->Rts_, *tab, *fld);
+
+         ToBitv(this->Rts_, infoTime);
       }
       void CheckPublish(ExgMdSymb& symb) override {
          if (this->DynBand_.Data_.IsEqualExcludeSide(symb.DynBand_.Data_))
@@ -324,10 +333,13 @@ static void I140_40x_DynBand(ExgMcMessage& e, f9fmkt_DynBandSt st) {
          symb.DynBand_.Data_.CopyExcludeSide(this->DynBand_.Data_);
          fon9::RevBufferList  rts{64};
          fon9::RevPutMem(rts, this->Rts_.GetCurrent(), this->Rts_.GetMemEnd());
-         symb.MdRtStream_.PublishAndSave(ToStrView(symb.SymbId_), f9fmkt::RtsPackType::FieldValue, std::move(rts));
+         // 在建構時, this->Rts_ 有填入 InfoTime, 所以這裡使用 FieldValue_AndInfoTime;
+         symb.MdRtStream_.PublishAndSave(ToStrView(symb.SymbId_),
+                                         f9fmkt::RtsPackType::FieldValue_AndInfoTime,
+                                         std::move(rts));
       }
    };
-   PreparePk ppk{*symbs.LayoutSP_, st, i40x};
+   PreparePk ppk{*symbs.LayoutSP_, st, i40x, e.Pk_.InformationTime_.ToDayTime()};
    ppk.CheckList(symbs, i40x.ListType_, i40x.List_, GetPkMarket(e.Pk_));
 };
 //--------------------------------------------------------------------------//
@@ -338,7 +350,7 @@ static void I140_10x_LmtRange(ExgMcMessage& e, int lvWill) {
       fon9_NON_COPY_NON_MOVE(PreparePk);
       int8_t   LvUpLmt_ = 0, LvDnLmt_ = 0;
       char     Padding___[6];
-      PreparePk(const fon9::seed::Layout& layout, const ExgMdSysInfo10x& i10x, int lvWill) {
+      PreparePk(const fon9::seed::Layout& layout, const ExgMdSysInfo10x& i10x, int lvWill, fon9::DayTime infoTime) {
          auto  lv = static_cast<uint8_t>(fon9::PackBcdTo<uint8_t>(i10x.Level_) - 1);
          assert(lv < TwfSymbRef_Data::kPriLmtCount);
          if (lv >= TwfSymbRef_Data::kPriLmtCount)
@@ -355,6 +367,7 @@ static void I140_10x_LmtRange(ExgMcMessage& e, int lvWill) {
          assert(tabRef != nullptr);
          FieldToBitv(*tabRef, this->LvUpLmt_, "LvUpLmt");
          FieldToBitv(*tabRef, this->LvDnLmt_, "LvDnLmt");
+         fon9::ToBitv(this->Rts_, infoTime);
       }
       void FieldToBitv(const fon9::seed::Tab& tabRef, int lvLmt, fon9::StrView fldName) {
          if (lvLmt == 0)
@@ -376,10 +389,13 @@ static void I140_10x_LmtRange(ExgMcMessage& e, int lvWill) {
             return;
          fon9::RevBufferList  rts{64};
          fon9::RevPutMem(rts, this->Rts_.GetCurrent(), this->Rts_.GetMemEnd());
-         symb.MdRtStream_.PublishAndSave(ToStrView(symb.SymbId_), f9fmkt::RtsPackType::FieldValue, std::move(rts));
+         // 在建構時, this->Rts_ 有填入 InfoTime, 所以這裡使用 FieldValue_AndInfoTime;
+         symb.MdRtStream_.PublishAndSave(ToStrView(symb.SymbId_),
+                                         f9fmkt::RtsPackType::FieldValue_AndInfoTime,
+                                         std::move(rts));
       }
    };
-   PreparePk ppk{*symbs.LayoutSP_, i10x, lvWill};
+   PreparePk ppk{*symbs.LayoutSP_, i10x, lvWill, e.Pk_.InformationTime_.ToDayTime()};
    CheckIdList(symbs, symbs.SymbMap_.Lock(), ppk, i10x.ListType_, i10x.IdList_);
 }
 //--------------------------------------------------------------------------//

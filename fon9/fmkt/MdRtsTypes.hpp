@@ -9,7 +9,6 @@
 namespace fon9 { namespace fmkt {
 
 enum class MdRtsKind : uint32_t {
-   All = 0xff,
    /// 基本資料訊息.
    Base = 0x01,
    /// 參考價訊息.
@@ -18,6 +17,11 @@ enum class MdRtsKind : uint32_t {
    BS = 0x08,
    /// 交易時段狀態.
    TradingSession = 0x80,
+
+   /// 沒有 InfoTime 的 RtsPackType 打包格式.
+   NoInfoTime = 0x100,
+
+   All = 0xffff,
 };
 fon9_ENABLE_ENUM_BITWISE_OP(MdRtsKind);
 //--------------------------------------------------------------------------//
@@ -90,11 +94,10 @@ enum class RtsPackType : uint8_t {
    DealBS,
 
    /// 單一商品的全部資料, 通常用在訂閱整棵樹的商品資料回補.
-   /// - RtsPackType::SnapshotSymbList 之後, 沒有緊接著的 InfoTime.
    /// - 底下內容重覆 n 次:
    ///   - SymbId
    ///   - SymbCellsToBitv()
-   SnapshotSymbList,
+   SnapshotSymbList_NoInfoTime,
 
    /// 指數值.
    /// - DealTime = Bitv(InfoTime)
@@ -110,20 +113,20 @@ enum class RtsPackType : uint8_t {
 
    /// 更新單一欄位.
    /// - 僅適用於: tabidx=0..15; fldidx=0..15;
-   /// - RtsPackType::FieldValue 之後, 沒有緊接著的 InfoTime.
    /// - 底下內容重複 1..N 次:
    ///   - uint8_t nTabFld;
    ///     - tabidx = (nTabFld >> 4);
    ///     - fldidx = (nTabFld & 0x0f);
    ///   - fld->BitvToCell();
-   FieldValue,
+   FieldValue_NoInfoTime,
+   FieldValue_AndInfoTime,
 
    /// 更新 Tab 的全部欄位.
-   /// - RtsPackType::TabValues 之後, 沒有緊接著的 InfoTime.
    /// - 底下內容重複 1..N 次:
    ///   - uint8_t tabidx;
    ///   - tabs[tabidx].(all fields)->BitvToCell();
-   TabValues,
+   TabValues_NoInfoTime,
+   TabValues_AndInfoTime,
 
    Count,
 };
