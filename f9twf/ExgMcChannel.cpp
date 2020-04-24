@@ -196,7 +196,7 @@ void ExgMcChannel::OnRecoverErr(SeqT beginSeqNo, unsigned recoverNum, ExgMrStatu
          }
       } while (this->NextSeq_ == i->Seq_);
    }
-   pks->erase(i, pks->begin());
+   pks->erase(pks->begin(), i);
    this->ResetBiggerNextSeq(endSeq);
    pks.unlock();
    this->StartPkContTimer();
