@@ -313,12 +313,11 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder, public RcSvStreamDeco
       auto            fnOnHandler = subr.Seeds_[subr.TabIndex_]->Handler_.FnOnReport_;
       const bool      isSubrTree = seed::IsSubrTree(rpt.SeedKey_.Begin_);
       CharVector      tempKeyText; // 在 isSubrTree==true 時使用.
-      const size_t    lastTabIdx = subr.Tree_->LayoutC_.TabCount_ - 1;
-      size_t          tabidx = lastTabIdx;
+      const size_t    tabCount = subr.Tree_->LayoutC_.TabCount_;
+      size_t          tabidx = 0;
       while (!dcq.empty()) {
-         if (isSubrTree && tabidx == lastTabIdx)
+         if (isSubrTree && tabidx == 0)
             this->FetchSeedKey(subr, dcq, tempKeyText, rpt);
-         BitvTo(dcq, tabidx);
          auto* tab = subr.Tree_->Layout_->GetTab(tabidx);
          assert(tab != nullptr);
          if (tab == nullptr) {
@@ -340,6 +339,8 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder, public RcSvStreamDeco
                           "|tab=", tab->Name_);
          if (fnOnHandler)
             fnOnHandler(&ses, &rpt);
+         if (++tabidx >= tabCount)
+            tabidx = 0;
       }
    }
    void DecodeSnapshotSymbList(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {

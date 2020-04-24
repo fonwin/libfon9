@@ -133,37 +133,50 @@ void MdRtRecover::OnTimer(TimeStamp now) {
             continue;
          }
          if (fon9_UNLIKELY(errlen)) {
-            fon9_LOG_ERROR("MdRtStream.Read|err=Bad storage"
+            fon9_LOG_ERROR("MdRtStream.Read|key=", nargs.KeyText_,
+                           "|err=Bad storage"
                            "|pos=", currChkPos - errlen,
                            "|len=", errlen);
             errlen = 0;
          }
          dcq.PopConsumed(sizeof(chkValue));
-         size_t pksz;
-         if (!PopBitvByteArraySize(dcq, pksz))
-            break;
-         assert(pksz > 0);
-         if (pksz <= 0)
+         size_t pksz = 0;
+         try {
+            if (!PopBitvByteArraySize(dcq, pksz))
+               break;
+            assert(pksz > 0);
+            if (pksz <= 0)
+               continue;
+            // 檢查是否需要回補: pkRtsKind, infoTime.
+            const MdRtsKind pkRtsKind = GetMdRtsKind(static_cast<RtsPackType>(*dcq.Peek1()));
+            if (IsEnumContains(pkRtsKind, MdRtsKind::NoInfoTime)) {
+               if (!this->IsStarted_)
+                  goto __SKIP_PK;
+            }
+            else {
+               DcQueueFixedMem pk{dcq.Peek1() + 1, pksz - 1};
+               BitvTo(pk, this->LastInfoTime_);
+            }
+            if (!this->IsStarted_) {
+               if (!IsStartTime(this->LastInfoTime_, this->StartInfoTime_, this->Mgr_.DailyClearTime()))
+                  goto __SKIP_PK;
+               this->IsStarted_ = true;
+            }
+            if (!IsEnumContainsAny(this->Filter_, pkRtsKind))
+               goto __SKIP_PK;
+            nargs.StreamDataKind_ |= cast_to_underlying(pkRtsKind);
+         }
+         catch (std::exception& e) {
+            fon9_LOG_ERROR("MdRtStream.Read|key=", nargs.KeyText_,
+                           "|err=Bad format"
+                           "|pos=", currChkPos,
+                           "|e=", e.what());
+            if (pksz > 0)
+               goto __SKIP_PK;
+            ++errlen;
+            dcq.PopConsumed(1);
             continue;
-         // 檢查是否需要回補: pkRtsKind, infoTime.
-         const MdRtsKind pkRtsKind = GetMdRtsKind(static_cast<RtsPackType>(*dcq.Peek1()));
-         if (IsEnumContains(pkRtsKind, MdRtsKind::NoInfoTime)) {
-            if (!this->IsStarted_)
-               goto __SKIP_PK;
          }
-         else {
-            DcQueueFixedMem pk{dcq.Peek1() + 1, pksz - 1};
-            BitvTo(pk, this->LastInfoTime_);
-         }
-         if (!this->IsStarted_) {
-            if (!IsStartTime(this->LastInfoTime_, this->StartInfoTime_, this->Mgr_.DailyClearTime()))
-               goto __SKIP_PK;
-            this->IsStarted_ = true;
-         }
-         if (!IsEnumContainsAny(this->Filter_, pkRtsKind))
-            goto __SKIP_PK;
-
-         nargs.StreamDataKind_ |= cast_to_underlying(pkRtsKind);
          if (nargs.CacheGV_.empty()) // 保留 pos, 若訂閱者流量管制, 則從 pos 開始.
             nargs.Pos_ = currChkPos;
          nargs.CacheGV_.append(pchk + sizeof(chkValue), reinterpret_cast<const char*>(dcq.Peek1() + pksz));
@@ -215,7 +228,8 @@ void MdRtRecover::OnTimer(TimeStamp now) {
          memmove(rdbuf, dcq.Peek1(), bufofs);
    }
    if (errlen) {
-      fon9_LOG_ERROR("MdRtStream.Read|err=Bad storage"
+      fon9_LOG_ERROR("MdRtStream.Read|key=", nargs.KeyText_,
+                     "|err=Bad storage"
                      "|pos=", nextReadPos - errlen,
                      "|len=", errlen);
    }

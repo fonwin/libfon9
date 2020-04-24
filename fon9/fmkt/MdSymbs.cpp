@@ -18,7 +18,6 @@ void fon9_API SymbCellsToBitv(RevBuffer& rbuf, seed::Layout& layout, Symb& symb)
          auto* fld = tab->Fields_.Get(--fldidx);
          fld->CellToBitv(rd, rbuf);
       }
-      ToBitv(rbuf, unsigned_cast(tab->GetIndex()));
    }
 }
 //--------------------------------------------------------------------------//
@@ -229,10 +228,9 @@ void MdSymbsBase::LoadFrom(std::string fname) {
             dcq.Read(rdbuf.alloc(barySize), barySize);
             DcQueueFixedMem rds{rdbuf.begin(), barySize};
             BitvTo(rds, keyText);
-            Symb&  symb = *this->FetchSymb(symbsLk, ToStrView(keyText));
-            size_t tabidx = 0;
-            for (auto tabCount = this->LayoutSP_->GetTabCount(); tabCount > 0; --tabCount) {
-               BitvTo(rds, tabidx);
+            Symb&       symb = *this->FetchSymb(symbsLk, ToStrView(keyText));
+            const auto  tabCount = this->LayoutSP_->GetTabCount();
+            for(size_t tabidx = 0; tabidx < tabCount; ++tabidx) {
                auto* tab = this->LayoutSP_->GetTab(tabidx);
                seed::SimpleRawWr wr{*symb.GetSymbData(static_cast<int>(tabidx))};
                const auto fldCount = tab->Fields_.size();
