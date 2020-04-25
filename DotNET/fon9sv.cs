@@ -226,7 +226,9 @@ namespace f9sv
    public struct ClientReport
    {
       public ResultCode ResultCode_;
-      UInt32 Padding___;
+      /// Stream 回報時提供, 由 Stream 定義內容.
+      public uint16_t StreamPackType_;
+      uint16_t Padding___;
       /// 使用者訂閱時自訂的編號.
       public IntPtr UserData_;
       /// 查詢或訂閱時提供的 TreePath (已正規化: 移除多餘的 '/', '.' 之類).

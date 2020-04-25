@@ -3,6 +3,7 @@
 #ifndef __fon9_fmkt_SymbDealData_hpp__
 #define __fon9_fmkt_SymbDealData_hpp__
 #include "fon9/fmkt/FmktTypes.hpp"
+#include "fon9/rc/RcMdRtsDecoder.h"
 #include "fon9/TimeStamp.hpp"
 
 namespace fon9 { namespace fmkt {
@@ -22,12 +23,8 @@ enum class DealFlag : uint8_t {
    /// TotalQty 不連續, 藉此判斷是否有遺漏成交明細.
    TotalQtyLost = 0x10,
 
-   /// 暫緩撮合.
-   HeldMatchMask = 0xc0,
-   /// 暫緩撮合, 瞬間價格趨漲.
-   HeldMatchTrendRise = 0x80,
-   /// 暫緩撮合, 瞬間價格趨跌.
-   HeldMatchTrendFall = 0x40,
+   /// LmtFlags 欄位有異動.
+   LmtFlagsChanged = 0x20,
 };
 fon9_ENABLE_ENUM_BITWISE_OP(DealFlag);
 
@@ -50,7 +47,11 @@ struct SymbDealData {
    /// 累計賣出成交筆數.
    Qty      DealSellCnt_{};
    DealFlag Flags_{};
-   char     Padding___[7];
+
+   /// 由資訊來源提供, 若沒提供則為 0, 核心系統不會主動與 今日漲跌停 比對.
+   f9sv_DealLmtFlag  LmtFlags_;
+
+   char     Padding___[6];
 
    SymbDealData() {
       this->Clear();

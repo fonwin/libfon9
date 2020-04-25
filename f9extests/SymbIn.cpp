@@ -28,10 +28,10 @@ fon9::fmkt::SymbData* SymbIn::FetchSymbData(int tabid) {
 fon9::seed::LayoutSP SymbIn::MakeLayout(fon9::seed::TreeFlag flags) {
    using namespace fon9::seed;
    return LayoutSP{new LayoutN(fon9_MakeField(Symb, SymbId_, "Id"), flags,
-      TabSP{new Tab{fon9::Named{"Base"}, fon9::fmkt::Symb::MakeFields(),    TabFlag::NoSapling_NoSeedCommand_Writable}},
-      TabSP{new Tab{fon9::Named{"Ref"},  fon9::fmkt::SymbRef_MakeFields(),  TabFlag::NoSapling_NoSeedCommand_Writable}},
-      TabSP{new Tab{fon9::Named{"BS"},   fon9::fmkt::SymbBS_MakeFields(),   TabFlag::NoSapling_NoSeedCommand_Writable}},
-      TabSP{new Tab{fon9::Named{"Deal"}, fon9::fmkt::SymbDeal_MakeFields(), TabFlag::NoSapling_NoSeedCommand_Writable}}
+      TabSP{new Tab{fon9::Named{"Base"}, fon9::fmkt::Symb::MakeFields(),      TabFlag::NoSapling_NoSeedCommand_Writable}},
+      TabSP{new Tab{fon9::Named{"Ref"},  fon9::fmkt::SymbRef_MakeFields(),    TabFlag::NoSapling_NoSeedCommand_Writable}},
+      TabSP{new Tab{fon9::Named{"BS"},   fon9::fmkt::SymbTwaBS_MakeFields(),  TabFlag::NoSapling_NoSeedCommand_Writable}},
+      TabSP{new Tab{fon9::Named{"Deal"}, fon9::fmkt::SymbTwaDeal_MakeFields(),TabFlag::NoSapling_NoSeedCommand_Writable}}
    )};
 }
 

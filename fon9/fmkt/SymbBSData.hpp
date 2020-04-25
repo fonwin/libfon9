@@ -3,6 +3,7 @@
 #ifndef __fon9_fmkt_SymbBSData_hpp__
 #define __fon9_fmkt_SymbBSData_hpp__
 #include "fon9/fmkt/FmktTypes.hpp"
+#include "fon9/rc/RcMdRtsDecoder.h"
 #include "fon9/TimeStamp.hpp"
 
 namespace fon9 { namespace fmkt {
@@ -33,13 +34,27 @@ struct SymbBSData {
    PriQty   Sells_[kBSCount];
    /// 買進價量列表, [0]=最佳買進價量.
    PriQty   Buys_[kBSCount];
-   /// 衍生賣出.
-   PriQty   DerivedSell_;
-   /// 衍生買進.
-   PriQty   DerivedBuy_;
    BSFlag   Flags_{};
-   char     Padding___[7];
 
+   /// 由資訊來源提供, 若沒提供則為 0, 核心系統不會主動與 今日漲跌停 比對.
+   f9sv_BSLmtFlag  LmtFlags_{};
+
+   char     Padding___[6];
+};
+
+struct SymbTwfBSData : public SymbBSData {
+   /// 衍生賣出.
+   PriQty   DerivedSell_{};
+   /// 衍生買進.
+   PriQty   DerivedBuy_{};
+
+   void Clear(DayTime tm = DayTime::Null()) {
+      memset(this, 0, sizeof(*this));
+      this->InfoTime_ = tm;
+   }
+};
+
+struct SymbTwsBSData : public SymbBSData {
    void Clear(DayTime tm = DayTime::Null()) {
       memset(this, 0, sizeof(*this));
       this->InfoTime_ = tm;

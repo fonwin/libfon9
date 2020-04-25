@@ -5,7 +5,7 @@
 
 namespace fon9 { namespace fmkt {
 
-seed::Fields SymbDeal_MakeFields() {
+fon9_API seed::Fields SymbDeal_MakeFields(bool isAddLmtFlags) {
    seed::Fields flds;
    flds.Add(fon9_MakeField(SymbDeal, Data_.InfoTime_,    "InfoTime"));
    flds.Add(fon9_MakeField(SymbDeal, Data_.DealTime_,    "DealTime"));
@@ -16,6 +16,9 @@ seed::Fields SymbDeal_MakeFields() {
    flds.Add(fon9_MakeField(SymbDeal, Data_.DealSellCnt_, "DealSellCnt"));
    flds.Add(seed::FieldSP{new seed::FieldIntHx<underlying_type_t<DealFlag>>(
       Named("Flags"), fon9_OffsetOfRawPointer(SymbDeal, Data_.Flags_))});
+   if(isAddLmtFlags)
+      flds.Add(seed::FieldSP{new seed::FieldIntHx<underlying_type_t<f9sv_DealLmtFlag>>(
+         Named("LmtFlags"), fon9_OffsetOfRawPointer(SymbDeal, Data_.LmtFlags_))});
    return flds;
 }
 

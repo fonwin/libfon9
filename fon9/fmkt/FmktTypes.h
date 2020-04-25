@@ -119,13 +119,18 @@ fon9_ENUM(f9fmkt_TradingSessionSt, uint8_t) {
    /// 不可刪單階段, 通常在開盤前 n 分鐘, 例: 台灣期交所開盤前2分鐘不可刪單.
    f9fmkt_TradingSessionSt_NonCancelPeriod = 0x44,
 
+   /// 延後開盤: 例如台灣證交所有提供「試算後延後開盤」.
+   f9fmkt_TradingSessionSt_DelayOpen       = 0x72,
    /// 一般盤中.
    f9fmkt_TradingSessionSt_Open            = 0x82,
+
    /// 暫停交易, 可能會恢復, 恢復後的狀態為 f9fmkt_TradingSessionSt_Open.
    f9fmkt_TradingSessionSt_Halted          = 0xb1,
    /// 收盤前, 仍可收單, 但交易方式可能與盤中不同.
    f9fmkt_TradingSessionSt_PreClose        = 0xe5,
 
+   /// 延後收盤: 例如台灣證交所有提供「試算後延後收盤」.
+   f9fmkt_TradingSessionSt_DelayClose      = 0xe3,
    /// 該時段收盤, 或該時段不再恢復交易.
    f9fmkt_TradingSessionSt_Closed          = 0xf3,
 };

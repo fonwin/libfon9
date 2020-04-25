@@ -19,9 +19,9 @@ class f9extests_API SymbIn : public fon9::fmkt::SymbTwa {
    fon9_NON_COPY_NON_MOVE(SymbIn);
    using base = fon9::fmkt::SymbTwa;
 public:
-   fon9::fmkt::SymbRef  Ref_;
-   fon9::fmkt::SymbBS   BS_;
-   fon9::fmkt::SymbDeal Deal_;
+   fon9::fmkt::SymbRef     Ref_;
+   fon9::fmkt::SymbTwaBS   BS_;
+   fon9::fmkt::SymbDeal    Deal_;
 
    using base::base;
 

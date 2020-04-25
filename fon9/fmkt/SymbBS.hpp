@@ -9,16 +9,23 @@ namespace fon9 { namespace fmkt {
 
 /// \ingroup fmkt
 /// 商品資料的擴充: 行情的買賣報價.
-fon9_API_TEMPLATE_CLASS(SymbBS, SimpleSymbData, SymbBSData);
+fon9_API_TEMPLATE_CLASS(SymbTwsBS, SimpleSymbData, SymbTwsBSData);
+fon9_API_TEMPLATE_CLASS(SymbTwfBS, SimpleSymbData, SymbTwfBSData);
 
-fon9_API seed::Fields SymbBS_MakeFields();
+/// 不包含「衍生買賣」, 包含 LmtFlags.
+fon9_API seed::Fields SymbTwsBS_MakeFields();
+/// 包含「衍生買賣」, 不包含 LmtFlags.
+fon9_API seed::Fields SymbTwfBS_MakeFields();
+
+using SymbTwaBS = SymbTwfBS;
+fon9_API seed::Fields SymbTwaBS_MakeFields();
 
 class fon9_API SymbBSTabDy : public SymbDataTab {
    fon9_NON_COPY_NON_MOVE(SymbBSTabDy);
    using base = SymbDataTab;
 public:
    SymbBSTabDy(Named&& named)
-      : base{std::move(named), SymbBS_MakeFields(), seed::TabFlag::NoSapling_NoSeedCommand_Writable} {
+      : base{std::move(named), SymbTwaBS_MakeFields(), seed::TabFlag::NoSapling_NoSeedCommand_Writable} {
    }
 
    SymbDataSP FetchSymbData(Symb&) override;

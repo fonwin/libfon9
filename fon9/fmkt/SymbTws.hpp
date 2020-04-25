@@ -27,6 +27,7 @@ public:
 
    /// base::MakeFields(); and:
    /// - ShUnit
+   /// - TwsFlags
    static seed::Fields MakeFields();
 };
 using SymbTwsSP = intrusive_ptr<SymbTws>;

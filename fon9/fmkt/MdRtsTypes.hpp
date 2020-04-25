@@ -143,6 +143,10 @@ constexpr DayTime YesterdayIndexTime() {
    return fon9::TimeInterval_Day(-1);
 }
 //--------------------------------------------------------------------------//
+// MSB 必須為 1, 也就是 RtBSSnapshotSpc 必須 >= 0x80;
+enum class RtBSSnapshotSpc : uint8_t {
+   LmtFlags = 0x80
+};
 enum class RtBSType : uint8_t {
    // --xx ----
    Mask = 0x30,
@@ -180,13 +184,13 @@ inline void MdRtsPackFieldValueNid(RevBuffer& rbuf, const seed::Tab& tab, const 
    assert(unsigned_cast(tab.GetIndex()) <= 0x0f && unsigned_cast(fld.GetIndex()) <= 0x0f);
    *rbuf.AllocPacket<uint8_t>() = static_cast<uint8_t>((tab.GetIndex() << 4) | fld.GetIndex());
 }
-// inline void MdRtsPackFieldValue(RevBuffer& rbuf,
-//                                 const seed::Tab& tab,
-//                                 const seed::Field& fld,
-//                                 const SymbData& dat) {
-//    fld.CellToBitv(seed::SimpleRawRd{dat}, rbuf);
-//    MdRtsPackFieldValueNid(rbuf, tab, fld);
-// }
+inline void MdRtsPackFieldValue(RevBuffer& rbuf,
+                                const seed::Tab& tab,
+                                const seed::Field& fld,
+                                const seed::RawRd& rd) {
+   fld.CellToBitv(rd, rbuf);
+   MdRtsPackFieldValueNid(rbuf, tab, fld);
+}
 
 } } // namespaces
 #endif//__fon9_fmkt_MdRtsTypes_hpp__

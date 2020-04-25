@@ -72,9 +72,9 @@ static bool MdRtsPackOrderBS(RevBuffer& rbuf, RtBSType bsType, const PriQty* pqs
 fon9_API void MdRtsPackSnapshotBS(RevBuffer& rbuf, const SymbBSData& symbBS) {
    const auto  curFlags = symbBS.Flags_;
    if (IsEnumContains(curFlags, BSFlag::DerivedSell))
-      MdRtsPackSingleBS(rbuf, RtBSType::DerivedSell, symbBS.DerivedSell_);
+      MdRtsPackSingleBS(rbuf, RtBSType::DerivedSell, static_cast<const SymbTwfBSData*>(&symbBS)->DerivedSell_);
    if (IsEnumContains(curFlags, BSFlag::DerivedBuy))
-      MdRtsPackSingleBS(rbuf, RtBSType::DerivedBuy, symbBS.DerivedBuy_);
+      MdRtsPackSingleBS(rbuf, RtBSType::DerivedBuy, static_cast<const SymbTwfBSData*>(&symbBS)->DerivedBuy_);
    if (IsEnumContains(curFlags, BSFlag::OrderSell))
       MdRtsPackOrderBS(rbuf, RtBSType::OrderSell, symbBS.Sells_);
    if (IsEnumContains(curFlags, BSFlag::OrderBuy))

@@ -47,7 +47,7 @@ class f9twf_API ExgMdSymb : public fon9::fmkt::SymbTwf, public fon9::fmkt::SymbD
    using base = fon9::fmkt::SymbTwf;
 public:
    TwfSymbRef                 Ref_;
-   fon9::fmkt::SymbBS         BS_;
+   fon9::fmkt::SymbTwfBS      BS_;
    fon9::fmkt::SymbDeal       Deal_;
    fon9::fmkt::SymbBreakSt    BreakSt_;
    fon9::fmkt::SymbFuoClosing FuoClosing_;
@@ -103,7 +103,7 @@ struct ExgMdEntry;
 
 /// 返回 mdEntry + mdCount;
 f9twf_API const void* ExgMdToSnapshotBS(fon9::DayTime mdTime, unsigned mdCount, const ExgMdEntry* mdEntry,
-                                        fon9::fmkt::SymbBS& symbBS, uint32_t priceOrigDiv);
+                                        fon9::fmkt::SymbTwfBS& symbBS, uint32_t priceOrigDiv);
 template <class SymbT>
 inline const void* ExgMdToSnapshotBS(fon9::DayTime mdTime, unsigned mdCount, const ExgMdEntry* mdEntry, SymbT& symb) {
    return ExgMdToSnapshotBS(mdTime, mdCount, mdEntry, symb.BS_, symb.PriceOrigDiv_);
@@ -112,7 +112,7 @@ inline const void* ExgMdToSnapshotBS(fon9::DayTime mdTime, unsigned mdCount, con
 struct ExgMcI081Entry;
 
 f9twf_API void ExgMdToUpdateBS(fon9::DayTime mdTime, unsigned mdCount, const ExgMcI081Entry* mdEntry,
-                               fon9::fmkt::SymbBS& symbBS, uint32_t priceOrigDiv);
+                               fon9::fmkt::SymbTwfBS& symbBS, uint32_t priceOrigDiv);
 template <class SymbT>
 inline void ExgMdToUpdateBS(fon9::DayTime mdTime, unsigned mdCount, const ExgMcI081Entry* mdEntry, SymbT& symb) {
    ExgMdToUpdateBS(mdTime, mdCount, mdEntry, symb.BS_, symb.PriceOrigDiv_);

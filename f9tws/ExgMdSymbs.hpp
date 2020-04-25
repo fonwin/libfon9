@@ -19,7 +19,7 @@ class f9tws_API ExgMdSymb : public fon9::fmkt::SymbTws, public fon9::fmkt::SymbD
    using base = fon9::fmkt::SymbTws;
 public:
    fon9::fmkt::SymbRef     Ref_;
-   fon9::fmkt::SymbBS      BS_;
+   fon9::fmkt::SymbTwsBS   BS_;
    fon9::fmkt::SymbDeal    Deal_;
    fon9::fmkt::SymbBreakSt BreakSt_;
    fon9::fmkt::MdRtStream  MdRtStream_;

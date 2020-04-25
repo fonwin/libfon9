@@ -22,7 +22,10 @@ void ExgMdFmt6Handler::PkContOnReceived(const void* pkptr, unsigned pksz, SeqT s
 
 // #define DEBUG_FMT6
 #ifdef DEBUG_FMT6
-   const bool kDebugPrint = (ToStrView(symb->SymbId_) == "2330");
+   const bool kDebugPrint = (/*ToStrView(symb->SymbId_) == "2885"//"2330"
+                             ||*/ (fmt6.StatusMask_ & 0x60) != 0
+                             || (fmt6.LmtMask_ & 0x03) != 0
+                             );
    if (kDebugPrint) {
       printf("\n[%s]%06u/%02x.%02x.%02x/Total=%u/",
              symb->SymbId_.begin(),
@@ -65,9 +68,14 @@ void ExgMdFmt6Handler::PkContOnReceived(const void* pkptr, unsigned pksz, SeqT s
       //   - 01：暫緩撮合且瞬間趨跌; 10：暫緩撮合且瞬間趨漲;
       //     - 此時 DealPri=上次成交價; DealQty=0; TotalQty=不變;
       //     - 然後該股票的 Fmt6 就是大約2分鐘的「試算」揭示, 且沒有再提供「瞬間價格趨勢」.
-      switch (fmt6.LmtMask_ & 0x03) {
-      case 1: symb->Deal_.Data_.Flags_ |= f9fmkt::DealFlag::HeldMatchTrendFall; break;
-      case 2: symb->Deal_.Data_.Flags_ |= f9fmkt::DealFlag::HeldMatchTrendRise; break;
+      static_assert(f9sv_DealLmtFlag_HeldMatchTrendFall == 0x01, "");
+      static_assert(f9sv_DealLmtFlag_HeldMatchTrendRise == 0x02, "");
+      static_assert(f9sv_DealLmtFlag_UpLmt == 0x80, "");
+      static_assert(f9sv_DealLmtFlag_DnLmt == 0x40, "");
+      const auto lmtFlags = static_cast<f9sv_DealLmtFlag>(fmt6.LmtMask_ & (0x80 | 0x40 | 0x01 | 0x02));
+      if (symb->Deal_.Data_.LmtFlags_ != lmtFlags) {
+         symb->Deal_.Data_.LmtFlags_ = lmtFlags;
+         symb->Deal_.Data_.Flags_ |= f9fmkt::DealFlag::LmtFlagsChanged;
       }
    }
 #ifdef DEBUG_FMT6
@@ -75,14 +83,61 @@ void ExgMdFmt6Handler::PkContOnReceived(const void* pkptr, unsigned pksz, SeqT s
       printf("%02x/", symb->Deal_.Data_.Flags_);
 #endif
 
+   const f9fmkt::TwsBaseFlag twsFlags = ((fmt6.StatusMask_ & 0x10)
+                                         ? f9fmkt::TwsBaseFlag::ContinuousMarket
+                                         : f9fmkt::TwsBaseFlag::AggregateAuction);
+   f9fmkt_TradingSessionSt tst = symb->TradingSessionSt_;
+   if (const auto stm = fmt6.StatusMask_ & (0x40 | 0x20 | 0x08 | 0x04)) {
+      switch (stm) {
+      case 0x40: tst = f9fmkt_TradingSessionSt_DelayOpen;  break;
+      case 0x20: tst = f9fmkt_TradingSessionSt_DelayClose; break;
+      case 0x08: tst = f9fmkt_TradingSessionSt_Open;       break;
+      case 0x04: tst = f9fmkt_TradingSessionSt_Closed;     break;
+      }
+   }
+
    fon9::RevBufferList rts{pksz};
+
+   if (fon9_UNLIKELY(twsFlags != f9fmkt::GetMatchingMethod(symb->TwsFlags_)
+                     || symb->TradingSessionSt_ != tst
+                     || symb->TradingSessionId_ != f9fmkt_TradingSessionId_Normal)) {
+      const auto* tabBase = this->MdSys_.Symbs_->LayoutSP_->GetTab(0);
+      assert(tabBase->Name_ == fon9_kCSTR_TabName_Base);
+      fon9::seed::SimpleRawRd  rd{*symb};
+      if (symb->TradingSessionId_ != f9fmkt_TradingSessionId_Normal) {
+         symb->TradingSessionId_ = f9fmkt_TradingSessionId_Normal;
+         f9fmkt::MdRtsPackFieldValue(rts, *tabBase, *tabBase->Fields_.Get("Session"), rd);
+      }
+      if (twsFlags != f9fmkt::GetMatchingMethod(symb->TwsFlags_)) {
+         symb->TwsFlags_ = (symb->TwsFlags_ - f9fmkt::TwsBaseFlag::MatchingMethodMask) | twsFlags;
+         f9fmkt::MdRtsPackFieldValue(rts, *tabBase, *tabBase->Fields_.Get("TwsFlags"), rd);
+      }
+      if (symb->TradingSessionSt_ != tst) {
+         symb->TradingSessionSt_ = tst;
+         f9fmkt::MdRtsPackFieldValue(rts, *tabBase, *tabBase->Fields_.Get("SessionSt"), rd);
+      }
+      symb->MdRtStream_.Publish(ToStrView(symb->SymbId_),
+                                f9fmkt::RtsPackType::FieldValue_AndInfoTime,
+                                dealTime, std::move(rts));
+   }
+
    f9fmkt::RtsPackType rtsPackType;
    if ((fmt6.ItemMask_ & 0x7e) || (fmt6.ItemMask_ & 1) == 0) {
-      symb->BS_.Data_.Flags_ = (isCalc ? f9fmkt::BSFlag::Calculated : f9fmkt::BSFlag{});
       symb->BS_.Data_.InfoTime_ = dealTime;
+      symb->BS_.Data_.Flags_ = (isCalc ? f9fmkt::BSFlag::Calculated : f9fmkt::BSFlag{});
       symb->BS_.Data_.Flags_ |= (f9fmkt::BSFlag::OrderBuy | f9fmkt::BSFlag::OrderSell);
       mdPQs = f9tws::AssignBS(symb->BS_.Data_.Buys_, mdPQs, (fmt6.ItemMask_ & 0x70) >> 4);
       mdPQs = f9tws::AssignBS(symb->BS_.Data_.Sells_, mdPQs, (fmt6.ItemMask_ & 0x0e) >> 1);
+
+      static_assert(f9sv_BSLmtFlag_UpLmtBuy == 0x20, "");
+      static_assert(f9sv_BSLmtFlag_DnLmtBuy == 0x10, "");
+      static_assert(f9sv_BSLmtFlag_UpLmtSell == 0x08, "");
+      static_assert(f9sv_BSLmtFlag_DnLmtSell == 0x04, "");
+      const auto bsLmtFlags = static_cast<f9sv_BSLmtFlag>(fmt6.LmtMask_ & (0x20 | 0x10 | 0x08 | 0x04));
+      if (symb->BS_.Data_.LmtFlags_ != bsLmtFlags) {
+         *rts.AllocPacket<uint8_t>() = fon9::cast_to_underlying(symb->BS_.Data_.LmtFlags_ = bsLmtFlags);
+         *rts.AllocPacket<uint8_t>() = fon9::cast_to_underlying(fon9::fmkt::RtBSSnapshotSpc::LmtFlags);
+      }
       if (hasDeal) {
          rtsPackType = f9fmkt::RtsPackType::DealBS;
          MdRtsPackSnapshotBS(rts, symb->BS_.Data_);
@@ -99,6 +154,8 @@ void ExgMdFmt6Handler::PkContOnReceived(const void* pkptr, unsigned pksz, SeqT s
       fon9::ToBitv(rts, symb->Deal_.Data_.Deal_.Qty_);
       fon9::ToBitv(rts, symb->Deal_.Data_.Deal_.Pri_);
       *rts.AllocPacket<uint8_t>() = 0; // = 1筆成交.
+      if (IsEnumContains(symb->Deal_.Data_.Flags_, f9fmkt::DealFlag::LmtFlagsChanged))
+         *rts.AllocPacket<uint8_t>() = fon9::cast_to_underlying(symb->Deal_.Data_.LmtFlags_);
       if (IsEnumContains(symb->Deal_.Data_.Flags_, f9fmkt::DealFlag::TotalQtyLost))
          fon9::ToBitv(rts, symb->Deal_.Data_.TotalQty_ - symb->Deal_.Data_.Deal_.Qty_);
       if (IsEnumContains(symb->Deal_.Data_.Flags_, f9fmkt::DealFlag::DealTimeChanged))

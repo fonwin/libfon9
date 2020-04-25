@@ -6,13 +6,30 @@
 
 namespace fon9 { namespace fmkt {
 
+enum class TwsBaseFlag : uint8_t {
+   MatchingMethodMask = 0x03,
+   /// 逐筆撮合.
+   ContinuousMarket = 0x01,
+   /// 集合競價.
+   AggregateAuction = 0x02,
+};
+fon9_ENABLE_ENUM_BITWISE_OP(TwsBaseFlag);
+/// 傳回:
+/// TwsBaseFlag::ContinuousMarket = 逐筆撮合;
+/// TwsBaseFlag::AggregateAuction = 集合競價;
+/// TwsBaseFlag{} 尚未提供此資訊;
+inline TwsBaseFlag GetMatchingMethod(TwsBaseFlag f) {
+   return f & TwsBaseFlag::MatchingMethodMask;
+}
+
 /// \ingroup fmkt
 /// 台灣證券預設的商品基本資料.
 /// - ShUnit
 struct SymbTwsBase {
    /// 台灣證券「一張」的單位數(股數)
-   uint32_t ShUnit_{0};
-   char     Padding___[4];
+   uint32_t    ShUnit_{0};
+   TwsBaseFlag TwsFlags_{};
+   char        Padding___[3];
 
    void SymbTwsBaseDailyClear() {
    }

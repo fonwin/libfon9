@@ -14,10 +14,10 @@ LayoutSP ExgMdSymb::MakeLayout() {
    constexpr auto kTabFlag = TabFlag::NoSapling_NoSeedCommand_Writable;
    return LayoutSP{new LayoutN(
       fon9_MakeField(Symb, SymbId_, "Id"), TreeFlag::AddableRemovable | TreeFlag::Unordered,
-      TabSP{new Tab{Named{fon9_kCSTR_TabName_Base},    MakeFields(),          kTabFlag}},
-      TabSP{new Tab{Named{fon9_kCSTR_TabName_Ref},     SymbRef_MakeFields(),  kTabFlag}},
-      TabSP{new Tab{Named{fon9_kCSTR_TabName_BS},      SymbBS_MakeFields(),   kTabFlag}},
-      TabSP{new Tab{Named{fon9_kCSTR_TabName_Deal},    SymbDeal_MakeFields(), kTabFlag}},
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_Base},    MakeFields(),            kTabFlag}},
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_Ref},     SymbRef_MakeFields(),    kTabFlag}},
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_BS},      SymbTwsBS_MakeFields(),  kTabFlag}},
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_Deal},    SymbTwsDeal_MakeFields(),kTabFlag}},
       f9fmkt_MAKE_TABS_OpenHighLow(),
       TabSP{new Tab{Named{fon9_kCSTR_TabName_BreakSt}, SymbBreakSt_MakeFieldsTws(), kTabFlag}},
       TabSP{new Tab{Named{fon9_kCSTR_TabName_Rt},      MdRtStream::MakeFields(),    kTabFlag}}

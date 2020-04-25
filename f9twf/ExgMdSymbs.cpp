@@ -30,8 +30,8 @@ fon9::seed::LayoutSP ExgMdSymb::MakeLayout() {
       fon9_MakeField(Symb, SymbId_, "Id"), TreeFlag::AddableRemovable | TreeFlag::Unordered,
       TabSP{new Tab{Named{fon9_kCSTR_TabName_Base}, MakeFields(),            kTabFlag}},
       TabSP{new Tab{Named{fon9_kCSTR_TabName_Ref},  TwfSymbRef_MakeFields(), kTabFlag}},
-      TabSP{new Tab{Named{fon9_kCSTR_TabName_BS},   SymbBS_MakeFields(),     kTabFlag}},
-      TabSP{new Tab{Named{fon9_kCSTR_TabName_Deal}, SymbDeal_MakeFields(),   kTabFlag}},
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_BS},   SymbTwfBS_MakeFields(),  kTabFlag}},
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_Deal}, SymbTwfDeal_MakeFields(),kTabFlag}},
       f9fmkt_MAKE_TABS_OpenHighLow(),
       TabSP{new Tab{Named{fon9_kCSTR_TabName_BreakSt}, SymbBreakSt_MakeFieldsTwf(),kTabFlag}},
       TabSP{new Tab{Named{fon9_kCSTR_TabName_Closing}, SymbFuoClosing_MakeFields(),kTabFlag}},
@@ -95,7 +95,7 @@ void ExgMdSymbs::OnAfterLoadFrom(Locker&& symbsLk) {
 }
 //--------------------------------------------------------------------------//
 f9twf_API const void* ExgMdToSnapshotBS(fon9::DayTime mdTime, unsigned mdCount, const ExgMdEntry* mdEntry,
-                                        fon9::fmkt::SymbBS& symbBS, uint32_t priceOrigDiv) {
+                                        fon9::fmkt::SymbTwfBS& symbBS, uint32_t priceOrigDiv) {
    symbBS.Data_.Clear(mdTime);
    for (unsigned mdL = 0; mdL < mdCount; ++mdL, ++mdEntry) {
       unsigned lv = fon9::PackBcdTo<unsigned>(mdEntry->Level_) - 1;
@@ -130,7 +130,7 @@ f9twf_API const void* ExgMdToSnapshotBS(fon9::DayTime mdTime, unsigned mdCount, 
    return mdEntry;
 }
 f9twf_API void ExgMdToUpdateBS(fon9::DayTime mdTime, unsigned mdCount, const ExgMcI081Entry* mdEntry,
-                               fon9::fmkt::SymbBS& symbBS, uint32_t priceOrigDiv) {
+                               fon9::fmkt::SymbTwfBS& symbBS, uint32_t priceOrigDiv) {
    symbBS.Data_.InfoTime_ = mdTime;
    symbBS.Data_.Flags_ = fon9::fmkt::BSFlag{};
    for (unsigned mdL = 0; mdL < mdCount; ++mdL, ++mdEntry) {

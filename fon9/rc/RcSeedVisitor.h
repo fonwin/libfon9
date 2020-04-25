@@ -281,7 +281,10 @@ typedef struct {
 /// 收到訂閱或查詢的資料.
 typedef struct {
    f9sv_Result    ResultCode_;
-   char           Padding___[4];
+   /// Stream 回報時提供, 由 Stream 定義內容.
+   /// 例如: MdRts 回報, ((uint8_t)StreamPackType_) == f9sv_RtsPackType
+   uint16_t       StreamPackType_;
+   char           Padding___[2];
    /// 使用者訂閱時自訂的編號.
    void*          UserData_;
    /// 查詢或訂閱時提供的 TreePath (已正規化: 移除多餘的 '/', '.' 之類).
