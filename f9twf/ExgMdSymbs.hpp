@@ -96,6 +96,13 @@ public:
    const ExgMdContracts& GetContracts(Locker&) const {
       return this->Contracts_;
    }
+
+   struct MdTreeOp : public MdSymbsOp {
+      fon9_NON_COPY_NON_MOVE(MdTreeOp);
+      using MdSymbsOp::MdSymbsOp;
+      void Get(fon9::StrView strKeyText, fon9::seed::FnPodOp fnCallback) override;
+   };
+   void OnTreeOp(fon9::seed::FnTreeOp fnCallback) override;
 };
 using ExgMdSymbsSP = fon9::intrusive_ptr<ExgMdSymbs>;
 //--------------------------------------------------------------------------//

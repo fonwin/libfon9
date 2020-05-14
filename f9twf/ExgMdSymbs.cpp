@@ -93,6 +93,47 @@ void ExgMdSymbs::OnAfterLoadFrom(Locker&& symbsLk) {
    (void)symbsLk;
    this->Contracts_.OnSymbsReload();
 }
+void ExgMdSymbs::OnTreeOp(fon9::seed::FnTreeOp fnCallback) {
+   MdTreeOp op{*this};
+   fnCallback(fon9::seed::TreeOpResult{this, fon9::seed::OpResult::no_error}, &op);
+}
+void ExgMdSymbs::MdTreeOp::Get(fon9::StrView strKeyText, fon9::seed::FnPodOp fnCallback) {
+   Locker lockedMap{static_cast<SymbTreeT*>(&this->Tree_)->SymbMap_};
+   auto   symb = static_cast<ExgMdSymbs*>(&this->Tree_)->GetSymb(lockedMap, strKeyText);
+   // 如果 strKeyText 為正確的複式單 Id (例: "TXFB0/C0" or "MXFC6/MX4C6"),
+   // 但商品不存在,
+   // => 可能尚未收到行情資料.
+   // => 此時應建立此複式商品.
+   const char* const id1 = strKeyText.begin();
+   const auto        idLen = strKeyText.size();
+   if (fon9_UNLIKELY(!symb && id1[5] == '/' && (idLen == 8 || idLen == 11))) {
+      // 2腳的商品都必須存在, 且 Leg1.Id < Leg2.Id (需注意跨年問題)
+      char  id2buf[5];
+      const char* id2;
+      if (idLen == 11)
+         id2 = id1 + 6;
+      else {
+         memcpy(id2buf, id1, 3);
+         memcpy(id2buf + 3, id1 + 6, 2);
+         id2 = id2buf;
+      }
+      auto leg1 = static_cast<ExgMdSymbs*>(&this->Tree_)->GetSymb(lockedMap, fon9::StrView{id1,5});
+      auto leg2 = static_cast<ExgMdSymbs*>(&this->Tree_)->GetSymb(lockedMap, fon9::StrView{id2,5});
+      if (leg1 && leg2
+          && static_cast<ExgMdSymb*>(leg1.get())->EndYYYYMMDD_ < static_cast<ExgMdSymb*>(leg2.get())->EndYYYYMMDD_) {
+         symb = static_cast<ExgMdSymbs*>(&this->Tree_)->FetchSymb(lockedMap, strKeyText);
+         if (symb) {
+            symb->TDayYYYYMMDD_ = leg1->TDayYYYYMMDD_;
+            symb->TradingMarket_ = leg1->TradingMarket_;
+            symb->TradingSessionId_ = leg1->TradingSessionId_;
+            symb->TradingSessionSt_ = leg1->TradingSessionSt_;
+            *static_cast<fon9::fmkt::SymbTwfBase*>(static_cast<ExgMdSymb*>(symb.get()))
+               = *static_cast<fon9::fmkt::SymbTwfBase*>(static_cast<ExgMdSymb*>(leg1.get()));
+         }
+      }
+   }
+   this->OnPodOp(strKeyText, std::move(symb), std::move(fnCallback), lockedMap);
+}
 //--------------------------------------------------------------------------//
 f9twf_API const void* ExgMdToSnapshotBS(fon9::DayTime mdTime, unsigned mdCount, const ExgMdEntry* mdEntry,
                                         fon9::fmkt::SymbTwfBS& symbBS, uint32_t priceOrigDiv) {

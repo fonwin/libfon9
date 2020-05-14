@@ -111,7 +111,7 @@ inline auto HEXToStrRev(char* pout, IntT value) -> decltype(HEXToStrRev(pout, st
 }
 
 inline char* PtrToStrRev(char* pout, const void* value) {
-   return HexToStrRev(pout, reinterpret_cast<uintmax_t>(value));
+   return HexToStrRev(pout, reinterpret_cast<uintptr_t>(value));
 }
 
 //--------------------------------------------------------------------------//
