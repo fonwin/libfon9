@@ -79,6 +79,8 @@ extern "C" {
       f9sv_BSLmtFlag_DnLmtSell = 0x04,
    };
 
+   /// fon9/fmkt/MdRtsTypes.hpp
+   /// enum class RtsPackType : uint8_t;
    fon9_ENUM(f9sv_RtsPackType, uint8_t) {
       /// 打包成交明細, 一個 DealPack 可能觸發多次「交易明細」異動事件.
       f9sv_RtsPackType_DealPack,

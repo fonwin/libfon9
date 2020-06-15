@@ -12,6 +12,7 @@ namespace f9sv
    /// 小數位數.
    using DecScale = System.Byte;
    using TabSize = System.UInt32;
+   using SvIndex = System.Int32;
 
    /// fon9 SeedVisitor 的基本命名物件.
    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
@@ -20,7 +21,7 @@ namespace f9sv
       public fon9.CStrView Name_;
       public fon9.CStrView Title_;
       public fon9.CStrView Description_;
-      public int Index_;
+      public SvIndex Index_;
       UInt32 Padding___;
    }
 
@@ -246,6 +247,16 @@ namespace f9sv
       ///   - 此時可用 SeedArray_[bsTabIdx] 取得「上次買賣報價」的內容.
       ///   - 取得 Tab 的方式: (Tab_ - Tab_->Named_.Index_)[bsTabIdx];
       public IntPtr SeedArray_;
+      /// 由回報提供者額外提供的識別資料.
+      /// 例如:
+      ///   - ((f9sv.RtsPackType)StreamPackType_) ==
+      ///      f9sv.RtsPackType.FieldValue_NoInfoTime,
+      ///      f9sv.RtsPackType.FieldValue_AndInfoTime;
+      ///     - 則此處為 Int32* fields = ((Int32*)StreamPackExArgs_);
+      ///     - N = fields[0] = 異動的欄位數量;
+      ///     - fields[1..N] = 異動的欄位索引.
+      public IntPtr StreamPackExArgs_;
+
       public unsafe IntPtr IndexSeed(int idx)
       {
          if (this.SeedArray_ == IntPtr.Zero)

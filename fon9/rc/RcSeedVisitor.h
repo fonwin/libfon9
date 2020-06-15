@@ -9,12 +9,14 @@
 extern "C" {
 #endif
 
+typedef int32_t   f9sv_Index;
+   
 /// fon9 SeedVisitor 的基本命名物件.
 typedef struct {
    fon9_CStrView  Name_;
    fon9_CStrView  Title_;
    fon9_CStrView  Description_;
-   int            Index_;
+   f9sv_Index     Index_;
    char           Padding___[4];
 } f9sv_Named;
 
@@ -302,6 +304,15 @@ typedef struct {
    ///   - 此時可用 SeedArray_[bsTabIdx] 取得「上次買賣報價」的內容.
    ///   - 取得 Tab 的方式: (Tab_ - Tab_->Named_.Index_)[bsTabIdx];
    const struct f9sv_Seed** SeedArray_;
+   /// 由回報提供者額外提供的識別資料.
+   /// 例如:
+   ///   - ((uint8_t)StreamPackType_) ==
+   ///      f9sv_RtsPackType_FieldValue_NoInfoTime,
+   ///      f9sv_RtsPackType_FieldValue_AndInfoTime;
+   ///     - 則此處為 const f9sv_Index* fields = ((const f9sv_Index*)StreamPackExArgs_);
+   ///     - N = fields[0] = 異動的欄位數量;
+   ///     - fields[1..N] = 異動的欄位索引.
+   uintptr_t   StreamPackExArgs_;
 } f9sv_ClientReport;
 
 /// 通知收到 SeedVisitor 的: 查詢結果、訂閱結果、訂閱訊息...

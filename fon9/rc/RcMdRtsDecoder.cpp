@@ -797,15 +797,19 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder, public RcSvStreamDeco
       }
    }
    void DecodeFieldValue_NoInfoTime(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {
-      auto     fnOnReport = rx.SubrSeedRec_->Handler_.FnOnReport_;
-      BaseAux  dec{rx};
-      auto     nTabFld = ReadOrRaise<uint8_t>(rxbuf);
+      auto        fnOnReport = rx.SubrSeedRec_->Handler_.FnOnReport_;
+      BaseAux     dec{rx};
+      auto        nTabFld = ReadOrRaise<uint8_t>(rxbuf);
+      f9sv_Index  fldIdxList[32];
+      rpt.StreamPackExArgs_ = reinterpret_cast<uintptr_t>(&fldIdxList[0]);
       while (!rxbuf.empty()) {
          auto const  tabidx = unsigned_cast(nTabFld >> 4);
          auto* const tab = rx.SubrRec_->Tree_->Layout_->GetTab(tabidx);
          assert(tab != nullptr);
+         fldIdxList[0] = 0;
          do {
-            auto  fldidx = unsigned_cast(nTabFld & 0x0f);
+            const auto  fldidx = unsigned_cast(nTabFld & 0x0f);
+            fldIdxList[++fldIdxList[0]] = fldidx;
             seed::SimpleRawWr wr{dec.SetRptTabSeed(rx, rpt, tabidx)};
             FieldBitvToCell(rx, rxbuf, tab->Fields_.Get(fldidx), wr);
             if (rxbuf.empty())
