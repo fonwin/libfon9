@@ -15,7 +15,7 @@ class fon9_API MdRtStream : public SymbData {
    InnApf::StreamRW  RtStorage_;
    InnApf::SizeT     RtStorageSize_;
    DayTime           InfoTime_{DayTime::Null()};
-   MdRtsKind         InfoTimeKind_{};
+   f9sv_MdRtsKind    InfoTimeKind_{};
    uint32_t          LastTimeSnapshotBS_{};
 
    void Save(RevBufferList&& rts);
@@ -30,7 +30,7 @@ class fon9_API MdRtStream : public SymbData {
    /// - 執行底下工作:
    ///   this->Publish();
    ///   this->OpenRtStorage();
-   ///   this->Save(RtsPackType::TradingSessionId);
+   ///   this->Save(f9sv_RtsPackType_TradingSessionId);
    void OnSessionChanged(const Symb& symb);
 
 public:
@@ -70,12 +70,12 @@ public:
 
    /// 打包並發行:
    /// pkType + infoTime(Bitv,Null表示InfoTime沒變) + rts;
-   void Publish(const StrView& keyText, RtsPackType pkType, DayTime infoTime, RevBufferList&& rts);
+   void Publish(const StrView& keyText, f9sv_RtsPackType pkType, DayTime infoTime, RevBufferList&& rts);
    void PublishUpdateBS(const StrView& keyText, SymbBSData& symbBS, RevBufferList&& rts);
 
    /// 先把 pkType 打包進 rts: *rts.AllocPacket<uint8_t>() = cast_to_underlying(pkType);
    /// 然後: 發行 & 儲存.
-   void PublishAndSave(const StrView& keyText, RtsPackType pkType, RevBufferList&& rts);
+   void PublishAndSave(const StrView& keyText, f9sv_RtsPackType pkType, RevBufferList&& rts);
 };
 //--------------------------------------------------------------------------//
 class fon9_API MdRtsNotifyArgs : public seed::SeedNotifyArgs {
@@ -83,7 +83,7 @@ class fon9_API MdRtsNotifyArgs : public seed::SeedNotifyArgs {
    using base = seed::SeedNotifyArgs;
 public:
    const BufferNode* const RtsForGvStr_;
-   MdRtsNotifyArgs(seed::Tree& tree, const StrView& keyText, MdRtsKind rtsKind, RevBufferList& rts)
+   MdRtsNotifyArgs(seed::Tree& tree, const StrView& keyText, f9sv_MdRtsKind rtsKind, RevBufferList& rts)
       : base(tree, nullptr/*tab*/, keyText, rtsKind)
       , RtsForGvStr_{rts.cfront()} {
    }

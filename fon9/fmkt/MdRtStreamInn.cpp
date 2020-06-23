@@ -148,8 +148,8 @@ void MdRtRecover::OnTimer(TimeStamp now) {
             if (pksz <= 0)
                continue;
             // 檢查是否需要回補: pkRtsKind, infoTime.
-            const MdRtsKind pkRtsKind = GetMdRtsKind(static_cast<RtsPackType>(*dcq.Peek1()));
-            if (IsEnumContains(pkRtsKind, MdRtsKind::NoInfoTime)) {
+            const f9sv_MdRtsKind pkRtsKind = GetMdRtsKind(static_cast<f9sv_RtsPackType>(*dcq.Peek1()));
+            if (IsEnumContains(pkRtsKind, f9sv_MdRtsKind_NoInfoTime)) {
                if (!this->IsStarted_)
                   goto __SKIP_PK;
             }

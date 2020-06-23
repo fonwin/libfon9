@@ -13,15 +13,15 @@ struct RtsMdMatchParser {
    fon9::RevBufferList  Rts_;
    ExgMdSymb&           Symb_;
    MdQty                SumQty_{};
-   f9fmkt::DealFlag     Flags_;
+   f9sv_DealFlag        Flags_;
    char                 Padding___[3];
    RtsMdMatchParser(unsigned pksz, ExgMdSymb& symb, bool isCalc)
       : Rts_{pksz}
       , Symb_(symb)
-      , Flags_{isCalc ? f9fmkt::DealFlag::Calculated : f9fmkt::DealFlag{}} {
+      , Flags_{isCalc ? f9sv_DealFlag_Calculated : f9sv_DealFlag{}} {
    }
    void OnParsedAMatch(const f9fmkt::PriQty& dst) {
-      if (!IsEnumContains(this->Flags_, f9fmkt::DealFlag::Calculated))
+      if (!IsEnumContains(this->Flags_, f9sv_DealFlag_Calculated))
          this->Symb_.CheckOHL(dst.Pri_, this->Symb_.Deal_.Data_.DealTime_);
       fon9::ToBitv(this->Rts_, dst.Qty_);
       fon9::ToBitv(this->Rts_, dst.Pri_);
@@ -37,7 +37,7 @@ struct RtsMdMatchParser {
       dst.Qty_ = fon9::PackBcdTo<MdQty>(md.MatchQty_);
       this->OnParsedAMatch(dst);
    }
-   void CheckFieldChanged(f9fmkt::DealFlag flag, f9fmkt::Qty& dst, MdQty src) {
+   void CheckFieldChanged(f9sv_DealFlag flag, f9fmkt::Qty& dst, MdQty src) {
       if (dst == src)
          return;
       dst = src;
@@ -61,8 +61,8 @@ f9twf_API void I024MatchParserToRts(ExgMcMessage& e) {
    const ExgMdMatchCnt*  pcnt = reinterpret_cast<const ExgMdMatchCnt*>(pdat);
    RtsMdMatchParser      parser(e.PkSize_, symb, (pk.CalculatedFlag_ == '1'));
    using MdQty = RtsMdMatchParser::MdQty;
-   parser.CheckFieldChanged(f9fmkt::DealFlag::DealSellCntChanged, symb.Deal_.Data_.DealSellCnt_, fon9::PackBcdTo<MdQty>(pcnt->MatchSellCnt_));
-   parser.CheckFieldChanged(f9fmkt::DealFlag::DealBuyCntChanged, symb.Deal_.Data_.DealBuyCnt_, fon9::PackBcdTo<MdQty>(pcnt->MatchBuyCnt_));
+   parser.CheckFieldChanged(f9sv_DealFlag_DealSellCntChanged, symb.Deal_.Data_.DealSellCnt_, fon9::PackBcdTo<MdQty>(pcnt->MatchSellCnt_));
+   parser.CheckFieldChanged(f9sv_DealFlag_DealBuyCntChanged, symb.Deal_.Data_.DealBuyCnt_, fon9::PackBcdTo<MdQty>(pcnt->MatchBuyCnt_));
    // 由於 symb.Deal_ 沒有每次異動的事件通知, 所以只要填入最後一筆就好.
    // 但仍要將成交明細傳給 MdRtStream.
    if (count <= 0)
@@ -77,24 +77,24 @@ f9twf_API void I024MatchParserToRts(ExgMcMessage& e) {
    *parser.Rts_.AllocPacket<uint8_t>() = count;
 
    const MdQty mTotQty = fon9::PackBcdTo<MdQty>(pcnt->MatchTotalQty_);
-   if (IsEnumContains(parser.Flags_, f9fmkt::DealFlag::Calculated)) {
+   if (IsEnumContains(parser.Flags_, f9sv_DealFlag_Calculated)) {
       assert(mTotQty == 0);
-      parser.CheckFieldChanged(f9fmkt::DealFlag::TotalQtyLost, symb.Deal_.Data_.TotalQty_, 0);
+      parser.CheckFieldChanged(f9sv_DealFlag_TotalQtyLost, symb.Deal_.Data_.TotalQty_, 0);
    }
    else {
-      parser.CheckFieldChanged(f9fmkt::DealFlag::TotalQtyLost, symb.Deal_.Data_.TotalQty_, mTotQty - parser.SumQty_);
+      parser.CheckFieldChanged(f9sv_DealFlag_TotalQtyLost, symb.Deal_.Data_.TotalQty_, mTotQty - parser.SumQty_);
    }
    symb.Deal_.Data_.TotalQty_ = mTotQty;
 
    if (symb.Deal_.Data_.DealTime_ != bfDealTime) {
-      parser.Flags_ |= f9fmkt::DealFlag::DealTimeChanged;
+      parser.Flags_ |= f9sv_DealFlag_DealTimeChanged;
       if (symb.Deal_.Data_.DealTime_ == symb.Deal_.Data_.InfoTime_)
          fon9::RevPutBitv(parser.Rts_, fon9_BitvV_NumberNull);
       else
          fon9::ToBitv(parser.Rts_, symb.Deal_.Data_.DealTime_);
    }
    *parser.Rts_.AllocPacket<uint8_t>() = fon9::cast_to_underlying(parser.Flags_);
-   symb.MdRtStream_.Publish(ToStrView(symb.SymbId_), f9fmkt::RtsPackType::DealPack,
+   symb.MdRtStream_.Publish(ToStrView(symb.SymbId_), f9sv_RtsPackType_DealPack,
                             symb.Deal_.Data_.InfoTime_, std::move(parser.Rts_));
 }
 

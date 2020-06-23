@@ -69,7 +69,7 @@ f9twf_API void I083BSParser(ExgMcMessage& e) {
                         pk.MdEntry_,
                         *e.Symb_);
       if (pk.CalculatedFlag_ == '1')
-         e.Symb_->BS_.Data_.Flags_ |= f9fmkt::BSFlag::Calculated;
+         e.Symb_->BS_.Data_.Flags_ |= f9sv_BSFlag_Calculated;
    }
 }
 //--------------------------------------------------------------------------//

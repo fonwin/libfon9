@@ -67,7 +67,7 @@ private:
    ConfigFileBinder     ConfigFileBinder_;
    SubConn              SubConnDev_;
    SubConn              SubConnSes_;
-   friend class IoManager;
+
    void NotifyChanged(DeviceItem&) override;
    void NotifyChanged(DeviceRun&) override;
 

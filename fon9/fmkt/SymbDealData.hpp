@@ -3,30 +3,12 @@
 #ifndef __fon9_fmkt_SymbDealData_hpp__
 #define __fon9_fmkt_SymbDealData_hpp__
 #include "fon9/fmkt/FmktTypes.hpp"
-#include "fon9/rc/RcMdRtsDecoder.h"
+#include "fon9/fmkt/FmdTypes.h"
 #include "fon9/TimeStamp.hpp"
 
+fon9_ENABLE_ENUM_BITWISE_OP(f9sv_DealFlag);
+
 namespace fon9 { namespace fmkt {
-
-enum class DealFlag : uint8_t {
-   /// 試撮價格訊息.
-   /// 何時可能會有試撮? 開盤前, 收盤前, 瞬間漲跌幅過大暫停交易期間(保險絲熔斷機制)...
-   Calculated = 0x01,
-
-   /// 成交時間有異動.
-   DealTimeChanged = 0x02,
-   /// DealBuyCnt 有異動.
-   DealBuyCntChanged = 0x04,
-   /// DealSellCnt 有異動.
-   DealSellCntChanged = 0x08,
-
-   /// TotalQty 不連續, 藉此判斷是否有遺漏成交明細.
-   TotalQtyLost = 0x10,
-
-   /// LmtFlags 欄位有異動.
-   LmtFlagsChanged = 0x20,
-};
-fon9_ENABLE_ENUM_BITWISE_OP(DealFlag);
 
 struct SymbDealData {
    /// 資訊時間(行情系統時間).
@@ -46,9 +28,10 @@ struct SymbDealData {
    Qty      DealBuyCnt_{};
    /// 累計賣出成交筆數.
    Qty      DealSellCnt_{};
-   DealFlag Flags_{};
 
-   /// 由資訊來源提供, 若沒提供則為 0, 核心系統不會主動與 今日漲跌停 比對.
+   f9sv_DealFlag Flags_{};
+
+   /// 由資訊來源提供, 若沒提供則為 0, 核心系統「不會主動」與「今日漲跌停」比對.
    f9sv_DealLmtFlag  LmtFlags_;
 
    char     Padding___[6];

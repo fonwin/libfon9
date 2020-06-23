@@ -146,21 +146,21 @@ f9twf_API const void* ExgMdToSnapshotBS(fon9::DayTime mdTime, unsigned mdCount, 
          if (lv >= symbBS.Data_.kBSCount)
             continue;
          dst = symbBS.Data_.Buys_ + lv;
-         symbBS.Data_.Flags_ |= fon9::fmkt::BSFlag::OrderBuy;
+         symbBS.Data_.Flags_ |= f9sv_BSFlag_OrderBuy;
          break;
       case '1':
          if (lv >= symbBS.Data_.kBSCount)
             continue;
          dst = symbBS.Data_.Sells_ + lv;
-         symbBS.Data_.Flags_ |= fon9::fmkt::BSFlag::OrderSell;
+         symbBS.Data_.Flags_ |= f9sv_BSFlag_OrderSell;
          break;
       case 'E':
          dst = &symbBS.Data_.DerivedBuy_;
-         symbBS.Data_.Flags_ |= fon9::fmkt::BSFlag::DerivedBuy;
+         symbBS.Data_.Flags_ |= f9sv_BSFlag_DerivedBuy;
          break;
       case 'F':
          dst = &symbBS.Data_.DerivedSell_;
-         symbBS.Data_.Flags_ |= fon9::fmkt::BSFlag::DerivedSell;
+         symbBS.Data_.Flags_ |= f9sv_BSFlag_DerivedSell;
          break;
       default:
          continue;
@@ -173,29 +173,29 @@ f9twf_API const void* ExgMdToSnapshotBS(fon9::DayTime mdTime, unsigned mdCount, 
 f9twf_API void ExgMdToUpdateBS(fon9::DayTime mdTime, unsigned mdCount, const ExgMcI081Entry* mdEntry,
                                fon9::fmkt::SymbTwfBS& symbBS, uint32_t priceOrigDiv) {
    symbBS.Data_.InfoTime_ = mdTime;
-   symbBS.Data_.Flags_ = fon9::fmkt::BSFlag{};
+   symbBS.Data_.Flags_ = f9sv_BSFlag{};
    for (unsigned mdL = 0; mdL < mdCount; ++mdL, ++mdEntry) {
       unsigned lv = fon9::PackBcdTo<unsigned>(mdEntry->Level_) - 1;
       fon9::fmkt::PriQty* dst;
       unsigned dstCount;
       switch (mdEntry->EntryType_) {
       case '0':
-         symbBS.Data_.Flags_ |= fon9::fmkt::BSFlag::OrderBuy;
+         symbBS.Data_.Flags_ |= f9sv_BSFlag_OrderBuy;
          dst = symbBS.Data_.Buys_;
          dstCount = symbBS.Data_.kBSCount;
          break;
       case '1':
-         symbBS.Data_.Flags_ |= fon9::fmkt::BSFlag::OrderSell;
+         symbBS.Data_.Flags_ |= f9sv_BSFlag_OrderSell;
          dst = symbBS.Data_.Sells_;
          dstCount = symbBS.Data_.kBSCount;
          break;
       case 'E':
-         symbBS.Data_.Flags_ |= fon9::fmkt::BSFlag::DerivedBuy;
+         symbBS.Data_.Flags_ |= f9sv_BSFlag_DerivedBuy;
          dst = &symbBS.Data_.DerivedBuy_;
          dstCount = 1;
          break;
       case 'F':
-         symbBS.Data_.Flags_ |= fon9::fmkt::BSFlag::DerivedSell;
+         symbBS.Data_.Flags_ |= f9sv_BSFlag_DerivedSell;
          dst = &symbBS.Data_.DerivedSell_;
          dstCount = 1;
          break;

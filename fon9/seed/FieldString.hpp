@@ -35,10 +35,10 @@ public:
    using ValueT = StringT;
 
    /// 建構, 固定為:
-   /// - FieldType::Chars;
+   /// - f9sv_FieldType_Chars;
    /// - StringT 只能是 data member(不可是 DyMem), 所以 FieldSource 固定為 DataMember;
    FieldString(Named&& named, int32_t ofs)
-      : base{std::move(named), FieldType::Chars, FieldSource::DataMember, ofs, sizeof(StringT), 0} {
+      : base{std::move(named), f9sv_FieldType_Chars, FieldSource::DataMember, ofs, sizeof(StringT), 0} {
    }
 
    StrView GetValue(const RawRd& rd) const {

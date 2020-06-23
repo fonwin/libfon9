@@ -22,7 +22,7 @@ void ExgMdFmt9Handler::OnPkReceived(const ExgMdHeader& pkhdr, unsigned pksz) {
       return;
 
    symb->Deal_.Data_.DealTime_ = symb->Deal_.Data_.InfoTime_ = dealTime;
-   symb->Deal_.Data_.Flags_ = f9fmkt::DealFlag::DealTimeChanged;
+   symb->Deal_.Data_.Flags_ = f9sv_DealFlag_DealTimeChanged;
    fmt9.DealPQ_.AssignTo(symb->Deal_.Data_.Deal_);
    symb->Deal_.Data_.TotalQty_ += symb->Deal_.Data_.Deal_.Qty_;
    symb->CheckOHL(symb->Deal_.Data_.Deal_.Pri_, dealTime);
@@ -33,7 +33,7 @@ void ExgMdFmt9Handler::OnPkReceived(const ExgMdHeader& pkhdr, unsigned pksz) {
    *rts.AllocPacket<uint8_t>() = 0; // = 1筆成交.
    fon9::RevPutBitv(rts, fon9_BitvV_NumberNull); // DealTime = InfoTime;
    *rts.AllocPacket<uint8_t>() = fon9::cast_to_underlying(symb->Deal_.Data_.Flags_);
-   symb->MdRtStream_.Publish(ToStrView(symb->SymbId_), f9fmkt::RtsPackType::DealPack,
+   symb->MdRtStream_.Publish(ToStrView(symb->SymbId_), f9sv_RtsPackType_DealPack,
                              dealTime, std::move(rts));
 }
 

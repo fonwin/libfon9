@@ -20,7 +20,7 @@ f9twf_API void I081BSParserToRts(ExgMcMessage& e) {
    const auto* mdEntry = pk.MdEntry_;
    auto&       symbBS = e.Symb_->BS_;
    symbBS.Data_.InfoTime_ = e.Pk_.InformationTime_.ToDayTime();
-   symbBS.Data_.Flags_ = BSFlag{};
+   symbBS.Data_.Flags_ = f9sv_BSFlag{};
    uint8_t  uCount = 0;
    Pri      mdPri;
 
@@ -42,25 +42,25 @@ f9twf_API void I081BSParserToRts(ExgMcMessage& e) {
       switch (mdEntry->EntryType_) {
       case '0':
          bsType = cast_to_underlying(RtBSType::OrderBuy);
-         symbBS.Data_.Flags_ |= BSFlag::OrderBuy;
+         symbBS.Data_.Flags_ |= f9sv_BSFlag_OrderBuy;
          dst = symbBS.Data_.Buys_;
          dstCount = symbBS.Data_.kBSCount;
          break;
       case '1':
          bsType = cast_to_underlying(RtBSType::OrderSell);
-         symbBS.Data_.Flags_ |= BSFlag::OrderSell;
+         symbBS.Data_.Flags_ |= f9sv_BSFlag_OrderSell;
          dst = symbBS.Data_.Sells_;
          dstCount = symbBS.Data_.kBSCount;
          break;
       case 'E':
          bsType = cast_to_underlying(RtBSType::DerivedBuy);
-         symbBS.Data_.Flags_ |= BSFlag::DerivedBuy;
+         symbBS.Data_.Flags_ |= f9sv_BSFlag_DerivedBuy;
          dst = &symbBS.Data_.DerivedBuy_;
          dstCount = 1;
          break;
       case 'F':
          bsType = cast_to_underlying(RtBSType::DerivedSell);
-         symbBS.Data_.Flags_ |= BSFlag::DerivedSell;
+         symbBS.Data_.Flags_ |= f9sv_BSFlag_DerivedSell;
          dst = &symbBS.Data_.DerivedSell_;
          dstCount = 1;
          break;
@@ -125,9 +125,9 @@ f9twf_API void I083BSParserToRts(ExgMcMessage& e) {
       return;
    ExgMdToSnapshotBS(e.Pk_.InformationTime_.ToDayTime(), PackBcdTo<unsigned>(pk.NoMdEntries_), pk.MdEntry_, *e.Symb_);
    auto&       symbBS = e.Symb_->BS_;
-   const auto  pkType = (pk.CalculatedFlag_ == '1' ? RtsPackType::CalculatedBS : RtsPackType::SnapshotBS);
-   if (pkType == RtsPackType::CalculatedBS)
-      symbBS.Data_.Flags_ |= BSFlag::Calculated;
+   const auto  pkType = (pk.CalculatedFlag_ == '1' ? f9sv_RtsPackType_CalculatedBS : f9sv_RtsPackType_SnapshotBS);
+   if (pkType == f9sv_RtsPackType_CalculatedBS)
+      symbBS.Data_.Flags_ |= f9sv_BSFlag_Calculated;
    RevBufferList rbuf{128};
    MdRtsPackSnapshotBS(rbuf, symbBS.Data_);
    e.Symb_->MdRtStream_.Publish(ToStrView(e.Symb_->SymbId_), pkType, symbBS.Data_.InfoTime_, std::move(rbuf));

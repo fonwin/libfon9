@@ -6,38 +6,38 @@
 
 namespace fon9 { namespace fmkt {
 
-fon9_API MdRtsKind GetMdRtsKind(RtsPackType pkType) {
-   static constexpr MdRtsKind RtsPackType2MdRtsKind[] = {
-      MdRtsKind::Deal,
-      MdRtsKind::BS,
-      MdRtsKind::BS,
-      MdRtsKind::BS,
-      MdRtsKind::TradingSession,
-      MdRtsKind::Base | MdRtsKind::Ref,
-      MdRtsKind::Deal | MdRtsKind::BS,
-      MdRtsKind::All,   // SnapshotSymbList_NoInfoTime
-      MdRtsKind::Deal,  // IndexValueV2
-      MdRtsKind::Deal,  // IndexValueV2List
-      MdRtsKind::All,   // FieldValue_NoInfoTime: 因為不確定要更新哪個欄位, 所以只好視為全部都有可能.
-      MdRtsKind::All - MdRtsKind::NoInfoTime,
-      MdRtsKind::All,   // TabValues_NoInfoTime:  因為不確定要更新哪個Tab, 所以只好視為全部都有可能.
-      MdRtsKind::All - MdRtsKind::NoInfoTime,
+fon9_API f9sv_MdRtsKind GetMdRtsKind(f9sv_RtsPackType pkType) {
+   static constexpr f9sv_MdRtsKind RtsPackType2MdRtsKind[] = {
+      f9sv_MdRtsKind_Deal,
+      f9sv_MdRtsKind_BS,
+      f9sv_MdRtsKind_BS,
+      f9sv_MdRtsKind_BS,
+      f9sv_MdRtsKind_TradingSession,
+      f9sv_MdRtsKind_Base | f9sv_MdRtsKind_Ref,
+      f9sv_MdRtsKind_Deal | f9sv_MdRtsKind_BS,
+      f9sv_MdRtsKind_All,   // SnapshotSymbList_NoInfoTime
+      f9sv_MdRtsKind_Deal,  // IndexValueV2
+      f9sv_MdRtsKind_Deal,  // IndexValueV2List
+      f9sv_MdRtsKind_All,   // FieldValue_NoInfoTime: 因為不確定要更新哪個欄位, 所以只好視為全部都有可能.
+      f9sv_MdRtsKind_All - f9sv_MdRtsKind_NoInfoTime,
+      f9sv_MdRtsKind_All,   // TabValues_NoInfoTime:  因為不確定要更新哪個Tab, 所以只好視為全部都有可能.
+      f9sv_MdRtsKind_All - f9sv_MdRtsKind_NoInfoTime,
    };
-   static_assert(numofele(RtsPackType2MdRtsKind) == cast_to_underlying(RtsPackType::Count), "");
-   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::DealPack)] == MdRtsKind::Deal, "");
-   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::SnapshotBS)] == MdRtsKind::BS, "");
-   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::CalculatedBS)] == MdRtsKind::BS, "");
-   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::UpdateBS)] == MdRtsKind::BS, "");
-   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::TradingSessionId)] == MdRtsKind::TradingSession, "");
-   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::BaseInfoTw)] == (MdRtsKind::Base | MdRtsKind::Ref), "");
-   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::DealBS)] == (MdRtsKind::Deal | MdRtsKind::BS), "");
-   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::SnapshotSymbList_NoInfoTime)] == MdRtsKind::All, "");
-   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::IndexValueV2)] == MdRtsKind::Deal, "");
-   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::IndexValueV2List)] == MdRtsKind::Deal, "");
-   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::FieldValue_NoInfoTime)] == MdRtsKind::All, "");
-   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::FieldValue_AndInfoTime)] == MdRtsKind::All - MdRtsKind::NoInfoTime, "");
-   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::TabValues_NoInfoTime)] == MdRtsKind::All, "");
-   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(RtsPackType::TabValues_AndInfoTime)] == MdRtsKind::All - MdRtsKind::NoInfoTime, "");
+   static_assert(numofele(RtsPackType2MdRtsKind) == cast_to_underlying(f9sv_RtsPackType_Count), "");
+   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(f9sv_RtsPackType_DealPack)] == f9sv_MdRtsKind_Deal, "");
+   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(f9sv_RtsPackType_SnapshotBS)] == f9sv_MdRtsKind_BS, "");
+   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(f9sv_RtsPackType_CalculatedBS)] == f9sv_MdRtsKind_BS, "");
+   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(f9sv_RtsPackType_UpdateBS)] == f9sv_MdRtsKind_BS, "");
+   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(f9sv_RtsPackType_TradingSessionId)] == f9sv_MdRtsKind_TradingSession, "");
+   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(f9sv_RtsPackType_BaseInfoTw)] == (f9sv_MdRtsKind_Base | f9sv_MdRtsKind_Ref), "");
+   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(f9sv_RtsPackType_DealBS)] == (f9sv_MdRtsKind_Deal | f9sv_MdRtsKind_BS), "");
+   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(f9sv_RtsPackType_SnapshotSymbList_NoInfoTime)] == f9sv_MdRtsKind_All, "");
+   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(f9sv_RtsPackType_IndexValueV2)] == f9sv_MdRtsKind_Deal, "");
+   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(f9sv_RtsPackType_IndexValueV2List)] == f9sv_MdRtsKind_Deal, "");
+   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(f9sv_RtsPackType_FieldValue_NoInfoTime)] == f9sv_MdRtsKind_All, "");
+   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(f9sv_RtsPackType_FieldValue_AndInfoTime)] == f9sv_MdRtsKind_All - f9sv_MdRtsKind_NoInfoTime, "");
+   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(f9sv_RtsPackType_TabValues_NoInfoTime)] == f9sv_MdRtsKind_All, "");
+   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(f9sv_RtsPackType_TabValues_AndInfoTime)] == f9sv_MdRtsKind_All - f9sv_MdRtsKind_NoInfoTime, "");
 
    return RtsPackType2MdRtsKind[cast_to_underlying(pkType)];
 }
@@ -71,13 +71,13 @@ static bool MdRtsPackOrderBS(RevBuffer& rbuf, RtBSType bsType, const PriQty* pqs
 
 fon9_API void MdRtsPackSnapshotBS(RevBuffer& rbuf, const SymbBSData& symbBS) {
    const auto  curFlags = symbBS.Flags_;
-   if (IsEnumContains(curFlags, BSFlag::DerivedSell))
+   if (IsEnumContains(curFlags, f9sv_BSFlag_DerivedSell))
       MdRtsPackSingleBS(rbuf, RtBSType::DerivedSell, static_cast<const SymbTwfBSData*>(&symbBS)->DerivedSell_);
-   if (IsEnumContains(curFlags, BSFlag::DerivedBuy))
+   if (IsEnumContains(curFlags, f9sv_BSFlag_DerivedBuy))
       MdRtsPackSingleBS(rbuf, RtBSType::DerivedBuy, static_cast<const SymbTwfBSData*>(&symbBS)->DerivedBuy_);
-   if (IsEnumContains(curFlags, BSFlag::OrderSell))
+   if (IsEnumContains(curFlags, f9sv_BSFlag_OrderSell))
       MdRtsPackOrderBS(rbuf, RtBSType::OrderSell, symbBS.Sells_);
-   if (IsEnumContains(curFlags, BSFlag::OrderBuy))
+   if (IsEnumContains(curFlags, f9sv_BSFlag_OrderBuy))
       MdRtsPackOrderBS(rbuf, RtBSType::OrderBuy, symbBS.Buys_);
 }
 

@@ -43,7 +43,7 @@ struct ExgMdFmt1Parser {
       fon9::ToBitv(rbuf, this->Symb_->ShUnit_);
       *rbuf.AllocPacket<char>() = this->Symb_->TradingMarket_;
       this->Symb_->MdRtStream_.Publish(ToStrView(this->Symb_->SymbId_),
-                                       f9fmkt::RtsPackType::BaseInfoTw,
+                                       f9sv_RtsPackType_BaseInfoTw,
                                        fon9::DayTime::Null(),
                                        std::move(rbuf));
       // 基本資料有異動時儲存, 用在程式重啟時載入, 重建商品基本資料.

@@ -42,7 +42,7 @@ struct MdSymbsBase::Recover : public TimerEntry {
          using base = seed::SeedNotifyStreamRecoverArgs;
          NotifyArgs(MdSymbsBase& mdSymbs)
             : base(mdSymbs, nullptr/*tab*/,
-                   // key: 因為用 RtsPackType::SnapshotSymbList_NoInfoTime 打包,
+                   // key: 因為用 f9sv_RtsPackType_SnapshotSymbList_NoInfoTime 打包,
                    // - 所以 key 為 don't care.
                    // - 但在 rc 送出時, 因為是 IsSubrTree() 所以會將這裡的 key 傳給 rc.client,
                    //   可參閱: fon9/rc/RcSeedVisitorServer.cpp,
@@ -74,7 +74,7 @@ struct MdSymbsBase::Recover : public TimerEntry {
          if (keepi >= numofele(keeps))
             break;
       }
-      *nargs.AckBuf_.AllocPacket<uint8_t>() = cast_to_underlying(RtsPackType::SnapshotSymbList_NoInfoTime);
+      *nargs.AckBuf_.AllocPacket<uint8_t>() = cast_to_underlying(f9sv_RtsPackType_SnapshotSymbList_NoInfoTime);
       // SeedNotifyKind::StreamRecover, 在 RtsPackType 之前, 必須加上長度:
       // SeedNotifyKind::StreamRecover + [RtsLength + RtsPackType  + RtsPackData] * N
       // SeedNotifyKind::StreamRecover + [RtsLength + SnapshotSymb + (Snapshot * N)] * 1
@@ -125,16 +125,16 @@ void MdSymbsBase::DailyClear(unsigned tdayYYYYMMDD) {
    *rts.AllocPacket<char>() = f9fmkt_TradingSessionId_Normal;
    PutBigEndian(rts.AllocPacket<uint32_t>(), tdayYYYYMMDD);
    RevPutBitv(rts, fon9_BitvV_NumberNull); // DayTime::Null();
-   *rts.AllocPacket<uint8_t>() = cast_to_underlying(RtsPackType::TradingSessionId);
-   MdRtsNotifyArgs  e{*this, fon9_kCSTR_SubrTree, GetMdRtsKind(RtsPackType::TradingSessionId), rts};
+   *rts.AllocPacket<uint8_t>() = cast_to_underlying(f9sv_RtsPackType_TradingSessionId);
+   MdRtsNotifyArgs  e{*this, fon9_kCSTR_SubrTree, GetMdRtsKind(f9sv_RtsPackType_TradingSessionId), rts};
    this->UnsafeSubj_.Publish(e);
 }
-void MdSymbsBase::UnsafePublish(RtsPackType pkType, seed::SeedNotifyArgs& e) {
+void MdSymbsBase::UnsafePublish(f9sv_RtsPackType pkType, seed::SeedNotifyArgs& e) {
    assert(this->SymbMap_.IsLocked());
-   // IsDailyClearing_ 時, 有可能 RtsPackType::TradingSessionId 或 PodRemoved(商品過期被移除)
+   // IsDailyClearing_ 時, 有可能 f9sv_RtsPackType_TradingSessionId 或 PodRemoved(商品過期被移除)
    // 所以這裡要讓 PodRemoved 送給 tree 的訂閱者,
    // 但 TradingSessionId 由 MdSymbsBase::DailyClear() 送出一次, 不要每個商品都送一次.
-   if (this->IsDailyClearing_ && pkType == RtsPackType::TradingSessionId)
+   if (this->IsDailyClearing_ && pkType == f9sv_RtsPackType_TradingSessionId)
       return;
    if (this->IsBlockPublish_)
       return;
@@ -142,9 +142,9 @@ void MdSymbsBase::UnsafePublish(RtsPackType pkType, seed::SeedNotifyArgs& e) {
    // 則不保證底下資料的正確:
    // - InfoTime, DealTime
    // - TotalQty
-   //   - RtsPackType::DealBS, RtsPackType::DealPack 一般情況不包含 TotalQty;
+   //   - f9sv_RtsPackType_DealBS, f9sv_RtsPackType_DealPack 一般情況不包含 TotalQty;
    //   - 在沒有 TotalQtyLost 的情況下, TotalQty 由 Client 自行計算.
-   // - RtsPackType::UpdateBS
+   // - f9sv_RtsPackType_UpdateBS
    this->UnsafeSubj_.Publish(e);
 }
 seed::OpResult MdSymbsBase::SubscribeStream(SubConn* pSubConn, seed::Tab& tab, StrView args, seed::FnSeedSubr&& fnSubr) {

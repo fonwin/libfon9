@@ -38,10 +38,10 @@ void ExgMdFmt6Handler::PkContOnReceived(const void* pkptr, unsigned pksz, SeqT s
    const bool  hasDeal = ((fmt6.ItemMask_ & 0x80) != 0);
    const ExgMdPriQty* mdPQs = fmt6.PQs_;
    if (hasDeal) {
-      symb->Deal_.Data_.Flags_ = (isCalc ? f9fmkt::DealFlag::Calculated : f9fmkt::DealFlag{});
+      symb->Deal_.Data_.Flags_ = (isCalc ? f9sv_DealFlag_Calculated : f9sv_DealFlag{});
       if (symb->Deal_.Data_.InfoTime_ != dealTime) {
          symb->Deal_.Data_.DealTime_ = symb->Deal_.Data_.InfoTime_ = dealTime;
-         symb->Deal_.Data_.Flags_ |= f9fmkt::DealFlag::DealTimeChanged;
+         symb->Deal_.Data_.Flags_ |= f9sv_DealFlag_DealTimeChanged;
       }
    #ifdef DEBUG_FMT6
       if (kDebugPrint) {
@@ -61,7 +61,7 @@ void ExgMdFmt6Handler::PkContOnReceived(const void* pkptr, unsigned pksz, SeqT s
             symb->CheckOHL(symb->Deal_.Data_.Deal_.Pri_, dealTime);
          const f9fmkt::Qty pkTotalQty = fon9::PackBcdTo<uint32_t>(fmt6.TotalQty_);
          if (symb->Deal_.Data_.TotalQty_ + symb->Deal_.Data_.Deal_.Qty_ != pkTotalQty)
-            symb->Deal_.Data_.Flags_ |= f9fmkt::DealFlag::TotalQtyLost;
+            symb->Deal_.Data_.Flags_ |= f9sv_DealFlag_TotalQtyLost;
          symb->Deal_.Data_.TotalQty_ = pkTotalQty;
       }
       // - Bit 1-0 瞬間價格趨勢 00：一般揭示; 11：（保留）
@@ -75,7 +75,7 @@ void ExgMdFmt6Handler::PkContOnReceived(const void* pkptr, unsigned pksz, SeqT s
       const auto lmtFlags = static_cast<f9sv_DealLmtFlag>(fmt6.LmtMask_ & (0x80 | 0x40 | 0x01 | 0x02));
       if (symb->Deal_.Data_.LmtFlags_ != lmtFlags) {
          symb->Deal_.Data_.LmtFlags_ = lmtFlags;
-         symb->Deal_.Data_.Flags_ |= f9fmkt::DealFlag::LmtFlagsChanged;
+         symb->Deal_.Data_.Flags_ |= f9sv_DealFlag_LmtFlagsChanged;
       }
    }
 #ifdef DEBUG_FMT6
@@ -117,15 +117,15 @@ void ExgMdFmt6Handler::PkContOnReceived(const void* pkptr, unsigned pksz, SeqT s
          f9fmkt::MdRtsPackFieldValue(rts, *tabBase, *tabBase->Fields_.Get("SessionSt"), rd);
       }
       symb->MdRtStream_.Publish(ToStrView(symb->SymbId_),
-                                f9fmkt::RtsPackType::FieldValue_AndInfoTime,
+                                f9sv_RtsPackType_FieldValue_AndInfoTime,
                                 dealTime, std::move(rts));
    }
 
-   f9fmkt::RtsPackType rtsPackType;
+   f9sv_RtsPackType rtsPackType;
    if ((fmt6.ItemMask_ & 0x7e) || (fmt6.ItemMask_ & 1) == 0) {
       symb->BS_.Data_.InfoTime_ = dealTime;
-      symb->BS_.Data_.Flags_ = (isCalc ? f9fmkt::BSFlag::Calculated : f9fmkt::BSFlag{});
-      symb->BS_.Data_.Flags_ |= (f9fmkt::BSFlag::OrderBuy | f9fmkt::BSFlag::OrderSell);
+      symb->BS_.Data_.Flags_ = (isCalc ? f9sv_BSFlag_Calculated : f9sv_BSFlag{});
+      symb->BS_.Data_.Flags_ |= (f9sv_BSFlag_OrderBuy | f9sv_BSFlag_OrderSell);
       mdPQs = f9tws::AssignBS(symb->BS_.Data_.Buys_, mdPQs, (fmt6.ItemMask_ & 0x70) >> 4);
       mdPQs = f9tws::AssignBS(symb->BS_.Data_.Sells_, mdPQs, (fmt6.ItemMask_ & 0x0e) >> 1);
 
@@ -139,26 +139,26 @@ void ExgMdFmt6Handler::PkContOnReceived(const void* pkptr, unsigned pksz, SeqT s
          *rts.AllocPacket<uint8_t>() = fon9::cast_to_underlying(fon9::fmkt::RtBSSnapshotSpc::LmtFlags);
       }
       if (hasDeal) {
-         rtsPackType = f9fmkt::RtsPackType::DealBS;
+         rtsPackType = f9sv_RtsPackType_DealBS;
          MdRtsPackSnapshotBS(rts, symb->BS_.Data_);
          goto __ASSIGN_DEAL_TO_RTS;
       }
       else {
-         rtsPackType = isCalc ? f9fmkt::RtsPackType::CalculatedBS : f9fmkt::RtsPackType::SnapshotBS;
+         rtsPackType = isCalc ? f9sv_RtsPackType_CalculatedBS : f9sv_RtsPackType_SnapshotBS;
          MdRtsPackSnapshotBS(rts, symb->BS_.Data_);
       }
    }
    else if (hasDeal) {
-      rtsPackType = f9fmkt::RtsPackType::DealPack;
+      rtsPackType = f9sv_RtsPackType_DealPack;
    __ASSIGN_DEAL_TO_RTS:;
       fon9::ToBitv(rts, symb->Deal_.Data_.Deal_.Qty_);
       fon9::ToBitv(rts, symb->Deal_.Data_.Deal_.Pri_);
       *rts.AllocPacket<uint8_t>() = 0; // = 1筆成交.
-      if (IsEnumContains(symb->Deal_.Data_.Flags_, f9fmkt::DealFlag::LmtFlagsChanged))
+      if (IsEnumContains(symb->Deal_.Data_.Flags_, f9sv_DealFlag_LmtFlagsChanged))
          *rts.AllocPacket<uint8_t>() = fon9::cast_to_underlying(symb->Deal_.Data_.LmtFlags_);
-      if (IsEnumContains(symb->Deal_.Data_.Flags_, f9fmkt::DealFlag::TotalQtyLost))
+      if (IsEnumContains(symb->Deal_.Data_.Flags_, f9sv_DealFlag_TotalQtyLost))
          fon9::ToBitv(rts, symb->Deal_.Data_.TotalQty_ - symb->Deal_.Data_.Deal_.Qty_);
-      if (IsEnumContains(symb->Deal_.Data_.Flags_, f9fmkt::DealFlag::DealTimeChanged))
+      if (IsEnumContains(symb->Deal_.Data_.Flags_, f9sv_DealFlag_DealTimeChanged))
          fon9::RevPutBitv(rts, fon9_BitvV_NumberNull);
       *rts.AllocPacket<uint8_t>() = fon9::cast_to_underlying(symb->Deal_.Data_.Flags_);
    }

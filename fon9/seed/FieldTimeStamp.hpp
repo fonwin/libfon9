@@ -14,12 +14,12 @@ class fon9_API FieldTimeStamp : public FieldValueFmt<TimeStamp, FmtTS> {
    using base = FieldValueFmt<TimeStamp, FmtTS>;
 public:
    /// 建構:
-   /// - 固定為 FieldType::TimeStamp; FieldSource::DataMember;
-   FieldTimeStamp(Named&& named, int32_t ofs) : base{std::move(named), FieldType::TimeStamp, ofs, TimeStamp::Scale} {
+   /// - 固定為 f9sv_FieldType_TimeStamp; FieldSource::DataMember;
+   FieldTimeStamp(Named&& named, int32_t ofs) : base{std::move(named), f9sv_FieldType_TimeStamp, ofs, TimeStamp::Scale} {
    }
    /// 建構:
-   /// - 固定為 FieldType::TimeStamp; FieldSource::DyMem;
-   FieldTimeStamp(Named&& named) : base(std::move(named), FieldType::TimeStamp, TimeStamp::Scale) {
+   /// - 固定為 f9sv_FieldType_TimeStamp; FieldSource::DyMem;
+   FieldTimeStamp(Named&& named) : base(std::move(named), f9sv_FieldType_TimeStamp, TimeStamp::Scale) {
    }
 
    /// 傳回: "Ts";
@@ -40,12 +40,12 @@ class fon9_API FieldTimeInterval : public FieldValueFmt<TimeInterval> {
    using base = FieldValueFmt<TimeInterval>;
 public:
    /// 建構:
-   /// - 固定為 FieldType::TimeInterval; FieldSource::DataMember;
-   FieldTimeInterval(Named&& named, int32_t ofs) : base{std::move(named), FieldType::TimeInterval, ofs, TimeInterval::Scale} {
+   /// - 固定為 f9sv_FieldType_TimeInterval; FieldSource::DataMember;
+   FieldTimeInterval(Named&& named, int32_t ofs) : base{std::move(named), f9sv_FieldType_TimeInterval, ofs, TimeInterval::Scale} {
    }
    /// 建構:
-   /// - 固定為 FieldType::TimeInterval; FieldSource::DyMem;
-   FieldTimeInterval(Named&& named) : base(std::move(named), FieldType::TimeInterval, TimeInterval::Scale) {
+   /// - 固定為 f9sv_FieldType_TimeInterval; FieldSource::DyMem;
+   FieldTimeInterval(Named&& named) : base(std::move(named), f9sv_FieldType_TimeInterval, TimeInterval::Scale) {
    }
 
    /// 傳回: "Ti";
@@ -66,12 +66,12 @@ class fon9_API FieldDayTime : public FieldValueFmt<DayTime> {
    using base = FieldValueFmt<DayTime>;
 public:
    /// 建構:
-   /// - 固定為 FieldType::FieldDayTime; FieldSource::DataMember;
-   FieldDayTime(Named&& named, int32_t ofs) : base{std::move(named), FieldType::DayTime, ofs, DayTime::Scale} {
+   /// - 固定為 f9sv_FieldType_FieldDayTime; FieldSource::DataMember;
+   FieldDayTime(Named&& named, int32_t ofs) : base{std::move(named), f9sv_FieldType_DayTime, ofs, DayTime::Scale} {
    }
    /// 建構:
-   /// - 固定為 FieldType::DayTime; FieldSource::DyMem;
-   FieldDayTime(Named&& named) : base(std::move(named), FieldType::DayTime, DayTime::Scale) {
+   /// - 固定為 f9sv_FieldType_DayTime; FieldSource::DyMem;
+   FieldDayTime(Named&& named) : base(std::move(named), f9sv_FieldType_DayTime, DayTime::Scale) {
    }
 
    /// 傳回: "Td";

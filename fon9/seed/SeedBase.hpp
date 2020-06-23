@@ -42,7 +42,7 @@ enum class OpResult {
    access_denied = -2,
    path_format_error = -3,
 
-   /// -10 .. -30 保留給 RcSeedVisitor.h 裡面的 enum f9sv_Result;
+   /// -10 .. -30 保留給 fon9/rc/RcSeedVisitor.h 裡面的 enum f9sv_Result;
 
    key_exists         = -50,
    key_format_error   = -51,

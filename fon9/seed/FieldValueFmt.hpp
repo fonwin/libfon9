@@ -22,12 +22,12 @@ class FieldValueFmt : public Field {
 public:
    /// 建構:
    /// - 固定為 FieldSource::DataMember;
-   FieldValueFmt(Named&& named, FieldType type, int32_t ofs, DecScaleT decScale)
+   FieldValueFmt(Named&& named, f9sv_FieldType type, int32_t ofs, DecScaleT decScale)
       : base{std::move(named), type, FieldSource::DataMember, ofs, sizeof(ValueT), decScale} {
    }
    /// 建構:
    /// - 固定為 FieldSource::DyMem;
-   FieldValueFmt(Named&& named, FieldType type, DecScaleT decScale)
+   FieldValueFmt(Named&& named, f9sv_FieldType type, DecScaleT decScale)
       : base(std::move(named), type, FieldSource::DyMem, 0, sizeof(ValueT), decScale) {
    }
 

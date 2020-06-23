@@ -37,7 +37,7 @@ void ExgMdFmt19Handler::OnPkReceived(const ExgMdHeader& pkhdr, unsigned pksz) {
    fon9::RevBufferList rts{pksz};
    f9fmkt::MdRtsPackTabValues(rts, *tabBreakSt, symb->BreakSt_);
    symb->MdRtStream_.PublishAndSave(ToStrView(symb->SymbId_),
-                                    f9fmkt::RtsPackType::TabValues_NoInfoTime,
+                                    f9sv_RtsPackType_TabValues_NoInfoTime,
                                     std::move(rts));
 }
 

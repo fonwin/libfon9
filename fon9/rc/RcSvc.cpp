@@ -54,17 +54,6 @@ static void FieldToC(f9sv_Field& cfld, const seed::Field& fld) {
    cfld.DecScale_ = fld.DecScale_;
    cfld.Type_ = static_cast<f9sv_FieldType>(cast_to_underlying(fld.Type_));
    cfld.NullValue_.Signed_ = fld.GetNullValue();
-
-   #define static_assert_FieldType(tname) \
-      static_assert(cast_to_underlying(f9sv_FieldType_##tname) == cast_to_underlying(seed::FieldType::tname), "");
-   static_assert_FieldType(Unknown);
-   static_assert_FieldType(Bytes);
-   static_assert_FieldType(Chars);
-   static_assert_FieldType(Integer);
-   static_assert_FieldType(Decimal);
-   static_assert_FieldType(TimeStamp);
-   static_assert_FieldType(TimeInterval);
-   static_assert_FieldType(DayTime);
 }
 void TreeRec::ParseLayout(StrView cfgstr) {
    assert(this->Layout_.get() == nullptr);

@@ -14,7 +14,7 @@ static FieldSP SchCfgStrFieldMaker(StrView& fldcfg, char chSpl, char chTail) {
    if (named.Name_.empty())
       return FieldSP{};
    using FieldSchCfgStr_Dy = FieldSchCfgStrT<FieldDyBlob>;
-   return FieldSP{new FieldSchCfgStr_Dy(std::move(named), FieldType::Chars)};
+   return FieldSP{new FieldSchCfgStr_Dy(std::move(named), f9sv_FieldType_Chars)};
 }
 
 static FieldMakerRegister reg{StrView{fon9_kCSTR_UDFieldMaker_SchCfgStr}, &SchCfgStrFieldMaker};

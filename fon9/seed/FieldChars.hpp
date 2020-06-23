@@ -19,16 +19,16 @@ protected:
 
 public:
    /// 建構:
-   /// - 固定為 FieldType::Chars; FieldSource::DataMember;
+   /// - 固定為 f9sv_FieldType_Chars; FieldSource::DataMember;
    /// - size 必須大於0, 若有動態調整大小的需求, 應使用 FieldStdString 或 FieldCharVector.
    FieldChars(Named&& named, int32_t ofs, size_t size)
-      : base(std::move(named), FieldType::Chars, FieldSource::DataMember, ofs, size, 0) {
+      : base(std::move(named), f9sv_FieldType_Chars, FieldSource::DataMember, ofs, size, 0) {
       assert(size > 0);
    }
    /// DyMem 建構, 所以不用提供 ofs:
-   /// - 固定為 FieldType::Chars; FieldSource::DyMem;
+   /// - 固定為 f9sv_FieldType_Chars; FieldSource::DyMem;
    FieldChars(Named&& named, size_t size)
-      : base(std::move(named), FieldType::Chars, FieldSource::DyMem, 0, size, 0) {
+      : base(std::move(named), f9sv_FieldType_Chars, FieldSource::DyMem, 0, size, 0) {
       assert(size > 0);
    }
 

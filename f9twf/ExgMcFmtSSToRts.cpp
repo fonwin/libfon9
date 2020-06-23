@@ -43,7 +43,7 @@ static void McI084SSParserO(ExgMcMessage& e) {
          ExgMdToSnapshotBS(mdTime, mdCount, prodEntry->MdEntry_, symb);
          RevBufferList rbuf{128};
          MdRtsPackSnapshotBS(rbuf, symb.BS_.Data_);
-         symb.MdRtStream_.Publish(ToStrView(symb.SymbId_), RtsPackType::SnapshotBS, mdTime, std::move(rbuf));
+         symb.MdRtStream_.Publish(ToStrView(symb.SymbId_), f9sv_RtsPackType_SnapshotBS, mdTime, std::move(rbuf));
          if (pI083) {
             static_assert(sizeof(pI083->NoMdEntries_) == 1, "");
             *pI083->NoMdEntries_ = *prodEntry->NoMdEntries_;

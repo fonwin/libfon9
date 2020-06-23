@@ -51,9 +51,9 @@ public:
 };
 //--------------------------------------------------------------------------//
 struct fon9_API MdRtSubr : public intrusive_ref_counter<MdRtSubr> {
-   MdRtsKind         RtFilter_{MdRtsKind::All};
+   f9sv_MdRtsKind    RtFilter_{f9sv_MdRtsKind_All};
    seed::FnSeedSubr  Callback_;
-   /// 從 args 取出 RtFiller_ = MdRtsKind(hex): empty() or 0 表示訂閱全部的即時訊息;
+   /// 從 args 取出 RtFiller_ = f9sv_MdRtsKind(hex): empty() or 0 表示訂閱全部的即時訊息;
    /// 並移動 args->begin() 到後面的參數位置.
    MdRtSubr(seed::FnSeedSubr&& sub, StrView* args)
       : RtFilter_{StrToMdRtsKind(args)}
@@ -62,10 +62,10 @@ struct fon9_API MdRtSubr : public intrusive_ref_counter<MdRtSubr> {
    virtual ~MdRtSubr();
 
    bool IsUnsubscribed() const {
-      return this->RtFilter_ == MdRtsKind{};
+      return this->RtFilter_ == f9sv_MdRtsKind{};
    }
    void SetUnsubscribed() {
-      this->RtFilter_ = MdRtsKind{};
+      this->RtFilter_ = f9sv_MdRtsKind{};
    }
 };
 struct MdRtSubrSP : public intrusive_ptr<MdRtSubr> {
@@ -98,7 +98,7 @@ struct MdRtRecover : public TimerEntry {
    MdRtStreamInnMgr& Mgr_;
    const MdRtSubrSP  RtSubr_;
    const StreamSP    Reader_;
-   MdRtsKind         Filter_{};
+   f9sv_MdRtsKind    Filter_{};
    char              Padding___[3];
    bool              IsStarted_{false};
 

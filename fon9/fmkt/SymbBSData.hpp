@@ -3,24 +3,12 @@
 #ifndef __fon9_fmkt_SymbBSData_hpp__
 #define __fon9_fmkt_SymbBSData_hpp__
 #include "fon9/fmkt/FmktTypes.hpp"
-#include "fon9/rc/RcMdRtsDecoder.h"
+#include "fon9/fmkt/FmdTypes.h"
 #include "fon9/TimeStamp.hpp"
 
-namespace fon9 { namespace fmkt {
+fon9_ENABLE_ENUM_BITWISE_OP(f9sv_BSFlag);
 
-enum class BSFlag : uint8_t {
-   /// 試撮後剩餘委託簿.
-   Calculated = 0x01,
-   /// 委託簿的買方有異動, 或快照有買方資料.
-   OrderBuy = 0x02,
-   /// 委託簿的賣方有異動, 或快照有賣方資料.
-   OrderSell = 0x04,
-   /// 委託簿的衍生買方有異動, 或快照有衍生買方資料.
-   DerivedBuy = 0x10,
-   /// 委託簿的衍生賣方有異動, 或快照有衍生賣方資料.
-   DerivedSell = 0x20,
-};
-fon9_ENABLE_ENUM_BITWISE_OP(BSFlag);
+namespace fon9 { namespace fmkt {
 
 struct SymbBSData {
    enum {
@@ -34,7 +22,8 @@ struct SymbBSData {
    PriQty   Sells_[kBSCount];
    /// 買進價量列表, [0]=最佳買進價量.
    PriQty   Buys_[kBSCount];
-   BSFlag   Flags_{};
+
+   f9sv_BSFlag Flags_{};
 
    /// 由資訊來源提供, 若沒提供則為 0, 核心系統不會主動與 今日漲跌停 比對.
    f9sv_BSLmtFlag  LmtFlags_{};

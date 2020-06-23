@@ -149,7 +149,7 @@ namespace f9sv
       BaseInfoTw,
 
       /// DealPack(有InfoTime) + SnapshotBS(無InfoTime);
-      /// 使用 f9fmkt::DealFlag::Calculated 判斷是否為試算.
+      /// 使用 f9sv.DealFlag.Calculated 判斷是否為試算.
       DealBS,
 
       SnapshotSymbList_NoInfoTime,

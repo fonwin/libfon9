@@ -25,12 +25,12 @@ class FieldDecimal : public FieldValueFmt<Decimal<I, S>> {
    using base = FieldValueFmt<Decimal<I, S>>;
 public:
    /// 建構:
-   /// - 固定為 FieldType::Decimal; FieldSource::DataMember;
-   FieldDecimal(Named&& named, int32_t ofs) : base{std::move(named), FieldType::Decimal, ofs, S} {
+   /// - 固定為 f9sv_FieldType_Decimal; FieldSource::DataMember;
+   FieldDecimal(Named&& named, int32_t ofs) : base{std::move(named), f9sv_FieldType_Decimal, ofs, S} {
    }
    /// 建構:
-   /// - 固定為 FieldType::Decimal; FieldSource::DyMem;
-   FieldDecimal(Named&& named) : base(std::move(named), FieldType::Decimal, S) {
+   /// - 固定為 f9sv_FieldType_Decimal; FieldSource::DyMem;
+   FieldDecimal(Named&& named) : base(std::move(named), f9sv_FieldType_Decimal, S) {
    }
 
    /// 傳回: "Sn.d" or "Un.d";  n = this->Size_;  d = this->DecScale_;
@@ -64,9 +64,9 @@ class fon9_API FieldDecimalDyScale : public Field {
    };
 public:
    /// 建構:
-   /// - 固定為 FieldType::Decimal; FieldSource::DyMem;
+   /// - 固定為 f9sv_FieldType_Decimal; FieldSource::DyMem;
    FieldDecimalDyScale(Named&& named, DecScaleT scale)
-      : base(std::move(named), FieldType::Decimal, FieldSource::DyMem, 0, sizeof(ValueT), scale) {
+      : base(std::move(named), f9sv_FieldType_Decimal, FieldSource::DyMem, 0, sizeof(ValueT), scale) {
    }
 
    ValueT GetOrigValue(const RawRd& rd) const {

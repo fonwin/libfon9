@@ -22,7 +22,7 @@ static void SymbBS_MakeFields(int ofsadj, seed::Fields& flds) {
       flds.Add(fon9_MakeField_OfsAdj(ofsadj, SymbBSData, Buys_[idx].Pri_, bsPriName));
       flds.Add(fon9_MakeField_OfsAdj(ofsadj, SymbBSData, Buys_[idx].Qty_, bsQtyName));
    }
-   flds.Add(seed::FieldSP{new seed::FieldIntHx<underlying_type_t<BSFlag>>(
+   flds.Add(seed::FieldSP{new seed::FieldIntHx<underlying_type_t<f9sv_BSFlag>>(
       Named("Flags"), ofsadj + fon9_OffsetOfRawPointer(SymbBSData, Flags_))});
 }
 static void AppendLmtFlags(int ofsadj, seed::Fields& flds) {

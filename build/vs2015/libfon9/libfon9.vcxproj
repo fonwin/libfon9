@@ -159,6 +159,8 @@
     <ClInclude Include="..\..\..\fon9\fix\IoFixSession.hpp" />
     <ClInclude Include="..\..\..\fon9\FlowControlCalc.hpp" />
     <ClInclude Include="..\..\..\fon9\FlowCounter.hpp" />
+    <ClInclude Include="..\..\..\fon9\fmkt\FmdRtsPackType.h" />
+    <ClInclude Include="..\..\..\fon9\fmkt\FmdTypes.h" />
     <ClInclude Include="..\..\..\fon9\fmkt\FmktTypes.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\MdRtsTypes.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\MdRtStream.hpp" />
@@ -294,6 +296,7 @@
     <ClInclude Include="..\..\..\fon9\seed\ConfigGridView.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\FieldCharsL.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\FieldSchCfgStr.hpp" />
+    <ClInclude Include="..\..\..\fon9\seed\FieldType.h" />
     <ClInclude Include="..\..\..\fon9\seed\FileImpTree.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\MaConfigTree.hpp" />
     <ClInclude Include="..\..\..\fon9\seed\NamedPark.hpp" />

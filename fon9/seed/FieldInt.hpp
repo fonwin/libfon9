@@ -42,14 +42,14 @@ public:
    };
 
    /// 建構:
-   /// - 固定為 FieldType::Integer; FieldSource::DataMember;
+   /// - 固定為 f9sv_FieldType_Integer; FieldSource::DataMember;
    FieldInt(Named&& named, int32_t ofs)
-      : base(std::move(named), FieldType::Integer, FieldSource::DataMember, ofs, sizeof(IntT), 0) {
+      : base(std::move(named), f9sv_FieldType_Integer, FieldSource::DataMember, ofs, sizeof(IntT), 0) {
    }
    /// 建構:
-   /// - 固定為 FieldType::Integer; FieldSource::DyMem;
+   /// - 固定為 f9sv_FieldType_Integer; FieldSource::DyMem;
    FieldInt(Named&& named)
-      : base(std::move(named), FieldType::Integer, FieldSource::DyMem, 0, sizeof(IntT), 0) {
+      : base(std::move(named), f9sv_FieldType_Integer, FieldSource::DyMem, 0, sizeof(IntT), 0) {
    }
 
    IntT GetValue(const RawRd& rd) const {

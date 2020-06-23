@@ -22,24 +22,24 @@ protected:
 
 public:
    /// 建構: 固定為 FieldSource::DyBlob;
-   FieldDyBlob(Named&& named, FieldType type)
+   FieldDyBlob(Named&& named, f9sv_FieldType type)
       : base{std::move(named), type, FieldSource::DyBlob, 0, sizeof(fon9_Blob), 0} {
    }
 
-   /// 取得 bytes 內容, 若 this->Type_ == FieldType::Chars 則可視為字串使用, 否則應視為 byte[];
+   /// 取得 bytes 內容, 若 this->Type_ == f9sv_FieldType_Chars 則可視為字串使用, 否則應視為 byte[];
    StrView GetValue(const RawRd& rd) const {
       fon9_Blob blob = GetUnaligned(rd.GetCellPtr<fon9_Blob>(*this));
       return StrView{reinterpret_cast<char*>(blob.MemPtr_), blob.MemUsed_};
    }
 
-   /// 傳回: this->Type_ == FieldType::Chars ? "C0 : "B0";
+   /// 傳回: this->Type_ == f9sv_FieldType_Chars ? "C0 : "B0";
    virtual StrView GetTypeId(NumOutBuf&) const override;
 
-   /// 若 this->Type_ == FieldType::Chars 內容直接字串輸出.
+   /// 若 this->Type_ == f9sv_FieldType_Chars 內容直接字串輸出.
    /// 否則輸出 base64 字串, 此時不理會 fmt.
    virtual void CellRevPrint(const RawRd& rd, StrView fmt, RevBuffer& out) const override;
 
-   /// 若 this->Type_ == FieldType::Chars 直接將 value 填入.
+   /// 若 this->Type_ == f9sv_FieldType_Chars 直接將 value 填入.
    /// 否則將 value 視為 base64 字串轉成 bytes 之後填入.
    virtual OpResult StrToCell(const RawWr& wr, StrView value) const override;
 

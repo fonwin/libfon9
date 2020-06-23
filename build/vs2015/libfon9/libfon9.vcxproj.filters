@@ -1121,6 +1121,15 @@
     <ClInclude Include="..\..\..\fon9\fmkt\SymbFuoClosing.hpp">
       <Filter>Header Files\fmkt\_SymbData%28BS,Deal...%29</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\FmdTypes.h">
+      <Filter>Header Files\fmkt\_Md</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\FmdRtsPackType.h">
+      <Filter>Header Files\fmkt\_Md</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\seed\FieldType.h">
+      <Filter>Header Files\seed\_fields</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />

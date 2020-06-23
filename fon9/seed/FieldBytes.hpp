@@ -17,16 +17,16 @@ protected:
    using base::base;
 public:
    /// 建構:
-   /// - 固定為 FieldType::Bytes; FieldSource::DataMember;
+   /// - 固定為 f9sv_FieldType_Bytes; FieldSource::DataMember;
    /// - size 必須大於0, 若有動態調整大小的需求, 應使用 FieldByteVector.
    FieldBytes(Named&& named, int32_t ofs, size_t size)
-      : base(std::move(named), FieldType::Bytes, FieldSource::DataMember, ofs, size, 0) {
+      : base(std::move(named), f9sv_FieldType_Bytes, FieldSource::DataMember, ofs, size, 0) {
       assert(size > 0);
    }
    /// 建構:
-   /// - 固定為 FieldType::Bytes; FieldSource::DyMem;
+   /// - 固定為 f9sv_FieldType_Bytes; FieldSource::DyMem;
    FieldBytes(Named&& named, size_t size)
-      : base(std::move(named), FieldType::Bytes, FieldSource::DyMem, 0, size, 0) {
+      : base(std::move(named), f9sv_FieldType_Bytes, FieldSource::DyMem, 0, size, 0) {
       assert(size > 0);
    }
 
@@ -84,9 +84,9 @@ class fon9_API FieldByteVector : public Field {
    typedef Field  base;
 public:
    /// 建構:
-   /// - 固定為 FieldType::Bytes; FieldSource::DataMember;
+   /// - 固定為 f9sv_FieldType_Bytes; FieldSource::DataMember;
    FieldByteVector(Named&& named, int32_t ofs)
-      : base{std::move(named), FieldType::Bytes, FieldSource::DataMember, ofs, sizeof(ByteVector), 0} {
+      : base{std::move(named), f9sv_FieldType_Bytes, FieldSource::DataMember, ofs, sizeof(ByteVector), 0} {
    }
 
    /// 傳回: "B0";

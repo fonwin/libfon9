@@ -35,7 +35,7 @@ f9twf_API void I010BasicInfoParserToRts(ExgMcMessage& e) {
       *rbuf.AllocPacket<uint8_t>() = symb.FlowGroup_;
       *rbuf.AllocPacket<char>() = symb.TradingMarket_;
       symb.MdRtStream_.Publish(ToStrView(symb.SymbId_),
-                               f9fmkt::RtsPackType::BaseInfoTw,
+                               f9sv_RtsPackType_BaseInfoTw,
                                e.Pk_.InformationTime_.ToDayTime(),
                                std::move(rbuf));
    }

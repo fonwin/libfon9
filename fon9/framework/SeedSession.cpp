@@ -247,7 +247,7 @@ void SeedSession::OnTicketRunnerGridView(seed::TicketRunnerGridView& runner, see
    auto                 iFmts = fmts.begin();
    for (; fld; ++iFmts) {
       iFmts->Width_ = static_cast<FmtDef::WidthType>(fld->GetTitleOrName().size());
-      if (!seed::IsFieldTypeNumber(fld->Type_))
+      if (!f9sv_IsFieldTypeNumber(fld->Type_))
          iFmts->Flags_ |= FmtFlag::LeftJustify;
       fld = res.Tab_ ? res.Tab_->Fields_.Get(fldIdx++) : nullptr;
    }

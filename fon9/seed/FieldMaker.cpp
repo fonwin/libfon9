@@ -29,7 +29,7 @@ static FieldSP MakeFieldChars(StrView& fldcfg, char chSpl, char chTail) {
    }
    switch (byteCount) {
    default: return FieldSP{new FieldChars{std::move(named), byteCount}};
-   case 0:  return FieldSP{new FieldDyBlob{std::move(named), FieldType::Chars}};
+   case 0:  return FieldSP{new FieldDyBlob{std::move(named), f9sv_FieldType_Chars}};
    case 1:
       switch (exType) {
       case 'Y': // "C1Y"
@@ -44,7 +44,7 @@ static FieldSP MakeFieldBytes(StrView& fldcfg, char chSpl, char chTail) {
    if (named.Name_.empty())
       return FieldSP{};
    if (byteCount == 0)
-      return FieldSP{new FieldDyBlob{std::move(named), FieldType::Bytes}};
+      return FieldSP{new FieldDyBlob{std::move(named), f9sv_FieldType_Bytes}};
    return FieldSP{new FieldBytes{std::move(named), byteCount}};
 }
 
@@ -135,7 +135,7 @@ static FieldSP MakeFieldImpl(StrView& fldcfg, char chSpl, char chTail) {
          Named named{DeserializeNamed(fldcfg, chSpl, chTail)};
          if (named.Name_.empty())
             return FieldSP{};
-         return FieldSP{new FieldDyBlob{std::move(named), FieldType::Chars}};
+         return FieldSP{new FieldDyBlob{std::move(named), f9sv_FieldType_Chars}};
       }
 
    case 'C':   return MakeFieldChars(fldcfg, chSpl, chTail);

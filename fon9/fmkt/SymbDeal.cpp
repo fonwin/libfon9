@@ -14,7 +14,7 @@ fon9_API seed::Fields SymbDeal_MakeFields(bool isAddLmtFlags) {
    flds.Add(fon9_MakeField(SymbDeal, Data_.TotalQty_,    "TotalQty"));
    flds.Add(fon9_MakeField(SymbDeal, Data_.DealBuyCnt_,  "DealBuyCnt"));
    flds.Add(fon9_MakeField(SymbDeal, Data_.DealSellCnt_, "DealSellCnt"));
-   flds.Add(seed::FieldSP{new seed::FieldIntHx<underlying_type_t<DealFlag>>(
+   flds.Add(seed::FieldSP{new seed::FieldIntHx<underlying_type_t<f9sv_DealFlag>>(
       Named("Flags"), fon9_OffsetOfRawPointer(SymbDeal, Data_.Flags_))});
    if(isAddLmtFlags)
       flds.Add(seed::FieldSP{new seed::FieldIntHx<underlying_type_t<f9sv_DealLmtFlag>>(

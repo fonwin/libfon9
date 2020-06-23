@@ -105,7 +105,7 @@ void MdRtStream::OnSessionChanged(const Symb& symb) {
    *rts.AllocPacket<char>() = symb.TradingSessionId_;
    PutBigEndian(rts.AllocPacket<uint32_t>(), symb.TDayYYYYMMDD_);
    BufferAppendTo(rts.cfront(), pk);
-   this->Publish(ToStrView(symb.SymbId_), RtsPackType::TradingSessionId, DayTime::Null(), std::move(rts));
+   this->Publish(ToStrView(symb.SymbId_), f9sv_RtsPackType_TradingSessionId, DayTime::Null(), std::move(rts));
    // 開啟 Storage, 如果 Storage 有變, 則將 SessionSt 寫入新開啟的 Storage.
    // 這樣在從頭回補時, 才能補到 TDay 及盤別狀態.
    this->InnMgr_.RtOpen(this->RtStorage_, symb);
@@ -113,35 +113,35 @@ void MdRtStream::OnSessionChanged(const Symb& symb) {
       this->RtStorageSize_ = this->RtStorage_.Size();
       RevPutMem(rts, pk.begin(), pk.size());
       RevPutBitv(rts, fon9_BitvV_NumberNull); // InfoTime = Null.
-      *rts.AllocPacket<uint8_t>() = cast_to_underlying(RtsPackType::TradingSessionId);
+      *rts.AllocPacket<uint8_t>() = cast_to_underlying(f9sv_RtsPackType_TradingSessionId);
       this->Save(std::move(rts));
    }
 }
 void MdRtStream::BeforeRemove(SymbTree& tree, Symb& symb) {
    seed::SeedNotifyArgs e(tree, nullptr, ToStrView(symb.SymbId_), nullptr, seed::SeedNotifyKind::PodRemoved);
    this->UnsafeSubj_.Publish(e);
-   this->InnMgr_.MdSymbs_.UnsafePublish(RtsPackType::Count, e);
+   this->InnMgr_.MdSymbs_.UnsafePublish(f9sv_RtsPackType_Count, e);
 }
 // -----
 void MdRtStream::PublishUpdateBS(const StrView& keyText, SymbBSData& symbBS, RevBufferList&& rts) {
    // 每秒儲存一次 SnapshotBS, 回補時才能正確處理 UpdateBS;
-   this->Publish(keyText, RtsPackType::UpdateBS, symbBS.InfoTime_, std::move(rts));
+   this->Publish(keyText, f9sv_RtsPackType_UpdateBS, symbBS.InfoTime_, std::move(rts));
    const auto bstm = static_cast<uint32_t>(symbBS.InfoTime_.GetIntPart());
    if (this->LastTimeSnapshotBS_ != bstm) {
       this->LastTimeSnapshotBS_ = bstm;
       rts.MoveOut();
-      symbBS.Flags_ |= BSFlag::OrderBuy | BSFlag::OrderSell | BSFlag::DerivedBuy | BSFlag::DerivedSell;
+      symbBS.Flags_ |= f9sv_BSFlag_OrderBuy | f9sv_BSFlag_OrderSell | f9sv_BSFlag_DerivedBuy | f9sv_BSFlag_DerivedSell;
       MdRtsPackSnapshotBS(rts, symbBS);
       ToBitv(rts, symbBS.InfoTime_);
-      *rts.AllocPacket<uint8_t>() = cast_to_underlying(IsEnumContains(symbBS.Flags_, BSFlag::Calculated)
-                                                       ? RtsPackType::CalculatedBS
-                                                       : RtsPackType::SnapshotBS);
+      *rts.AllocPacket<uint8_t>() = cast_to_underlying(IsEnumContains(symbBS.Flags_, f9sv_BSFlag_Calculated)
+                                                       ? f9sv_RtsPackType_CalculatedBS
+                                                       : f9sv_RtsPackType_SnapshotBS);
    }
    this->Save(std::move(rts));
 }
-void MdRtStream::Publish(const StrView& keyText, RtsPackType pkType, const DayTime infoTime, RevBufferList&& rts) {
+void MdRtStream::Publish(const StrView& keyText, f9sv_RtsPackType pkType, const DayTime infoTime, RevBufferList&& rts) {
    const auto rtsKind = GetMdRtsKind(pkType);
-   assert(!IsEnumContains(rtsKind, MdRtsKind::NoInfoTime));
+   assert(!IsEnumContains(rtsKind, f9sv_MdRtsKind_NoInfoTime));
    if ((this->InfoTimeKind_ == rtsKind && this->InfoTime_ == infoTime) || infoTime.IsNull())
       RevPutBitv(rts, fon9_BitvV_NumberNull);
    else {
@@ -157,14 +157,14 @@ void MdRtStream::Publish(const StrView& keyText, RtsPackType pkType, const DayTi
    this->UnsafeSubj_.Publish(e);
    this->InnMgr_.MdSymbs_.UnsafePublish(pkType, e);
    // -----
-   if (IsEnumContains(rtsKind, MdRtsKind::BS)) {
+   if (IsEnumContains(rtsKind, f9sv_MdRtsKind_BS)) {
       fon9_WARN_DISABLE_SWITCH;
       switch (pkType) {
-      case RtsPackType::UpdateBS:
+      case f9sv_RtsPackType_UpdateBS:
          // 由 this->PublishUpdateBS() 決定如何儲存.
          return;
-      case RtsPackType::SnapshotBS:
-      case RtsPackType::CalculatedBS:
+      case f9sv_RtsPackType_SnapshotBS:
+      case f9sv_RtsPackType_CalculatedBS:
          this->LastTimeSnapshotBS_ = static_cast<uint32_t>(infoTime.GetIntPart());
          break;
       }
@@ -172,7 +172,7 @@ void MdRtStream::Publish(const StrView& keyText, RtsPackType pkType, const DayTi
    }
    this->Save(std::move(rts));
 }
-void MdRtStream::PublishAndSave(const StrView& keyText, RtsPackType pkType, RevBufferList&& rts) {
+void MdRtStream::PublishAndSave(const StrView& keyText, f9sv_RtsPackType pkType, RevBufferList&& rts) {
    *rts.AllocPacket<uint8_t>() = cast_to_underlying(pkType);
 
    MdRtsNotifyArgs e(this->InnMgr_.MdSymbs_, keyText, GetMdRtsKind(pkType), rts);

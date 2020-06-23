@@ -76,8 +76,8 @@ public:
    seed::OpResult SubscribeStream(SubConn* pSubConn, seed::Tab&, StrView args, seed::FnSeedSubr&&);
    seed::OpResult UnsubscribeStream(SubConn, seed::Tab&);
    /// - 此處會檢查 assert(this->SymbMap_.IsLocked()); 未鎖定的呼叫, 必定為設計上的問題.
-   /// - 若 pkType == RtsPackType::Count; 則必須從 e.NotifyKind_ 取得通知種類.
-   void UnsafePublish(RtsPackType pkType, seed::SeedNotifyArgs& e);
+   /// - 若 pkType == f9sv_RtsPackType_Count; 則必須從 e.NotifyKind_ 取得通知種類.
+   void UnsafePublish(f9sv_RtsPackType pkType, seed::SeedNotifyArgs& e);
 
    void DailyClear(unsigned tdayYYYYMMDD);
 
@@ -107,7 +107,7 @@ public:
       RevBufferList* GetPublishBuffer() {
          return this->Owner_.UnsafeSubj_.IsEmpty() ? nullptr : &this->AckBuf_;
       }
-      void UnsafePublish(RtsPackType pkType, seed::SeedNotifyArgs& e) {
+      void UnsafePublish(f9sv_RtsPackType pkType, seed::SeedNotifyArgs& e) {
          assert(this->Owner_.SymbMap_.IsLocked());
          this->Owner_.IsBlockPublish_ = false;
          this->Owner_.UnsafePublish(pkType, e);

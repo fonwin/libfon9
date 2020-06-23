@@ -129,7 +129,7 @@ struct I140_BreakSt_PreparePk : public I140_CheckPublish {
          }
       }
       symb.MdRtStream_.Publish(ToStrView(symb.SymbId_),
-                               f9fmkt::RtsPackType::FieldValue_AndInfoTime,
+                               f9sv_RtsPackType_FieldValue_AndInfoTime,
                                this->InfoTime_, std::move(rts));
    }
 };
@@ -298,7 +298,7 @@ static void I140_40r_DynRange(ExgMcMessage& e, f9fmkt_DynBandSt st) {
          fon9::RevPutMem(rts, this->Rts_.GetCurrent(), this->Rts_.GetMemEnd());
          // 在建構時, this->Rts_ 有填入 InfoTime, 所以這裡使用 FieldValue_AndInfoTime;
          symb.MdRtStream_.PublishAndSave(ToStrView(symb.SymbId_),
-                                         f9fmkt::RtsPackType::FieldValue_AndInfoTime,
+                                         f9sv_RtsPackType_FieldValue_AndInfoTime,
                                          std::move(rts));
       }
    };
@@ -335,7 +335,7 @@ static void I140_40x_DynBand(ExgMcMessage& e, f9fmkt_DynBandSt st) {
          fon9::RevPutMem(rts, this->Rts_.GetCurrent(), this->Rts_.GetMemEnd());
          // 在建構時, this->Rts_ 有填入 InfoTime, 所以這裡使用 FieldValue_AndInfoTime;
          symb.MdRtStream_.PublishAndSave(ToStrView(symb.SymbId_),
-                                         f9fmkt::RtsPackType::FieldValue_AndInfoTime,
+                                         f9sv_RtsPackType_FieldValue_AndInfoTime,
                                          std::move(rts));
       }
    };
@@ -391,7 +391,7 @@ static void I140_10x_LmtRange(ExgMcMessage& e, int lvWill) {
          fon9::RevPutMem(rts, this->Rts_.GetCurrent(), this->Rts_.GetMemEnd());
          // 在建構時, this->Rts_ 有填入 InfoTime, 所以這裡使用 FieldValue_AndInfoTime;
          symb.MdRtStream_.PublishAndSave(ToStrView(symb.SymbId_),
-                                         f9fmkt::RtsPackType::FieldValue_AndInfoTime,
+                                         f9sv_RtsPackType_FieldValue_AndInfoTime,
                                          std::move(rts));
       }
    };
@@ -401,11 +401,11 @@ static void I140_10x_LmtRange(ExgMcMessage& e, int lvWill) {
 //--------------------------------------------------------------------------//
 f9twf_API void I140SysInfoParserToRts(ExgMcMessage& e) {
    const ExgMcI140& i140 = *static_cast<const ExgMcI140*>(&e.Pk_);
-   if (0);// TODO: 如果有訂閱 tree(例:B主機 訂閱 A主機 的 /TwfMd/Symbs), 且 ListType!=Symbol, 要怎麼通知呢?
-          // Add tree:「FlowGroup」, 可訂閱tree, 期貨、選擇權各一個 tree;
-          // - I140; 市場狀態通知
-          //   - TradingSessionSt = 開始收單, 開盤, 不可刪單階段 Non-cancel Period, 收盤或不再恢復交易;
-          //   - Reason;
+   if (0);// TODO: 如果有訂閱 tree(例:B主機 訂閱 A主機 的 /TwfMd/Symbs), 且 i140.ListType != Symbol, 要怎麼通知呢?
+   // ?-1-? Add tree:「FlowGroup」, 可訂閱tree, 期貨、選擇權各一個 tree?
+   // ?-2-? 使用 MdSymbsBase::BlockPublish 然後直接轉送 I140?
+   //       => 如果 B主機 正在補商品快照, 這時 B主機 收到的 I140 要如何處理: 尚未補到快照的商品?
+   // ?-3-? 直接送出各商品異動封包?
 
    switch (fon9::PackBcdTo<unsigned>(i140.FunctionCode_)) {
    case 100: I140_10x_LmtRange(e, -1); break;

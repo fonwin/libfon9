@@ -8,7 +8,7 @@
 namespace fon9 { namespace seed {
 
 StrView FieldDyBlob::GetTypeId(NumOutBuf&) const {
-   return this->Type_ == FieldType::Chars ? StrView{"C0"} : StrView{"B0"};
+   return this->Type_ == f9sv_FieldType_Chars ? StrView{"C0"} : StrView{"B0"};
 }
 
 void FieldDyBlob::CellRevPrint(const RawRd& rd, StrView fmt, RevBuffer& out) const {
@@ -18,7 +18,7 @@ void FieldDyBlob::CellRevPrint(const RawRd& rd, StrView fmt, RevBuffer& out) con
          RevPrint(out, StrView{}, FmtDef{fmt});
       return;
    }
-   if (this->Type_ == FieldType::Chars)
+   if (this->Type_ == f9sv_FieldType_Chars)
       FmtRevPrint(fmt, out, StrView{reinterpret_cast<char*>(blob.MemPtr_), blob.MemUsed_});
    else
       RevPutB64(out, blob.MemPtr_, blob.MemUsed_);
@@ -29,7 +29,7 @@ void FieldDyBlob::OnCellChanged(const RawWr&) const {
 OpResult FieldDyBlob::StrToCellNoEvent(const RawWr& wr, StrView value) const {
    fon9_Blob* ptr = wr.GetCellPtr<fon9_Blob>(*this);
    fon9_Blob blob = GetUnaligned(ptr);
-   if (this->Type_ == FieldType::Chars)
+   if (this->Type_ == f9sv_FieldType_Chars)
       fon9_Blob_Set(&blob, value.begin(), static_cast<fon9_Blob_Size_t>(value.size()));
    else if (size_t bmax = Base64DecodeLength(value.size())) {
       if (fon9_UNLIKELY(bmax != static_cast<fon9_Blob_Size_t>(bmax)

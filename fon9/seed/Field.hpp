@@ -3,6 +3,7 @@
 #ifndef __fon9_seed_Field_hpp__
 #define __fon9_seed_Field_hpp__
 #include "fon9/seed/SeedBase.hpp"
+#include "fon9/seed/FieldType.h"
 #include "fon9/buffer/RevBuffer.hpp"
 #include "fon9/buffer/DcQueue.hpp"
 #include "fon9/ToStr.hpp"
@@ -31,39 +32,6 @@ enum class FieldSource : uint8_t {
 };
 
 /// \ingroup seed
-/// 欄位儲存的資料類型.
-enum class FieldType : uint8_t {
-   /// 類型不明, 或自訂欄位.
-   Unknown,
-
-   /// bytes 陣列.
-   /// 顯示字串 = 需要額外轉換(例: HEX, Base64...)
-   Bytes,
-
-   /// 字元串(尾端不一定會有EOS).
-   /// 顯示字串 = 直接使用內含字元, 直到EOS or 最大長度.
-   Chars,
-
-   /// 整數欄位.
-   Integer = 10,
-
-   /// 固定小數位欄位: fon9::Decimal
-   Decimal,
-
-   /// 時間戳.
-   TimeStamp,
-
-   /// 時間間隔.
-   TimeInterval,
-   /// 時間: 距離 00:00:00 的時間間隔.
-   /// 輸出格式 `days-hh:mm:ss.uuuuuu`
-   DayTime,
-};
-inline bool IsFieldTypeNumber(FieldType t) {
-   return t >= FieldType::Integer;
-}
-
-/// \ingroup seed
 enum class FieldFlag {
    /// 如果需要在設計階段, 就決定要禁止透過 Field 修改欄位,
    /// 則應使用 FieldConst<> 來建立欄位物件.
@@ -76,6 +44,7 @@ enum class FieldFlag {
 };
 fon9_ENABLE_ENUM_BITWISE_OP(FieldFlag);
 
+/// 在 FieldMaker.cpp 裡面, 建立 MakeField() 或 AppendFieldConfig() 時.
 enum class FieldFlagChar : char {
    Readonly = 'r',
    Hide = 'h',
@@ -88,7 +57,7 @@ fon9_WARN_DISABLE_PADDING;
 class fon9_API Field : public NamedIx {
    fon9_NON_COPY_NON_MOVE(Field);
 public:
-   Field(Named&& named, FieldType type, FieldSource src, int32_t offset, size_t size, DecScaleT decScale)
+   Field(Named&& named, f9sv_FieldType type, FieldSource src, int32_t offset, size_t size, DecScaleT decScale)
       : NamedIx{std::move(named)}
       , Offset_{offset}
       , Size_{static_cast<uint32_t>(size)}
@@ -110,13 +79,14 @@ public:
    /// 在使用 data member 的情況, Offset_ 有可能為負值, 例:
    /// - class MySeed : public Base1, public Raw {};
    /// - 如果使用 Base1 的 data member, 則 Offset_ 為負值!
-   int32_t     Offset_;
+   int32_t        Offset_;
    /// 欄位資料的大小.
-   uint32_t    Size_;
-   FieldSource Source_;
-   FieldType   Type_;
-   FieldFlag   Flags_{};
-   DecScaleT   DecScale_;
+   uint32_t       Size_;
+   FieldSource    Source_;
+   f9sv_FieldType Type_;
+   FieldFlag      Flags_{};
+   DecScaleT      DecScale_;
+   static_assert(std::is_same<f9sv_DecScale, DecScaleT>::value, "");
 
    /// 取得型別字串: 參考 MakeField() 建立.
    /// 傳回值不一定會填入 buf.

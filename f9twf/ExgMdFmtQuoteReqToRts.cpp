@@ -23,7 +23,7 @@ f9twf_API void I100QuoteReqParserToRts(ExgMcMessage& e) {
    auto* tabQuoteReq = lk.Symbs_.LayoutSP_->GetTab(fon9_kCSTR_TabName_QuoteReq);
    f9fmkt::MdRtsPackTabValues(rbuf, *tabQuoteReq, symb.QuoteReq_);
    symb.MdRtStream_.Publish(ToStrView(symb.SymbId_),
-                            f9fmkt::RtsPackType::TabValues_AndInfoTime,
+                            f9sv_RtsPackType_TabValues_AndInfoTime,
                             e.Pk_.InformationTime_.ToDayTime(),
                             std::move(rbuf));
 }
