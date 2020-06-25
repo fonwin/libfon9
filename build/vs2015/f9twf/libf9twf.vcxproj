@@ -86,6 +86,7 @@
     <ClInclude Include="..\..\..\f9twf\ExgMapMgr.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgMapSessionDn.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgMcChannel.hpp" />
+    <ClInclude Include="..\..\..\f9twf\ExgMcChannelTunnel.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgMcFmtSSToRts.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgMcGroup.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgMcReceiver.hpp" />
@@ -131,6 +132,7 @@
     <ClCompile Include="..\..\..\f9twf\ExgMapMgr.cpp" />
     <ClCompile Include="..\..\..\f9twf\ExgMapSessionDn.cpp" />
     <ClCompile Include="..\..\..\f9twf\ExgMcChannel.cpp" />
+    <ClCompile Include="..\..\..\f9twf\ExgMcChannelTunnel.cpp" />
     <ClCompile Include="..\..\..\f9twf\ExgMcFmtSSToRts.cpp" />
     <ClCompile Include="..\..\..\f9twf\ExgMcGroup.cpp" />
     <ClCompile Include="..\..\..\f9twf\ExgMcReceiver.cpp" />

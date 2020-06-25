@@ -11,6 +11,7 @@ io::SessionSP ExgMcReceiverFactory::CreateSession(IoManager& ioMgr, const IoConf
    if (auto mgr = dynamic_cast<ExgMcGroupIoMgr*>(&ioMgr)) {
       StrView           tag, value, args = ToStrView(cfg.SessionArgs_);
       ExgMrChannelId_t  channelId = 0;
+      TimeInterval      waitInterval{TimeInterval::Null()};
       while (fon9::StrFetchTagValue(args, tag, value)) {
          if (tag == "ChannelId") {
             channelId = StrTo(value, channelId);
@@ -19,8 +20,16 @@ io::SessionSP ExgMcReceiverFactory::CreateSession(IoManager& ioMgr, const IoConf
                return nullptr;
             }
          }
+         else if (tag == "WaitInterval")
+            waitInterval = StrTo(value, waitInterval);
       }
-      return new ExgMcReceiver(mgr->McGroup_->ChannelMgr_, channelId);
+      if (auto ch = mgr->McGroup_->ChannelMgr_->GetChannel(channelId)) {
+         if (!waitInterval.IsNull())
+            ch->SetWaitInterval(waitInterval);
+         return new ExgMcReceiver(mgr->McGroup_->ChannelMgr_, channelId);
+      }
+      errReason = "f9twf.ExgMcReceiverFactory.CreateSession: Unknown ChannelId.";
+      return nullptr;
    }
    errReason = "f9twf.ExgMcReceiverFactory.CreateSession: Unknown IoMgr.";
    return nullptr;

@@ -22,6 +22,8 @@ public:
    PkContFeeder();
    virtual ~PkContFeeder();
 
+   void Clear();
+
    /// 收到的封包透過這裡處理.
    /// - 若封包有連續, 則透過 PkContOnReceived() 通知衍生者.
    /// - 若封包不連續:
@@ -29,7 +31,10 @@ public:
    ///   - 等候一小段時間(this->WaitInterval_), 若無法取得連續封包, 則強制繼續處理.
    void FeedPacket(const void* pk, unsigned pksz, SeqT seq);
 
-   void Clear();
+   /// 如果封包序號不連續, 要等候多少時間? 才觸發「繼續處理」事件.
+   void SetWaitInterval(TimeInterval v) {
+      this->WaitInterval_ = v;
+   }
 
 protected:
    SeqT           NextSeq_{0};

@@ -177,7 +177,7 @@ class f9twf_API ExgMcChannel : private fon9::PkContFeeder {
 
    bool OnPkContSnapshot(const ExgMcHead& pk);
    ExgMcChannelState OnPkHb(const ExgMcHead& pk, unsigned pksz);
-   ExgMcChannelState OnPkSeqReset();
+   ExgMcChannelState OnPkSeqReset(const ExgMcHead& pk, unsigned pksz);
 
    void Ctor(ExgMcChannelMgr* mgr, ExgMrChannelId_t channelId, ExgMcChannelStyle style) {
       assert(this->ChannelMgr_ == nullptr && this->ChannelId_ == 0);
@@ -194,6 +194,10 @@ class f9twf_API ExgMcChannel : private fon9::PkContFeeder {
 public:
    ExgMcChannel() = default;
    ~ExgMcChannel();
+
+   /// 若 ExgMcReceiver 連線到 McTunnel, 應該將 Channel.WaitInterval 設為 0;
+   using base::SetWaitInterval;
+
    ExgMcChannelMgr* GetChannelMgr() const {
       return this->ChannelMgr_;
    }

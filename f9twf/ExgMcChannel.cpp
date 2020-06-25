@@ -289,10 +289,19 @@ ExgMcChannelState ExgMcChannel::OnPkHb(const ExgMcHead& pk, unsigned pksz) {
    if (this->IsSnapshot()) // 快照更新: 使用 (A:Refresh Begin .. Z:Refresh Complete) 判斷 CycledClose.
       return this->State_;
    const SeqT seq = pk.GetChannelSeq();
+   if (!this->IsSetupReloading_) {
+      // 不論序號是否正確, 都先記錄 PkLog & DispatchMcMessage:
+      // => 為了讓其他服務端 (McToMi, McChannelTunnel...) 能夠收到 Hb(即使亂序也沒關係)
+      // => 這樣其他服務可以檢查「確定行情在線」, 避免誤判行情斷線.
+      this->PkLogAppend(&pk, pksz, seq);
+      // Hb 需要自行觸發 DispatchMcMessage(裡面會觸發 NotifyConsumers).
+      auto locker = this->PkPendings_.Lock();
+      ExgMcMessage e(pk, pksz, *this, seq);
+      this->DispatchMcMessage(e);
+   }
    // Heartbeat: CHANNEL-SEQ 欄位會為該傳輸群組之末筆序號訊息。
    if (this->NextSeq_ != seq + 1) // 序號不正確的 Hb, 不處理.
       return this->State_;
-   this->PkLogAppend(&pk, pksz, seq);
    // 檢查 Channel 是否已符合 Cycled 條件.
    if (seq == 0 // 期交所系統已啟動, 但尚未開始發送輪播訊息.
        || this->CycleStartSeq_ == seq + 1) // 兩次輪播循環之間的 Hb: 不用理會.
@@ -308,7 +317,7 @@ ExgMcChannelState ExgMcChannel::OnPkHb(const ExgMcHead& pk, unsigned pksz) {
    this->OnCycleStart(seq + 1);
    return this->State_;
 }
-ExgMcChannelState ExgMcChannel::OnPkSeqReset() {
+ExgMcChannelState ExgMcChannel::OnPkSeqReset(const ExgMcHead& pk, unsigned pksz) {
    if (0); // SeqReset 之後, API 商品訂閱者的序號要怎麼處理呢?
    fon9_LOG_WARN(this->ChannelMgr_->Name_, ".I002.SeqReset|channelId=", this->ChannelId_);
    RecoversImpl rs{std::move(*this->Recovers_.Lock())};
@@ -317,9 +326,18 @@ ExgMcChannelState ExgMcChannel::OnPkSeqReset() {
       cur->GetDevice()->WaitGetDeviceId(); // 等候 AsyncClose() 完成.
       cur->GetDevice()->AsyncOpen(std::string{});
    }
+
+   const SeqT seq = pk.GetChannelSeq();
+   this->PkLogAppend(&pk, pksz, seq);
+
    auto pks = this->PkPendings_.Lock();
    pks->clear();
    this->NextSeq_ = 0;
+   if (!this->IsSetupReloading_) {
+      // SeqReset 需要自行觸發 DispatchMcMessage(裡面會觸發 NotifyConsumers).
+      ExgMcMessage e(pk, pksz, *this, seq);
+      this->DispatchMcMessage(e);
+   }
    return this->State_;
 }
 // 收到完整封包後, 會執行到此, 尚未確定是否重複或有遺漏.
@@ -332,7 +350,7 @@ ExgMcChannelState ExgMcChannel::OnPkReceived(const ExgMcHead& pk, unsigned pksz)
       case '1': // I001.Hb.
          return this->OnPkHb(pk, pksz);
       case '2': // I002.SeqReset.
-         return this->OnPkSeqReset();
+         return this->OnPkSeqReset(pk, pksz);
       }
    }
    // ----- 處理特殊序號.

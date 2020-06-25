@@ -170,6 +170,9 @@
     <ClInclude Include="..\..\..\f9twf\ExgMdFmtClosing.hpp">
       <Filter>Header Files\_MktData</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\f9twf\ExgMcChannelTunnel.hpp">
+      <Filter>Header Files\_MktData</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\f9twf\ExgLineTmpArgs.cpp">
@@ -252,6 +255,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\f9twf\ExgMdFmtClosingToRts.cpp">
       <Filter>Source Files\_MktData\_ToRts</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\f9twf\ExgMcChannelTunnel.cpp">
+      <Filter>Source Files\_MktData</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

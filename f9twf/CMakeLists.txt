@@ -17,6 +17,7 @@ set(f9twf_src
  ExgMcReceiver.cpp
  ExgMcReceiverFactory.cpp
  ExgMcChannel.cpp
+ ExgMcChannelTunnel.cpp
  ExgMcGroup.cpp
  ExgMcToMiConv.cpp
  ExgMrRecover.cpp
