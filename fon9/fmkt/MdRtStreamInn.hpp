@@ -75,7 +75,8 @@ struct MdRtSubrSP : public intrusive_ptr<MdRtSubr> {
    void operator()(const seed::SeedNotifyArgs& e) const {
       assert(static_cast<SymbTree*>(&e.Tree_)->SymbMap_.IsLocked());
       assert(!this->get()->IsUnsubscribed());
-      this->get()->Callback_(e);
+      if (IsEnumContainsAny(this->get()->RtFilter_, static_cast<f9sv_MdRtsKind>(e.StreamDataKind_)))
+         this->get()->Callback_(e);
    }
 };
 using MdRtUnsafeSubj = seed::UnsafeSeedSubjT<MdRtSubrSP>;

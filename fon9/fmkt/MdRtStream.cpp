@@ -41,6 +41,7 @@ seed::OpResult MdRtStream::SubscribeStream(SubConn*           pSubConn,
       SubscribeStreamOK(SymbPodOp& op, seed::Tab& tabRt)
          : base(*op.Sender_, &tabRt, op.KeyText_, nullptr, seed::SeedNotifyKind::SubscribeStreamOK)
          , PodOp_(op) {
+         this->StreamDataKind_ = f9sv_MdRtsKind_All;
       }
       BufferList GetGridViewBuffer(const std::string** ppGvStr) const override {
          if (ppGvStr)
