@@ -102,6 +102,7 @@ namespace f9sv
       public Named Named_;
       public unsafe Field* FieldArray_;
       public uint32_t FieldCount_;
+      UInt32 Padding___;
 
       public unsafe Field* FindField(string fldName)
       {
@@ -389,7 +390,7 @@ namespace f9sv
          return sval;
       }
 
-      [DllImport("msvcrt.dll")]
+      [DllImport("msvcrt.dll", CallingConvention = CallingConvention.Cdecl)]
       internal static extern unsafe int memcmp(void* b1, void* b2, int count);
    }
 
