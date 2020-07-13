@@ -62,8 +62,8 @@ typedef struct {
 /// 例如: OMS使用者的: 可用帳號列表、可用櫃號列表、流量管制參數...
 typedef struct {
    const f9sv_Field*       FieldArray_;
-   unsigned                FieldCount_;
-   unsigned                RecordCount_;
+   uint32_t                FieldCount_;
+   uint32_t                RecordCount_;
    const fon9_CStrView**   RecordList_;
 } f9sv_GvList;
 
@@ -87,7 +87,7 @@ typedef struct {
 typedef struct {
    fon9_CStrView                 OrigStrView_;
    const f9sv_GvTable* const*    TableList_;
-   unsigned                      TableCount_;
+   uint32_t                      TableCount_;
    char                          Padding___[4];
 } f9sv_GvTables;
 
@@ -118,9 +118,21 @@ typedef void (fon9_CAPI_CALL *f9sv_FnOnConfig)(f9rc_ClientSession*, const f9sv_C
 typedef struct {
    f9sv_Named        Named_;
    const f9sv_Field* FieldArray_;
-   unsigned          FieldCount_;
+   uint32_t          FieldCount_;
    char              Padding___[4];
 } f9sv_Tab;
+static inline const f9sv_Field* f9sv_Tab_FindFieldName(const f9sv_Tab* tab, const char* fldName) {
+   uint32_t L = tab->FieldCount_;
+   if (L > 0) {
+      const f9sv_Field* fld = tab->FieldArray_ + L;
+      do {
+         --fld;
+         if (strcmp(fld->Named_.Name_.Begin_, fldName) == 0)
+            return fld;
+      } while (--L > 0);
+   }
+   return NULL;
+}
 
 typedef uint32_t  f9sv_TabSize;
 
@@ -137,6 +149,18 @@ typedef struct {
    f9sv_TabSize   TabCount_;
    char           Padding___[4];
 } f9sv_Layout;
+static inline f9sv_Tab* f9sv_Layout_FindTabName(const f9sv_Layout* layout, const char* tabName) {
+   uint32_t L = layout->TabCount_;
+   if(L > 0) {
+      f9sv_Tab* tab = layout->TabArray_ + L;
+      do {
+         --tab;
+         if (strcmp(tab->Named_.Name_.Begin_, tabName) == 0)
+            return tab;
+      } while (--L > 0);
+   }
+   return NULL;
+}
 
 /// 參考 fon9/seed/SeedBase.hpp: enum class OpResult;
 /// >=0 表示沒有錯誤.
@@ -374,10 +398,10 @@ f9sv_GetSvResultMessage(f9sv_Result res);
 /// *bufsz 傳回包含 EOS 需要的資料量.
 /// 返回 outbuf;
 f9sv_CAPI_FN(const char*)
-f9sv_GetField_Str(const struct f9sv_Seed* seed, const f9sv_Field* fld, char* outbuf, unsigned* bufsz);
+f9sv_GetField_Str(const struct f9sv_Seed* seed, const f9sv_Field* fld, char* outbuf, uint32_t* bufsz);
 
 static inline const char*
-f9sv_GetField_StrN(const struct f9sv_Seed* seed, const f9sv_Field* fld, char* outbuf, unsigned bufsz) {
+f9sv_GetField_StrN(const struct f9sv_Seed* seed, const f9sv_Field* fld, char* outbuf, uint32_t bufsz) {
    return f9sv_GetField_Str(seed, fld, outbuf, &bufsz);
 }
 

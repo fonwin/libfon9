@@ -121,7 +121,7 @@ f9sv_GetSvResultMessage(f9sv_Result res) {
 //--------------------------------------------------------------------------//
 
 f9sv_CAPI_FN(const char*)
-f9sv_GetField_Str(const struct f9sv_Seed* seed, const f9sv_Field* fld, char* outbuf, unsigned* bufsz) {
+f9sv_GetField_Str(const struct f9sv_Seed* seed, const f9sv_Field* fld, char* outbuf, uint32_t* bufsz) {
    assert(reinterpret_cast<const fon9::seed::Field*>(fld->InternalOwner_)->GetIndex() == fld->Named_.Index_);
    fon9::RevBufferList rbuf{128};
    reinterpret_cast<const fon9::seed::Field*>(fld->InternalOwner_)
@@ -138,7 +138,7 @@ f9sv_GetField_Str(const struct f9sv_Seed* seed, const f9sv_Field* fld, char* out
          outbuf[*bufsz - 1] = '\0';
       }
    }
-   *bufsz = static_cast<unsigned>(outsz + 1);
+   *bufsz = static_cast<uint32_t>(outsz + 1);
    return outbuf;
 }
 

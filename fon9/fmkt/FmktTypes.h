@@ -277,14 +277,14 @@ fon9_ENUM(f9fmkt_TradingRequestSt, uint8_t) {
    // 這裡的狀態碼, 必須與 f9fmkt_OrderSt 一起考慮.
    // 因為新單的 RequestSt 改變時, 通常會拿新單的 RequestSt 直接更新 OrderSt.
 };
-inline bool f9fmkt_TradingRequestSt_IsFinishedRejected(f9fmkt_TradingRequestSt st) {
+inline int f9fmkt_TradingRequestSt_IsFinishedRejected(f9fmkt_TradingRequestSt st) {
    return (unsigned char)(st & 0xf0) == (unsigned char)(0xe0);
 }
-inline bool f9fmkt_TradingRequestSt_IsAnyRejected(f9fmkt_TradingRequestSt st) {
+inline int f9fmkt_TradingRequestSt_IsAnyRejected(f9fmkt_TradingRequestSt st) {
    return f9fmkt_TradingRequestSt_IsFinishedRejected(st)
       || st == f9fmkt_TradingRequestSt_PartExchangeRejected;
 }
-inline bool f9fmkt_TradingRequestSt_IsPart(f9fmkt_TradingRequestSt st) {
+inline int f9fmkt_TradingRequestSt_IsPart(f9fmkt_TradingRequestSt st) {
    return (unsigned char)(st & 0xf0) == (unsigned char)(0xa0);
 }
 
@@ -388,13 +388,13 @@ fon9_ENUM(f9fmkt_OrderSt, uint8_t) {
    // 這裡的狀態碼, 必須與 f9fmkt_TradingRequestSt 一起考慮.
    // 因為新單的 RequestSt 改變時, 通常會拿新單的 RequestSt 直接更新 OrderSt.
 };
-inline bool f9fmkt_OrderSt_IsFinishedRejected(f9fmkt_OrderSt st) {
+inline int f9fmkt_OrderSt_IsFinishedRejected(f9fmkt_OrderSt st) {
    return f9fmkt_TradingRequestSt_IsFinishedRejected((f9fmkt_TradingRequestSt)st);
 }
-inline bool f9fmkt_OrderSt_IsAnyRejected(f9fmkt_OrderSt st) {
+inline int f9fmkt_OrderSt_IsAnyRejected(f9fmkt_OrderSt st) {
    return f9fmkt_TradingRequestSt_IsAnyRejected((f9fmkt_TradingRequestSt)st);
 }
-inline bool f9fmkt_OrderSt_IsCanceled(f9fmkt_OrderSt st) {
+inline int f9fmkt_OrderSt_IsCanceled(f9fmkt_OrderSt st) {
    return f9fmkt_OrderSt_AsCanceled <= st && st <= f9fmkt_OrderSt_Canceled;
 }
 
