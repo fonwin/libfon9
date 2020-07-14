@@ -39,15 +39,14 @@ class f9tws_API ExgMdHandlerPkCont : public ExgMdHandler, public fon9::PkContFee
    // fon9::PkContFeeder::Clear();
    void DailyClear() override;
    void LogSeqGap(const ExgMdHeader& pk, SeqT seq, SeqT lostCount);
-protected:
+public:
+   using ExgMdHandler::ExgMdHandler;
+   virtual ~ExgMdHandlerPkCont();
+
    void CheckLogLost(const ExgMdHeader& pk, SeqT seq) {
       if (auto lostCount = (seq - this->NextSeq_))
          this->LogSeqGap(pk, seq, lostCount);
    }
-
-public:
-   using ExgMdHandler::ExgMdHandler;
-   virtual ~ExgMdHandlerPkCont();
 };
 //--------------------------------------------------------------------------//
 /// TwsMdSys
@@ -90,8 +89,11 @@ class f9tws_API ExgMdSystem : public fon9::fmkt::MdSystem {
    void OnMdSystemStartup(unsigned tdayYYYYMMDD, const std::string& logPath) override;
    void OnParentTreeClear(fon9::seed::Tree& parent);
 
+   ExgMdSystem(fon9::seed::MaTreeSP root, std::string name, std::string rtiNamePre);
+
 public:
    const ExgMdSymbsSP   Symbs_;
+   const ExgMdSymbsSP   SymbsOdd_;
    const ExgMdIndicesSP Indices_;
 
    ExgMdSystem(fon9::seed::MaTreeSP root, std::string name, bool useRtiForRecover);
@@ -118,6 +120,7 @@ public:
    /// - 格式 14：認購(售)權證全稱資料.
    /// - 格式 15：當日停止交易資料.
    /// - 格式 21︰指數基本資料.
+   /// - 格式 22︰盤中零股交易個股基本資料.
    void BaseInfoPkLog(const ExgMdHeader& pk, unsigned pksz) {
       if (this->BaseInfoPkLog_ && !this->IsReloading_)
          this->BaseInfoPkLog_->Append(&pk, pksz);

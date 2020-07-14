@@ -3,12 +3,12 @@
 #ifndef __f9tws_ExgMdFmt6_hpp__
 #define __f9tws_ExgMdFmt6_hpp__
 #include "f9tws/ExgMdFmt.hpp"
-#include "fon9/fmkt/SymbBSData.hpp"
 
 namespace f9tws {
 fon9_PACK(1);
 
-struct ExgMdFmt6v4 : public ExgMdHeader {
+/// Fmt6(整股), Fmt23(零股) 的相同部分.
+struct ExgMdFmtRtBase : public ExgMdHeader {
    StkNo             StkNo_;
    ExgMdHHMMSSu6     Time_;
 
@@ -19,7 +19,7 @@ struct ExgMdFmt6v4 : public ExgMdHeader {
    bool IsLastDealSent() const {
       return this->Time_.HH_[0] == 0x99;
    }
-                                  
+
    /// - Bit 7 成交
    ///   - 0︰無成交價、成交量，不傳送
    ///   - 1︰有成交價、成交量，而且傳送
@@ -29,7 +29,7 @@ struct ExgMdFmt6v4 : public ExgMdHeader {
    /// - Bit 3-1 賣出
    ///   - 000︰無賣出價、賣出量，不傳送
    ///   - 001 －101︰揭示賣出價、賣出量之傳送之檔位數（1..5檔）
-   /// - Bit 0 最佳五檔價量
+   /// - Bit 0 最佳五檔價量 (Fmt23 保留)
    ///   逐筆交易每筆委託撮合後，可能產生數個成交價量揭示，
    ///   揭示最後一個成交價量時，同時揭露最佳五檔買賣價量，Bit 0 = 0。
    ///   非最後一個成交價量揭示時，則僅揭示成交價量但不揭示最佳五檔，Bit 0 = 1。
@@ -43,17 +43,24 @@ struct ExgMdFmt6v4 : public ExgMdHeader {
    /// - Bit 7 試算狀態註記
    ///   - 若 Bit 7 為 1，表示目前即時行情:PQs_[] 為試算階段狀態；
    ///   - 若 Bit 7 為 0，表示目前為一般揭示狀態，此時 Bit 6 與 Bit 5 註記資料無任何意義。
-   /// - Bit 6 試算後,延後開盤註記  0：否; 1：是
-   /// - Bit 5 試算後,延後收盤註記  0：否; 1：是
+   /// - Bit 6 試算後,延後開盤註記  0：否; 1：是     (Fmt23 保留)
+   /// - Bit 5 試算後,延後收盤註記  0：否; 1：是     (Fmt23 保留)
    /// - Bit 4 撮合方式註記        0：集合競價; 1：逐筆撮合
    /// - Bit 3 開盤註記            0：否; 1：是
    /// - Bit 2 收盤註記            0：否; 1：是
    /// - Bit 1-0 保留
    fon9::byte        StatusMask_;
+};
+
+struct ExgMdFmt6v4 : public ExgMdFmtRtBase {
    /// 累計成交數量.
    fon9::PackBcd<8>  TotalQty_;
    /// 根據 ItemMask_ 決定 PQs_[] 有多少元素及其內涵.
    ExgMdPriQty       PQs_[1];
+
+   bool HasBS() const {
+      return (this->ItemMask_ & 0x7e) || (this->ItemMask_ & 1) == 0;
+   }
 };
 static_assert(sizeof(ExgMdFmt6v4)
               == sizeof(ExgMdHeader) + sizeof(StkNo) + sizeof(ExgMdHHMMSSu6) + sizeof(ExgMdTail)
@@ -63,16 +70,18 @@ static_assert(sizeof(ExgMdFmt6v4)
 fon9_PACK_POP;
 
 //--------------------------------------------------------------------------//
-inline const ExgMdPriQty* AssignBS(fon9::fmkt::PriQty* dst, const ExgMdPriQty* pqs, int count) {
-   if (count > fon9::fmkt::SymbBSData::kBSCount)
-      count = fon9::fmkt::SymbBSData::kBSCount;
-   for (int L = 0; L < count; ++L) {
-      pqs->AssignTo(*dst);
-      ++dst;
+template <class DstPQ, class ExgMdPQ, unsigned kBSCount>
+inline const ExgMdPQ* AssignBS(DstPQ (&adst)[kBSCount], const ExgMdPQ* pqs, unsigned count) {
+   if (count > kBSCount)
+      count = kBSCount;
+   DstPQ* pdst = adst;
+   for (unsigned L = 0; L < count; ++L) {
+      pqs->AssignTo(*pdst);
+      ++pdst;
       ++pqs;
    }
-   if (count < fon9::fmkt::SymbBSData::kBSCount)
-      memset(dst, 0, sizeof(*dst) * (fon9::fmkt::SymbBSData::kBSCount - count));
+   if (count < kBSCount)
+      memset(pdst, 0, sizeof(*pdst) * (kBSCount - count));
    return pqs;
 }
 

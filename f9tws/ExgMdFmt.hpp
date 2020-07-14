@@ -78,7 +78,7 @@ fon9_PACK_POP;
 //--------------------------------------------------------------------------//
 
 enum {
-   kExgMdMaxFmtNo = 21,
+   kExgMdMaxFmtNo = 30,
    kExgMdMaxVer = 8,
 };
 

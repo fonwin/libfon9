@@ -8,8 +8,15 @@ set(f9tws_src
  ExgMdFmt6Handler.cpp
  ExgMdFmt9Handler.cpp
  ExgMdFmt19Handler.cpp
+
+ # 零股
+ ExgMdFmt22Handler.cpp
+ ExgMdFmt23Handler.cpp
+
+ # 指數
  ExgMdFmtIxHandler.cpp
  ExgMdFmtIxNoList.cpp
+
  ExgMdReceiverSession.cpp
  ExgMdReceiverFactory.cpp
 

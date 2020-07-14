@@ -45,25 +45,33 @@ void ExgMdHandlerPkCont::LogSeqGap(const ExgMdHeader& pk, SeqT seq, SeqT lostCou
    }
 }
 //--------------------------------------------------------------------------//
-ExgMdSystem::ExgMdSystem(fon9::seed::MaTreeSP root, std::string name, bool useRtiForRecover)
+ExgMdSystem::ExgMdSystem(fon9::seed::MaTreeSP root, std::string name, std::string rtiNamePre)
    : base(root, name)
-   , Symbs_{new ExgMdSymbs{useRtiForRecover ? (fon9::seed::SysEnv_GetLogFileFmtPath(*root) + name + "_Symbs") : std::string{}}}
-   , Indices_{new ExgMdIndices{useRtiForRecover ? (fon9::seed::SysEnv_GetLogFileFmtPath(*root) + name + "_Indices") : std::string{}}} {
+   , Symbs_{new ExgMdSymbs{rtiNamePre.empty() ? std::string{} : (rtiNamePre + "Symbs")}}
+   , SymbsOdd_{new ExgMdSymbs{rtiNamePre.empty() ? std::string{} : (rtiNamePre + "SymbsOdd")}}
+   , Indices_{new ExgMdIndices{rtiNamePre.empty() ? std::string{} : (rtiNamePre + "Indices")}} {
    this->Sapling_->AddNamedSapling(this->Symbs_, "Symbs");
+   this->Sapling_->AddNamedSapling(this->SymbsOdd_, "SymbsOdd");
    this->Sapling_->AddNamedSapling(this->Indices_, "Indices");
    this->Symbs_->SetDailyClearHHMMSS(this->GetClearHHMMSS());
+   this->SymbsOdd_->SetDailyClearHHMMSS(this->GetClearHHMMSS());
    this->Indices_->SetDailyClearHHMMSS(this->GetClearHHMMSS());
+}
+ExgMdSystem::ExgMdSystem(fon9::seed::MaTreeSP root, std::string name, bool useRtiForRecover)
+   : ExgMdSystem(root, name, useRtiForRecover ? (fon9::seed::SysEnv_GetLogFileFmtPath(*root) + name + "_") : std::string{}) {
 }
 ExgMdSystem::~ExgMdSystem() {
 }
 void ExgMdSystem::OnParentTreeClear(fon9::seed::Tree& parent) {
-   std::string logpath = this->LogPath();
-   this->Symbs_->SaveTo(logpath + "_Symbs.mds");
-   this->Indices_->SaveTo(logpath + "_Indices.mds");
+   std::string logpath = this->LogPath() + "_";
+   this->Symbs_->SaveTo(logpath + "Symbs.mds");
+   this->SymbsOdd_->SaveTo(logpath + "SymbsOdd.mds");
+   this->Indices_->SaveTo(logpath + "Indices.mds");
    base::OnParentTreeClear(parent);
 }
 void ExgMdSystem::OnMdClearTimeChanged() {
    this->Symbs_->SetDailyClearHHMMSS(this->GetClearHHMMSS());
+   this->SymbsOdd_->SetDailyClearHHMMSS(this->GetClearHHMMSS());
    this->Indices_->SetDailyClearHHMMSS(this->GetClearHHMMSS());
 }
 void ExgMdSystem::OnMdSystemStartup(const unsigned tdayYYYYMMDD, const std::string& logPath) {
@@ -82,6 +90,7 @@ void ExgMdSystem::OnMdSystemStartup(const unsigned tdayYYYYMMDD, const std::stri
 
    base::OnMdSystemStartup(tdayYYYYMMDD, logPath);
    this->Symbs_->DailyClear(tdayYYYYMMDD);
+   this->SymbsOdd_->DailyClear(tdayYYYYMMDD);
    this->Indices_->DailyClear(tdayYYYYMMDD);
 
    auto seeds = this->Sapling_->GetList(nullptr);
@@ -122,9 +131,10 @@ void ExgMdSystem::OnMdSystemStartup(const unsigned tdayYYYYMMDD, const std::stri
       this->BaseInfoPkLog_ = std::move(pkLogF);
    }
    // ----------------------------------------
-   std::string logpath = this->LogPath();
-   this->Symbs_->LoadFrom(logpath + "_Symbs.mds");
-   this->Indices_->LoadFrom(logpath + "_Indices.mds");
+   std::string logpath = this->LogPath() + "_";
+   this->Symbs_->LoadFrom(logpath + "Symbs.mds");
+   this->SymbsOdd_->LoadFrom(logpath + "Symbs.mds");
+   this->Indices_->LoadFrom(logpath + "Indices.mds");
 }
 
 } // namespaces
