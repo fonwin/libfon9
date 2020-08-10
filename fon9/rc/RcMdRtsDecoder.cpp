@@ -38,6 +38,7 @@ inline const seed::Field* GetFieldOrRaise(seed::Tab& tab, StrView fldName) {
 inline const seed::Field* GetFieldOrNull(seed::Tab& tab, StrView fldName) {
    return tab.Fields_.Get(fldName);
 }
+//--------------------------------------------------------------------------//
 /// 如果為 Null 表示: 不變動 dst;
 static void BitvToDayTimeOrUnchange(DcQueue& rxbuf, DayTime& dst) {
    DayTime val{DayTime::Null()};
@@ -48,9 +49,11 @@ static void BitvToDayTimeOrUnchange(DcQueue& rxbuf, DayTime& dst) {
 //--------------------------------------------------------------------------//
 class RcSvStreamDecoderNote_MdRts : public RcSvStreamDecoderNote {
    fon9_NON_COPY_NON_MOVE(RcSvStreamDecoderNote_MdRts);
-   DayTime     RtInfoTime_{DayTime::Null()};
-   DayTime     ReInfoTime_{DayTime::Null()};
-   svc::PodRec RePod_;
+   seed::FieldNumberT   RtMktSeq_{};
+   DayTime              RtInfoTime_{DayTime::Null()};
+   DayTime              ReInfoTime_{DayTime::Null()};
+   svc::PodRec          RePod_;
+
    svc::SeedSP* GetRptSeedArray(svc::RxSubrData& rx) {
       if (rx.NotifyKind_ == seed::SeedNotifyKind::StreamData) {
          if (!rx.IsSubrTree_ || rx.SeedKey_.empty() || seed::IsSubrTree(rx.SeedKey_.begin()))
@@ -61,6 +64,7 @@ class RcSvStreamDecoderNote_MdRts : public RcSvStreamDecoderNote {
          rx.SubrRec_->Tree_->MakePod(this->RePod_);
       return this->RePod_.Seeds_;
    }
+
 public:
    RcSvStreamDecoderNote_MdRts() = default;
    svc::SeedSP* SetRptSeedArray(f9sv_ClientReport& rpt, svc::RxSubrData& rx) {
@@ -128,6 +132,7 @@ struct RcSvStreamDecoder_TabFields_POD {
    const seed::Field*   FldBaseSessionSt_;
    const seed::Field*   FldBaseMarket_;
    const seed::Field*   FldBaseFlowGroup_;
+   const seed::Field*   FldBasePriceOrigDiv_;
    const seed::Field*   FldBaseStrikePriceDiv_;
    const seed::Field*   FldBaseShUnit_;
 
@@ -150,7 +155,10 @@ struct RcSvStreamDecoder_TabFields_POD {
    const seed::Field*   FldBSInfoTime_;
    const seed::Field*   FldBSFlags_;
    const seed::Field*   FldBSLmtFlags_;
+   const seed::Field*   FldBSMktSeq_;
 };
+static_assert(std::is_pod<RcSvStreamDecoder_TabFields_POD>::value, "");
+
 struct RcSvStreamDecoder_TabFields : public RcSvStreamDecoder_TabFields_POD {
    struct FieldPQ {
       const seed::Field*   FldPri_;
@@ -179,6 +187,7 @@ struct RcSvStreamDecoder_TabFields : public RcSvStreamDecoder_TabFields_POD {
       this->FldBaseSessionSt_      = GetFieldOrRaise(*tab, "SessionSt");
       this->FldBaseMarket_         = GetFieldOrRaise(*tab, "Market");
       this->FldBaseFlowGroup_      = GetFieldOrNull(*tab, "FlowGroup");
+      this->FldBasePriceOrigDiv_   = GetFieldOrNull(*tab, "PriceOrigDiv");
       this->FldBaseStrikePriceDiv_ = GetFieldOrNull(*tab, "StrikePriceDiv");
       this->FldBaseShUnit_         = GetFieldOrNull(*tab, "ShUnit");
 
@@ -201,6 +210,7 @@ struct RcSvStreamDecoder_TabFields : public RcSvStreamDecoder_TabFields_POD {
          this->FldBSInfoTime_ = GetFieldOrRaise(*tab, "InfoTime");
          this->FldBSFlags_    = GetFieldOrRaise(*tab, "Flags");
          this->FldBSLmtFlags_ = GetFieldOrNull(*tab, "LmtFlags");
+         this->FldBSMktSeq_   = GetFieldOrNull(*tab, "MktSeq");
          GetBSFields(this->FldOrderBuys_,    tab->Fields_, 'B', '\0');
          GetBSFields(this->FldOrderSells_,   tab->Fields_, 'S', '\0');
          GetBSFields(this->FldDerivedBuys_,  tab->Fields_, 'D', 'B');
@@ -287,8 +297,8 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder, public RcSvStreamDeco
    static void FetchSeedKey(svc::SubrRec& subr, DcQueue& dcq, CharVector& tempKeyText, f9sv_ClientReport& rpt) {
       BitvTo(dcq, tempKeyText);
       rpt.SeedKey_.Begin_ = tempKeyText.begin();
-      rpt.SeedKey_.End_ = tempKeyText.end();
-      rpt.SeedArray_ = svc::ToSeedArray(subr.Tree_->FetchPod(rpt.SeedKey_).Seeds_);
+      rpt.SeedKey_.End_   = tempKeyText.end();
+      rpt.SeedArray_      = svc::ToSeedArray(subr.Tree_->FetchPod(rpt.SeedKey_).Seeds_);
    }
    void DecodeSnapshotSymb(svc::SubrRec& subr, DcQueue& dcq,
                            f9rc_ClientSession& ses, f9sv_ClientReport& rpt,
@@ -342,32 +352,31 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder, public RcSvStreamDeco
       rpt.StreamPackType_ = cast_to_underlying(pkType);
       if (fon9_UNLIKELY(rx.IsNeedsLog_))
          RevPrint(rx.LogBuf_, "|pkType=", pkType);
-
       switch (pkType) {
       case f9sv_RtsPackType_DealPack:
-      {
-         InfoAux  dec{rx, rpt, rxbuf, this->TabIdxDeal_};
-         DecodeDealPack(dec, rx, rpt, rxbuf);
+         this->DecodeDealPack(InfoAux{rx, rpt, rxbuf, this->TabIdxDeal_}, rx, rpt, rxbuf);
          assert(rxbuf.empty());
          return;
-      }
-      case f9sv_RtsPackType_SnapshotBS:
       case f9sv_RtsPackType_CalculatedBS:
+      case f9sv_RtsPackType_SnapshotBS:
       {
-         InfoAux  dec(rx, rpt, rxbuf, this->TabIdxBS_);
-         this->DecodeSnapshotBS(dec, rx, rpt, rxbuf,
-            (pkType == f9sv_RtsPackType_CalculatedBS
-             ? f9sv_BSFlag_Calculated : f9sv_BSFlag{}));
+         InfoAux  dec{rx, rpt, rxbuf, this->TabIdxBS_};
+         if (this->IsMktSeqOK(dec, rx, rpt, rxbuf))
+            this->DecodeSnapshotBS(std::move(dec), rx, rpt, rxbuf, (pkType == f9sv_RtsPackType_CalculatedBS
+                                                                    ? f9sv_BSFlag_Calculated : f9sv_BSFlag{}));
          return;
       }
       case f9sv_RtsPackType_UpdateBS:
          return this->DecodeUpdateBS(rx, rpt, rxbuf);
+      case f9sv_RtsPackType_DealBS:
+         return this->DecodeDealBS(rx, rpt, rxbuf);
+
       case f9sv_RtsPackType_TradingSessionId:
          return this->DecodeTradingSessionId(rx, rpt, rxbuf);
       case f9sv_RtsPackType_BaseInfoTw:
          return this->DecodeBaseInfoTw(rx, rpt, rxbuf);
-      case f9sv_RtsPackType_DealBS:
-         return this->DecodeDealBS(rx, rpt, rxbuf);
+      case f9sv_RtsPackType_PriLmts:
+         return this->DecodePriLmts(InfoAux{rx, rpt, rxbuf, this->TabIdxRef_}, rx, rpt, rxbuf);
       case f9sv_RtsPackType_SnapshotSymbList_NoInfoTime:
          return this->DecodeSnapshotSymbList(rx, rpt, rxbuf);
       case f9sv_RtsPackType_IndexValueV2:
@@ -433,7 +442,29 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder, public RcSvStreamDeco
          fnOnHandler(&rx.Session_, &rpt);
    }
    // -----
-   f9sv_DealFlag DecodeDealPack(InfoAux& dec, svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {
+   bool IsMktSeqOK(const InfoAux& dec, svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) const {
+      (void)dec; // MktSeq 是在 InfoTime 之後, 所以必須確定有先用 dec 取出 InfoTime.
+      if (!this->FldBSMktSeq_)
+         return true;
+      uint64_t rxSeq{};
+      BitvTo(rxbuf, rxSeq);
+      seed::SimpleRawWr bsWr{const_cast<f9sv_Seed*>(rpt.SeedArray_[this->TabIdxBS_])};
+      if (fon9_LIKELY(rx.NotifyKind_ == seed::SeedNotifyKind::StreamData)) {
+         if (signed_cast(rxSeq) <= this->FldBSMktSeq_->GetNumber(bsWr, 0, 0))
+            return false;
+      }
+      else {
+         // Recover 不用考慮 mktseq 是否為過期資料.
+      }
+      this->FldBSMktSeq_->PutNumber(bsWr, signed_cast(rxSeq), 0);
+      return true;
+   }
+
+   #define f9sv_DealFlag_IsOld   static_cast<f9sv_DealFlag>(0xff)
+   f9sv_DealFlag DecodeDealPack(InfoAux&& dec, svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {
+      if (!this->IsMktSeqOK(dec, rx, rpt, rxbuf))
+         return f9sv_DealFlag_IsOld;
+
       DayTime  dealTime = *dec.InfoTime_;
       dec.PutDecField(*this->FldDealInfoTime_, dealTime);
 
@@ -505,11 +536,11 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder, public RcSvStreamDeco
    }
    void DecodeDealBS(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {
       InfoAux        decDeal{rx, rpt, rxbuf, this->TabIdxDeal_};
-      f9sv_DealFlag  dflag = this->DecodeDealPack(decDeal, rx, rpt, rxbuf);
-      InfoAux        decBS{decDeal, rpt, this->TabIdxBS_};
-      this->DecodeSnapshotBS(decBS, rx, rpt, rxbuf,
-         (IsEnumContains(dflag, f9sv_DealFlag_Calculated)
-          ? f9sv_BSFlag_Calculated : f9sv_BSFlag{}));
+      f9sv_DealFlag  dflag = this->DecodeDealPack(std::move(decDeal), rx, rpt, rxbuf);
+      if (dflag != f9sv_DealFlag_IsOld)
+         this->DecodeSnapshotBS(InfoAux{decDeal, rpt, this->TabIdxBS_},
+                                rx, rpt, rxbuf, (IsEnumContains(dflag, f9sv_DealFlag_Calculated)
+                                                 ? f9sv_BSFlag_Calculated : f9sv_BSFlag{}));
    }
    // -----
    static void ClearFieldValues(const seed::RawWr& wr, FieldPQList::const_iterator ibeg, FieldPQList::const_iterator iend) {
@@ -523,16 +554,16 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder, public RcSvStreamDeco
       RevPrint(rbuf, '*');
       fld.FldPri_->CellRevPrint(rd, nullptr, rbuf);
    }
-   void DecodeSnapshotBS(InfoAux& dec, svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf, f9sv_BSFlag bsFlags) {
+   void DecodeSnapshotBS(InfoAux&& dec, svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf, f9sv_BSFlag bsFlags) {
       dec.PutDecField(*this->FldBSInfoTime_, *dec.InfoTime_);
       const FieldPQList* flds;
       while (!rxbuf.empty()) {
          if (fon9_UNLIKELY(rx.IsNeedsLog_))
             RevPrint(rx.LogBuf_, '}');
-         const uint8_t first = ReadOrRaise<uint8_t>(rxbuf);
+         const uint8_t bstype = ReadOrRaise<uint8_t>(rxbuf);
          static_assert((cast_to_underlying(fmkt::RtBSType::Mask) & 0x80) == 0, "");
-         if ((first & 0x80) == 0) {
-            switch (static_cast<fmkt::RtBSType>(first & cast_to_underlying(fmkt::RtBSType::Mask))) {
+         if ((bstype & 0x80) == 0) {
+            switch (static_cast<fmkt::RtBSType>(bstype & cast_to_underlying(fmkt::RtBSType::Mask))) {
             #define case_RtBSType(type) case fmkt::RtBSType::type: \
             flds = &this->Fld##type##s_; \
             bsFlags |= f9sv_BSFlag_##type; \
@@ -547,7 +578,7 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder, public RcSvStreamDeco
                return;
             }
             assert(!flds->empty());
-            unsigned count = static_cast<unsigned>(first & 0x0f) + 1;
+            unsigned count = static_cast<unsigned>(bstype & 0x0f) + 1;
             auto     ibeg = flds->cbegin() + count;
             this->ClearFieldValues(dec.RawWr_, ibeg, flds->cend());
             do {
@@ -562,7 +593,7 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder, public RcSvStreamDeco
             } while (--count > 0);
          }
          else { // [BS快照] 的 特殊欄位更新.
-            switch (static_cast<fmkt::RtBSSnapshotSpc>(first)) {
+            switch (static_cast<fmkt::RtBSSnapshotSpc>(bstype)) {
             case fmkt::RtBSSnapshotSpc::LmtFlags:
             {  // BSLmtFlags.
                assert(this->FldBSLmtFlags_ != nullptr);
@@ -572,10 +603,10 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder, public RcSvStreamDeco
                   RevPrint(rx.LogBuf_, ToHex(lmtFlags));
             }
             break;
-            } // switch(first)
+            } // switch(bstype)
          }
          if (fon9_UNLIKELY(rx.IsNeedsLog_))
-            RevPrint(rx.LogBuf_, "|rtBS.", ToHex(first), "={");
+            RevPrint(rx.LogBuf_, "|rtBS.", ToHex(bstype), "={");
       }
       // -----
       #define check_ClearFieldValues(type) \
@@ -625,6 +656,8 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder, public RcSvStreamDeco
    }
    void DecodeUpdateBS(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {
       InfoAux  dec(rx, rpt, rxbuf, this->TabIdxBS_);
+      if (!this->IsMktSeqOK(dec, rx, rpt, rxbuf))
+         return;
       dec.PutDecField(*this->FldBSInfoTime_, *dec.InfoTime_);
       const uint8_t first = ReadOrRaise<uint8_t>(rxbuf);
       f9sv_BSFlag   bsFlags{};
@@ -752,20 +785,38 @@ struct RcSvStreamDecoder_MdRts : public RcSvStreamDecoder, public RcSvStreamDeco
       }
       if (this->FldBaseStrikePriceDiv_) {
          uint8_t  u8StrikePriceDecimalLocator = ReadOrRaise<uint8_t>(rxbuf);
-         this->FldBaseStrikePriceDiv_->PutNumber(decBase.RawWr_, static_cast<seed::FieldNumberT>(GetDecDivisor(u8StrikePriceDecimalLocator)), 0);
+         this->FldBaseStrikePriceDiv_->PutNumber(decBase.RawWr_, static_cast<seed::FieldNumberT>(
+            GetDecDivisor(u8StrikePriceDecimalLocator)), 0);
+      }
+      if (this->FldBasePriceOrigDiv_) {
+         uint8_t  u8PriceOrigDiv = ReadOrRaise<uint8_t>(rxbuf);
+         this->FldBasePriceOrigDiv_->PutNumber(decBase.RawWr_, static_cast<seed::FieldNumberT>(
+            GetDecDivisor(static_cast<DecScaleT>(this->FldPriRef_->DecScale_ - u8PriceOrigDiv))), 0);
       }
       if (this->FldBaseShUnit_) {
          this->FldBaseShUnit_->BitvToCell(decBase.RawWr_, rxbuf);
       }
       this->ReportEv(rx, rpt);
 
-      InfoAux  decRef(decBase, rpt, this->TabIdxRef_);
+      InfoAux  decRef{decBase, rpt, this->TabIdxRef_};
       this->FldPriRef_->BitvToCell(decRef.RawWr_, rxbuf);
+      if (rxbuf.empty())
+         this->ReportEv(rx, rpt);
+      else
+         this->DecodePriLmts(std::move(decRef), rx, rpt, rxbuf);
+   }
+   void DecodePriLmts(InfoAux&& decRef, svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {
       this->FldPriUpLmt_->BitvToCell(decRef.RawWr_, rxbuf);
       this->FldPriDnLmt_->BitvToCell(decRef.RawWr_, rxbuf);
       for (auto& fldPriLmt : this->FldPriLmts_) {
-         fldPriLmt.Up_->BitvToCell(decRef.RawWr_, rxbuf);
-         fldPriLmt.Dn_->BitvToCell(decRef.RawWr_, rxbuf);
+         if (rxbuf.empty()) {
+            fldPriLmt.Up_->SetNull(decRef.RawWr_);
+            fldPriLmt.Dn_->SetNull(decRef.RawWr_);
+         }
+         else {
+            fldPriLmt.Up_->BitvToCell(decRef.RawWr_, rxbuf);
+            fldPriLmt.Dn_->BitvToCell(decRef.RawWr_, rxbuf);
+         }
       }
       this->ReportEv(rx, rpt);
       assert(rxbuf.empty());

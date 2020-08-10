@@ -67,7 +67,7 @@ public:
    /// - this->Contract_->OnSymbRemove(*this);
    void OnBeforeRemove(fon9::fmkt::SymbTree& owner, unsigned tdayYYYYMMDD) override;
 
-   static fon9::seed::LayoutSP MakeLayout();
+   static fon9::seed::LayoutSP MakeLayout(bool isAddMarketSeq);
 };
 //--------------------------------------------------------------------------//
 class f9twf_API ExgMdSymbs : public fon9::fmkt::MdSymbsT<ExgMdSymb> {
@@ -78,7 +78,8 @@ class f9twf_API ExgMdSymbs : public fon9::fmkt::MdSymbsT<ExgMdSymb> {
    void OnAfterLoadFrom(Locker&& symbsLk) override;
 
 public:
-   ExgMdSymbs(std::string rtiPathFmt);
+   ExgMdSymbs(std::string rtiPathFmt, bool isAddMarketSeq);
+
    fon9::fmkt::SymbSP MakeSymb(const fon9::StrView& symbid) override;
 
    ExgMdContract& FetchContract(ExgMdSymb& symb) {
@@ -110,19 +111,19 @@ struct ExgMdEntry;
 
 /// 返回 mdEntry + mdCount;
 f9twf_API const void* ExgMdToSnapshotBS(fon9::DayTime mdTime, unsigned mdCount, const ExgMdEntry* mdEntry,
-                                        fon9::fmkt::SymbTwfBS& symbBS, uint32_t priceOrigDiv);
+                                        fon9::fmkt::SymbTwfBS& symbBS, uint32_t priceOrigDiv, fon9::fmkt::MarketDataSeq mktseq);
 template <class SymbT>
-inline const void* ExgMdToSnapshotBS(fon9::DayTime mdTime, unsigned mdCount, const ExgMdEntry* mdEntry, SymbT& symb) {
-   return ExgMdToSnapshotBS(mdTime, mdCount, mdEntry, symb.BS_, symb.PriceOrigDiv_);
+inline const void* ExgMdToSnapshotBS(fon9::DayTime mdTime, unsigned mdCount, const ExgMdEntry* mdEntry, SymbT& symb, fon9::fmkt::MarketDataSeq mktseq) {
+   return ExgMdToSnapshotBS(mdTime, mdCount, mdEntry, symb.BS_, symb.PriceOrigDiv_, mktseq);
 }
 //----------------------
 struct ExgMcI081Entry;
 
 f9twf_API void ExgMdToUpdateBS(fon9::DayTime mdTime, unsigned mdCount, const ExgMcI081Entry* mdEntry,
-                               fon9::fmkt::SymbTwfBS& symbBS, uint32_t priceOrigDiv);
+                               fon9::fmkt::SymbTwfBS& symbBS, uint32_t priceOrigDiv, fon9::fmkt::MarketDataSeq mktseq);
 template <class SymbT>
-inline void ExgMdToUpdateBS(fon9::DayTime mdTime, unsigned mdCount, const ExgMcI081Entry* mdEntry, SymbT& symb) {
-   ExgMdToUpdateBS(mdTime, mdCount, mdEntry, symb.BS_, symb.PriceOrigDiv_);
+inline void ExgMdToUpdateBS(fon9::DayTime mdTime, unsigned mdCount, const ExgMcI081Entry* mdEntry, SymbT& symb, fon9::fmkt::MarketDataSeq mktseq) {
+   ExgMdToUpdateBS(mdTime, mdCount, mdEntry, symb.BS_, symb.PriceOrigDiv_, mktseq);
 }
 
 } // namespaces

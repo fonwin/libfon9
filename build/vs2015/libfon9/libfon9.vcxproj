@@ -161,6 +161,7 @@
     <ClInclude Include="..\..\..\fon9\FlowCounter.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\FmdRtsPackType.h" />
     <ClInclude Include="..\..\..\fon9\fmkt\FmdTypes.h" />
+    <ClInclude Include="..\..\..\fon9\fmkt\FmdTypes.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\FmktTypes.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\MdRtsTypes.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\MdRtStream.hpp" />

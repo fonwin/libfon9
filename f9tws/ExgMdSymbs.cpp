@@ -10,14 +10,14 @@ using namespace fon9;
 using namespace fon9::seed;
 using namespace fon9::fmkt;
 
-LayoutSP ExgMdSymb::MakeLayout() {
+LayoutSP ExgMdSymb::MakeLayout(bool isAddMarketSeq) {
    constexpr auto kTabFlag = TabFlag::NoSapling_NoSeedCommand_Writable;
    return LayoutSP{new LayoutN(
       fon9_MakeField(Symb, SymbId_, "Id"), TreeFlag::AddableRemovable | TreeFlag::Unordered,
-      TabSP{new Tab{Named{fon9_kCSTR_TabName_Base},    MakeFields(),            kTabFlag}},
-      TabSP{new Tab{Named{fon9_kCSTR_TabName_Ref},     SymbRef_MakeFields(),    kTabFlag}},
-      TabSP{new Tab{Named{fon9_kCSTR_TabName_BS},      SymbTwsBS_MakeFields(),  kTabFlag}},
-      TabSP{new Tab{Named{fon9_kCSTR_TabName_Deal},    SymbTwsDeal_MakeFields(),kTabFlag}},
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_Base},    MakeFields(),                kTabFlag}},
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_Ref},     SymbRef_MakeFields(),        kTabFlag}},
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_BS},      SymbTwsBS_MakeFields(isAddMarketSeq), kTabFlag}},
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_Deal},    SymbTwsDeal_MakeFields(),    kTabFlag}},
       f9fmkt_MAKE_TABS_OpenHighLow(),
       TabSP{new Tab{Named{fon9_kCSTR_TabName_BreakSt}, SymbBreakSt_MakeFieldsTws(), kTabFlag}},
       TabSP{new Tab{Named{fon9_kCSTR_TabName_Rt},      MdRtStream::MakeFields(),    kTabFlag}}
@@ -56,8 +56,10 @@ void ExgMdSymb::OnBeforeRemove(SymbTree& owner, unsigned tdayYYYYMMDD) {
    this->MdRtStream_.BeforeRemove(owner, *this);
 }
 //--------------------------------------------------------------------------//
-ExgMdSymbs::ExgMdSymbs(std::string rtiPathFmt)
-   : base(ExgMdSymb::MakeLayout(), std::move(rtiPathFmt), EnAllowSubrSnapshotSymb)
+ExgMdSymbs::ExgMdSymbs(std::string rtiPathFmt, bool isAddMarketSeq)
+   : base(ExgMdSymb::MakeLayout(isAddMarketSeq), std::move(rtiPathFmt),
+          fon9::fmkt::MdSymbsCtrlFlag::AllowSubrSnapshotSymb
+          | (isAddMarketSeq ? fon9::fmkt::MdSymbsCtrlFlag::HasMarketDataSeq : fon9::fmkt::MdSymbsCtrlFlag{}))
    , TabBreakSt_{LayoutSP_->GetTab(fon9_kCSTR_TabName_BreakSt)} {
 }
 SymbSP ExgMdSymbs::MakeSymb(const StrView& symbid) {

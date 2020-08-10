@@ -25,7 +25,7 @@ protected:
 public:
    const ExgMdSymbsSP   Symbs_;
 
-   ExgMcSystem(fon9::seed::MaTreeSP root, std::string name, bool useRtiForRecover);
+   ExgMcSystem(fon9::seed::MaTreeSP root, std::string name, bool useRtiForRecover, bool isAddMarketSeq);
    ~ExgMcSystem();
 };
 using ExgMcSystemSP = fon9::intrusive_ptr<ExgMcSystem>;

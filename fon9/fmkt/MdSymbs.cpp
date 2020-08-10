@@ -126,7 +126,7 @@ void MdSymbsBase::DailyClear(unsigned tdayYYYYMMDD) {
    PutBigEndian(rts.AllocPacket<uint32_t>(), tdayYYYYMMDD);
    RevPutBitv(rts, fon9_BitvV_NumberNull); // DayTime::Null();
    *rts.AllocPacket<uint8_t>() = cast_to_underlying(f9sv_RtsPackType_TradingSessionId);
-   MdRtsNotifyArgs  e{*this, fon9_kCSTR_SubrTree, GetMdRtsKind(f9sv_RtsPackType_TradingSessionId), rts};
+   MdRtsNotifyArgs  e{*this, fon9_kCSTR_SubrTree, f9sv_MdRtsKind_TradingSession, rts};
    this->UnsafeSubj_.Publish(e);
 }
 void MdSymbsBase::UnsafePublish(f9sv_RtsPackType pkType, seed::SeedNotifyArgs& e) {
@@ -138,7 +138,7 @@ void MdSymbsBase::UnsafePublish(f9sv_RtsPackType pkType, seed::SeedNotifyArgs& e
       return;
    if (this->IsBlockPublish_)
       return;
-   // 訂閱時, 若沒有提供 'S' = get all SnapshotSymb;
+   // 訂閱時, 若沒有提供 'S'(get all SnapshotSymb) 旗標;
    // 則不保證底下資料的正確:
    // - InfoTime, DealTime
    // - TotalQty
@@ -148,11 +148,11 @@ void MdSymbsBase::UnsafePublish(f9sv_RtsPackType pkType, seed::SeedNotifyArgs& e
    this->UnsafeSubj_.Publish(e);
 }
 seed::OpResult MdSymbsBase::SubscribeStream(SubConn* pSubConn, seed::Tab& tab, StrView args, seed::FnSeedSubr&& fnSubr) {
-   if (!(this->EnAllows_ & EnAllowSubrTree) || &tab != this->RtTab_)
+   if (!IsEnumContains(this->CtrlFlags_, MdSymbsCtrlFlag::AllowSubrTree) || &tab != this->RtTab_)
       return seed::SubscribeStreamUnsupported(pSubConn);
    // args = "MdRts:F,S"
    // F(hex) = MdRtsKind MdRtSubr.RtFilter_;
-   // 'S' = get all SnapshotSymb; 建構時必須提供 EnAllowSubrSnapshotSymb 旗標;
+   // 'S' = get all SnapshotSymb; 建構時必須提供 MdSymbsCtrlFlag::AllowSubrSnapshotSymb 旗標;
    const StrView decoderName = StrFetchTrim(args, ':');
    if (decoderName != "MdRts")
       return seed::OpResult::bad_subscribe_stream_args;
@@ -160,9 +160,9 @@ seed::OpResult MdSymbsBase::SubscribeStream(SubConn* pSubConn, seed::Tab& tab, S
    SymbsSubrSP  psub{new SymbsSubr{std::move(fnSubr), &args}};
    if (StrTrimHead(&args).Get1st() == ',')
       StrTrimHead(&args, args.begin() + 1);
-   // 解析 args 看看是否需要取得「全部商品」的現在資料? this->EnAllows_ 是否開放?
+   // 解析 args 看看是否需要取得「全部商品」的現在資料? this->CtrlFlags_ 是否開放?
    bool isSubrGetAll = false;
-   if ((this->EnAllows_ & EnAllowSubrSnapshotSymb) == EnAllowSubrSnapshotSymb) {
+   if (IsEnumContains(this->CtrlFlags_, MdSymbsCtrlFlag::AllowSubrSnapshotSymb)) {
       isSubrGetAll = (args.Get1st() == 'S');
    }
    else if (!args.empty())

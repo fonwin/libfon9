@@ -221,7 +221,8 @@ struct RtParser : public TwfPkReceiver, public fon9::fmkt::SymbTree {
       f9extests::SymbIn& symb = *static_cast<f9extests::SymbIn*>(rthis.FetchSymb(symbs, symbid).get());
       unsigned mdCount = fon9::PackBcdTo<unsigned>(static_cast<const f9twf::ExgMcI081*>(&pk)->NoMdEntries_);
       auto*    mdEntry = static_cast<const f9twf::ExgMcI081*>(&pk)->MdEntry_;
-      f9twf::ExgMdToUpdateBS(pk.InformationTime_.ToDayTime(), mdCount, mdEntry, symb);
+      f9twf::ExgMdToUpdateBS(pk.InformationTime_.ToDayTime(), mdCount, mdEntry, symb,
+                             fon9::fmkt::PackBcdToMarketSeq(static_cast<const f9twf::ExgMcI081*>(&pk)->ProdMsgSeq_));
       if (reinterpret_cast<uintptr_t>(mdEntry + mdCount) - reinterpret_cast<uintptr_t>(&pk)
           != pksz - sizeof(f9twf::ExgMdTail))
          fon9_CheckTestResult("McI081BSParser.pksz", false);
@@ -234,7 +235,8 @@ struct RtParser : public TwfPkReceiver, public fon9::fmkt::SymbTree {
       const void* entryEnd = f9twf::ExgMdToSnapshotBS(pk.InformationTime_.ToDayTime(),
          fon9::PackBcdTo<unsigned>(static_cast<const f9twf::ExgMcI083*>(&pk)->NoMdEntries_),
          static_cast<const f9twf::ExgMcI083*>(&pk)->MdEntry_,
-         symb);
+         symb,
+         fon9::fmkt::PackBcdToMarketSeq(static_cast<const f9twf::ExgMcI083*>(&pk)->ProdMsgSeq_));
       if (reinterpret_cast<uintptr_t>(entryEnd) - reinterpret_cast<uintptr_t>(&pk)
           != pksz - sizeof(f9twf::ExgMdTail))
          fon9_CheckTestResult("McI083BSParser.pksz", false);

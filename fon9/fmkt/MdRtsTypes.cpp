@@ -6,42 +6,6 @@
 
 namespace fon9 { namespace fmkt {
 
-fon9_API f9sv_MdRtsKind GetMdRtsKind(f9sv_RtsPackType pkType) {
-   static constexpr f9sv_MdRtsKind RtsPackType2MdRtsKind[] = {
-      f9sv_MdRtsKind_Deal,
-      f9sv_MdRtsKind_BS,
-      f9sv_MdRtsKind_BS,
-      f9sv_MdRtsKind_BS,
-      f9sv_MdRtsKind_TradingSession,
-      f9sv_MdRtsKind_Base | f9sv_MdRtsKind_Ref,
-      f9sv_MdRtsKind_Deal | f9sv_MdRtsKind_BS,
-      f9sv_MdRtsKind_All,   // SnapshotSymbList_NoInfoTime
-      f9sv_MdRtsKind_Deal,  // IndexValueV2
-      f9sv_MdRtsKind_Deal,  // IndexValueV2List
-      f9sv_MdRtsKind_All,   // FieldValue_NoInfoTime: 因為不確定要更新哪個欄位, 所以只好視為全部都有可能.
-      f9sv_MdRtsKind_All - f9sv_MdRtsKind_NoInfoTime,
-      f9sv_MdRtsKind_All,   // TabValues_NoInfoTime:  因為不確定要更新哪個Tab, 所以只好視為全部都有可能.
-      f9sv_MdRtsKind_All - f9sv_MdRtsKind_NoInfoTime,
-   };
-   static_assert(numofele(RtsPackType2MdRtsKind) == cast_to_underlying(f9sv_RtsPackType_Count), "");
-   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(f9sv_RtsPackType_DealPack)] == f9sv_MdRtsKind_Deal, "");
-   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(f9sv_RtsPackType_SnapshotBS)] == f9sv_MdRtsKind_BS, "");
-   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(f9sv_RtsPackType_CalculatedBS)] == f9sv_MdRtsKind_BS, "");
-   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(f9sv_RtsPackType_UpdateBS)] == f9sv_MdRtsKind_BS, "");
-   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(f9sv_RtsPackType_TradingSessionId)] == f9sv_MdRtsKind_TradingSession, "");
-   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(f9sv_RtsPackType_BaseInfoTw)] == (f9sv_MdRtsKind_Base | f9sv_MdRtsKind_Ref), "");
-   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(f9sv_RtsPackType_DealBS)] == (f9sv_MdRtsKind_Deal | f9sv_MdRtsKind_BS), "");
-   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(f9sv_RtsPackType_SnapshotSymbList_NoInfoTime)] == f9sv_MdRtsKind_All, "");
-   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(f9sv_RtsPackType_IndexValueV2)] == f9sv_MdRtsKind_Deal, "");
-   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(f9sv_RtsPackType_IndexValueV2List)] == f9sv_MdRtsKind_Deal, "");
-   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(f9sv_RtsPackType_FieldValue_NoInfoTime)] == f9sv_MdRtsKind_All, "");
-   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(f9sv_RtsPackType_FieldValue_AndInfoTime)] == f9sv_MdRtsKind_All - f9sv_MdRtsKind_NoInfoTime, "");
-   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(f9sv_RtsPackType_TabValues_NoInfoTime)] == f9sv_MdRtsKind_All, "");
-   static_assert(RtsPackType2MdRtsKind[cast_to_underlying(f9sv_RtsPackType_TabValues_AndInfoTime)] == f9sv_MdRtsKind_All - f9sv_MdRtsKind_NoInfoTime, "");
-
-   return RtsPackType2MdRtsKind[cast_to_underlying(pkType)];
-}
-//--------------------------------------------------------------------------//
 static bool MdRtsPackSingleBS(RevBuffer& rbuf, RtBSType bsType, const PriQty& pq) {
    if (pq.Qty_ == 0)
       return false;

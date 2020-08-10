@@ -1130,6 +1130,9 @@
     <ClInclude Include="..\..\..\fon9\seed\FieldType.h">
       <Filter>Header Files\seed\_fields</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\FmdTypes.hpp">
+      <Filter>Header Files\fmkt\_Md</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />

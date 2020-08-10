@@ -38,6 +38,7 @@ void ExgMdFmt19Handler::OnPkReceived(const ExgMdHeader& pkhdr, unsigned pksz) {
    f9fmkt::MdRtsPackTabValues(rts, *tabBreakSt, symb->BreakSt_);
    symb->MdRtStream_.PublishAndSave(ToStrView(symb->SymbId_),
                                     f9sv_RtsPackType_TabValues_NoInfoTime,
+                                    f9sv_MdRtsKind_All_NoInfoTime,
                                     std::move(rts));
 }
 

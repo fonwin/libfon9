@@ -8,7 +8,10 @@ namespace f9twf {
 
 /// 解析 static_cast<const ExgMcI010*>(&e.Pk_);
 /// 並透過 symb.MdRtStream_ 發行.
-f9twf_API void I010BasicInfoParserToRts(ExgMcMessage& e);
+f9twf_API void I010BasicInfoParserToRts_V7(ExgMcMessage& e);
+f9twf_API void I010BasicInfoParserToRts_V8(ExgMcMessage& e);
+
+f9twf_API void I012BasePriLmts(ExgMcMessage& e);
 
 } // namespaces
 #endif//__f9twf_ExgMdFmtBasicInfoToRts_hpp__

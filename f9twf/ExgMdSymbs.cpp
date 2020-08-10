@@ -8,30 +8,17 @@
 
 namespace f9twf {
 
-fon9::seed::LayoutSP ExgMdSymb::MakeLayout() {
+fon9::seed::LayoutSP ExgMdSymb::MakeLayout(bool isAddMarketSeq) {
    using namespace fon9;
    using namespace fon9::seed;
    using namespace fon9::fmkt;
-   // -----
-   // TODO:
-   // -----
-   // Add [Tab:詢價]:
-   //    詢價揭示時間(DISCLOSURE TIME), 詢價持續時間(999 秒: DURATION TIME);
-   // -----
-   // Add [Tab:收盤後資料]:
-   //    結算價(SETTLEMENT PRICE);
-   //    未平倉合約數(OPEN INTEREST);
-   //    鉅額交易總成交量(BLOCK TRADE QTY);
-   // -----
-   // 新增解析的格式, 要在建立 ExgMcChannelMgr 之後, 透過 ExgMcChannelMgr::RegMcMessageParser() 註冊;
-   // -----
    constexpr auto kTabFlag = TabFlag::NoSapling_NoSeedCommand_Writable;
    return LayoutSP{new LayoutN(
       fon9_MakeField(Symb, SymbId_, "Id"), TreeFlag::AddableRemovable | TreeFlag::Unordered,
-      TabSP{new Tab{Named{fon9_kCSTR_TabName_Base}, MakeFields(),            kTabFlag}},
-      TabSP{new Tab{Named{fon9_kCSTR_TabName_Ref},  TwfSymbRef_MakeFields(), kTabFlag}},
-      TabSP{new Tab{Named{fon9_kCSTR_TabName_BS},   SymbTwfBS_MakeFields(),  kTabFlag}},
-      TabSP{new Tab{Named{fon9_kCSTR_TabName_Deal}, SymbTwfDeal_MakeFields(),kTabFlag}},
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_Base}, MakeFields(),                  kTabFlag}},
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_Ref},  TwfSymbRef_MakeFields(),       kTabFlag}},
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_BS},   SymbTwfBS_MakeFields(isAddMarketSeq), kTabFlag}},
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_Deal}, SymbTwfDeal_MakeFields(),      kTabFlag}},
       f9fmkt_MAKE_TABS_OpenHighLow(),
       TabSP{new Tab{Named{fon9_kCSTR_TabName_BreakSt}, SymbBreakSt_MakeFieldsTwf(),kTabFlag}},
       TabSP{new Tab{Named{fon9_kCSTR_TabName_Closing}, SymbFuoClosing_MakeFields(),kTabFlag}},
@@ -82,8 +69,9 @@ void ExgMdSymb::OnBeforeRemove(fon9::fmkt::SymbTree& owner, unsigned tdayYYYYMMD
    this->Contract_.OnSymbRemove(*this);
 }
 //--------------------------------------------------------------------------//
-ExgMdSymbs::ExgMdSymbs(std::string rtiPathFmt)
-   : base(ExgMdSymb::MakeLayout(), std::move(rtiPathFmt)) {
+ExgMdSymbs::ExgMdSymbs(std::string rtiPathFmt, bool isAddMarketSeq)
+   : base(ExgMdSymb::MakeLayout(isAddMarketSeq), std::move(rtiPathFmt),
+          isAddMarketSeq ? fon9::fmkt::MdSymbsCtrlFlag::HasMarketDataSeq : fon9::fmkt::MdSymbsCtrlFlag{}) {
 }
 fon9::fmkt::SymbSP ExgMdSymbs::MakeSymb(const fon9::StrView& symbid) {
    assert(this->SymbMap_.IsLocked());
@@ -136,8 +124,9 @@ void ExgMdSymbs::MdTreeOp::Get(fon9::StrView strKeyText, fon9::seed::FnPodOp fnC
 }
 //--------------------------------------------------------------------------//
 f9twf_API const void* ExgMdToSnapshotBS(fon9::DayTime mdTime, unsigned mdCount, const ExgMdEntry* mdEntry,
-                                        fon9::fmkt::SymbTwfBS& symbBS, uint32_t priceOrigDiv) {
+                                        fon9::fmkt::SymbTwfBS& symbBS, uint32_t priceOrigDiv, fon9::fmkt::MarketDataSeq mktseq) {
    symbBS.Data_.Clear(mdTime);
+   symbBS.Data_.MarketSeq_ = mktseq;
    for (unsigned mdL = 0; mdL < mdCount; ++mdL, ++mdEntry) {
       unsigned lv = fon9::PackBcdTo<unsigned>(mdEntry->Level_) - 1;
       fon9::fmkt::PriQty* dst;
@@ -171,9 +160,10 @@ f9twf_API const void* ExgMdToSnapshotBS(fon9::DayTime mdTime, unsigned mdCount, 
    return mdEntry;
 }
 f9twf_API void ExgMdToUpdateBS(fon9::DayTime mdTime, unsigned mdCount, const ExgMcI081Entry* mdEntry,
-                               fon9::fmkt::SymbTwfBS& symbBS, uint32_t priceOrigDiv) {
+                               fon9::fmkt::SymbTwfBS& symbBS, uint32_t priceOrigDiv, fon9::fmkt::MarketDataSeq mktseq) {
    symbBS.Data_.InfoTime_ = mdTime;
    symbBS.Data_.Flags_ = f9sv_BSFlag{};
+   symbBS.Data_.MarketSeq_ = mktseq;
    for (unsigned mdL = 0; mdL < mdCount; ++mdL, ++mdEntry) {
       unsigned lv = fon9::PackBcdTo<unsigned>(mdEntry->Level_) - 1;
       fon9::fmkt::PriQty* dst;

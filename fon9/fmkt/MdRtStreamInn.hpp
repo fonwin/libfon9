@@ -12,6 +12,11 @@ namespace fon9 { namespace fmkt {
 
 class fon9_API MdSymbsBase;
 
+// MdRts 封包儲存到 Inn 時.
+// 在封包前端放 4 bytes(uint32_t, big endian) = 實際的位置, 當成檢查碼.
+// 當檔案有異常時, 可以用此找到下一個正確的位置.
+using MdRtStreamInn_ChkValueType = uint32_t;
+
 /// MdRtStream 的儲存機制;
 /// - 即時儲存.
 /// - 歷史回補.
@@ -51,7 +56,7 @@ public:
 };
 //--------------------------------------------------------------------------//
 struct fon9_API MdRtSubr : public intrusive_ref_counter<MdRtSubr> {
-   f9sv_MdRtsKind    RtFilter_{f9sv_MdRtsKind_All};
+   f9sv_MdRtsKind    RtFilter_{f9sv_MdRtsKind_Full};
    seed::FnSeedSubr  Callback_;
    /// 從 args 取出 RtFiller_ = f9sv_MdRtsKind(hex): empty() or 0 表示訂閱全部的即時訊息;
    /// 並移動 args->begin() 到後面的參數位置.

@@ -9,22 +9,26 @@
 namespace f9twf {
 
 struct TwfSymbRef_Data {
-   struct PriLmt {
-      fon9::fmkt::Pri   Up_{};
-      fon9::fmkt::Pri   Dn_{};
-   };
+   fon9::fmkt::Pri   PriRef_{};
+
+   /// 期交所漲跌停價, 在文件「逐筆行情資訊傳輸作業手冊」版本 Ver:1.2.0 (2020/08/03) 改成使用 I012 提供.
+   /// 漲跌停階數為 PackBcd<2>; 所以最多為 99 階. 原則上最多不超過 20;
    enum {
       kPriLmtCount = 3
    };
 
-   fon9::fmkt::Pri   PriRef_{};
-   PriLmt            PriLmts_[kPriLmtCount];
-   char              PaddingAfterBaseRef___[6];
+   struct PriLmt {
+      fon9::fmkt::Pri   Up_{};
+      fon9::fmkt::Pri   Dn_{};
+   };
+   PriLmt   PriLmts_[kPriLmtCount];
+   char     PaddingAfterPriLmts___[6];
+
    /// LvUpLmt_ == 0 使用 PriLmts_[0];
    /// - 預告: -1 or -2;
    /// - 實施:  1 or  2;
-   int8_t            LvUpLmt_{0};
-   int8_t            LvDnLmt_{0};
+   int8_t   LvUpLmt_{0};
+   int8_t   LvDnLmt_{0};
 
    TwfSymbRef_Data() {
       this->Clear();
@@ -32,8 +36,8 @@ struct TwfSymbRef_Data {
    void Clear() {
       memset(this, 0, sizeof(*this));
    }
-   bool IsEuqalBaseRef(const TwfSymbRef_Data& rhs) const {
-      return memcmp(this, &rhs, fon9_OffsetOf(TwfSymbRef_Data, PaddingAfterBaseRef___)) == 0;
+   bool IsEuqalPriRefAndPriLmts(const TwfSymbRef_Data& rhs) const {
+      return memcmp(this, &rhs, fon9_OffsetOf(TwfSymbRef_Data, PaddingAfterPriLmts___)) == 0;
    }
 };
 

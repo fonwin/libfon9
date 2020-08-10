@@ -5,8 +5,10 @@
 
 namespace fon9 { namespace fmkt {
 
-static void SymbBS_MakeFields(int ofsadj, seed::Fields& flds) {
+static void SymbBS_MakeFields(int ofsadj, seed::Fields& flds, bool isAddMarketSeq) {
    flds.Add(fon9_MakeField_OfsAdj(ofsadj, SymbBSData, InfoTime_, "InfoTime"));
+   if (isAddMarketSeq)
+      flds.Add(fon9_MakeField_OfsAdj(ofsadj, SymbBSData, MarketSeq_, "MktSeq"));
    char bsPriName[] = "-nP";
    char bsQtyName[] = "-nQ";
    int  idx;
@@ -29,23 +31,23 @@ static void AppendLmtFlags(int ofsadj, seed::Fields& flds) {
    flds.Add(seed::FieldSP{new seed::FieldIntHx<underlying_type_t<f9sv_BSLmtFlag>>(
       Named("LmtFlags"), ofsadj + fon9_OffsetOfRawPointer(SymbBSData, LmtFlags_))});
 }
-fon9_API seed::Fields SymbTwsBS_MakeFields() {
+fon9_API seed::Fields SymbTwsBS_MakeFields(bool isAddMarketSeq) {
    seed::Fields flds;
-   SymbBS_MakeFields(fon9_OffsetOf(SymbTwsBS, Data_), flds);
+   SymbBS_MakeFields(fon9_OffsetOf(SymbTwsBS, Data_), flds, isAddMarketSeq);
    AppendLmtFlags(fon9_OffsetOf(SymbTwsBS, Data_), flds);
    return flds;
 }
-fon9_API seed::Fields SymbTwfBS_MakeFields() {
+fon9_API seed::Fields SymbTwfBS_MakeFields(bool isAddMarketSeq) {
    seed::Fields flds;
-   SymbBS_MakeFields(fon9_OffsetOf(SymbTwfBS, Data_), flds);
+   SymbBS_MakeFields(fon9_OffsetOf(SymbTwfBS, Data_), flds, isAddMarketSeq);
    flds.Add(fon9_MakeField(SymbTwfBS, Data_.DerivedSell_.Pri_, "DS1P"));
    flds.Add(fon9_MakeField(SymbTwfBS, Data_.DerivedSell_.Qty_, "DS1Q"));
    flds.Add(fon9_MakeField(SymbTwfBS, Data_.DerivedBuy_.Pri_,  "DB1P"));
    flds.Add(fon9_MakeField(SymbTwfBS, Data_.DerivedBuy_.Qty_,  "DB1Q"));
    return flds;
 }
-fon9_API seed::Fields SymbTwaBS_MakeFields() {
-   seed::Fields flds = SymbTwfBS_MakeFields();
+fon9_API seed::Fields SymbTwaBS_MakeFields(bool isAddMarketSeq) {
+   seed::Fields flds = SymbTwfBS_MakeFields(isAddMarketSeq);
    AppendLmtFlags(fon9_OffsetOf(SymbTwfBS, Data_), flds);
    return flds;
 }

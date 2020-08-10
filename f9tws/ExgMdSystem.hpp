@@ -89,14 +89,14 @@ class f9tws_API ExgMdSystem : public fon9::fmkt::MdSystem {
    void OnMdSystemStartup(unsigned tdayYYYYMMDD, const std::string& logPath) override;
    void OnParentTreeClear(fon9::seed::Tree& parent);
 
-   ExgMdSystem(fon9::seed::MaTreeSP root, std::string name, std::string rtiNamePre);
+   ExgMdSystem(fon9::seed::MaTreeSP root, std::string name, std::string rtiNamePre, bool isAddMarketSeq);
 
 public:
    const ExgMdSymbsSP   Symbs_;
    const ExgMdSymbsSP   SymbsOdd_;
    const ExgMdIndicesSP Indices_;
 
-   ExgMdSystem(fon9::seed::MaTreeSP root, std::string name, bool useRtiForRecover);
+   ExgMdSystem(fon9::seed::MaTreeSP root, std::string name, bool useRtiForRecover, bool isAddMarketSeq);
    ~ExgMdSystem();
 
    /// "./logs/yyyymmdd/" + this->Name_;

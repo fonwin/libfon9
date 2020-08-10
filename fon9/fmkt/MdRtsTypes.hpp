@@ -15,9 +15,8 @@ static_assert(cast_to_underlying(f9sv_RtsPackType_Count) <= 0x7f, "");
 
 inline f9sv_MdRtsKind StrToMdRtsKind(StrView* args) {
    f9sv_MdRtsKind res = static_cast<f9sv_MdRtsKind>(HexStrTo(args));
-   return(res == f9sv_MdRtsKind{} ? f9sv_MdRtsKind_All : res);
+   return(res == f9sv_MdRtsKind{} ? f9sv_MdRtsKind_Full : res);
 }
-fon9_API f9sv_MdRtsKind GetMdRtsKind(f9sv_RtsPackType pkType);
 //--------------------------------------------------------------------------//
 /// static_assert(ClosedIndexTime().GetOrigValue() == 99 * 24 * 60 * 60 * DayTime::Divisor, "");
 /// = 8553600000000

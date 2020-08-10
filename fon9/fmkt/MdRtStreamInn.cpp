@@ -122,11 +122,18 @@ void MdRtRecover::OnTimer(TimeStamp now) {
 
       const char* const rdend = rdbuf + bufofs + rdsz;
       DcQueueFixedMem   dcq{rdbuf, rdend};
-      uint32_t          chkValue;
+      // ChkHeader 儲存的內容, 請參考 MdRtStream::Save();
+      constexpr auto    kChkHeaderSize = sizeof(MdRtStreamInn_ChkValueType) + sizeof(f9sv_MdRtsKind);
       const char*       pchk;
-      while ((pchk = static_cast<const char*>(dcq.Peek(&chkValue, sizeof(chkValue)))) != nullptr) {
-         chkValue = GetBigEndian<uint32_t>(pchk);
-         const PosT currChkPos = (nextReadPos - (rdend - pchk));
+      for(;;) {
+         if (dcq.CalcSize() <= kChkHeaderSize) {
+            // 剩餘資料量不足 => 繼續讀取下一個 block, 或是等流量緩解後繼續.
+            pchk = nullptr;
+            break;
+         }
+         pchk = reinterpret_cast<const char*>(dcq.Peek1());
+         const auto  chkValue = GetBigEndian<MdRtStreamInn_ChkValueType>(pchk);
+         const PosT  currChkPos = (nextReadPos - (rdend - pchk));
          if (fon9_UNLIKELY(static_cast<uint32_t>(currChkPos) != chkValue)) {
             ++errlen;
             dcq.PopConsumed(1);
@@ -139,7 +146,9 @@ void MdRtRecover::OnTimer(TimeStamp now) {
                            "|len=", errlen);
             errlen = 0;
          }
-         dcq.PopConsumed(sizeof(chkValue));
+         const f9sv_MdRtsKind pkRtsKind = GetBigEndian<f9sv_MdRtsKind>(pchk + sizeof(chkValue));
+         dcq.PopConsumed(kChkHeaderSize);
+         // 接下來處理實際的 MdRts 封包.
          size_t pksz = 0;
          try {
             if (!PopBitvByteArraySize(dcq, pksz))
@@ -148,13 +157,12 @@ void MdRtRecover::OnTimer(TimeStamp now) {
             if (pksz <= 0)
                continue;
             // 檢查是否需要回補: pkRtsKind, infoTime.
-            const f9sv_MdRtsKind pkRtsKind = GetMdRtsKind(static_cast<f9sv_RtsPackType>(*dcq.Peek1()));
             if (IsEnumContains(pkRtsKind, f9sv_MdRtsKind_NoInfoTime)) {
                if (!this->IsStarted_)
                   goto __SKIP_PK;
             }
             else {
-               DcQueueFixedMem pk{dcq.Peek1() + 1, pksz - 1};
+               DcQueueFixedMem pk{dcq.Peek1() + sizeof(f9sv_RtsPackType), pksz - sizeof(f9sv_RtsPackType)};
                BitvTo(pk, this->LastInfoTime_);
             }
             if (!this->IsStarted_) {
@@ -179,7 +187,8 @@ void MdRtRecover::OnTimer(TimeStamp now) {
          }
          if (nargs.CacheGV_.empty()) // 保留 pos, 若訂閱者流量管制, 則從 pos 開始.
             nargs.Pos_ = currChkPos;
-         nargs.CacheGV_.append(pchk + sizeof(chkValue), reinterpret_cast<const char*>(dcq.Peek1() + pksz));
+         // 包含長度的完整封包訊息, 加入到 nargs.CacheGV_;
+         nargs.CacheGV_.append(pchk + kChkHeaderSize, reinterpret_cast<const char*>(dcq.Peek1() + pksz));
          // 回補通知. 多筆打包一次(增加回補效率).
          if (nargs.CacheGV_.size() > 1024) { // MTU = 1500?
             {  // lock tree: 確保可以安全的使用 this->RtSubr_;
@@ -197,7 +206,7 @@ void MdRtRecover::OnTimer(TimeStamp now) {
                   return;
                }
                // 返回 nargs.FlowControlWait_.GetOrigValue() > 0;
-               // 不接受流量管制的建議, 從 Reader_ 讀入的資料, 必須優先處理完.
+               // 不接受流量管制的建議, 每次從 this->Reader_ 讀入的資料, 必須優先處理完.
                // else {
                //    this->LastPos_ = currChkPos + (reinterpret_cast<const char*>(dcq.Peek1()) - pchk);
                //    this->RunAfter(nargs.FlowControlWait_);
@@ -218,12 +227,12 @@ void MdRtRecover::OnTimer(TimeStamp now) {
          // 則暫時離開回補迴圈:
          // - 讓其他回補要求有機會執行.
          // - 降低大量回補造成單一物件(recover)的壓力, 讓 recover 有機會喘口氣.
-         nextReadPos -= (pchk ? (bufofs + sizeof(chkValue)) : bufofs);
+         nextReadPos -= (pchk ? (bufofs + kChkHeaderSize) : bufofs);
          this->LastPos_ = nextReadPos;
          break;
       }
       if (pchk)
-         memmove(rdbuf, pchk, bufofs += sizeof(chkValue));
+         memmove(rdbuf, pchk, bufofs += kChkHeaderSize);
       else if (bufofs != 0)
          memmove(rdbuf, dcq.Peek1(), bufofs);
    }

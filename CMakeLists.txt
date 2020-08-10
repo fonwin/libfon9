@@ -22,6 +22,10 @@ string(REPLACE ";" " " CMAKE_CXX_FLAGS "${CXX_FLAGS}")
 include_directories(.)
 
 add_subdirectory(fon9)
-add_subdirectory(f9extests)
+
+if(CMAKE_FON9_BUILD_UINT_TEST)
+   add_subdirectory(f9extests)
+endif()
+
 add_subdirectory(f9tws)
 add_subdirectory(f9twf)

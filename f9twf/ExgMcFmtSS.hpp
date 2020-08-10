@@ -74,12 +74,14 @@ struct ExgMcI084 : public ExgMcHead {
    //-----------------------------------------------------------------------//
    struct ProductStatusEntry {
       ExgMdProdId20     ProdId_;
-      /// 放寬漲幅階段: 若商品發生放寬漲跌幅時，此欄位表示該商品目前漲跌幅狀態。
+      /// 放寬漲幅階段: 若商品發生放寬漲跌幅時，此欄位表示該商品「目前」漲跌幅狀態。
       /// 若無，則為預設值 0。
-      fon9::PackBcd<1>  ExpandTypeLevelR_;
-      /// 放寬跌幅階段: 若商品發生放寬漲跌幅時，此欄位表示該商品目前漲跌幅狀態。
+      /// Ver1 = PackBcd<1>; Ver2 = PackBcd<2>; 基本上還是相容.
+      fon9::PackBcd<2>  ExpandTypeLevelR_;
+      /// 放寬跌幅階段: 若商品發生放寬漲跌幅時，此欄位表示該商品「目前」漲跌幅狀態。
       /// 若無，則為預設值 0。
-      fon9::PackBcd<1>  ExpandTypeLevelF_;
+      /// Ver1 = PackBcd<1>; Ver2 = PackBcd<2>; 基本上還是相容.
+      fon9::PackBcd<2>  ExpandTypeLevelF_;
       /// 商品流程狀態陣列，預設值為 "NNNNNN";
       /// 每個字元代表某個時間流程或商品暫停/恢復流程狀態。
       /// 請參考: 「臺灣期貨交易所 逐筆行情資訊傳輸作業手冊」

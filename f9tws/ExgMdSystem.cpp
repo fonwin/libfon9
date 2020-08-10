@@ -45,11 +45,11 @@ void ExgMdHandlerPkCont::LogSeqGap(const ExgMdHeader& pk, SeqT seq, SeqT lostCou
    }
 }
 //--------------------------------------------------------------------------//
-ExgMdSystem::ExgMdSystem(fon9::seed::MaTreeSP root, std::string name, std::string rtiNamePre)
+ExgMdSystem::ExgMdSystem(fon9::seed::MaTreeSP root, std::string name, std::string rtiNamePre, bool isAddMarketSeq)
    : base(root, name)
-   , Symbs_{new ExgMdSymbs{rtiNamePre.empty() ? std::string{} : (rtiNamePre + "Symbs")}}
-   , SymbsOdd_{new ExgMdSymbs{rtiNamePre.empty() ? std::string{} : (rtiNamePre + "SymbsOdd")}}
-   , Indices_{new ExgMdIndices{rtiNamePre.empty() ? std::string{} : (rtiNamePre + "Indices")}} {
+   , Symbs_{new ExgMdSymbs(rtiNamePre.empty() ? std::string{} : (rtiNamePre + "Symbs"), isAddMarketSeq)}
+   , SymbsOdd_{new ExgMdSymbs(rtiNamePre.empty() ? std::string{} : (rtiNamePre + "SymbsOdd"), isAddMarketSeq)}
+   , Indices_{new ExgMdIndices(rtiNamePre.empty() ? std::string{} : (rtiNamePre + "Indices"))} {
    this->Sapling_->AddNamedSapling(this->Symbs_, "Symbs");
    this->Sapling_->AddNamedSapling(this->SymbsOdd_, "SymbsOdd");
    this->Sapling_->AddNamedSapling(this->Indices_, "Indices");
@@ -57,8 +57,10 @@ ExgMdSystem::ExgMdSystem(fon9::seed::MaTreeSP root, std::string name, std::strin
    this->SymbsOdd_->SetDailyClearHHMMSS(this->GetClearHHMMSS());
    this->Indices_->SetDailyClearHHMMSS(this->GetClearHHMMSS());
 }
-ExgMdSystem::ExgMdSystem(fon9::seed::MaTreeSP root, std::string name, bool useRtiForRecover)
-   : ExgMdSystem(root, name, useRtiForRecover ? (fon9::seed::SysEnv_GetLogFileFmtPath(*root) + name + "_") : std::string{}) {
+ExgMdSystem::ExgMdSystem(fon9::seed::MaTreeSP root, std::string name, bool useRtiForRecover, bool isAddMarketSeq)
+   : ExgMdSystem(root, name,
+                 useRtiForRecover ? (fon9::seed::SysEnv_GetLogFileFmtPath(*root) + name + "_") : std::string{},
+                 isAddMarketSeq) {
 }
 ExgMdSystem::~ExgMdSystem() {
 }

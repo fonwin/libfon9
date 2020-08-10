@@ -24,6 +24,7 @@ f9twf_API void I100QuoteReqParserToRts(ExgMcMessage& e) {
    f9fmkt::MdRtsPackTabValues(rbuf, *tabQuoteReq, symb.QuoteReq_);
    symb.MdRtStream_.Publish(ToStrView(symb.SymbId_),
                             f9sv_RtsPackType_TabValues_AndInfoTime,
+                            f9sv_MdRtsKind_QuoteReq,
                             e.Pk_.InformationTime_.ToDayTime(),
                             std::move(rbuf));
 }

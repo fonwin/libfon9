@@ -41,7 +41,7 @@ seed::OpResult MdRtStream::SubscribeStream(SubConn*           pSubConn,
       SubscribeStreamOK(SymbPodOp& op, seed::Tab& tabRt)
          : base(*op.Sender_, &tabRt, op.KeyText_, nullptr, seed::SeedNotifyKind::SubscribeStreamOK)
          , PodOp_(op) {
-         this->StreamDataKind_ = f9sv_MdRtsKind_All;
+         this->StreamDataKind_ = f9sv_MdRtsKind_Full;
       }
       BufferList GetGridViewBuffer(const std::string** ppGvStr) const override {
          if (ppGvStr)
@@ -106,7 +106,7 @@ void MdRtStream::OnSessionChanged(const Symb& symb) {
    *rts.AllocPacket<char>() = symb.TradingSessionId_;
    PutBigEndian(rts.AllocPacket<uint32_t>(), symb.TDayYYYYMMDD_);
    BufferAppendTo(rts.cfront(), pk);
-   this->Publish(ToStrView(symb.SymbId_), f9sv_RtsPackType_TradingSessionId, DayTime::Null(), std::move(rts));
+   this->Publish(ToStrView(symb.SymbId_), f9sv_RtsPackType_TradingSessionId, f9sv_MdRtsKind_TradingSession, DayTime::Null(), std::move(rts));
    // 開啟 Storage, 如果 Storage 有變, 則將 SessionSt 寫入新開啟的 Storage.
    // 這樣在從頭回補時, 才能補到 TDay 及盤別狀態.
    this->InnMgr_.RtOpen(this->RtStorage_, symb);
@@ -115,7 +115,7 @@ void MdRtStream::OnSessionChanged(const Symb& symb) {
       RevPutMem(rts, pk.begin(), pk.size());
       RevPutBitv(rts, fon9_BitvV_NumberNull); // InfoTime = Null.
       *rts.AllocPacket<uint8_t>() = cast_to_underlying(f9sv_RtsPackType_TradingSessionId);
-      this->Save(std::move(rts));
+      this->Save(std::move(rts), f9sv_MdRtsKind_TradingSession);
    }
 }
 void MdRtStream::BeforeRemove(SymbTree& tree, Symb& symb) {
@@ -124,41 +124,42 @@ void MdRtStream::BeforeRemove(SymbTree& tree, Symb& symb) {
    this->InnMgr_.MdSymbs_.UnsafePublish(f9sv_RtsPackType_Count, e);
 }
 // -----
-void MdRtStream::PublishUpdateBS(const StrView& keyText, SymbBSData& symbBS, RevBufferList&& rts) {
-   // 每秒儲存一次 SnapshotBS, 回補時才能正確處理 UpdateBS;
-   this->Publish(keyText, f9sv_RtsPackType_UpdateBS, symbBS.InfoTime_, std::move(rts));
+void MdRtStream::PublishUpdateBS(const StrView& keyText, SymbBSData& symbBS, RevBufferList&& rts, MdSymbsCtrlFlag flags) {
+   // 每秒儲存一次 SnapshotBS, 回補時才不會在沒有「參考報價」的情況下收到 UpdateBS.
+   PackMktSeq(rts, flags, symbBS.MarketSeq_);
+   this->Publish(keyText, f9sv_RtsPackType_UpdateBS, f9sv_MdRtsKind_BS, symbBS.InfoTime_, std::move(rts));
    const auto bstm = static_cast<uint32_t>(symbBS.InfoTime_.GetIntPart());
    if (this->LastTimeSnapshotBS_ != bstm) {
       this->LastTimeSnapshotBS_ = bstm;
       rts.MoveOut();
       symbBS.Flags_ |= f9sv_BSFlag_OrderBuy | f9sv_BSFlag_OrderSell | f9sv_BSFlag_DerivedBuy | f9sv_BSFlag_DerivedSell;
       MdRtsPackSnapshotBS(rts, symbBS);
+      PackMktSeq(rts, flags, symbBS.MarketSeq_);
       ToBitv(rts, symbBS.InfoTime_);
       *rts.AllocPacket<uint8_t>() = cast_to_underlying(IsEnumContains(symbBS.Flags_, f9sv_BSFlag_Calculated)
                                                        ? f9sv_RtsPackType_CalculatedBS
                                                        : f9sv_RtsPackType_SnapshotBS);
    }
-   this->Save(std::move(rts));
+   this->Save(std::move(rts), f9sv_MdRtsKind_BS);
 }
-void MdRtStream::Publish(const StrView& keyText, f9sv_RtsPackType pkType, const DayTime infoTime, RevBufferList&& rts) {
-   const auto rtsKind = GetMdRtsKind(pkType);
-   assert(!IsEnumContains(rtsKind, f9sv_MdRtsKind_NoInfoTime));
-   if ((this->InfoTimeKind_ == rtsKind && this->InfoTime_ == infoTime) || infoTime.IsNull())
+void MdRtStream::Publish(const StrView& keyText, f9sv_RtsPackType pkType, f9sv_MdRtsKind pkKind, const DayTime infoTime, RevBufferList&& rts) {
+   assert(!IsEnumContains(pkKind, f9sv_MdRtsKind_NoInfoTime));
+   if ((this->InfoTimeKind_ == pkKind && this->InfoTime_ == infoTime) || infoTime.IsNull())
       RevPutBitv(rts, fon9_BitvV_NumberNull);
    else {
       // 訂閱者可用 RtsKind 過濾所需要的封包種類,
       // 所以如果 RtsKind 改變了, 仍需要將 InfoTime 送出.
-      this->InfoTimeKind_ = rtsKind;
+      this->InfoTimeKind_ = pkKind;
       this->InfoTime_ = infoTime;
       ToBitv(rts, infoTime);
    }
    *rts.AllocPacket<uint8_t>() = cast_to_underlying(pkType);
    // -----
-   MdRtsNotifyArgs e{this->InnMgr_.MdSymbs_, keyText, rtsKind, rts};
+   MdRtsNotifyArgs e{this->InnMgr_.MdSymbs_, keyText, pkKind, rts};
    this->UnsafeSubj_.Publish(e);
    this->InnMgr_.MdSymbs_.UnsafePublish(pkType, e);
    // -----
-   if (IsEnumContains(rtsKind, f9sv_MdRtsKind_BS)) {
+   if (IsEnumContains(pkKind, f9sv_MdRtsKind_BS)) {
       fon9_WARN_DISABLE_SWITCH;
       switch (pkType) {
       case f9sv_RtsPackType_UpdateBS:
@@ -171,24 +172,25 @@ void MdRtStream::Publish(const StrView& keyText, f9sv_RtsPackType pkType, const 
       }
       fon9_WARN_POP;
    }
-   this->Save(std::move(rts));
+   this->Save(std::move(rts), pkKind);
 }
-void MdRtStream::PublishAndSave(const StrView& keyText, f9sv_RtsPackType pkType, RevBufferList&& rts) {
+void MdRtStream::PublishAndSave(const StrView& keyText, f9sv_RtsPackType pkType, f9sv_MdRtsKind pkKind, RevBufferList&& rts) {
    *rts.AllocPacket<uint8_t>() = cast_to_underlying(pkType);
 
-   MdRtsNotifyArgs e(this->InnMgr_.MdSymbs_, keyText, GetMdRtsKind(pkType), rts);
+   MdRtsNotifyArgs e(this->InnMgr_.MdSymbs_, keyText, pkKind, rts);
    this->UnsafeSubj_.Publish(e);
    this->InnMgr_.MdSymbs_.UnsafePublish(pkType, e);
-   this->Save(std::move(rts));
+   this->Save(std::move(rts), pkKind);
 }
 // -----
-void MdRtStream::Save(RevBufferList&& rts) {
+void MdRtStream::Save(RevBufferList&& rts, f9sv_MdRtsKind pkKind) {
    assert(rts.cfront() != nullptr);
    if (this->RtStorage_.IsReady()) {
+      // 封包大小只包含需要回補的內容, 這樣在回補就不用重新計算了.
       ByteArraySizeToBitvT(rts, CalcDataSize(rts.cfront()));
-      // 在封包前端放 4 bytes(uint32_t, big endian) = 實際的位置, 當成格式檢查碼.
-      // 當檔案有異常時, 可以用此找到下一個正確的位置.
-      PutBigEndian(rts.AllocPacket<uint32_t>(), static_cast<uint32_t>(this->RtStorageSize_));
+      // 將此封包的種類儲存起來, 用來過濾回補條件.
+      PutBigEndian(rts.AllocPacket<f9sv_MdRtsKind>(), pkKind);
+      PutBigEndian(rts.AllocPacket<MdRtStreamInn_ChkValueType>(), static_cast<MdRtStreamInn_ChkValueType>(this->RtStorageSize_));
       this->RtStorageSize_ += CalcDataSize(rts.cfront());
       this->RtStorage_.AppendBuffered(rts.MoveOut());
    }

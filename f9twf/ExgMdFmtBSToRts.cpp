@@ -18,9 +18,9 @@ f9twf_API void I081BSParserToRts(ExgMcMessage& e) {
    // ExgMdToUpdateBS(e.Pk_.InformationTime_.ToDayTime(), PackBcdTo<unsigned>(pk.NoMdEntries_), pk.MdEntry_, *e.Symb_);
    const auto  mdCount = PackBcdTo<uint8_t>(pk.NoMdEntries_);
    const auto* mdEntry = pk.MdEntry_;
-   auto&       symbBS = e.Symb_->BS_;
-   symbBS.Data_.InfoTime_ = e.Pk_.InformationTime_.ToDayTime();
-   symbBS.Data_.Flags_ = f9sv_BSFlag{};
+   auto&       symbBS = e.Symb_->BS_.Data_;
+   symbBS.InfoTime_ = e.Pk_.InformationTime_.ToDayTime();
+   symbBS.Flags_ = f9sv_BSFlag{};
    uint8_t  uCount = 0;
    Pri      mdPri;
 
@@ -42,26 +42,26 @@ f9twf_API void I081BSParserToRts(ExgMcMessage& e) {
       switch (mdEntry->EntryType_) {
       case '0':
          bsType = cast_to_underlying(RtBSType::OrderBuy);
-         symbBS.Data_.Flags_ |= f9sv_BSFlag_OrderBuy;
-         dst = symbBS.Data_.Buys_;
-         dstCount = symbBS.Data_.kBSCount;
+         symbBS.Flags_ |= f9sv_BSFlag_OrderBuy;
+         dst = symbBS.Buys_;
+         dstCount = symbBS.kBSCount;
          break;
       case '1':
          bsType = cast_to_underlying(RtBSType::OrderSell);
-         symbBS.Data_.Flags_ |= f9sv_BSFlag_OrderSell;
-         dst = symbBS.Data_.Sells_;
-         dstCount = symbBS.Data_.kBSCount;
+         symbBS.Flags_ |= f9sv_BSFlag_OrderSell;
+         dst = symbBS.Sells_;
+         dstCount = symbBS.kBSCount;
          break;
       case 'E':
          bsType = cast_to_underlying(RtBSType::DerivedBuy);
-         symbBS.Data_.Flags_ |= f9sv_BSFlag_DerivedBuy;
-         dst = &symbBS.Data_.DerivedBuy_;
+         symbBS.Flags_ |= f9sv_BSFlag_DerivedBuy;
+         dst = &symbBS.DerivedBuy_;
          dstCount = 1;
          break;
       case 'F':
          bsType = cast_to_underlying(RtBSType::DerivedSell);
-         symbBS.Data_.Flags_ |= f9sv_BSFlag_DerivedSell;
-         dst = &symbBS.Data_.DerivedSell_;
+         symbBS.Flags_ |= f9sv_BSFlag_DerivedSell;
+         dst = &symbBS.DerivedSell_;
          dstCount = 1;
          break;
       default:
@@ -115,7 +115,9 @@ f9twf_API void I081BSParserToRts(ExgMcMessage& e) {
    if (uCount <= 0)
       return;
    *rbuf.AllocPacket<uint8_t>() = static_cast<uint8_t>(uCount - 1);
-   e.Symb_->MdRtStream_.PublishUpdateBS(ToStrView(e.Symb_->SymbId_), symbBS.Data_, std::move(rbuf));
+   symbBS.MarketSeq_ = PackBcdToMarketSeq(pk.ProdMsgSeq_);
+   e.Symb_->MdRtStream_.PublishUpdateBS(ToStrView(e.Symb_->SymbId_), symbBS, std::move(rbuf),
+                                        e.Channel_.GetChannelMgr()->Symbs_->CtrlFlags_);
 }
 //--------------------------------------------------------------------------//
 f9twf_API void I083BSParserToRts(ExgMcMessage& e) {
@@ -123,14 +125,16 @@ f9twf_API void I083BSParserToRts(ExgMcMessage& e) {
    ExgMdLocker lk{e, pk.ProdId_};
    if (!e.Channel_.GetChannelMgr()->CheckSymbTradingSessionId(*e.Symb_))
       return;
-   ExgMdToSnapshotBS(e.Pk_.InformationTime_.ToDayTime(), PackBcdTo<unsigned>(pk.NoMdEntries_), pk.MdEntry_, *e.Symb_);
-   auto&       symbBS = e.Symb_->BS_;
+   ExgMdToSnapshotBS(e.Pk_.InformationTime_.ToDayTime(), PackBcdTo<unsigned>(pk.NoMdEntries_), pk.MdEntry_,
+                     *e.Symb_, PackBcdToMarketSeq(pk.ProdMsgSeq_));
+   auto&       symbBS = e.Symb_->BS_.Data_;
    const auto  pkType = (pk.CalculatedFlag_ == '1' ? f9sv_RtsPackType_CalculatedBS : f9sv_RtsPackType_SnapshotBS);
    if (pkType == f9sv_RtsPackType_CalculatedBS)
-      symbBS.Data_.Flags_ |= f9sv_BSFlag_Calculated;
+      symbBS.Flags_ |= f9sv_BSFlag_Calculated;
    RevBufferList rbuf{128};
-   MdRtsPackSnapshotBS(rbuf, symbBS.Data_);
-   e.Symb_->MdRtStream_.Publish(ToStrView(e.Symb_->SymbId_), pkType, symbBS.Data_.InfoTime_, std::move(rbuf));
+   MdRtsPackSnapshotBS(rbuf, symbBS);
+   PackMktSeq(rbuf, e.Channel_.GetChannelMgr()->Symbs_->CtrlFlags_, symbBS.MarketSeq_);
+   e.Symb_->MdRtStream_.Publish(ToStrView(e.Symb_->SymbId_), pkType, f9sv_MdRtsKind_BS, symbBS.InfoTime_, std::move(rbuf));
 }
 
 } // namespaces

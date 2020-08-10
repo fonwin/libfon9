@@ -40,10 +40,11 @@ static void McI084SSParserO(ExgMcMessage& e) {
       auto& symb = *static_cast<ExgMdSymb*>(symbs->FetchSymb(locker, fon9::StrView_eos_or_all(prodEntry->ProdId_.Chars_, ' ')).get());
       auto  mdCount = fon9::PackBcdTo<unsigned>(prodEntry->NoMdEntries_);
       if (e.Channel_.GetChannelMgr()->CheckSymbTradingSessionId(symb)) {
-         ExgMdToSnapshotBS(mdTime, mdCount, prodEntry->MdEntry_, symb);
+         ExgMdToSnapshotBS(mdTime, mdCount, prodEntry->MdEntry_, symb, PackBcdToMarketSeq(prodEntry->LastProdMsgSeq_));
          RevBufferList rbuf{128};
          MdRtsPackSnapshotBS(rbuf, symb.BS_.Data_);
-         symb.MdRtStream_.Publish(ToStrView(symb.SymbId_), f9sv_RtsPackType_SnapshotBS, mdTime, std::move(rbuf));
+         PackMktSeq(rbuf, symbs->CtrlFlags_, symb.BS_.Data_.MarketSeq_);
+         symb.MdRtStream_.Publish(ToStrView(symb.SymbId_), f9sv_RtsPackType_SnapshotBS, f9sv_MdRtsKind_BS, mdTime, std::move(rbuf));
          if (pI083) {
             static_assert(sizeof(pI083->NoMdEntries_) == 1, "");
             *pI083->NoMdEntries_ = *prodEntry->NoMdEntries_;
@@ -62,13 +63,57 @@ static void McI084SSParserO(ExgMcMessage& e) {
       prodEntry = reinterpret_cast<const ExgMcI084::OrderDataEntry*>(prodEntry->MdEntry_ + mdCount);
    }
 }
+
+static void McI084SSParserP(ExgMcMessage& e) {
+   auto&    pk         = static_cast<const ExgMcI084*>(&e.Pk_)->_P_ProductStatus_;
+   auto     mdTime     = e.Pk_.InformationTime_.ToDayTime();
+   unsigned prodCount  = fon9::PackBcdTo<unsigned>(pk.NoEntries_);
+   auto*    prodEntry  = pk.Entry_;
+   auto*    symbs      = e.Channel_.GetChannelMgr()->Symbs_.get();
+
+   struct LvLmtParser {
+      fon9_NON_COPY_NON_MOVE(LvLmtParser);
+      fon9::RevBufferList        Rts_{64};
+      const fon9::seed::Tab&     TabRef_;
+      const fon9::seed::Field&   FldLvUpLmt_;
+      const fon9::seed::Field&   FldLvDnLmt_;
+      LvLmtParser(fon9::seed::Layout& layout)
+         : TabRef_(*layout.GetTab(fon9_kCSTR_TabName_Ref))
+         , FldLvUpLmt_(*TabRef_.Fields_.Get("LvUpLmt"))
+         , FldLvDnLmt_(*TabRef_.Fields_.Get("LvDnLmt")) {
+      }
+      bool SetLvLmt(int8_t& dst, const fon9::seed::Field& fld, uint8_t lv) {
+         if (lv > 0)
+            --lv;
+         if (dst == lv)
+            return false;
+         fon9::fmkt::MdRtsPackFieldValueNid(this->Rts_, this->TabRef_, fld);
+         return true;
+      }
+   };
+   LvLmtParser parser{*symbs->LayoutSP_};
+   auto        locker = symbs->SymbMap_.Lock();
+   for (unsigned prodL = 0; prodL < prodCount; ++prodL) {
+      auto& symb = *static_cast<ExgMdSymb*>(symbs->FetchSymb(locker, fon9::StrView_eos_or_all(prodEntry->ProdId_.Chars_, ' ')).get());
+      bool  isChanged = parser.SetLvLmt(symb.Ref_.Data_.LvUpLmt_, parser.FldLvUpLmt_, fon9::PackBcdTo<uint8_t>(prodEntry->ExpandTypeLevelR_))
+                      | parser.SetLvLmt(symb.Ref_.Data_.LvDnLmt_, parser.FldLvDnLmt_, fon9::PackBcdTo<uint8_t>(prodEntry->ExpandTypeLevelF_));
+      if (isChanged) {
+         symb.MdRtStream_.Publish(ToStrView(symb.SymbId_),
+                                  f9sv_RtsPackType_FieldValue_AndInfoTime,
+                                  f9sv_MdRtsKind_Ref,
+                                  mdTime,
+                                  std::move(parser.Rts_));
+      }
+   }
+}
+
 f9twf_API void I084SSParserToRts(ExgMcMessage& e) {
    switch (static_cast<const ExgMcI084*>(&e.Pk_)->MessageType_) {
-   //case 'A': McI084SSParserA(e); break;
-     case 'O': McI084SSParserO(e); break;
-   //case 'S': McI084SSParserS(e); break;
-   //case 'P': McI084SSParserP(e); break;
-   //case 'Z': McI084SSParserZ(e); break;
+   //case 'A': McI084SSParserA(e);  break;
+     case 'O': McI084SSParserO(e);  break;
+   //case 'S': McI084SSParserS(e);  break;
+     case 'P': McI084SSParserP(e);  break;
+   //case 'Z': McI084SSParserZ(e);  break;
    }
 }
 

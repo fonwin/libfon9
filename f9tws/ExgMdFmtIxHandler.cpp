@@ -72,6 +72,7 @@ struct ExgMdIndexUpdater {
       fon9::ToBitv(rts, idxValueV2);
       ix.MdRtStream_.Publish(ToStrView(ix.SymbId_),
                              f9sv_RtsPackType_IndexValueV2,
+                             f9sv_MdRtsKind_Deal,
                              this->IdxTime_,
                              std::move(rts));
       if (gbuf) {
@@ -149,9 +150,7 @@ void ExgMdFmt3Handler::OnPkReceived(const ExgMdHeader& pkhdr, unsigned pksz) {
       return;
    fon9::ToBitv(*gbuf, updater.IdxTime_);
    *(gbuf->AllocPacket<uint8_t>()) = fon9::cast_to_underlying(f9sv_RtsPackType_IndexValueV2List);
-   f9fmkt::MdRtsNotifyArgs  e(updater.Indicas_, fon9::seed::TextBegin(),
-                              f9fmkt::GetMdRtsKind(f9sv_RtsPackType_IndexValueV2List),
-                              *gbuf);
+   f9fmkt::MdRtsNotifyArgs  e(updater.Indicas_, fon9::seed::TextBegin(), f9sv_MdRtsKind_Deal, *gbuf);
    bpub.UnsafePublish(f9sv_RtsPackType_IndexValueV2List, e);
 }
 

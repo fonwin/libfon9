@@ -44,7 +44,7 @@ public:
    /// 預設觸發 this->MdRtStream_.BeforeRemove(owner, *this);
    void OnBeforeRemove(fon9::fmkt::SymbTree& owner, unsigned tdayYYYYMMDD) override;
 
-   static fon9::seed::LayoutSP MakeLayout();
+   static fon9::seed::LayoutSP MakeLayout(bool isAddMarketSeq);
 };
 //--------------------------------------------------------------------------//
 class f9tws_API ExgMdSymbs : public fon9::fmkt::MdSymbsT<ExgMdSymb> {
@@ -53,7 +53,7 @@ class f9tws_API ExgMdSymbs : public fon9::fmkt::MdSymbsT<ExgMdSymb> {
 
 public:
    fon9::seed::Tab* const  TabBreakSt_;
-   ExgMdSymbs(std::string rtiPathFmt);
+   ExgMdSymbs(std::string rtiPathFmt, bool isAddMarketSeq);
 
    fon9::fmkt::SymbSP MakeSymb(const fon9::StrView& symbid) override;
 };

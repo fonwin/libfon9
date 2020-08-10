@@ -1,0 +1,37 @@
+﻿2020/08/10
+- 在 [買賣報價、成交明細] 增加 MktSeq 欄位，在多資訊源的環境，用來過濾重複(過時)資訊:
+- 成交封包, 仍要提供 MktSeq, 因為試算成交的 TotalQty 為 0, 所以不能只用 TotalQty 判斷是否為舊封包.
+
+- 目前情況:
+  只有 Deal, BS 需要 MktSeq, 其餘現有資料都不需要 MktSeq, 在可見的未來不會有改變.
+  f9sv_RtsPackType_DealPack,
+  f9sv_RtsPackType_DealBS,
+  f9sv_RtsPackType_SnapshotBS,
+  f9sv_RtsPackType_CalculatedBS,
+  f9sv_RtsPackType_UpdateBS,
+
+- 方法1. 在 enum f9sv_RtsPackType 增加一個 f9sv_RtsPackType_MktSeq;
+  /// - MktSeq(Bitv) (應更新 BS.MktSeq 欄位)
+  /// - MktSeq 之後, 接著後續的 RtsPackType 及其內容.
+  /// - 僅在 Server 有提供 BS.MktSeq 欄位時才會有此封包.
+  /// - 用在多資訊來源時, 判斷是否為重複資料.
+
+- 方法2. 在原本的封包增加 MktSeq(Bitv) 內容(如果有 BS.MktSeq 欄位)
+
+- 考量:
+  - [方法1]在回補時, 會難以判斷 InfoTime?
+    - f9sv_RtsPackType_MktSeq + InfoTime + MktSeq + [後續封包(不含InfoTime)].
+      - [後續封包]解析要排除 InfoTime.
+      - 依然要改動到[後續封包]解析程序?
+        - 可將[後續封包]的InfoTime設為Null,就不會動到[後續封包]解析程序了.
+  - [方法1]資料量會比[方法2]多 2 bytes: (PkType=f9sv_RtsPackType_MktSeq) + (MktSeq) + (後續封包:InfoTime=Null)
+    - 會用到 MktSeq 的環境，通常API端會接收[交易所行情]，用來過濾重複資訊，此時 2 bytes 是否有那麼嚴重?
+    - 使用[方法1]的未來擴充性較佳.
+      - 未來還有需要 MktSeq 的訊息需要擴充嗎?
+      - 不論選擇哪種方式，打包端都必須修改。
+      - 方法1: 解包端較單純。
+      - 方法2: 每個提供 MktSeq 的封包都解要調整。
+
+- 最後決定: 使用[方法2.]
+  - 依目前情況來看, 現有 enum f9sv_RtsPackType; 已確定了要修改的內容, 以後的變動不大.
+  - 所以直接修改[打包及解包]比較單純.

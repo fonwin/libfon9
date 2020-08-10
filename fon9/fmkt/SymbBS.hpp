@@ -13,19 +13,19 @@ fon9_API_TEMPLATE_CLASS(SymbTwsBS, SimpleSymbData, SymbTwsBSData);
 fon9_API_TEMPLATE_CLASS(SymbTwfBS, SimpleSymbData, SymbTwfBSData);
 
 /// 不包含「衍生買賣」, 包含 LmtFlags.
-fon9_API seed::Fields SymbTwsBS_MakeFields();
+fon9_API seed::Fields SymbTwsBS_MakeFields(bool isAddMarketSeq);
 /// 包含「衍生買賣」, 不包含 LmtFlags.
-fon9_API seed::Fields SymbTwfBS_MakeFields();
+fon9_API seed::Fields SymbTwfBS_MakeFields(bool isAddMarketSeq);
 
 using SymbTwaBS = SymbTwfBS;
-fon9_API seed::Fields SymbTwaBS_MakeFields();
+fon9_API seed::Fields SymbTwaBS_MakeFields(bool isAddMarketSeq);
 
 class fon9_API SymbBSTabDy : public SymbDataTab {
    fon9_NON_COPY_NON_MOVE(SymbBSTabDy);
    using base = SymbDataTab;
 public:
-   SymbBSTabDy(Named&& named)
-      : base{std::move(named), SymbTwaBS_MakeFields(), seed::TabFlag::NoSapling_NoSeedCommand_Writable} {
+   SymbBSTabDy(Named&& named, bool isAddMarketSeq = true)
+      : base{std::move(named), SymbTwaBS_MakeFields(isAddMarketSeq), seed::TabFlag::NoSapling_NoSeedCommand_Writable} {
    }
 
    SymbDataSP FetchSymbData(Symb&) override;

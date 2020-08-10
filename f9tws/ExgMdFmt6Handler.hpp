@@ -125,10 +125,12 @@ inline void FmtRt_PkContOnReceived(ExgMdHandlerPkCont& handler, ExgMdSymbs& symb
       }
       symb->MdRtStream_.Publish(ToStrView(symb->SymbId_),
                                 f9sv_RtsPackType_FieldValue_AndInfoTime,
+                                f9sv_MdRtsKind_TradingSession,
                                 dealTime, std::move(rts));
    }
 
    f9sv_RtsPackType rtsPackType;
+   f9sv_MdRtsKind   pkKind;
    if (mdfmt.HasBS()) {
       symb->BS_.Data_.InfoTime_ = dealTime;
       symb->BS_.Data_.Flags_ = (isCalc ? f9sv_BSFlag_Calculated : f9sv_BSFlag{});
@@ -148,16 +150,19 @@ inline void FmtRt_PkContOnReceived(ExgMdHandlerPkCont& handler, ExgMdSymbs& symb
       }
       if (hasDeal) {
          rtsPackType = f9sv_RtsPackType_DealBS;
+         pkKind = f9sv_MdRtsKind_Deal | f9sv_MdRtsKind_BS;
          MdRtsPackSnapshotBS(rts, symb->BS_.Data_);
          goto __ASSIGN_DEAL_TO_RTS;
       }
       else {
          rtsPackType = isCalc ? f9sv_RtsPackType_CalculatedBS : f9sv_RtsPackType_SnapshotBS;
+         pkKind = f9sv_MdRtsKind_BS;
          MdRtsPackSnapshotBS(rts, symb->BS_.Data_);
       }
    }
    else if (hasDeal) {
       rtsPackType = f9sv_RtsPackType_DealPack;
+      pkKind = f9sv_MdRtsKind_Deal;
    __ASSIGN_DEAL_TO_RTS:;
       fon9::ToBitv(rts, symb->Deal_.Data_.Deal_.Qty_);
       fon9::ToBitv(rts, symb->Deal_.Data_.Deal_.Pri_);
@@ -173,7 +178,8 @@ inline void FmtRt_PkContOnReceived(ExgMdHandlerPkCont& handler, ExgMdSymbs& symb
    else { // none Deal, none BS?
       return;
    }
-   symb->MdRtStream_.Publish(ToStrView(symb->SymbId_), rtsPackType, dealTime, std::move(rts));
+   f9fmkt::PackMktSeq(rts, symb->BS_.Data_.MarketSeq_, symbs.CtrlFlags_, static_cast<f9fmkt::MarketDataSeq>(seq));
+   symb->MdRtStream_.Publish(ToStrView(symb->SymbId_), rtsPackType, pkKind, dealTime, std::move(rts));
 }
 
 } // namespaces

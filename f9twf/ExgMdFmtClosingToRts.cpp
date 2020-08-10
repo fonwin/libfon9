@@ -24,6 +24,7 @@ static void I071ClosingToRts(ExgMcMessage& e, const ExgMdClosing071& pk) {
    f9fmkt::MdRtsPackTabValues(rbuf, *tabClosing, symb.FuoClosing_);
    symb.MdRtStream_.Publish(ToStrView(symb.SymbId_),
                             f9sv_RtsPackType_TabValues_AndInfoTime,
+                            f9sv_MdRtsKind_Closing,
                             e.Pk_.InformationTime_.ToDayTime(),
                             std::move(rbuf));
 }

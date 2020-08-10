@@ -3,10 +3,8 @@
 #ifndef __fon9_fmkt_SymbBSData_hpp__
 #define __fon9_fmkt_SymbBSData_hpp__
 #include "fon9/fmkt/FmktTypes.hpp"
-#include "fon9/fmkt/FmdTypes.h"
+#include "fon9/fmkt/FmdTypes.hpp"
 #include "fon9/TimeStamp.hpp"
-
-fon9_ENABLE_ENUM_BITWISE_OP(f9sv_BSFlag);
 
 namespace fon9 { namespace fmkt {
 
@@ -17,18 +15,21 @@ struct SymbBSData {
    };
 
    /// 報價時間.
-   DayTime  InfoTime_{DayTime::Null()};
+   DayTime        InfoTime_{DayTime::Null()};
    /// 賣出價量列表, [0]=最佳賣出價量.
-   PriQty   Sells_[kBSCount];
+   PriQty         Sells_[kBSCount];
    /// 買進價量列表, [0]=最佳買進價量.
-   PriQty   Buys_[kBSCount];
+   PriQty         Buys_[kBSCount];
 
-   f9sv_BSFlag Flags_{};
+   f9sv_BSFlag    Flags_{};
 
    /// 由資訊來源提供, 若沒提供則為 0, 核心系統不會主動與 今日漲跌停 比對.
-   f9sv_BSLmtFlag  LmtFlags_{};
+   f9sv_BSLmtFlag LmtFlags_{};
 
-   char     Padding___[6];
+   char           Padding___[2];
+
+   /// 市場行情序號.
+   MarketDataSeq  MarketSeq_{0};
 };
 
 struct SymbTwfBSData : public SymbBSData {

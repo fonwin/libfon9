@@ -14,18 +14,38 @@ extern "C" {
 fon9_ENUM(f9sv_MdRtsKind, uint32_t) {
    /// 基本資料訊息.
    f9sv_MdRtsKind_Base = 0x01,
-   /// 參考價訊息.
+   /// 參考價訊息(今日參考價、漲跌停價、LvUpLmt、LvDnLmt...)
    f9sv_MdRtsKind_Ref = 0x02,
    /// 成交價量.
    f9sv_MdRtsKind_Deal = 0x04,
    /// 買賣報價.
    f9sv_MdRtsKind_BS = 0x08,
+
+   //// 收盤後資訊, e.g. 結算價.
+   f9sv_MdRtsKind_Closing = 0x10,
+
+   /// 詢價.
+   f9sv_MdRtsKind_QuoteReq = 0x20,
+
+   /// 動態價格穩定措施.
+   f9sv_MdRtsKind_DynBand = 0x40,
+
    /// 交易時段狀態.
+   /// Session, SessionSt, TwsBaseFlag...
    f9sv_MdRtsKind_TradingSession = 0x80,
+
    /// 沒有 InfoTime 的 f9sv_RtsPackType 打包格式.
+   /// 回補時, 若有指定回補起始時間, 則會從封包內容取出 InfoTime,
+   /// 如果有此旗標, 表示無法藉此封包判斷回補起始時間.
    f9sv_MdRtsKind_NoInfoTime = 0x100,
 
-   f9sv_MdRtsKind_All = 0xffff,
+   /// 當某訊息需要提供給所有訂閱者, 不論訂閱時 Kind filter.
+   /// e.g. 暫停交易(BreakSt).
+   f9sv_MdRtsKind_All_NoInfoTime = 0xffff,
+   f9sv_MdRtsKind_All_AndInfoTime = f9sv_MdRtsKind_All_NoInfoTime - f9sv_MdRtsKind_NoInfoTime,
+
+   /// 當訂閱時沒有指定 Kind filter, 則表示訂閱全部.
+   f9sv_MdRtsKind_Full = 0xffff,
 };
 
 /// \ingroup fmkt
@@ -39,6 +59,7 @@ fon9_ENUM(f9sv_RtsPackType, uint8_t) {
    /// 打包成交明細.
    /// - 收到封包者: 一個 DealPack 可能觸發多次「交易明細」異動事件.
    /// - InfoTime(Bitv: Null = MdRtsDecoder.InfoTime)
+   /// - 若有 BS.MktSeq 則在此提供 MktSeq(Bitv)
    /// - f9sv_DealFlag(uint8_t): flags
    /// - IsEnumContains(flags, f9sv_DealFlag_DealTimeChanged):
    ///   - DealTime(Bitv: Null=InfoTime)
@@ -53,19 +74,21 @@ fon9_ENUM(f9sv_RtsPackType, uint8_t) {
 
    /// 委託簿快照(買賣報價), 不一定會填滿檔位, 接收端必須清除未提供的檔位.
    /// - InfoTime(Bitv: Null = MdRtsDecoder.InfoTime)
-   /// - first(1 byte):
-   ///   - (first & RtBSType::Mask) : RtBSType::OrderBuy, OrderSell, DerivedBuy, DerivedSell;
-   ///   - Count 4 bits = (first & 0x0f) + 1;
-   ///   - 例如: first = 0x13: first 之後, 提供「第4檔..第1檔」的賣出報價 Pri(Bitv), Qty(Bitv);
+   /// - 若有 BS.MktSeq 則在此提供 MktSeq(Bitv)
+   /// - bstype(1 byte):
+   ///   - (bstype & RtBSType::Mask) : RtBSType::OrderBuy, OrderSell, DerivedBuy, DerivedSell;
+   ///   - Count 4 bits = (bstype & 0x0f) + 1;
+   ///   - 例如: bstype = 0x13: bstype 之後, 提供「第4檔..第1檔」的賣出報價 Pri(Bitv), Qty(Bitv);
    f9sv_RtsPackType_SnapshotBS,
    /// 試算委託簿快照, 後續內容與 SnapshotBS 相同.
    f9sv_RtsPackType_CalculatedBS,
 
    /// 委託簿異動.
    /// - InfoTime(Bitv: Null = MdRtsDecoder.InfoTime)
-   /// - first(1 byte):
-   ///   - MSB 1 bit = (first & 0x80) = Calculated?
-   ///   - Count 7 bits = (first & 7f) + 1; 底下的資料重複次數.
+   /// - 若有 BS.MktSeq 則在此提供 MktSeq(Bitv)
+   /// - count(1 byte):
+   ///   - MSB 1 bit = (count & 0x80) = Calculated?
+   ///   - Count 7 bits = (count & 7f) + 1; 底下的資料重複次數.
    /// - type(1 byte)
    ///   - (type & 0x0f) : Level;
    ///   - (type & RtBSType::Mask) : RtBSType::OrderBuy, OrderSell, DerivedBuy, DerivedSell;
@@ -84,12 +107,12 @@ fon9_ENUM(f9sv_RtsPackType, uint8_t) {
    /// Twf 基本資訊.
    /// - InfoTime(Bitv: Null=Unchanged)
    /// - TradingMarket(char)
-   /// - 如果有 Base.FlowGroup: FlowGroup(uint8_t)
-   /// - 如果有 Base.StrikePriceDiv: StrikePriceDecimalLocator(uint8_t)
-   /// - 如果有 Base.ShUnit: ShUnit(Bitv)
+   /// - 如果有 Base.FlowGroup 欄位:      FlowGroup(uint8_t)
+   /// - 如果有 Base.StrikePriceDiv 欄位: StrikePriceDecimalLocator(uint8_t)
+   /// - 如果有 Base.PriceOrigDiv 欄位:   PriceDecimalLocator(uint8_t)
+   /// - 如果有 Base.ShUnit 欄位:         ShUnit(Bitv)
    /// - PriRef(Bitv)
-   /// - PriUpLmt(Bitv)
-   /// - PriDnLmt(Bitv)
+   /// - 漲跌停價 0..N 階(直到封包結束):  PriUpLmt(Bitv) + PriDnLmt(Bitv)
    f9sv_RtsPackType_BaseInfoTw,
 
    /// DealPack(有InfoTime) + SnapshotBS(無InfoTime);
@@ -130,6 +153,9 @@ fon9_ENUM(f9sv_RtsPackType, uint8_t) {
    ///   - tabs[tabidx].(all fields)->BitvToCell();
    f9sv_RtsPackType_TabValues_NoInfoTime,
    f9sv_RtsPackType_TabValues_AndInfoTime,
+
+   /// 漲跌停價異動.
+   f9sv_RtsPackType_PriLmts,
 
    f9sv_RtsPackType_Count,
 };

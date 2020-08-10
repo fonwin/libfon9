@@ -4,6 +4,7 @@
 #define __fon9_fmkt_MdSymbs_hpp__
 #include "fon9/fmkt/SymbTree.hpp"
 #include "fon9/fmkt/MdRtStream.hpp"
+#include "fon9/fmkt/FmdTypes.hpp"
 #include "fon9/fmkt/SymbTabNames.h"
 
 namespace fon9 { namespace fmkt {
@@ -45,22 +46,14 @@ protected:
    char  Padding____[2];
 
 public:
-   enum EnAllow {
-      /// 允許訂閱整棵樹.
-      EnAllowSubrTree = 0x01,
-      /// 訂閱整棵樹時, 允許取得當時全部商品的快照.
-      /// 因為要打包商品的快照 SnapshotSymb: Base、Ref、High、Low、BS、Deal...
-      /// 所以會瞬間占用大量資源, 且會瞬間造成網路流量大增;
-      EnAllowSubrSnapshotSymb = 0x02 | EnAllowSubrTree,
-   };
-   const EnAllow     EnAllows_;
-   seed::Tab* const  RtTab_;
-   MdRtStreamInnMgr  RtInnMgr_;
+   const MdSymbsCtrlFlag   CtrlFlags_;
+   seed::Tab* const        RtTab_;
+   MdRtStreamInnMgr        RtInnMgr_;
 
    fon9_MSC_WARN_DISABLE(4355); // 'this': used in base member initializer list
-   MdSymbsBase(seed::LayoutSP layout, std::string rtiPathFmt, EnAllow enAllows = EnAllow{})
+   MdSymbsBase(seed::LayoutSP layout, std::string rtiPathFmt, MdSymbsCtrlFlag flags = MdSymbsCtrlFlag{})
       : base{std::move(layout)}
-      , EnAllows_{enAllows}
+      , CtrlFlags_{flags}
       , RtTab_{LayoutSP_->GetTab(fon9_kCSTR_TabName_Rt)}
       , RtInnMgr_(*this, std::move(rtiPathFmt)) {
    }
@@ -72,7 +65,7 @@ public:
       this->RtInnMgr_.SetDailyClearHHMMSS(hhmmss);
    }
 
-   /// 訂閱整棵樹, this->EnAllow_ 必須提供 EnAllowSubrTree.
+   /// 訂閱整棵樹, 建構時必須提供 MdSymbsCtrlFlag::AllowSubrTree 旗標.
    seed::OpResult SubscribeStream(SubConn* pSubConn, seed::Tab&, StrView args, seed::FnSeedSubr&&);
    seed::OpResult UnsubscribeStream(SubConn, seed::Tab&);
    /// - 此處會檢查 assert(this->SymbMap_.IsLocked()); 未鎖定的呼叫, 必定為設計上的問題.

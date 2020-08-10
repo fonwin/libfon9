@@ -113,11 +113,13 @@ struct I140_BreakSt_PreparePk : public I140_CheckPublish {
    }
    void CheckPublish(ExgMdSymb& symb) override {
       fon9::RevBufferList  rts{64};
+      f9sv_MdRtsKind       pkKind = f9sv_MdRtsKind_TradingSession;
       if (symb.TradingSessionSt_ == this->TSessionSt_) {
          if (symb.BreakSt_.Data_ == this->BreakSt_.Data_)
             return;
          fon9::RevPrint(rts, this->PkBreakSt_);
          symb.BreakSt_.Data_ = this->BreakSt_.Data_;
+         pkKind = f9sv_MdRtsKind_All_AndInfoTime;
       }
       else {
          symb.TradingSessionSt_ = this->TSessionSt_;
@@ -126,10 +128,12 @@ struct I140_BreakSt_PreparePk : public I140_CheckPublish {
          else {
             fon9::RevPutMem(rts, this->Rts_.GetCurrent(), this->Rts_.GetMemEnd());
             symb.BreakSt_.Data_ = this->BreakSt_.Data_;
+            pkKind = f9sv_MdRtsKind_All_AndInfoTime;
          }
       }
       symb.MdRtStream_.Publish(ToStrView(symb.SymbId_),
                                f9sv_RtsPackType_FieldValue_AndInfoTime,
+                               pkKind,
                                this->InfoTime_, std::move(rts));
    }
 };
@@ -299,6 +303,7 @@ static void I140_40r_DynRange(ExgMcMessage& e, f9fmkt_DynBandSt st) {
          // 在建構時, this->Rts_ 有填入 InfoTime, 所以這裡使用 FieldValue_AndInfoTime;
          symb.MdRtStream_.PublishAndSave(ToStrView(symb.SymbId_),
                                          f9sv_RtsPackType_FieldValue_AndInfoTime,
+                                         f9sv_MdRtsKind_DynBand,
                                          std::move(rts));
       }
    };
@@ -336,6 +341,7 @@ static void I140_40x_DynBand(ExgMcMessage& e, f9fmkt_DynBandSt st) {
          // 在建構時, this->Rts_ 有填入 InfoTime, 所以這裡使用 FieldValue_AndInfoTime;
          symb.MdRtStream_.PublishAndSave(ToStrView(symb.SymbId_),
                                          f9sv_RtsPackType_FieldValue_AndInfoTime,
+                                         f9sv_MdRtsKind_DynBand,
                                          std::move(rts));
       }
    };
@@ -351,7 +357,7 @@ static void I140_10x_LmtRange(ExgMcMessage& e, int lvWill) {
       int8_t   LvUpLmt_ = 0, LvDnLmt_ = 0;
       char     Padding___[6];
       PreparePk(const fon9::seed::Layout& layout, const ExgMdSysInfo10x& i10x, int lvWill, fon9::DayTime infoTime) {
-         auto  lv = static_cast<uint8_t>(fon9::PackBcdTo<uint8_t>(i10x.Level_) - 1);
+         auto   lv = static_cast<uint8_t>(fon9::PackBcdTo<uint8_t>(i10x.Level_) - 1);
          assert(lv < TwfSymbRef_Data::kPriLmtCount);
          if (lv >= TwfSymbRef_Data::kPriLmtCount)
             lv = TwfSymbRef_Data::kPriLmtCount - 1;
@@ -365,8 +371,8 @@ static void I140_10x_LmtRange(ExgMcMessage& e, int lvWill) {
          }
          const auto* tabRef = layout.GetTab(fon9_kCSTR_TabName_Ref);
          assert(tabRef != nullptr);
-         FieldToBitv(*tabRef, this->LvUpLmt_, "LvUpLmt");
-         FieldToBitv(*tabRef, this->LvDnLmt_, "LvDnLmt");
+         this->FieldToBitv(*tabRef, this->LvUpLmt_, "LvUpLmt");
+         this->FieldToBitv(*tabRef, this->LvDnLmt_, "LvDnLmt");
          fon9::ToBitv(this->Rts_, infoTime);
       }
       void FieldToBitv(const fon9::seed::Tab& tabRef, int lvLmt, fon9::StrView fldName) {
@@ -384,14 +390,16 @@ static void I140_10x_LmtRange(ExgMcMessage& e, int lvWill) {
          return true;
       }
       void CheckPublish(ExgMdSymb& symb) override {
-         if (!CheckSetLvLmt(symb.Ref_.Data_.LvUpLmt_, this->LvUpLmt_)
-             && !CheckSetLvLmt(symb.Ref_.Data_.LvDnLmt_, this->LvDnLmt_))
+         const bool isChanged = this->CheckSetLvLmt(symb.Ref_.Data_.LvUpLmt_, this->LvUpLmt_)
+                              | this->CheckSetLvLmt(symb.Ref_.Data_.LvDnLmt_, this->LvDnLmt_);
+         if (!isChanged)
             return;
          fon9::RevBufferList  rts{64};
          fon9::RevPutMem(rts, this->Rts_.GetCurrent(), this->Rts_.GetMemEnd());
          // 在建構時, this->Rts_ 有填入 InfoTime, 所以這裡使用 FieldValue_AndInfoTime;
          symb.MdRtStream_.PublishAndSave(ToStrView(symb.SymbId_),
                                          f9sv_RtsPackType_FieldValue_AndInfoTime,
+                                         f9sv_MdRtsKind_Ref,
                                          std::move(rts));
       }
    };
