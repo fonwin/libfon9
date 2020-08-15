@@ -69,6 +69,13 @@ OpResult FieldChars::Copy(const RawWr& wr, const RawRd& rd) const {
 int FieldChars::Compare(const RawRd& lhs, const RawRd& rhs) const {
    return memcmp(lhs.GetCellPtr<char>(*this), rhs.GetCellPtr<char>(*this), this->Size_);
 }
+size_t FieldChars::AppendRawBytes(const RawRd& rd, ByteVector& dst) const {
+   dst.append(rd.GetCellPtr<char>(*this), this->Size_);
+   return this->Size_;
+}
+int FieldChars::CompareRawBytes(const RawRd& rd, const void* rhs, size_t rsz) const {
+   return fon9_CompareBytes(rd.GetCellPtr<byte>(*this), this->Size_, rhs, rsz);
+}
 
 //--------------------------------------------------------------------------//
 
@@ -101,9 +108,16 @@ OpResult FieldChar1::Copy(const RawWr& wr, const RawRd& rd) const {
    return OpResult::no_error;
 }
 int FieldChar1::Compare(const RawRd& lhs, const RawRd& rhs) const {
-   char L = *lhs.GetCellPtr<char>(*this);
-   char R = *rhs.GetCellPtr<char>(*this);
-   return (L < R) ? -1 : (L == R) ? 0 : 1;
+   return Compare2Values(*lhs.GetCellPtr<char>(*this), *rhs.GetCellPtr<char>(*this));
+}
+int FieldChar1::CompareRawBytes(const RawRd& rd, const void* rhs, size_t rsz) const {
+   if (rsz) {
+      int retval = Compare2Values(*rd.GetCellPtr<char>(*this), *static_cast<const char*>(rhs));
+      if (retval || rsz == 1)
+         return retval;
+      return -1;
+   }
+   return 1; // rd > rhs(empty);
 }
 
 //--------------------------------------------------------------------------//

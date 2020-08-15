@@ -203,12 +203,14 @@ typedef enum {
 
    /// = fon9::seed::OpResult::access_denied = -2,
    f9sv_Result_AccessDenied = -2,
+   /// = fon9::seed::path_format_error = -3,
+   f9sv_Result_PathFormatError = -3,
    /// = fon9::seed::OpResult::not_found_tab = -201,
    f9sv_Result_NotFoundTab = -201,
 
    /// 在呼叫 f9sv_Query(); 或 f9sv_Subscribe(); 時,
-   /// - 沒有呼叫過 f9OmsRc_Initialize();
-   /// - 或建立 ses 時, 沒有提供 f9OmsRc_ClientSessionParams 參數.
+   /// - 沒有呼叫過 f9sv_Initialize();
+   /// - 或建立 ses 時, 沒有提供 f9sv_ClientSessionParams 參數.
    f9sv_Result_BadInitParams = -10,
 
    /// 連線中斷. 查詢、訂閱, 都會收到此回報, 然後清除所有的要求(查詢、訂閱...).

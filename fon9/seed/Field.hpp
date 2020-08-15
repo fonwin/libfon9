@@ -134,9 +134,15 @@ public:
 
    /// 複製欄位內容.
    virtual OpResult Copy(const RawWr& wr, const RawRd& rd) const = 0;
-
-   /// 比較欄位內容的大小.
+   /// 比較欄位內容.
    virtual int Compare(const RawRd& lhs, const RawRd& rhs) const = 0;
+
+   /// 複製欄位的原始內容到 dst 的尾端.
+   /// - 若為字串(或 bytes)則複製「字串(或 bytes)內容」.
+   /// - 返回複製的長度.
+   virtual size_t AppendRawBytes(const RawRd& rd, ByteVector& dst) const = 0;
+   /// 比較欄位內容.
+   virtual int CompareRawBytes(const RawRd& rd, const void* rhs, size_t rsz) const = 0;
 };
 fon9_WARN_POP;
 

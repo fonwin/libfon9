@@ -39,7 +39,7 @@ fon9_WARN_DISABLE_PADDING;
 fon9_MSC_WARN_DISABLE_NO_PUSH(4355 /* 'this' : used in base member initializer list*/);
 IoManagerTree::IoManagerTree(const IoManagerArgs& args, TimeInterval afterOpen)
    : baseTree{IoManagerTree::GetLayout()}
-   , IoManager(args)
+   , baseIoMgr(args)
    , TabTreeOp_{new seed::TabTreeOp(*this->LayoutSP_->GetTab(kTabConfigIndex))} {
    this->SubConnDev_ = this->DeviceFactoryPark_->Subscribe([this](DeviceFactory*, seed::ParkTree::EventType) {
       this->OnFactoryParkChanged();
@@ -165,16 +165,6 @@ void IoManagerTree::DisposeAndReopen(std::string cause, TimeInterval afterReopen
    this->DisposeDevices(std::move(cause));
    this->Timer_.RunAfter(afterReopen);
    this->TimerFor_ = TimerFor::Open;
-}
-void IoManagerTree::LockedDisposeDevices(const DeviceMap::Locker& map, std::string cause) {
-   for (auto& i : *map) {
-      i->SchSt_ = SchSt::Unknown;
-      if (io::Device* dev = i->Device_.get())
-         dev->AsyncDispose(cause);
-   }
-}
-void IoManagerTree::DisposeDevices(std::string cause) {
-   this->LockedDisposeDevices(DeviceMap::Locker{this->DeviceMap_}, std::move(cause));
 }
 void IoManagerTree::OnParentSeedClear() {
    DeviceMap::Locker map{this->DeviceMap_};

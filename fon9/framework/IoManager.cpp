@@ -76,7 +76,7 @@ void IoManager::RaiseMakeIoServiceFatal(Result2 err) const {
 }
 
 template <class IoService>
-intrusive_ptr<IoService> IoManager::MakeIoService() const{
+intrusive_ptr<IoService> IoManager::MakeIoService() const {
    io::IoServiceArgs iosvArgs;
    this->ParseIoServiceArgs(iosvArgs);
    typename IoService::MakeResult err;
@@ -108,6 +108,27 @@ io::FdrServiceSP IoManager::GetFdrService() {
    return this->FdrService_;
 }
 #endif
+
+//--------------------------------------------------------------------------//
+//
+// 在 Device 還活著時, 不能把 DeviceMap 清除,
+// 因為 dev 的事件通知 mgr 時, 還會透過 dev.GetManagerBookmark() 取回 item.
+//
+// /// 先呼叫 this->DisposeDevices(cause); 然後清除 DeviceMap;
+// /// 在RAM的設定會消失, 但不會影響設定檔的內容.
+// void IoManager::ClearSessions(std::string cause) {
+//    DeviceMap::Locker map{this->DeviceMap_};
+//    this->LockedDisposeDevices(map, std::move(cause));
+//    map->clear();
+// }
+
+void IoManager::LockedDisposeDevices(const DeviceMap::Locker& map, std::string cause) {
+   for (auto& i : *map) {
+      i->SchSt_ = SchSt::Unknown;
+      if (io::Device* dev = i->Device_.get())
+         dev->AsyncDispose(cause);
+   }
+}
 //--------------------------------------------------------------------------//
 void IoManager::AssignStStr(CharVector& dst, TimeStamp now, StrView stmsg) {
    size_t sz = kDateTimeStrWidth + stmsg.size() + 1;
@@ -147,31 +168,37 @@ IoManager::DeviceOpenResult IoManager::CreateDevice(DeviceItem& item) {
    AssignStStr(item.DeviceSt_, UtcNow(), "Device factory not found");
    return DeviceOpenResult::DeviceFactoryNotFound;
 }
-IoManager::DeviceOpenResult IoManager::CheckOpenDevice(DeviceItem& item) {
+IoManager::DeviceOpenResult IoManager::CheckCreateDevice(DeviceItem& item) {
    if (item.Config_.Enabled_ != EnabledYN::Yes)
       return DeviceOpenResult::Disabled;
-   DeviceOpenResult res;
-   if (item.Device_) {
+   if (item.Device_)
+      return DeviceOpenResult::AlreadyExists;
+   DeviceOpenResult res = this->CreateDevice(item);
+   if (!item.Device_) {
+      fon9_LOG_WARN("IoManager.", this->Name_, ".CheckCreateDevice"
+                    "|cfgid=", item.Id_,
+                    "|ses=", item.Config_.SessionName_,
+                    "|sesArgs={", item.Config_.SessionArgs_, "}"
+                    "|dev=", item.Config_.DeviceName_,
+                    "|devArgs={", item.Config_.DeviceArgs_, "}"
+                    "|res=", res,
+                    "|err=", item.SessionSt_, '|', item.DeviceSt_);
+   }
+   return res;
+}
+IoManager::DeviceOpenResult IoManager::CheckOpenDevice(DeviceItem& item) {
+   DeviceOpenResult res = this->CheckCreateDevice(item);
+   if(res == DeviceOpenResult::Disabled)
+      return res;
+   if (res == DeviceOpenResult::AlreadyExists) {
       if (item.OpenArgs_ == item.Config_.DeviceArgs_)
          return DeviceOpenResult::AlreadyExists;
-      res = DeviceOpenResult::AlreadyExists;
+      // 不用 return; OpenArgs_ 有變動, 重新開啟.
    }
-   else {
-      res = this->CreateDevice(item);
-      if (!item.Device_) {
-         fon9_LOG_WARN("IoManager.", this->Name_, ".CheckOpenDevice"
-                       "|cfgid=",    item.Id_,
-                       "|ses=",      item.Config_.SessionName_,
-                       "|sesArgs={", item.Config_.SessionArgs_, "}"
-                       "|dev=",      item.Config_.DeviceName_,
-                       "|devArgs={", item.Config_.DeviceArgs_, "}"
-                       "|res=",      res,
-                       "|err=",      item.SessionSt_, '|', item.DeviceSt_);
-         return res;
-      }
+   if (item.Device_) {
+      AssignStStr(item.DeviceSt_, UtcNow(), "Async opening");
+      item.Device_->AsyncOpen(item.Config_.DeviceArgs_.ToString());
    }
-   AssignStStr(item.DeviceSt_, UtcNow(), "Async opening");
-   item.Device_->AsyncOpen(item.Config_.DeviceArgs_.ToString());
    return res;
 }
 //--------------------------------------------------------------------------//

@@ -3,10 +3,7 @@
 #ifndef __fon9_fmkt_SymbDealData_hpp__
 #define __fon9_fmkt_SymbDealData_hpp__
 #include "fon9/fmkt/FmktTypes.hpp"
-#include "fon9/fmkt/FmdTypes.h"
-#include "fon9/TimeStamp.hpp"
-
-fon9_ENABLE_ENUM_BITWISE_OP(f9sv_DealFlag);
+#include "fon9/fmkt/FmdTypes.hpp"
 
 namespace fon9 { namespace fmkt {
 

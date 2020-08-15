@@ -60,6 +60,8 @@ public:
 
    virtual OpResult Copy(const RawWr& wr, const RawRd& rd) const override;
    virtual int Compare(const RawRd& lhs, const RawRd& rhs) const override;
+   virtual size_t AppendRawBytes(const RawRd& rd, ByteVector& dst) const override;
+   virtual int CompareRawBytes(const RawRd& rd, const void* rhs, size_t rsz) const override;
 };
 
 template <size_t arysz>
@@ -111,6 +113,7 @@ public:
 
    virtual OpResult Copy(const RawWr& wr, const RawRd& rd) const override;
    virtual int Compare(const RawRd& lhs, const RawRd& rhs) const override;
+   virtual int CompareRawBytes(const RawRd& rd, const void* rhs, size_t rsz) const override;
 };
 
 inline FieldSPT<FieldChar1> MakeField(Named&& named, int32_t ofs, char&) {

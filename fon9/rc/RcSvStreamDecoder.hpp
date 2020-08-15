@@ -32,7 +32,7 @@ public:
 
    /// - rpt 已初始化: rpt.TreePath_; rpt.Layout_; rpt.SeedKey_; rpt.Tab_; rpt.UserData_;
    ///   - rpt.ResultCode_ = f9sv_Result_SubrStream*; 已填入對應值;
-   ///   -  其餘為0;
+   ///   - 其餘為0;
    /// - 收到的 stream data 放在 rx.Gv_, 內容由 Stream 自訂, 不一定是文字.
    /// - 衍生者解碼後應觸發事件通知, 然後才返回.
    virtual void DecodeStreamData(svc::RxSubrData& rx, f9sv_ClientReport& rpt) = 0;

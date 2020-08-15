@@ -9,12 +9,11 @@
 #include <unordered_map>
 #include <deque>
 
-extern "C" {
-   struct f9sv_Seed : public fon9::seed::Raw {
-      fon9_NON_COPY_NON_MOVE(f9sv_Seed);
-      f9sv_Seed() = default;
-   };
+struct f9sv_Seed : public fon9::seed::Raw {
+   fon9_NON_COPY_NON_MOVE(f9sv_Seed);
+   f9sv_Seed() = default;
 };
+
 //-----------------------------
 namespace fon9 { namespace rc {
 
@@ -27,15 +26,17 @@ using RcSvStreamDecoderNoteSP = std::unique_ptr<RcSvStreamDecoderNote>;
 namespace svc {
 
 struct SeedRec : public f9sv_Seed {
-   fon9_NON_COPYABLE(SeedRec);
-   SeedRec() {
-      ZeroStruct(this->Handler_);
-   }
+   fon9_NON_COPY_NON_MOVE(SeedRec);
    f9sv_ReportHandler      Handler_;
    f9sv_SubrIndex          SubrIndex_{kSubrIndexNull};
    SvFunc                  SvFunc_{};
    char                    Padding___[3];
    RcSvStreamDecoderNoteSP StreamDecoderNote_;
+
+   SeedRec() {
+      ZeroStruct(this->Handler_);
+   }
+
    void ClearSvFunc() {
       this->Handler_.FnOnReport_ = nullptr;
       this->SubrIndex_ = kSubrIndexNull;

@@ -145,6 +145,15 @@ struct IsTrivialByte {
    enum { value = (sizeof(decay_t<T>) == 1 && std::is_trivial<decay_t<T>>::value) };
 };
 
+/// \ingroup Misc
+/// \retval -1    L < R
+/// \retval 0     L == R
+/// \retval 1     L > R
+template <typename T>
+inline int Compare2Values(T L, T R) {
+   return (L < R) ? -1 : (L == R) ? 0 : 1;
+}
+
 //--------------------------------------------------------------------------//
 
 /// \ingroup Misc
@@ -283,7 +292,9 @@ static inline byte* PutFwd(byte* dst, char(&chary)[arysz]) {
 template <class StrT>
 static inline auto PutFwd(byte* dst, const StrT& src)
 -> decltype(PutFwd(dst, &*src.begin(), src.size())) {
-   return PutFwd(dst, &*src.begin(), src.size());
+   if (auto sz = src.size())
+      return PutFwd(dst, &*src.begin(), sz);
+   return dst;
 }
 
 } // namespace

@@ -126,7 +126,7 @@ void MdSymbsBase::DailyClear(unsigned tdayYYYYMMDD) {
    PutBigEndian(rts.AllocPacket<uint32_t>(), tdayYYYYMMDD);
    RevPutBitv(rts, fon9_BitvV_NumberNull); // DayTime::Null();
    *rts.AllocPacket<uint8_t>() = cast_to_underlying(f9sv_RtsPackType_TradingSessionId);
-   MdRtsNotifyArgs  e{*this, fon9_kCSTR_SubrTree, f9sv_MdRtsKind_TradingSession, rts};
+   MdRtsNotifyArgs  e{*this, fon9_kCSTR_SubrTree, f9sv_MdRtsKind_All_AndInfoTime, rts};
    this->UnsafeSubj_.Publish(e);
 }
 void MdSymbsBase::UnsafePublish(f9sv_RtsPackType pkType, seed::SeedNotifyArgs& e) {

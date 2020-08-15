@@ -134,7 +134,7 @@ public:
    virtual ~DeviceListener();
 
    /// 提供給 IoManager 安全的取用 Device.ManagerBookmark.
-   AcceptedClients::ConstLocker Lock() const{
+   AcceptedClients::ConstLocker Lock() const {
       return AcceptedClients::ConstLocker{this->AcceptedClients_};
    }
 

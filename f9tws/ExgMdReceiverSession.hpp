@@ -4,7 +4,7 @@
 #define __f9tws_ExgMdReceiverSession_hpp__
 #include "f9tws/ExgMdSystem.hpp"
 #include "f9tws/ExgMdPkReceiver.hpp"
-#include "fon9/framework/IoFactory.hpp"
+#include "fon9/io/Session.hpp"
 
 namespace f9tws {
 

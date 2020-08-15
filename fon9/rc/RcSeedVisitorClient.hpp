@@ -3,7 +3,6 @@
 #ifndef __fon9_rc_RcSeedVisitorClient_hpp__
 #define __fon9_rc_RcSeedVisitorClient_hpp__
 #include "fon9/rc/RcClientSession.hpp"
-#include "fon9/rc/RcSvc.hpp"
 #include "fon9/rc/RcSvStreamDecoder.hpp"
 
 namespace fon9 { namespace rc {
@@ -26,6 +25,8 @@ public:
 
 struct RcSvClientRequest;
 
+/// - 在 Rc Session 建立時, 就會將 RcSeedVisitorClientNote 建立好.
+/// - 在 ApReady/LinkBroken 時, 會呼叫 this->ClearRequests() 清除全部的訂閱及Layout.
 class RcSeedVisitorClientNote : public RcFunctionNote {
    fon9_NON_COPY_NON_MOVE(RcSeedVisitorClientNote);
 public:
@@ -38,19 +39,24 @@ public:
    void OnRecvFunctionCall(RcSession& ses, RcFunctionParam& param) override;
 
    /// 在 RcSeedVisitorClientAgent::OnSessionLinkBroken() 轉呼叫此處.
+   /// - 在此呼叫 this->ClearRequests(): 不保留訂閱設定, 重新連線後, 由使用者自行重新訂閱.
    void OnSessionLinkBroken(RcClientSession& ses);
-   /// 在 RcSeedVisitorClientAgent::OnSessionApReady() 轉呼叫此處.
+
+   /// - 清除全部的訂閱及Layout;
+   /// - 呼叫時機: 在 ApReady 及 LinkBroken 時.
    void ClearRequests(RcClientSession& ses);
 
    using TreeLocker = svc::TreeLocker;
    TreeLocker LockTree() {
       return this->TreeMap_.Lock();
    }
-   // -----
+
+   /// 檢查「sv 查詢要求」的流量管制.
    TimeInterval FcQryFetch(const TreeLocker& locker) {
       (void)locker; assert(locker.owns_lock());
       return this->FcQry_.Fetch();
    }
+
    f9sv_Result AddSubr(const TreeLocker& locker, RcSvClientRequest& req, const svc::PodRec* pod);
 
 private:

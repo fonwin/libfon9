@@ -65,7 +65,7 @@ void RcSvClientRequest::FlushLog() {
          RevPrint(rbuf_, "|subrIndex=", this->SubrIndex_);
       if (this->DupTabIndex_ != kTabAll)
          RevPrint(rbuf_, "|dupTabIdx=", this->DupTabIndex_);
-      if (!Parser_.Path_.empty() && this->OrigTreePath_ != ToStrView(this->Parser_.Path_))
+      if (!this->Parser_.Path_.empty() && this->OrigTreePath_ != ToStrView(this->Parser_.Path_))
          RevPrint(rbuf_, "|npath=", this->Parser_.Path_);
       if (this->OrigTabName_.empty())
          RevPrint(rbuf_, this->TabIndex_);

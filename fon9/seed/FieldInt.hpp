@@ -108,9 +108,18 @@ public:
       return OpResult::no_error;
    }
    virtual int Compare(const RawRd& lhs, const RawRd& rhs) const override {
-      auto L = this->GetValue(lhs);
-      auto R = this->GetValue(rhs);
-      return (L < R) ? -1 : (L == R) ? 0 : 1;
+      return Compare2Values(this->GetValue(lhs), this->GetValue(rhs));
+   }
+   virtual size_t AppendRawBytes(const RawRd& rd, ByteVector& dst) const override {
+      dst.append(rd.GetCellPtr<OrigType>(*this), sizeof(OrigType));
+      return sizeof(OrigType);
+   }
+   virtual int CompareRawBytes(const RawRd& rd, const void* rhs, size_t rsz) const override {
+      if (rsz == sizeof(OrigType)) {
+         OrigType rval; memcpy(&rval, rhs, sizeof(OrigType));
+         return Compare2Values(this->GetValue(rd), rval);
+      }
+      return 1;
    }
 };
 

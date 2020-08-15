@@ -90,6 +90,7 @@ f9sv_CAPI_FN(const char*)
 f9sv_GetSvResultMessage(f9sv_Result res) {
    static_assert(f9sv_Result_AccessDenied == fon9::rc::ToResultC(fon9::seed::OpResult::access_denied), "");
    static_assert(f9sv_Result_NotFoundTab == fon9::rc::ToResultC(fon9::seed::OpResult::not_found_tab), "");
+   static_assert(f9sv_Result_PathFormatError == fon9::rc::ToResultC(fon9::seed::OpResult::path_format_error), "");
 
    #define case_return(r)  case f9sv_Result_##r:    return #r;
    switch (res) {
@@ -107,6 +108,8 @@ f9sv_GetSvResultMessage(f9sv_Result res) {
 
       case_return(AccessDenied);
       case_return(NotFoundTab);
+      case_return(PathFormatError);
+
       case_return(BadInitParams);
       case_return(LinkBroken);
       case_return(FlowControl);

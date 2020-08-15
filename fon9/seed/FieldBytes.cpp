@@ -76,6 +76,13 @@ OpResult FieldBytes::Copy(const RawWr& wr, const RawRd& rd) const {
 int FieldBytes::Compare(const RawRd& lhs, const RawRd& rhs) const {
    return memcmp(lhs.GetCellPtr<byte>(*this), rhs.GetCellPtr<byte>(*this), this->Size_);
 }
+size_t FieldBytes::AppendRawBytes(const RawRd& rd, ByteVector& dst) const {
+   dst.append(rd.GetCellPtr<byte>(*this), this->Size_);
+   return this->Size_;
+}
+int FieldBytes::CompareRawBytes(const RawRd& rd, const void* rhs, size_t rsz) const {
+   return fon9_CompareBytes(rd.GetCellPtr<byte>(*this), this->Size_, rhs, rsz);
+}
 
 //--------------------------------------------------------------------------//
 
@@ -136,6 +143,17 @@ OpResult FieldByteVector::Copy(const RawWr& wr, const RawRd& rd) const {
 }
 int FieldByteVector::Compare(const RawRd& lhs, const RawRd& rhs) const {
    return lhs.GetMemberCell<ByteVector>(*this).compare(rhs.GetMemberCell<ByteVector>(*this));
+}
+size_t FieldByteVector::AppendRawBytes(const RawRd& rd, ByteVector& dst) const {
+   const auto& src = rd.GetMemberCell<ByteVector>(*this);
+   const auto  sz = src.size();
+   if (sz)
+      dst.append(src.begin(), sz);
+   return sz;
+}
+int FieldByteVector::CompareRawBytes(const RawRd& rd, const void* rhs, size_t rsz) const {
+   const auto& lhs = rd.GetMemberCell<ByteVector>(*this);
+   return fon9_CompareBytes(lhs.begin(), lhs.size(), rhs, rsz);
 }
 
 } } // namespaces

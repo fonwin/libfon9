@@ -106,7 +106,7 @@ void MdRtStream::OnSessionChanged(const Symb& symb) {
    *rts.AllocPacket<char>() = symb.TradingSessionId_;
    PutBigEndian(rts.AllocPacket<uint32_t>(), symb.TDayYYYYMMDD_);
    BufferAppendTo(rts.cfront(), pk);
-   this->Publish(ToStrView(symb.SymbId_), f9sv_RtsPackType_TradingSessionId, f9sv_MdRtsKind_TradingSession, DayTime::Null(), std::move(rts));
+   this->Publish(ToStrView(symb.SymbId_), f9sv_RtsPackType_TradingSessionId, f9sv_MdRtsKind_All_AndInfoTime, DayTime::Null(), std::move(rts));
    // 開啟 Storage, 如果 Storage 有變, 則將 SessionSt 寫入新開啟的 Storage.
    // 這樣在從頭回補時, 才能補到 TDay 及盤別狀態.
    this->InnMgr_.RtOpen(this->RtStorage_, symb);
@@ -115,7 +115,7 @@ void MdRtStream::OnSessionChanged(const Symb& symb) {
       RevPutMem(rts, pk.begin(), pk.size());
       RevPutBitv(rts, fon9_BitvV_NumberNull); // InfoTime = Null.
       *rts.AllocPacket<uint8_t>() = cast_to_underlying(f9sv_RtsPackType_TradingSessionId);
-      this->Save(std::move(rts), f9sv_MdRtsKind_TradingSession);
+      this->Save(std::move(rts), f9sv_MdRtsKind_All_AndInfoTime);
    }
 }
 void MdRtStream::BeforeRemove(SymbTree& tree, Symb& symb) {

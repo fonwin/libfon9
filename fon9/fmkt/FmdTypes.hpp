@@ -7,6 +7,7 @@
 #include "fon9/BitvEncode.hpp"
 
 fon9_ENABLE_ENUM_BITWISE_OP(f9sv_BSFlag);
+fon9_ENABLE_ENUM_BITWISE_OP(f9sv_DealFlag);
 
 namespace fon9 { namespace fmkt {
 

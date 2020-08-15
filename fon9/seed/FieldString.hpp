@@ -99,6 +99,15 @@ public:
    virtual int Compare(const RawRd& lhs, const RawRd& rhs) const override {
       return lhs.GetMemberCell<StringT>(*this).compare(rhs.GetMemberCell<StringT>(*this));
    }
+   virtual size_t AppendRawBytes(const RawRd& rd, ByteVector& dst) const override {
+      const auto src = ToStrView(rd.GetMemberCell<StringT>(*this));
+      dst.append(src);
+      return src.size();
+   }
+   virtual int CompareRawBytes(const RawRd& rd, const void* rhs, size_t rsz) const override {
+      const auto lhs = ToStrView(rd.GetMemberCell<StringT>(*this));
+      return fon9_CompareBytes(lhs.begin(), lhs.size(), rhs, rsz);
+   }
 };
 
 template <class StringT, class FieldT = FieldString<decay_t<StringT>>>
@@ -140,7 +149,6 @@ public:
    bool empty() const {
       return this->String_.empty();
    }
-
    int compare(const EvStringT& rhs) const {
       return this->String_.compare(rhs.String_);
    }

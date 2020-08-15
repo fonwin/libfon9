@@ -46,14 +46,14 @@ extern "C" {
 //    recs->push_back(rec);
 //    return 1;
 // }
-   
+
 fon9_CAPI_FN(int)
-fon9_Initialize(const char* logFileFmt) {
+f9rc_Initialize(const char* logFileFmt, const char* iosvCfg) {
    if (f9rc_St_ >= f9rc_St_Finalizing)
       return ENOSYS;
    ++f9rc_InitCount_;
    if (logFileFmt) {
-      if(*logFileFmt == '\0')
+      if (*logFileFmt == '\0')
          logFileFmt = "./logs/{0:f+'L'}/fon9cli.log";
       auto res = fon9::InitLogWriteToFile(logFileFmt, fon9::FileRotate::TimeScale::Day, 0, 0);
       if (res.IsError())
@@ -65,8 +65,8 @@ fon9_Initialize(const char* logFileFmt) {
 
       assert(RcClientMgr_.get() == nullptr);
       fon9::IoManagerArgs ioMgrArgs;
-      ioMgrArgs.Name_ = "f9rcClientMgr";
-      ioMgrArgs.IoServiceCfgstr_ = "ThreadCount=1";// "|Wait=Policy|Cpus=List|Capacity=0";
+      ioMgrArgs.Name_ = "RcClientMgr";
+      ioMgrArgs.IoServiceCfgstr_ = (iosvCfg ? iosvCfg : "ThreadCount=1|Wait=Block");
       RcClientMgr_.reset(new RcClientMgr{ioMgrArgs});
 
       fon9::GetDefaultThreadPool();
@@ -77,6 +77,16 @@ fon9_Initialize(const char* logFileFmt) {
       std::this_thread::yield();
    }
    return 0;
+}
+
+fon9_CAPI_FN(int)
+fon9_Initialize(const char* logFileFmt) {
+   return f9rc_Initialize(logFileFmt, nullptr);
+}
+
+fon9_CAPI_FN(fon9_IoManager*)
+f9rc_GetRcClientIoManager() {
+   return RcClientMgr_.get();
 }
    
 fon9_CAPI_FN(uint32_t)
@@ -92,7 +102,12 @@ fon9_Finalize() {
    // for (auto rec : finalizeHandlers)
    //    rec.FnFinalizeHandler_(rec.UserData_);
 
-   RcClientMgr_.reset();
+   if (RcClientMgr_) {
+      RcClientMgr_->DisposeDevices("fon9_Finalize");
+      while (RcClientMgr_->use_count() > 1)
+         std::this_thread::yield();
+      RcClientMgr_.reset();
+   }
 
    fon9::WaitDefaultThreadPoolQuit(fon9::GetDefaultThreadPool());
    #ifdef fon9_HAVE_OnWindowsMainExitHandle
@@ -118,6 +133,30 @@ fon9_CAPI_FN(void)
 f9rc_DestroyClientSession(f9rc_ClientSession* ses, int isWait) {
    if (ses && RcClientMgr_)
       RcClientMgr_->DestroyRcClientSession(static_cast<RcClientSession*>(ses), isWait);
+}
+//--------------------------------------------------------------------------//
+fon9_CAPI_FN(fon9_IoManager*) fon9_CreateIoManager(const char* name, const char* iosvCfg) {
+   if (f9rc_InitCount_ <= 0)
+      return nullptr;
+   ++f9rc_InitCount_;
+   fon9::IoManagerArgs ioMgrArgs;
+   ioMgrArgs.Name_.assign(name);
+   if (iosvCfg)
+      ioMgrArgs.IoServiceCfgstr_.assign(iosvCfg);
+   fon9_IoManager* ioMgr = new fon9_IoManager{ioMgrArgs};
+   intrusive_ptr_add_ref(ioMgr);
+   return ioMgr;
+}
+fon9_CAPI_FN(void) fon9_DestroyIoManager(fon9_IoManager* ioMgr, int isWait) {
+   if (ioMgr == nullptr)
+      return;
+   ioMgr->DisposeDevices("DestroyIoManager");
+   if (isWait) {
+      while (ioMgr->use_count() > 1)
+         std::this_thread::yield();
+   }
+   intrusive_ptr_release(ioMgr);
+   fon9_Finalize(); // 在 fon9_CreateIoManager(); 有 ++f9rc_InitCount_; 所以在此需要 fon9_Finalize();
 }
 
 } // extern "C"

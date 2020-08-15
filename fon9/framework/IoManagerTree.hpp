@@ -11,9 +11,9 @@ fon9_WARN_DISABLE_PADDING;
 class fon9_API IoManagerTree : public seed::Tree, public IoManager {
    fon9_NON_COPY_NON_MOVE(IoManagerTree);
    using baseTree = seed::Tree;
+   using baseIoMgr = IoManager;
    unsigned IoManagerAddRef() override;
    unsigned IoManagerRelease() override;
-   void LockedDisposeDevices(const DeviceMap::Locker& map, std::string cause);
 
 public:
    /// 若 !args.CfgFileName_.empty()
@@ -52,8 +52,6 @@ public:
    // 啟動Timer: n秒後檢查: Open or Close devices.
    void StartTimerForOpen(TimeInterval afterOpen);
 
-   /// 銷毀全部的 devices.
-   void DisposeDevices(std::string cause);
    /// 銷毀全部的 devices 之後, 重新開啟.
    void DisposeAndReopen(std::string cause, TimeInterval afterReopen = TimeInterval_Second(3));
 

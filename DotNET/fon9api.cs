@@ -6,7 +6,7 @@ namespace fon9
 {
    using uint32_t = System.UInt32;
 
-   class Api
+   public class Api
    {
       /// 啟動 fon9 C API 函式庫.
       /// - 請使用時注意: 不考慮 multi thread 同時呼叫 fon9_Initialize()/fon9_Finalize();
@@ -22,6 +22,12 @@ namespace fon9
       ///   - 其他為 log 檔開啟失敗的原因(errno).
       [DllImport(fon9.DotNetApi.kDllName, EntryPoint = "fon9_Initialize", CharSet = CharSet.Ansi)]
       public static extern int Initialize([MarshalAs(UnmanagedType.LPStr)] string logFileFmt);
+
+      /// 同 Initialize(); 但可在首次初始化時設定 rc session 的 iosv 參數.
+      // fon9_CAPI_FN(int) f9rc_Initialize(const char* logFileFmt, const char* iosvCfg);
+      [DllImport(fon9.DotNetApi.kDllName, EntryPoint = "f9rc_Initialize", CharSet = CharSet.Ansi)]
+      public static extern int RcInitialize([MarshalAs(UnmanagedType.LPStr)] string logFileFmt, [MarshalAs(UnmanagedType.LPStr)] string iosvCfg);
+
       /// 結束 fon9 函式庫.
       /// - 結束前必須先將所有建立的物件刪除:
       ///   - 例如: f9rc_CreateClientSession() => f9rc_DestroyClientSession();
@@ -68,7 +74,7 @@ namespace fon9
       }
    }
 
-   class Tools
+   public class Tools
    {
       public const int STD_INPUT_HANDLE = -10;
       [DllImport("kernel32.dll", SetLastError = true)]
@@ -108,5 +114,80 @@ namespace fon9
          ExitThread(0);
          return true;
       }
+   }
+
+   /// 在 IoManager 裡面, 建立連線時所需要的參數.
+   [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+   public class IoSessionParams
+   {
+      [MarshalAs(UnmanagedType.LPStr)]
+      public string SesName_;
+      [MarshalAs(UnmanagedType.LPStr)]
+      public string SesParams_;
+      [MarshalAs(UnmanagedType.LPStr)]
+      public string DevName_;
+      [MarshalAs(UnmanagedType.LPStr)]
+      public string DevParams_;
+   }
+   public class IoManager : IDisposable
+   {
+      IntPtr IoMgr_ = IntPtr.Zero;
+
+      public IoManager()
+      {
+      }
+      public IoManager(string name, string iosvCfg)
+      {
+         this.Create(name, iosvCfg);
+      }
+
+      /// 使用 DestroyWait(); 關閉全部連線.
+      public void Dispose()
+      {
+         this.DestroyWait();
+      }
+      public void DestroyWait() => Destroy(true);
+      public void DestroyNoWait() => Destroy(false);
+      /// 銷毀 IoManager, 並在刪除前關閉全部連線.
+      /// 在返回前, 仍然可能在其他 thread 收到事件.
+      /// isWait = true 表示要等確定銷毀後才返回.
+      /// isWait = false 表示在返回後仍可能收到事件, 如果您是在事件通知時呼叫, 則不能等候銷毀(會造成死結).
+      public void Destroy(bool isWait)
+      {
+         IntPtr ioMgr = this.IoMgr_;
+         if (ioMgr == IntPtr.Zero)
+            return;
+         this.IoMgr_ = IntPtr.Zero;
+         DestroyIoManager(ioMgr, isWait ? 1 : 0);
+      }
+
+      public IntPtr Handle { get { return this.IoMgr_; } }
+
+      /// 建立 IoManager 連線管理物件.
+      /// - 必須在 fon9.Api.Initialize() 之後呼叫.
+      /// - 當您不再使用時, 應呼叫 Dispose(); 或 DestroyWait(); 或 DestroyNoWait(); 關閉.
+      /// - 建立之前, 會先用 this.DestroyWait(); 銷毀之前的連線.
+      /// - name 在 fon9 LogFile 辨識, 是哪個 IoManager 紀錄的 log.
+      /// - iosvCfg 範例 "ThreadCount=n|Wait=Policy|Cpus=List|Capacity=0";
+      ///   - 若 iosvCfg.IsNullOrEmpty(), 預設: "ThreadCount=2|Wait=Block";
+      ///   - List: 要綁定的 CPU(Core) 列表, 使用「,」分隔, 例如: 1,2
+      ///   - Capacity: 可支援的連線(fd)數量, 預設為 0 = 自動擴增;
+      /// - retval true 成功.
+      /// - retval false 失敗: 尚未呼叫 fon9.Api.Initialize(); 或已呼叫 fon9.Api.Finalize();
+      public bool Create(string name, string iosvCfg)
+      {
+         this.DestroyWait();
+         this.IoMgr_ = CreateIoManager(name, iosvCfg);
+         return this.IoMgr_ == IntPtr.Zero ? false : true;
+      }
+
+      // fon9_CAPI_FN(fon9_IoManager*) fon9_CreateIoManager(const char* name, const char* iosvCfg);
+      [DllImport(fon9.DotNetApi.kDllName, EntryPoint = "fon9_CreateIoManager", CharSet = CharSet.Ansi)]
+      static extern IntPtr CreateIoManager([MarshalAs(UnmanagedType.LPStr)] string name, [MarshalAs(UnmanagedType.LPStr)] string iosvCfg);
+
+      /// 系統結束前必須刪除已建立的 IoManager.
+      // fon9_CAPI_FN(void) fon9_DestroyIoManager(fon9_IoManager* ioMgr, int isWait);
+      [DllImport(fon9.DotNetApi.kDllName, EntryPoint = "fon9_DestroyIoManager")]
+      static extern void DestroyIoManager(IntPtr ioMgr, int isWait);
    }
 }

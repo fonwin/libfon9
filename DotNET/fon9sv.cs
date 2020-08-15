@@ -437,8 +437,8 @@ namespace f9sv
       NotFoundTab = -201,
 
       /// 在呼叫 f9sv_Query(); 或 f9sv_Subscribe(); 時,
-      /// - 沒有呼叫過 f9OmsRc_Initialize();
-      /// - 或建立 ses 時, 沒有提供 f9OmsRc_ClientSessionParams 參數.
+      /// - 沒有呼叫過 f9sv.Api.Initialize();
+      /// - 或建立 ses 時, 沒有提供 f9sv.ClientSessionParams 參數.
       BadInitParams = -10,
 
       /// 連線中斷. 查詢、訂閱, 都會收到此回報, 然後清除所有的要求(查詢、訂閱...).

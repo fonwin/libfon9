@@ -1,6 +1,7 @@
 ﻿// \file f9tws/ExgMdReceiverSession.cpp
 // \author fonwinz@gmail.com
 #include "f9tws/ExgMdReceiverSession.hpp"
+#include "fon9/io/Device.hpp"
 #include "fon9/TsAppend.hpp"
 
 namespace f9tws {

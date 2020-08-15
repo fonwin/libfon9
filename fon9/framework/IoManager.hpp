@@ -81,6 +81,11 @@ public:
 
    IoManager(const IoManagerArgs& args);
 
+   /// 銷毀全部的 devices, 但是不清除 DeviceMap, 所以設定還在RAM, 可以重新開啟.
+   void DisposeDevices(std::string cause) {
+      this->LockedDisposeDevices(DeviceMap::Locker{this->DeviceMap_}, std::move(cause));
+   }
+
    /// 若 id 重複, 則返回 false, 表示失敗.
    /// 若 cfg.Enabled_ == EnabledYN::Yes 則會啟用該設定.
    /// - 若有 bind config file, 透過這裡加入設定, 不會觸發更新設定檔.
@@ -190,6 +195,7 @@ protected:
       DeviceCreateError,
    };
    DeviceOpenResult CheckOpenDevice(DeviceItem& item);
+   DeviceOpenResult CheckCreateDevice(DeviceItem& item);
    DeviceOpenResult CreateDevice(DeviceItem& item);
 
    static void AssignStStr(CharVector& dst, TimeStamp now, StrView stmsg);
@@ -200,6 +206,8 @@ protected:
    static seed::LayoutSP MakeAcceptedClientLayoutImpl();
    static seed::LayoutSP GetAcceptedClientLayout();
    static void MakeAcceptedClientTree(DeviceRun& serverItem, io::DeviceListenerSP listener);
+
+   void LockedDisposeDevices(const DeviceMap::Locker& map, std::string cause);
 };
 fon9_WARN_POP;
 

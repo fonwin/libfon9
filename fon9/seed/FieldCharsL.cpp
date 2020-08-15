@@ -62,5 +62,12 @@ OpResult FieldCharsL::Copy(const RawWr& wr, const RawRd& rd) const {
 int FieldCharsL::Compare(const RawRd& lhs, const RawRd& rhs) const {
    return this->GetValue(lhs).Compare(this->GetValue(rhs));
 }
+size_t FieldCharsL::AppendRawBytes(const RawRd& rd, ByteVector& dst) const {
+   dst.append(rd.GetCellPtr<char>(*this), this->Size_);
+   return this->Size_;
+}
+int FieldCharsL::CompareRawBytes(const RawRd& rd, const void* rhs, size_t rsz) const {
+   return fon9_CompareBytes(rd.GetCellPtr<byte>(*this), this->Size_, rhs, rsz);
+}
 
 } } // namespaces

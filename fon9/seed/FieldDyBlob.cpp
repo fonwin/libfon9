@@ -100,5 +100,14 @@ int FieldDyBlob::Compare(const RawRd& lhs, const RawRd& rhs) const {
    fon9_Blob R = GetUnaligned(rhs.GetCellPtr<fon9_Blob>(*this));
    return fon9_CompareBytes(L.MemPtr_, L.MemUsed_, R.MemPtr_, R.MemUsed_);
 }
+size_t FieldDyBlob::AppendRawBytes(const RawRd& rd, ByteVector& dst) const {
+   const fon9_Blob  src = GetUnaligned(rd.GetCellPtr<fon9_Blob>(*this));
+   dst.append(src.MemPtr_, src.MemUsed_);
+   return src.MemUsed_;
+}
+int FieldDyBlob::CompareRawBytes(const RawRd& rd, const void* rhs, size_t rsz) const {
+   const fon9_Blob lhs = GetUnaligned(rd.GetCellPtr<fon9_Blob>(*this));
+   return fon9_CompareBytes(lhs.MemPtr_, lhs.MemUsed_, rhs, rsz);
+}
 
 } } // namespaces

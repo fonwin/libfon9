@@ -87,6 +87,18 @@ public:
    virtual int Compare(const RawRd& lhs, const RawRd& rhs) const override {
       return this->GetValue(lhs).Compare(this->GetValue(rhs));
    }
+   virtual size_t AppendRawBytes(const RawRd& rd, ByteVector& dst) const override {
+      dst.append(rd.GetCellPtr<ValueT>(*this), sizeof(ValueT));
+      return sizeof(ValueT);
+   }
+   virtual int CompareRawBytes(const RawRd& rd, const void* rhs, size_t rsz) const override {
+      ValueT rval;
+      if (rsz == sizeof(ValueT))
+         memcpy(&rval, rhs, sizeof(ValueT));
+      else
+         rval = ValueT::Null();
+      return this->GetValue(rd).Compare(rval);
+   }
 };
 
 } } // namespaces

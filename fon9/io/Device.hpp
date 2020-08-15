@@ -99,7 +99,9 @@ public:
    virtual SendResult SendASAP(BufferList&& src) = 0;
    template <class StrT>
    SendResult StrSendASAP(const StrT& str) {
-      return this->SendASAP(&*str.begin(), str.size());
+      if (auto sz = str.size())
+         return this->SendASAP(&*str.begin(), sz);
+      return SendResult{0};
    }
    /// 把資料送出, 但 **盡快返回**.
    /// - 可能的方法是: 把資料放到 buffer, 然後通知 傳送thread 送出資料.
@@ -107,7 +109,9 @@ public:
    virtual SendResult SendBuffered(BufferList&& src) = 0;
    template <class StrT>
    SendResult StrSendBuffered(const StrT& str) {
-      return this->SendBuffered(&*str.begin(), str.size());
+      if (auto sz = str.size())
+         return this->SendBuffered(&*str.begin(), sz);
+      return SendResult{0};
    }
 
    SendResult Send(const void* src, size_t size) {
@@ -122,7 +126,9 @@ public:
    }
    template <class StrT>
    SendResult StrSend(const StrT& str) {
-      return this->Send(&*str.begin(), str.size());
+      if (auto sz = str.size())
+         return this->Send(&*str.begin(), sz);
+      return SendResult{0};
    }
 
    /// 到 Op thread 取得 DeviceId, 然後才返回.

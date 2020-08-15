@@ -24,6 +24,8 @@ extern "C" {
 ///   - ENOSYS: 已經呼叫 fon9_Finalize() 系統結束.
 ///   - 其他為 log 檔開啟失敗的原因(errno).
 fon9_CAPI_FN(int) fon9_Initialize(const char* logFileFmt);
+/// 同 fon9_Initialize(); 但可在首次初始化時設定 rc session 的 iosv 參數.
+fon9_CAPI_FN(int) f9rc_Initialize(const char* logFileFmt, const char* iosvCfg);
 
 /// 結束 fon9 函式庫.
 /// - 結束前必須先將所有建立的物件刪除:
@@ -44,17 +46,47 @@ fon9_CAPI_FN(uint32_t) fon9_Finalize(void);
 
 //--------------------------------------------------------------------------//
 
+typedef struct fon9_IoManager    fon9_IoManager;
+
+/// 必須在 fon9_Initialize() 之後呼叫.
+/// 系統結束前必須使用 fon9_DestroyIoManager(retval); 刪除已建立的 IoManager.
+/// \param name 在 fon9 LogFile 辨識.
+/// \param iosvCfg "ThreadCount=n|Wait=Policy|Cpus=List|Capacity=0";
+///                - 若為 NULL 或 "", 預設: "ThreadCount=2|Wait=Block";
+///                - List: 要綁定的 CPU(Core) 列表, 使用「,」分隔, 例如: 1,2
+///                - Capacity: 可支援的連線(fd)數量, 預設為 0 = 自動擴增;
+/// \retval NULL 建立失敗, 尚未呼叫 fon9_Initialize(); 或已呼叫 fon9_Finalize();
+fon9_CAPI_FN(fon9_IoManager*) fon9_CreateIoManager(const char* name, const char* iosvCfg);
+
+/// 系統結束前必須刪除已建立的 IoManager.
+fon9_CAPI_FN(void) fon9_DestroyIoManager(fon9_IoManager* ioMgr, int isWait);
+static inline void fon9_DestroyIoManager_Wait(fon9_IoManager* ioMgr)   { fon9_DestroyIoManager(ioMgr, 1); }
+static inline void fon9_DestroyIoManager_NoWait(fon9_IoManager* ioMgr) { fon9_DestroyIoManager(ioMgr, 0); }
+
+/// 取得 rc client session 的 IoManager.
+/// 必須先呼叫過 fon9_Initialize(); 或 f9rc_Initialize();
+/// retval 不可透過 fon9_DestroyIoManager() 刪除.
+fon9_CAPI_FN(fon9_IoManager*) f9rc_GetRcClientIoManager(void);
+
+typedef struct {
+   const char* SesName_;
+   const char* SesParams_;
+   const char* DevName_;
+   const char* DevParams_;
+} fon9_IoSessionParams;
+
+//--------------------------------------------------------------------------//
+
 /// Rc protocol 可以支援多種功能呼叫(例: OmsRc, SeedVisitor...)
 /// 每種功能呼叫, 可能需要 API 的使用者提供: 必要資料, 及相關的 Handler.
 /// \code
 ///   typedef struct {
 ///      f9rc_FunctionNoteParams BaseParam_;
 ///      ... 其他參數 ...
-///   } f9rc_SeedVisitorNoteParams;
+///   } f9sv_ClientSessionParams;
 /// \endcode
 typedef struct {
-   /// sizeof(f9rc_SeedVisitor);
-   /// sizeof(f9OmsRc_ClientSessionParams);
+   /// 例如: sizeof(f9sv_ClientSessionParams);
    uint32_t          ParamSize_;
    f9rc_FunctionCode FunctionCode_;
    char              Padding__[3];
