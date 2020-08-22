@@ -103,7 +103,7 @@ bool TestBitvCompositeRecFill(int fill) {
 
    fon9::BitvInArchive  iar{ibuf};
    CompositeRec         out;
-   memset(&out, fill, sizeof(out));
+   memset(static_cast<void*>(&out), fill, sizeof(out));
    iar(out);
 
    return (src == out);

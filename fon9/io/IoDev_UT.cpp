@@ -77,8 +77,8 @@ __NEXT_CMD:
             return "tx size empty.";
          cmdln.SetBegin(endp);
          switch(fon9::StrTrimHead(&cmdln).Get1st()) {
-         case 'm':   size *= 1000;
-         case 'k':   size *= 1000;  break;
+         case 'm':   size *= 1000 * 1000; break;
+         case 'k':   size *= 1000;        break;
          }
          std::string msg(size, '\0');
          this->LastSendTime_ = fon9::UtcNow();

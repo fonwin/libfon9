@@ -115,14 +115,20 @@ static constexpr bool IsTextBegin(const StrView& k) {
 }
 
 /// 當用此當作 OnPodOp(), OnPodOpRange() 的參數時, 則表示 container->end();
-/// 也可用在支援 append 的 Tree, 例: AddPod(StrView{TreeOp::kStrKeyText_End_,0}); 用來表示 append.
-static constexpr const char* const  kStrKeyText_End_ = reinterpret_cast<const char*>(-1);
-static constexpr StrView TextEnd() {
-   return StrView{kStrKeyText_End_, static_cast<size_t>(0)};
+/// 也可用在支援 append 的 Tree, 例: AddPod(TextEnd()); 用來表示 append.
+static constexpr const intptr_t  kStrKeyText_End_i = -1;
+// 避免 gcc 8: reinterpret_cast from integer to pointer
+// static constexpr const char* const  kStrKeyText_End_ = reinterpret_cast<const char*>(-1);
+
+static inline StrView TextEnd() {
+   return StrView{reinterpret_cast<const char*>(kStrKeyText_End_i), static_cast<size_t>(0)};
 }
 static constexpr bool IsTextEnd(const StrView& k) {
    // return k.begin() == kStrKeyText_End_; 這樣寫, VC 不允許: C3249: illegal statement or sub-expression for 'constexpr' function
-   return reinterpret_cast<intptr_t>(k.begin()) == reinterpret_cast<intptr_t>(kStrKeyText_End_);
+   return reinterpret_cast<intptr_t>(k.begin()) == kStrKeyText_End_i;
+}
+static constexpr bool IsTextEnd(const char* pText) {
+   return reinterpret_cast<intptr_t>(pText) == kStrKeyText_End_i;
 }
 
 static constexpr bool IsTextBeginOrEnd(const StrView& k) {

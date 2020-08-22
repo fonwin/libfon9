@@ -51,6 +51,7 @@ fon9_API intmax_t NaiveStrToSInt(const char *pbeg, const char* pend, const char*
       break;
    case '+':
       ++pbeg;
+      // fall through
    default:
       isNeg = false;
       break;

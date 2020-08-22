@@ -595,6 +595,7 @@ void RcSeedVisitorClientNote::OnRecvSubrData(RcClientSession& ses, DcQueue& rxbu
       }
       // 單一 pod/seed 被移除, 不會再收到事件.
       // 所以不用 break; 繼續處理 [移除訂閱].
+      /* fall through */
    case seed::SeedNotifyKind::ParentSeedClear:
       // 收到此通知之後, 訂閱會被清除, 不會再收到事件.
       rpt.ResultCode_ = f9sv_Result_SubrNotifyUnsubscribed;

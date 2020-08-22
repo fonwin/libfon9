@@ -17,7 +17,7 @@ f9twf_API TmpCheckSum TmpCalcCheckSum(const TmpHeader& pktmp, size_t pksz) {
 //--------------------------------------------------------------------------//
 
 bool ExgCombSymbId::Parse(const fon9::StrView symbid) {
-   memset(this, 0, sizeof(*this));
+   fon9::ForceZeroNonTrivial(this);
    const size_t      idsz = symbid.size();
    const char* const idstr = symbid.begin();
 

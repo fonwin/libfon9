@@ -199,11 +199,12 @@ f9twf_API void ExgMdToUpdateBS(fon9::DayTime mdTime, unsigned mdCount, const Exg
       case '2': // Delete.
          if (auto mvc = dstCount - lv - 1)
             memmove(dst, dst + 1, mvc * sizeof(*dst));
-         memset(dst + dstCount - lv - 1, 0, sizeof(*dst));
+         fon9::ForceZeroNonTrivial(dst + dstCount - lv - 1);
          break;
       case '0': // New.
          if (auto mvc = dstCount - lv - 1)
             memmove(dst + 1, dst, mvc * sizeof(*dst));
+         /* fall through */ // 繼續設定新的價量.
       case '1': // Change.
       case '5': // Overlay.
          mdEntry->Price_.AssignTo(dst->Pri_, priceOrigDiv);

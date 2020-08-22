@@ -37,7 +37,7 @@ struct SymbDealData {
       this->Clear();
    }
    void Clear() {
-      memset(this, 0, sizeof(*this));
+      ForceZeroNonTrivial(this);
       this->InfoTime_.AssignNull();
       this->DealTime_.AssignNull();
    }

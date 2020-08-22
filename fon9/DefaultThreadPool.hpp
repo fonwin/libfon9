@@ -3,6 +3,9 @@
 #ifndef __fon9_DefaultThreadPool_hpp__
 #define __fon9_DefaultThreadPool_hpp__
 #include "fon9/MessageQueue.hpp"
+fon9_BEFORE_INCLUDE_STD;
+#include <functional>
+fon9_AFTER_INCLUDE_STD;
 
 namespace fon9 {
 

@@ -15,6 +15,9 @@ namespace fon9 {
 /// - 當全部的 Objects 都死亡時才會釋放 this;
 class fon9_API ObjArrayMem : protected intrusive_ref_counter<ObjArrayMem> {
    fon9_NON_COPY_NON_MOVE(ObjArrayMem);
+   template< typename DerivedT, typename CounterPolicyT >
+   friend unsigned int sp_adl_block::intrusive_ptr_release(const intrusive_ref_counter< DerivedT, CounterPolicyT >* p) BOOST_NOEXCEPT;
+
 protected:
    uint32_t RemainCount_;
 

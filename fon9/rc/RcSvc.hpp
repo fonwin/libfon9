@@ -54,9 +54,24 @@ inline const f9sv_Seed** ToSeedArray(SeedSP* seedArray) {
    // 底下的這些 static_assert(), 是為了確定 C API 可以正確使用:
    //    struct f9sv_ClientReport 的 const struct f9sv_Seed** SeedArray_;
    static_assert(sizeof(svc::SeedSP) == sizeof(svc::SeedRec*), "");
-   #ifndef _MSC_VER // MSVC 哪個版本有提供底下的檢查呢?
-      static_assert(fon9_OffsetOfBase(svc::SeedRec, f9sv_Seed) == 0, "");
+
+   // ----- 只有 gcc 5 可以這樣用? MSVC 19, gcc 8 都不行?!
+   #if defined(__GNUC__) && (__GNUC__ <= 5)
+      static_assert(fon9_OffsetOfBase(SeedRec, f9sv_Seed) == 0, "");
+   // enum { kOffset = fon9_OffsetOfBase(SeedRec, f9sv_Seed) }; static_assert(kOffset == 0, "");
+   #else
+   // ----- MSVC 19 (Release, Debug 都不行這樣用?!)
+   // if (fon9_OffsetOfBase(svc::SeedRec, f9sv_Seed) != 0) {    // always false: compile 最佳化之後, 不會來到 if 裡面.
+   //    extern void RcSv_SeedRec_Cannot_ConvertTo_f9sv_Seed(); // 所以如果有 link error,
+   //    RcSv_SeedRec_Cannot_ConvertTo_f9sv_Seed();             // 則表示 svc::SeedRec* <=> f9sv_Seed* 無法直接轉換.
+   // }
+   // ----- 改判斷 SeedRec 的第1個 data member 的位置, 是否剛好緊接 f9sv_Seed 之後.
+   fon9_GCC_WARN_DISABLE("-Winvalid-offsetof");
+   static_assert(offsetof(SeedRec, Handler_) == sizeof(f9sv_Seed) && sizeof(f9sv_Seed) != 0, "");
+   fon9_GCC_WARN_POP;
    #endif
+   // -----
+
    fon9_GCC_WARN_DISABLE("-Wold-style-cast");
    return (const f9sv_Seed**)(seedArray);
    fon9_GCC_WARN_POP;

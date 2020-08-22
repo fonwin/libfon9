@@ -137,6 +137,14 @@ template<class T>
 inline void ZeroStruct(T& r) {
    ZeroStruct(&r);
 }
+template<class T>
+inline void ForceZeroNonTrivial(T* r) {
+   memset(static_cast<void*>(r), 0, sizeof(*r));
+}
+template<class T>
+inline void ForceZeroNonTrivial(T& r) {
+   ForceZeroNonTrivial(&r);
+}
 
 /// \ingroup Misc
 /// 判斷 T 是否為 char, byte, int8_t, uint8_t 之類的 1 byte 傳統型別.
@@ -198,6 +206,7 @@ inline int32_t DataMemberOffset(MemberT Derived::*pDataMember) {
 
 /// \ingroup Misc
 // 避免使用 offsetof() 時, gcc 的善意提醒: offsetof within non-standard-layout type ‘...’ is undefined
+// 也可以取得比較深層的 data member (e.g. SymbBSData.Buys_[i].Pri_);
 #define fon9_OffsetOf(Type, Member_) \
    static_cast<size_t>(reinterpret_cast<intptr_t>(&(reinterpret_cast<Type*>(0x10000)->Member_)) \
                       - static_cast<intptr_t>(0x10000))

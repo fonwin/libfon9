@@ -39,14 +39,14 @@ struct SymbTwfBSData : public SymbBSData {
    PriQty   DerivedBuy_{};
 
    void Clear(DayTime tm = DayTime::Null()) {
-      memset(this, 0, sizeof(*this));
+      ForceZeroNonTrivial(this);
       this->InfoTime_ = tm;
    }
 };
 
 struct SymbTwsBSData : public SymbBSData {
    void Clear(DayTime tm = DayTime::Null()) {
-      memset(this, 0, sizeof(*this));
+      ForceZeroNonTrivial(this);
       this->InfoTime_ = tm;
    }
 };

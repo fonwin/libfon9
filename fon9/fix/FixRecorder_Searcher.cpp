@@ -71,7 +71,7 @@ const char* FixRecorder::FixRevSercher::ParseControlMsgSeqNum(const char* pbeg, 
       }
       if (*++pbeg != f9fix_kCSTR_HdrNextRecvSeq[1])
          break;
-      // 有設定 'R', 所以不用 break; 繼續下去.
+      /* fall through */ // 有設定 'R', 所以不用 break; 繼續下去.
    case f9fix_kCSTR_HdrNextRecvSeq[1]:
       if (*++pbeg != f9fix_kCSTR_HdrNextRecvSeq[2])
          break;

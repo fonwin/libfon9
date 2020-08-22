@@ -33,8 +33,7 @@ struct AuthR {
    /// - fon9_IsAuthError(RCode_), 則此處為失敗原因.
    std::string    Info_;
 
-   AuthR() = default;
-   AuthR(fon9_Auth_R rcode) : RCode_{rcode} {
+   AuthR(fon9_Auth_R rcode = fon9_Auth_EOther) : RCode_{rcode} {
    }
    AuthR(fon9_Auth_R rcode, std::string info) : RCode_{rcode}, Info_{std::move(info)} {
    }

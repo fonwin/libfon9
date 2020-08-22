@@ -72,7 +72,7 @@ struct SymbDynBand_Data {
       this->Clear();
    }
    void Clear() {
-      memset(this, 0, sizeof(*this));
+      ForceZeroNonTrivial(this);
    }
    bool IsEqualExcludeRange(const SymbDynBand_Data& rhs) const {
       return memcmp(this, &rhs, fon9_OffsetOf(SymbDynBand_Data, PaddingBeforeRange___)) == 0;

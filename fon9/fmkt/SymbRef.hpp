@@ -13,7 +13,7 @@ struct SymbRef_Data {
    Pri   PriDnLmt_{};
 
    void Clear() {
-      memset(this, 0, sizeof(*this));
+      ForceZeroNonTrivial(this);
    }
    bool operator==(const SymbRef_Data& rhs) const {
       return memcmp(this, &rhs, sizeof(*this)) == 0;

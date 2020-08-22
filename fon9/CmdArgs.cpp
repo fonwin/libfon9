@@ -20,7 +20,7 @@ StrView GetCmdArg(int argc, char** argv, const StrView& argShort, const StrView&
                vstr += 2;
                break;
             }
-            // 不用 break; 使用 -argShort
+            /* fall through */  // 只有一個 '-': 使用 -argShort
          case '/':
             argName = &argShort;
             ++vstr;

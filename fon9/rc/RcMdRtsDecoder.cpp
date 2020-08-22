@@ -635,7 +635,7 @@ struct RcSvStreamDecoder_MdRts : public RcMdRtsDecoder {
          switch (static_cast<fmkt::RtBSAction>(bsType & cast_to_underlying(fmkt::RtBSAction::Mask))) {
          case fmkt::RtBSAction::New:
             InsertPQ(aux.RawWr_, ibeg, flds->cend());
-            // 不用 break; 取出 rxbuf 裡面的 Pri,Qty; 填入 ibeg;
+            /* fall through */ // 繼續取出 rxbuf 裡面的 Pri,Qty; 填入 ibeg;
          case fmkt::RtBSAction::ChangePQ:
             ibeg->FldPri_->BitvToCell(aux.RawWr_, rxbuf);
             ibeg->FldQty_->BitvToCell(aux.RawWr_, rxbuf);

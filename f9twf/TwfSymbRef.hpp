@@ -34,7 +34,7 @@ struct TwfSymbRef_Data {
       this->Clear();
    }
    void Clear() {
-      memset(this, 0, sizeof(*this));
+      fon9::ForceZeroNonTrivial(this);
    }
    bool IsEuqalPriRefAndPriLmts(const TwfSymbRef_Data& rhs) const {
       return memcmp(this, &rhs, fon9_OffsetOf(TwfSymbRef_Data, PaddingAfterPriLmts___)) == 0;

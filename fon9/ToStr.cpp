@@ -29,7 +29,7 @@ fon9_API char* HexLeadRev(char* pout, const char* pend, char chX) {
       case 'x': case 'X':     // "0x..."
          return pout;
       }
-      // 不用 break; 不是 "0" 也不是 "0x..." 則在前方加上 'x';
+      /* fall through */ // 不是 "0" 也不是 "0x..." 則在前方加上 'x';
    default:
       *--pout = chX;
       return pout;

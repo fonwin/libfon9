@@ -234,7 +234,7 @@ struct ConfigLoader::Appender {
             continue;
          case BeforeAppend_NormalLine:
             this->ExpandLine(lnpr, plnEnd);
-            // 不用 break, 檢查是否需要 push_back('\n');
+            /* fall through */  // 繼續檢查是否需要 push_back('\n');
          case BeforeAppend_ToNextLineNormal:
             if (plnEnd)
                this->LineInfos_.Str_.push_back('\n');

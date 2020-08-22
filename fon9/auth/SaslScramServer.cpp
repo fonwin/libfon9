@@ -198,7 +198,7 @@ void SaslScramServer::AuthVerify(const AuthRequest& req) {
          this->ParseChangePass(req);
          break;
       }
-      // 不用 break; 不是改密碼, 就是錯誤的 step.
+      /* fall through */ // 不是改密碼, 就是錯誤的 step.
    default:
       this->OnVerifyCB_(AuthR(fon9_Auth_EOther, "invalid-step"), this);
       break;

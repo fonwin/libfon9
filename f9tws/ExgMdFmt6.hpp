@@ -81,7 +81,7 @@ inline const ExgMdPQ* AssignBS(DstPQ (&adst)[kBSCount], const ExgMdPQ* pqs, unsi
       ++pqs;
    }
    if (count < kBSCount)
-      memset(pdst, 0, sizeof(*pdst) * (kBSCount - count));
+      memset(static_cast<void*>(pdst), 0, sizeof(*pdst) * (kBSCount - count));
    return pqs;
 }
 

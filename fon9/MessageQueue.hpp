@@ -5,8 +5,10 @@
 #include "fon9/ThreadController.hpp"
 #include "fon9/ThreadTools.hpp"
 #include "fon9/Log.hpp"
+fon9_BEFORE_INCLUDE_STD;
 #include <deque>
 #include <vector>
+fon9_AFTER_INCLUDE_STD;
 
 namespace fon9 {
 

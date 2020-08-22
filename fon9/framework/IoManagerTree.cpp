@@ -108,7 +108,7 @@ void IoManagerTree::EmitOnTimer(TimerEntry* timer, TimeStamp now) {
             isStMessageChanged = !item->AsyncDisposeDevice(now, "Disabled");
             break;
          }
-         // 不用 break; 檢查 item 是否在時間排程內.
+         /* fall through */ // 檢查 item 是否在時間排程內.
       case TimerFor::CheckSch:
       default:
          if (item->Config_.Enabled_ != EnabledYN::Yes)

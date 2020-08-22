@@ -94,7 +94,7 @@ struct Fmt6Parser : public TwsPkReceiver, public fon9::fmkt::SymbTree {
          ++pqs;
       }
       if (count < fon9::fmkt::SymbBSData::kBSCount)
-         memset(dst, 0, sizeof(*dst) * (fon9::fmkt::SymbBSData::kBSCount - count));
+         memset(static_cast<void*>(dst), 0, sizeof(*dst) * (fon9::fmkt::SymbBSData::kBSCount - count));
       return pqs;
    }
 };

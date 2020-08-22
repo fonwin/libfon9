@@ -467,6 +467,7 @@ void InnDbf::OnInnSyncReceived(InnSyncer& syncer, DcQueue&& buf) {
    InnDbfSyncEventArgs  evArgs;
    InnDbfTableName      tableName;
    BitvInArchive        iar{buf};
+   evArgs.RoomType_ = InnDbfRoomType{};
    iar(evArgs.RoomType_, tableName, evArgs.SyncKey_);
 
    InnDbfTableHandler*  handler;

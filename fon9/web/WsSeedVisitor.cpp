@@ -94,7 +94,7 @@ struct WsSeedVisitor::SeedVisitor : public seed::SeedVisitor {
             goto __REVPRINT_PATH_WITH_KEY_TEXT;
          case fon9::seed::SeedNotifyKind::SeedChanged:
             RevPrint(rbuf, args.GetGridView());
-            // 不用 break; 繼續填入 ">ss path\n"
+            /* fall through */ // 繼續填入 ">ss path\n"
          case fon9::seed::SeedNotifyKind::SeedRemoved:
             cmdEcho = ">ss ";
             RevPrint(rbuf, '\n');

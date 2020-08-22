@@ -31,7 +31,7 @@ const char* FmtDef::ParseWidth(const char* pcur, const char* pend) {
    switch (*pcur) {
    case '_':
       this->Flags_ |= FmtFlag::NoDecimalPoint;
-      // 不用 break; 繼續解析 this->Precision_;
+      /* fall through */ // 繼續解析 this->Precision_;
    case '.':
       this->Flags_ |= FmtFlag::HasPrecision;
       if (++pcur == pend)

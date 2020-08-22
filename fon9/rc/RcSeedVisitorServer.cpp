@@ -549,7 +549,7 @@ void RcSeedVisitorServerNote::OnSubscribeNotify(SubrRegSP preg, const seed::Seed
       return;
    case seed::SeedNotifyKind::StreamEnd:
       preg->IsSubjectClosed_ = true;
-      // 不用 break; 繼續處理 gv 及 key 填入 ackbuf;
+      /* fall through */ // 繼續處理 gv 及 key 填入 ackbuf;
    case seed::SeedNotifyKind::SeedChanged:
    case seed::SeedNotifyKind::StreamData:
       ToBitv(ackbuf, e.GetGridView());

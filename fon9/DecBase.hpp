@@ -25,11 +25,11 @@ enum : DecScaleT {
 /// 小數位數為D時的除數.
 /// \tparam IntType 整數型別, 例如: int, unsigned...
 /// \tparam ScaleN  小數位數.
-template <typename IntType, DecScaleT ScaleN>
+template <typename IntType, unsigned ScaleN>
 struct DecDivisor {
    enum : DecScaleT {
       /// 小數位數.
-      Scale = ScaleN
+      Scale = static_cast<DecScaleT>(ScaleN)
    };
    enum : IntType {
       /// 小數位數為 Scale 時的除數.

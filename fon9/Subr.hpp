@@ -87,7 +87,7 @@ public:
 /// \tparam ContainerT  儲存訂閱者的容器: 預設使用 SubrMap; 請參考 SubrMap 的介面.
 template < class SubscriberT
    , class MutexT = std::recursive_mutex
-   , template <class SubscriberT> class ContainerT = SubrMap
+   , template <class T/*SubscriberT*/> class ContainerT = SubrMap
    >
 class Subject {
    fon9_NON_COPY_NON_MOVE(Subject);

@@ -67,8 +67,13 @@ public:
 
    ~Outcome() {
       this->Clear();
-      static_assert((static_cast<void*>(&static_cast<Outcome*>(nullptr)->Result_) == &static_cast<Outcome*>(nullptr)->Error_),
-                    "'&Outcome.Result_' != '&Outcome.Error_'");
+      static_assert(
+         #if !defined(__GNUC__) || (__GNUC__ < 8)
+            (static_cast<void*>(&static_cast<Outcome*>(nullptr)->Result_) == &static_cast<Outcome*>(nullptr)->Error_),
+         #else
+            offsetof(Outcome, Result_) == offsetof(Outcome, Error_),
+         #endif
+         "&Outcome.Result_ != &Outcome.Error_; 無法最佳化?");
    }
 
    Outcome() : St_{OutcomeSt::NoValue} {

@@ -4,6 +4,7 @@
 #include "fon9/CyclicBarrier.hpp"
 #include "fon9/MessageQueue.hpp"
 #include "fon9/TestTools.hpp"
+#include <functional>
 
 //--------------------------------------------------------------------------//
 

@@ -235,7 +235,8 @@ bool StrToTimeIntervalAux::IsValidChar(TempResultT& res, StrToNumCursor& cur) {
    case '-': // res = "days-"
       if ((pcur = StrFindIf(pcur + 1, cur.ExpectEnd_, isnotspace)) == nullptr)
          return false;
-      // 不用 break; 檢查接下來 *pcur 是否為數字:
+      /* fall through */
+      // 檢查接下來 *pcur 是否為數字:
       // - 不是數字則為無效字元;
       // - 是數字則繼續解析: "hh:mm:ss.uuuuuu" or "mm:ss.uuuuuu" or "ss.uuuuuu";
    default: // res = "days "

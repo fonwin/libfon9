@@ -6,6 +6,7 @@
 fon9_BEFORE_INCLUDE_STD;
 #include <vector>
 #include <algorithm>
+#include <functional>
 fon9_AFTER_INCLUDE_STD;
 
 namespace fon9  {

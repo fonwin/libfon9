@@ -91,7 +91,7 @@ void RcSvReqKey::LoadSeedName(DcQueue& rxbuf) {
          this->IsAllTabs_ = seed::IsTabAll(this->TabName_.begin());
          break;
       }
-      // 不用 break; bitv = fon9_BitvT_IntegerPos: 取出 tabidx;
+      /* fall through */ // bitv = fon9_BitvT_IntegerPos: 取出 tabidx;
    case fon9_BitvV_NumberNull: // all tabs.
    case fon9_BitvV_Number0:
       f9sv_TabSize  tabidx = kTabAll;

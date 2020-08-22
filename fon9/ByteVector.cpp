@@ -19,7 +19,7 @@ void ByteVector::CopyBytes(const void* mem, size_t sz) {
    else {
       assert(static_cast<fon9_Blob_Size_t>(sz) == sz);
       if (!this->Key_.IsUseBlob()) {
-         memset(&this->Key_, 0, sizeof(this->Key_));
+         fon9::ForceZeroNonTrivial(this->Key_);
          this->Key_.SetUseRefOrBlob();
       }
       fon9_Blob_Set(&this->Key_.Blob_, mem, static_cast<fon9_Blob_Size_t>(sz));

@@ -343,7 +343,7 @@ public:
       bool GetIvacNoChk(IvacNo& ivalue, fon9::StrView strKeyText) {
          if (strKeyText.begin() == fon9::seed::kStrKeyText_Begin_)
             ivalue = 0;
-         else if (strKeyText.begin() == fon9::seed::kStrKeyText_End_)
+         else if (fon9::seed::IsTextEnd(strKeyText.begin()))
             ivalue = kEndIvacNoChk;
          else {
             IvacNo key = fon9::StrTo(strKeyText, 0u);

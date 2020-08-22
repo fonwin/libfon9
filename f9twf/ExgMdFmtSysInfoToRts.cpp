@@ -197,6 +197,7 @@ struct I140_DynBand_PreparePk : public I140_CheckPublish {
       case ExgMdSysInfo_ListType::Symbol:
          PublishSymbolList(lk, *this, fon9::PackBcdTo<unsigned>(list.Count_),
                            list.List_->ProdId20_.Chars_, sizeof(list.List_->ProdId20_));
+         break;
       case ExgMdSysInfo_ListType::Contract:
          PublishContractList(symbs, *this,
                              fon9::PackBcdTo<unsigned>(list.Count_),
@@ -252,7 +253,7 @@ static void I140_40r_DynRange(ExgMcMessage& e, f9fmkt_DynBandSt st) {
             if (i40r.SideType_ != f9fmkt_DynBandSide::f9fmkt_DynBandSide_All)
                break;
             // i40r.SideType_ == f9fmkt_DynBandSide::f9fmkt_DynBandSide_All
-            // 不用 break;
+            /* fall through */ // 因為是 f9fmkt_DynBandSide_All, 所以繼續處理 RangeS;
          case f9fmkt_DynBandSide::f9fmkt_DynBandSide_Short:
          case f9fmkt_DynBandSide::f9fmkt_DynBandSide_OptShort:
             this->DynBand_.Data_.RangeS_.Assign<1>(fon9::PackBcdTo<uint8_t>(i40r.Range9V9_));

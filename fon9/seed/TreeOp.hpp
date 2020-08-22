@@ -194,7 +194,7 @@ template <class Container, class Iterator>
 static bool GetIteratorForGv(Container& container, Iterator& istart, const char* strKeyText) {
    if (strKeyText == kStrKeyText_Begin_)
       istart = container.begin();
-   else if (strKeyText == kStrKeyText_End_)
+   else if (IsTextEnd(strKeyText))
       istart = container.end();
    else
       return false;

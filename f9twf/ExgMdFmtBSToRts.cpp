@@ -78,7 +78,7 @@ f9twf_API void I081BSParserToRts(ExgMcMessage& e) {
          bsType = static_cast<uint8_t>(bsType | cast_to_underlying(RtBSAction::Delete));
          if (auto mvc = dstCount - lv - 1)
             memmove(dst, dst + 1, mvc * sizeof(*dst));
-         memset(dst + dstCount - lv - 1, 0, sizeof(*dst));
+         fon9::ForceZeroNonTrivial(dst + dstCount - lv - 1);
          break;
       case '0': // New.
          bsType = static_cast<uint8_t>(bsType | cast_to_underlying(RtBSAction::New));

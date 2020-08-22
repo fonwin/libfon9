@@ -147,6 +147,7 @@ AuthR SaslScramClient::OnChallenge(StrView message) {
          return AuthR(fon9_Auth_NeedsMore, std::move(climsg));
       }
    } // case 's'
+     /* fall through */ // 's' 沒有提供 "s=NewSALT,i=NewITERATOR"; 則當作一般驗證(不改密碼).
    case 'h':
    case 'v':
    {
