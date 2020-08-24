@@ -3,8 +3,9 @@
 #ifndef __fon9_rc_RcMdRtsDecoder_hpp__
 #define __fon9_rc_RcMdRtsDecoder_hpp__
 #include "fon9/rc/RcMdRtsDecoder.h"
-#include "fon9/fmkt/MdRtsTypes.hpp"
 #include "fon9/rc/RcSvStreamDecoder.hpp"
+#include "fon9/fmkt/MdRtsTypes.hpp"
+#include "fon9/seed/RawWr.hpp"
 
 namespace fon9 { namespace rc {
 
@@ -60,6 +61,13 @@ struct RcMdRtsDecoder_TabFields : public RcMdRtsDecoder_TabFields_POD {
    struct FieldPQ {
       const seed::Field*   FldPri_;
       const seed::Field*   FldQty_;
+
+      void CopyFrom(const FieldPQ& src, const seed::RawWr& bsWr) const {
+         assert(src.FldPri_->Size_ == this->FldPri_->Size_ && src.FldPri_->DecScale_ == this->FldPri_->DecScale_);
+         assert(src.FldQty_->Size_ == this->FldQty_->Size_);
+         memcpy(bsWr.GetCellPtr<char>(*this->FldPri_), bsWr.GetCellPtr<char>(*src.FldPri_), src.FldPri_->Size_);
+         memcpy(bsWr.GetCellPtr<char>(*this->FldQty_), bsWr.GetCellPtr<char>(*src.FldQty_), src.FldQty_->Size_);
+      }
    };
    using FieldPQList = std::vector<FieldPQ>;
    FieldPQList FldOrderBuys_;
@@ -76,6 +84,21 @@ struct RcMdRtsDecoder_TabFields : public RcMdRtsDecoder_TabFields_POD {
    FieldPriLmts FldPriLmts_;
 
    RcMdRtsDecoder_TabFields(svc::TreeRec& tree);
+
+   static void InsertPQ(const seed::RawWr& bsWr,
+                        FieldPQList::const_iterator iLv,
+                        FieldPQList::const_iterator iEnd) {
+      for (--iEnd; iEnd != iLv; --iEnd)
+         iEnd->CopyFrom(*(iEnd - 1), bsWr);
+   }
+   static void DeletePQ(const seed::RawWr& bsWr,
+                        FieldPQList::const_iterator iLv,
+                        FieldPQList::const_iterator iEnd) {
+      for (--iEnd; iLv != iEnd; ++iLv)
+         iLv->CopyFrom(*(iLv + 1), bsWr);
+      iEnd->FldPri_->SetNull(bsWr);
+      iEnd->FldQty_->SetNull(bsWr);
+   }
 };
 
 class RcMdRtsDecoder : public RcSvStreamDecoder, public RcMdRtsDecoder_TabFields {

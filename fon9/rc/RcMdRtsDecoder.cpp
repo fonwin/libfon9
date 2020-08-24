@@ -582,28 +582,6 @@ struct RcSvStreamDecoder_MdRts : public RcMdRtsDecoder {
          fnOnReport(&rx.Session_, &rpt);
    }
    // -----
-   static void CopyPQ(const seed::RawWr& wr, const FieldPQ& dst, const FieldPQ& src) {
-      const auto srcPriNull = src.FldPri_->GetNullValue();
-      const auto srcPriScale = src.FldPri_->DecScale_;
-      dst.FldPri_->PutNumber(wr, src.FldPri_->GetNumber(wr, srcPriScale, srcPriNull), srcPriScale);
-      dst.FldQty_->PutNumber(wr, src.FldQty_->GetNumber(wr, 0, 0), 0);
-   }
-   static void DeletePQ(const seed::RawWr& wr, FieldPQList::const_iterator ibeg, FieldPQList::const_iterator iend) {
-      assert(ibeg != iend);
-      const FieldPQ* prev = &*ibeg;
-      // 刪除 ibeg: ibeg 之後往前移動; 清除 iend-1;
-      while (++ibeg != iend) {
-         const FieldPQ* curr = &*ibeg;
-         CopyPQ(wr, *prev, *curr);
-         prev = curr;
-      }
-      prev->FldPri_->SetNull(wr);
-      prev->FldQty_->SetNull(wr);
-   }
-   static void InsertPQ(const seed::RawWr& wr, FieldPQList::const_iterator ibeg, FieldPQList::const_iterator iend) {
-      while (--iend != ibeg)
-         CopyPQ(wr, *iend, *(iend - 1));
-   }
    void DecodeUpdateBS(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {
       InfoAux  aux(rx, rpt, rxbuf, this->TabIdxBS_);
       if (!this->IsMktSeqNewer(aux, rx, rpt, rxbuf))
@@ -631,24 +609,24 @@ struct RcSvStreamDecoder_MdRts : public RcMdRtsDecoder {
             fon9_LOG_ERROR("DecodeUpdateBS|err=Bad level|rtBS=", ToHex(bsType));
             return;
          }
-         const auto ibeg = flds->cbegin() + (bsType & 0x0f);
+         const auto iLv = flds->cbegin() + (bsType & 0x0f);
          switch (static_cast<fmkt::RtBSAction>(bsType & cast_to_underlying(fmkt::RtBSAction::Mask))) {
          case fmkt::RtBSAction::New:
-            InsertPQ(aux.RawWr_, ibeg, flds->cend());
-            /* fall through */ // 繼續取出 rxbuf 裡面的 Pri,Qty; 填入 ibeg;
+            InsertPQ(aux.RawWr_, iLv, flds->cend());
+            /* fall through */ // 繼續取出 rxbuf 裡面的 Pri,Qty; 填入 iLv;
          case fmkt::RtBSAction::ChangePQ:
-            ibeg->FldPri_->BitvToCell(aux.RawWr_, rxbuf);
-            ibeg->FldQty_->BitvToCell(aux.RawWr_, rxbuf);
+            iLv->FldPri_->BitvToCell(aux.RawWr_, rxbuf);
+            iLv->FldQty_->BitvToCell(aux.RawWr_, rxbuf);
             if (fon9_UNLIKELY(rx.IsNeedsLog_))
-               RevPrintPQ(rx.LogBuf_, *ibeg, aux.RawWr_);
+               RevPrintPQ(rx.LogBuf_, *iLv, aux.RawWr_);
             break;
          case fmkt::RtBSAction::ChangeQty:
-            ibeg->FldQty_->BitvToCell(aux.RawWr_, rxbuf);
+            iLv->FldQty_->BitvToCell(aux.RawWr_, rxbuf);
             if (fon9_UNLIKELY(rx.IsNeedsLog_))
-               ibeg->FldQty_->CellRevPrint(aux.RawWr_, nullptr, rx.LogBuf_);
+               iLv->FldQty_->CellRevPrint(aux.RawWr_, nullptr, rx.LogBuf_);
             break;
          case fmkt::RtBSAction::Delete:
-            DeletePQ(aux.RawWr_, ibeg, flds->cend());
+            DeletePQ(aux.RawWr_, iLv, flds->cend());
             break;
          default:
             assert(!"Unknown RtBSAction.");
