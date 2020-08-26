@@ -45,6 +45,7 @@ struct RcMdRtsDecoder_TabFields_POD {
    const seed::Field*   FldDealSellCnt_;
    const seed::Field*   FldDealFlags_;
    const seed::Field*   FldDealLmtFlags_;
+   const seed::Field*   FldIdxDealMktSeq_;
 
    const seed::Field*   FldBSInfoTime_;
    const seed::Field*   FldBSFlags_;
@@ -132,10 +133,11 @@ public:
       this->RtMktSeq_ = mktseq;
    }
    bool IsMktSeqNewer(const seed::Field& fldBSMktSeq, const seed::RawWr& bsWr, uint64_t rxSeq) {
-      if (rxSeq <= this->RtMktSeq_)
-         return false;
-      fldBSMktSeq.PutNumber(bsWr, signed_cast(this->RtMktSeq_ = rxSeq), 0);
-      return true;
+      if (fon9_LIKELY(this->RtMktSeq_ < rxSeq || rxSeq == 0)) {
+         fldBSMktSeq.PutNumber(bsWr, signed_cast(this->RtMktSeq_ = rxSeq), 0);
+         return true;
+      }
+      return false;
    }
    bool IsMktSeqNext(uint64_t rxSeq) {
       if (rxSeq != this->RtMktSeq_ + 1)

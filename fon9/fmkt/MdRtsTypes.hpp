@@ -28,6 +28,13 @@ constexpr DayTime ClosedIndexTime() {
 constexpr DayTime YesterdayIndexTime() {
    return fon9::TimeInterval_Day(-1);
 }
+/// 指數時間及傳輸序號皆為 0 表示開盤前傳送昨日收盤指數。
+/// 指數時間為 999999 表示傳送今日收盤指數。收盤指數資料將以每 5 秒鐘之傳送間隔，繼續傳送約 15 分鐘。
+constexpr fon9::DayTime ExgMdIndexToDayTime(unsigned idxHHMMSS) {
+   return (idxHHMMSS == 0 ? YesterdayIndexTime()
+           : idxHHMMSS == 999999 ? ClosedIndexTime()
+           : TimeInterval_HHMMSS(idxHHMMSS));
+}
 //--------------------------------------------------------------------------//
 // MSB 必須為 1, 也就是 RtBSSnapshotSpc 必須 >= 0x80;
 enum class RtBSSnapshotSpc : uint8_t {

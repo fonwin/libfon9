@@ -11,8 +11,20 @@
 namespace f9tws {
 
 /// 交易所的指數資料, 只有時間 & 指數值.
-using IndexDeal = fon9::fmkt::SymbTimePri;
-f9tws_API fon9::seed::Fields IndexDeal_MakeFields();
+class IndexDealData : public fon9::fmkt::SymbTimePri_Data {
+   using base = fon9::fmkt::SymbTimePri_Data;
+public:
+   /// 市場行情序號.
+   fon9::fmkt::MarketDataSeq  MarketSeq_{0};
+   char  Padding____[4];
+
+   void Clear() {
+      base::Clear();
+      this->MarketSeq_ = 0;
+   }
+};
+typedef fon9::fmkt::SimpleSymbData<IndexDealData>  IndexDeal;
+f9tws_API fon9::seed::Fields IndexDeal_MakeFields(bool isAddMarketSeq);
 //--------------------------------------------------------------------------//
 class f9tws_API ExgMdIndex : public fon9::fmkt::Symb, public fon9::fmkt::SymbDataOHL {
    fon9_NON_COPY_NON_MOVE(ExgMdIndex);
@@ -39,7 +51,7 @@ public:
    void SessionClear(fon9::fmkt::SymbTree& owner, f9fmkt_TradingSessionId tsesId) override;
    void OnBeforeRemove(fon9::fmkt::SymbTree& owner, unsigned tdayYYYYMMDD) override;
 
-   static fon9::seed::LayoutSP MakeLayout();
+   static fon9::seed::LayoutSP MakeLayout(bool isAddMarketSeq);
 };
 //--------------------------------------------------------------------------//
 class f9tws_API ExgMdIndices : public fon9::fmkt::MdSymbsT<ExgMdIndex> {
@@ -47,7 +59,7 @@ class f9tws_API ExgMdIndices : public fon9::fmkt::MdSymbsT<ExgMdIndex> {
    using base = fon9::fmkt::MdSymbsT<ExgMdIndex>;
 
 public:
-   ExgMdIndices(std::string pathFmt);
+   ExgMdIndices(std::string pathFmt, bool isAddMarketSeq);
    fon9::fmkt::SymbSP MakeSymb(const fon9::StrView& symbid) override;
 };
 using ExgMdIndicesSP = fon9::intrusive_ptr<ExgMdIndices>;

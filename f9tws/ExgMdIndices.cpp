@@ -6,24 +6,26 @@
 
 namespace f9tws {
 
-f9tws_API fon9::seed::Fields IndexDeal_MakeFields() {
+f9tws_API fon9::seed::Fields IndexDeal_MakeFields(bool isAddMarketSeq) {
    fon9::seed::Fields flds;
+   if (isAddMarketSeq)
+      flds.Add(fon9_MakeField(IndexDeal, Data_.MarketSeq_, "MktSeq"));
    flds.Add(fon9_MakeField(IndexDeal, Data_.Time_, "DealTime"));
    flds.Add(fon9_MakeField(IndexDeal, Data_.Pri_,  "DealPri"));
    return flds;
 }
 //--------------------------------------------------------------------------//
-fon9::seed::LayoutSP ExgMdIndex::MakeLayout() {
+fon9::seed::LayoutSP ExgMdIndex::MakeLayout(bool isAddMarketSeq) {
    using namespace fon9;
    using namespace fon9::seed;
    using namespace fon9::fmkt;
    constexpr auto kTabFlag = TabFlag::NoSapling_NoSeedCommand_Writable;
    return LayoutSP{new LayoutN(
       fon9_MakeField(Symb, SymbId_, "Id"), TreeFlag::AddableRemovable | TreeFlag::Unordered,
-      TabSP{new Tab{Named{fon9_kCSTR_TabName_Base}, MakeFields(),             kTabFlag}},
-      TabSP{new Tab{Named{fon9_kCSTR_TabName_Deal}, IndexDeal_MakeFields(),   kTabFlag}},
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_Base}, MakeFields(),                         kTabFlag}},
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_Deal}, IndexDeal_MakeFields(isAddMarketSeq), kTabFlag}},
       f9fmkt_MAKE_TABS_OpenHighLow(),
-      TabSP{new Tab{Named{fon9_kCSTR_TabName_Rt},   MdRtStream::MakeFields(), kTabFlag}}
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_Rt},   MdRtStream::MakeFields(),             kTabFlag}}
    )};
 }
 static const int32_t kExgMdIndexOffset[]{
@@ -56,8 +58,10 @@ void ExgMdIndex::OnBeforeRemove(fon9::fmkt::SymbTree& owner, unsigned tdayYYYYMM
    this->MdRtStream_.BeforeRemove(owner, *this);
 }
 //--------------------------------------------------------------------------//
-ExgMdIndices::ExgMdIndices(std::string pathFmt)
-   : base(ExgMdIndex::MakeLayout(), std::move(pathFmt), fon9::fmkt::MdSymbsCtrlFlag::AllowSubrSnapshotSymb) {
+ExgMdIndices::ExgMdIndices(std::string pathFmt, bool isAddMarketSeq)
+   : base(ExgMdIndex::MakeLayout(isAddMarketSeq), std::move(pathFmt),
+          fon9::fmkt::MdSymbsCtrlFlag::AllowSubrSnapshotSymb
+          | (isAddMarketSeq ? fon9::fmkt::MdSymbsCtrlFlag::HasMarketDataSeq : fon9::fmkt::MdSymbsCtrlFlag{})) {
 }
 fon9::fmkt::SymbSP ExgMdIndices::MakeSymb(const fon9::StrView& symbid) {
    return new ExgMdIndex(symbid, this->RtInnMgr_);

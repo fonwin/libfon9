@@ -49,7 +49,7 @@ ExgMdSystem::ExgMdSystem(fon9::seed::MaTreeSP root, std::string name, std::strin
    : base(root, name)
    , Symbs_{new ExgMdSymbs(rtiNamePre.empty() ? std::string{} : (rtiNamePre + "Symbs"), isAddMarketSeq)}
    , SymbsOdd_{new ExgMdSymbs(rtiNamePre.empty() ? std::string{} : (rtiNamePre + "SymbsOdd"), isAddMarketSeq)}
-   , Indices_{new ExgMdIndices(rtiNamePre.empty() ? std::string{} : (rtiNamePre + "Indices"))} {
+   , Indices_{new ExgMdIndices(rtiNamePre.empty() ? std::string{} : (rtiNamePre + "Indices"), isAddMarketSeq)} {
    this->Sapling_->AddNamedSapling(this->Symbs_, "Symbs");
    this->Sapling_->AddNamedSapling(this->SymbsOdd_, "SymbsOdd");
    this->Sapling_->AddNamedSapling(this->Indices_, "Indices");

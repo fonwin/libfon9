@@ -37,24 +37,18 @@ void ExgMdFmt21Handler::OnPkReceived(const ExgMdHeader& pkhdr, unsigned pksz) {
 #endif
 }
 //--------------------------------------------------------------------------//
-// 指數時間及傳輸序號皆為 0 表示開盤前傳送昨日收盤指數。
-// 指數時間為 999999 表示傳送今日收盤指數。收盤指數資料將以每 5 秒鐘之傳送間隔，繼續傳送約 15 分鐘。
-static fon9::DayTime ToIndexTime(const fon9::PackBcd<6>& pIdxHHMMSS) {
-   const auto idxHHMMSS = fon9::PackBcdTo<unsigned>(pIdxHHMMSS);
-   return (idxHHMMSS == 0 ? f9fmkt::YesterdayIndexTime()
-           : idxHHMMSS == 999999 ? f9fmkt::ClosedIndexTime()
-           : fon9::TimeInterval_HHMMSS(idxHHMMSS));
-}
-
 struct ExgMdIndexUpdater {
    fon9_NON_COPY_NON_MOVE(ExgMdIndexUpdater);
-   ExgMdIndices&        Indicas_;
-   ExgMdIndices::Locker IxsLk_;
-   const fon9::DayTime  IdxTime_;
-   ExgMdIndexUpdater(ExgMdSystem& mdsys, const fon9::PackBcd<6>& pIdxHHMMSS)
+   ExgMdIndices&                 Indicas_;
+   ExgMdIndices::Locker          IxsLk_;
+   const fon9::DayTime           IdxTime_;
+   const f9fmkt::MarketDataSeq   MktSeq_;
+   char                          Padding____[4];
+   ExgMdIndexUpdater(ExgMdSystem& mdsys, const fon9::PackBcd<6>& pIdxHHMMSS, f9fmkt::MarketDataSeq mktseq)
       : Indicas_(*mdsys.Indices_)
       , IxsLk_{Indicas_.SymbMap_.Lock()}
-      , IdxTime_{ToIndexTime(pIdxHHMMSS)} {
+      , IdxTime_{f9fmkt::ExgMdIndexToDayTime(fon9::PackBcdTo<unsigned>(pIdxHHMMSS))}
+      , MktSeq_{mktseq} {
    }
    ExgMdIndex* Update(const IdxNo& idxNo, const IdxValueV2& valueV2, fon9::RevBuffer* gbuf = nullptr) {
       ExgMdIndex& ix = *static_cast<ExgMdIndex*>(this->Indicas_.FetchSymb(this->IxsLk_, ToStrView(idxNo)).get());
@@ -70,6 +64,7 @@ struct ExgMdIndexUpdater {
          ix.CheckOHL(idxValuePri, this->IdxTime_);
       fon9::RevBufferList rts{128};
       fon9::ToBitv(rts, idxValueV2);
+      f9fmkt::PackMktSeq(rts, this->Indicas_.CtrlFlags_, ix.Deal_.Data_.MarketSeq_ = this->MktSeq_);
       ix.MdRtStream_.Publish(ToStrView(ix.SymbId_),
                              f9sv_RtsPackType_IndexValueV2,
                              f9sv_MdRtsKind_Deal,
@@ -88,7 +83,7 @@ ExgMdFmtIxHandler::~ExgMdFmtIxHandler() {
 void ExgMdFmtIxHandler::OnPkReceived(const ExgMdHeader& pkhdr, unsigned pksz) {
    (void)pksz;
    const ExgMdFmtIx& fmtIx = *static_cast<const ExgMdFmtIx*>(&pkhdr);
-   ExgMdIndexUpdater updater{this->MdSys_, fmtIx.IdxHHMMSS_};
+   ExgMdIndexUpdater updater{this->MdSys_, fmtIx.IdxHHMMSS_, fmtIx.GetSeqNo()};
    if (auto* ix = updater.Update(fmtIx.IdxNo_, fmtIx.IdxValueV2_)) {
       (void)ix;
       #ifdef DEBUG_PRINT_IDX
@@ -124,16 +119,19 @@ void ExgMdFmt3Handler::Initialize() {
 void ExgMdFmt3Handler::OnPkReceived(const ExgMdHeader& pkhdr, unsigned pksz) {
    (void)pksz;
    const ExgMdFmt3&  fmt3 = *static_cast<const ExgMdFmt3*>(&pkhdr);
-   ExgMdIndexUpdater updater{this->MdSys_, fmt3.IdxHHMMSS_};
+   ExgMdIndexUpdater updater{this->MdSys_, fmt3.IdxHHMMSS_, fmt3.GetSeqNo()};
 
    ExgMdIndices::BlockPublish bpub(updater.Indicas_,
                                    static_cast<fon9::BufferNodeSize>(this->IdxNoCount_ * 15));
    fon9::RevBufferList*       gbuf = bpub.GetPublishBuffer();
-   if (updater.Update(this->IdxNoList_[0], fmt3.IndicesV2_[0], gbuf) == nullptr)
-      return;
-   for (size_t L = 1; L < this->IdxNoCount_; ++L) {
-      if (this->IdxNoList_[L].Chars_[0] != ' ')
-         updater.Update(this->IdxNoList_[L], fmt3.IndicesV2_[L], gbuf);
+   bool                       is1stUpdated = true;
+   for (size_t L = 0; L < this->IdxNoCount_; ++L) {
+      if (this->IdxNoList_[L].Chars_[0] != ' ') {
+         if (updater.Update(this->IdxNoList_[L], fmt3.IndicesV2_[L], gbuf))
+            is1stUpdated = false;
+         else if (is1stUpdated)
+            return;
+      }
    }
 
 #ifdef DEBUG_PRINT_IDX
@@ -148,6 +146,7 @@ void ExgMdFmt3Handler::OnPkReceived(const ExgMdHeader& pkhdr, unsigned pksz) {
 
    if (gbuf == nullptr)
       return;
+   f9fmkt::PackMktSeq(*gbuf, updater.Indicas_.CtrlFlags_, updater.MktSeq_);
    fon9::ToBitv(*gbuf, updater.IdxTime_);
    *(gbuf->AllocPacket<uint8_t>()) = fon9::cast_to_underlying(f9sv_RtsPackType_IndexValueV2List);
    f9fmkt::MdRtsNotifyArgs  e(updater.Indicas_, fon9::seed::TextBegin(), f9sv_MdRtsKind_Deal, *gbuf);
