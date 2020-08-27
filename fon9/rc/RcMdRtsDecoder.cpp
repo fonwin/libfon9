@@ -160,6 +160,28 @@ public:
          rx.SubrRec_->Tree_->MakePod(this->RePod_);
       return ToSeedArray(this->RePod_.Seeds_);
    }
+
+   bool IsRxMktSeqNewer(const seed::Field& fld, const seed::RawWr& wr, svc::RxSubrData& rx, DcQueue& rxbuf) {
+      uint64_t rxSeq{};
+      BitvTo(rxbuf, rxSeq);
+      if (fon9_UNLIKELY(rx.IsNeedsLog_))
+         RevPrint(rx.LogBuf_, "MktSeq=", rxSeq);
+
+      if (fon9_LIKELY(rx.NotifyKind_ == seed::SeedNotifyKind::StreamData)) {
+         if (!this->IsMktSeqNewer(fld, wr, rxSeq)) {
+            if (fon9_UNLIKELY(rx.IsNeedsLog_))
+               RevPrint(rx.LogBuf_, "|Old.");
+            return false;
+         }
+      }
+      else {
+         // rx.NotifyKind_ == Recover; 不用考慮 mktseq 是否為過期資料.
+         fld.PutNumber(wr, signed_cast(rxSeq), 0);
+      }
+      if (fon9_UNLIKELY(rx.IsNeedsLog_))
+         RevPrint(rx.LogBuf_, '|');
+      return true;
+   }
 };
 
 struct MdRtsDecoderAuxNote {
@@ -306,9 +328,9 @@ struct RcSvStreamDecoder_MdRts : public RcMdRtsDecoder {
       case f9sv_RtsPackType_SnapshotBS:
       {
          InfoAux  aux{rx, rpt, rxbuf, this->TabIdxBS_};
-         if (this->IsBSMktSeqNewer(aux, rx, rpt, rxbuf))
-            this->DecodeSnapshotBS(std::move(aux), rx, rpt, rxbuf, (pkType == f9sv_RtsPackType_CalculatedBS
-                                                                    ? f9sv_BSFlag_Calculated : f9sv_BSFlag{}));
+         if (this->IsBSMktSeqNewer(aux, rx, rxbuf))
+            this->DecodeSnapshotBS(std::move(aux), rx, rpt, rxbuf,
+                                   pkType == f9sv_RtsPackType_CalculatedBS ? f9sv_BSFlag_Calculated : f9sv_BSFlag{});
          return;
       }
       case f9sv_RtsPackType_UpdateBS:
@@ -387,37 +409,13 @@ struct RcSvStreamDecoder_MdRts : public RcMdRtsDecoder {
          fnOnHandler(&rx.Session_, &rpt);
    }
    // -----
-   static bool IsMktSeqNewer(const seed::Field& fld, const seed::RawWr& wr, RcSvStreamDecoderNote_MdRts& note, svc::RxSubrData& rx, DcQueue& rxbuf) {
-      uint64_t rxSeq{};
-      BitvTo(rxbuf, rxSeq);
-      if (fon9_UNLIKELY(rx.IsNeedsLog_))
-         RevPrint(rx.LogBuf_, "MktSeq=", rxSeq);
-
-      if (fon9_LIKELY(rx.NotifyKind_ == seed::SeedNotifyKind::StreamData)) {
-         if (!note.IsMktSeqNewer(fld, wr, rxSeq)) {
-            if (fon9_UNLIKELY(rx.IsNeedsLog_))
-               RevPrint(rx.LogBuf_, "|Old.");
-            return false;
-         }
-      }
-      else {
-         // rx.NotifyKind_ == Recover; 不用考慮 mktseq 是否為過期資料.
-         fld.PutNumber(wr, signed_cast(rxSeq), 0);
-      }
-      if (fon9_UNLIKELY(rx.IsNeedsLog_))
-         RevPrint(rx.LogBuf_, '|');
-      return true;
-   }
-   bool IsBSMktSeqNewer(const InfoAux& aux, svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) const {
-      if (!this->FldBSMktSeq_)
-         return true;
-      return this->IsMktSeqNewer(*this->FldBSMktSeq_, seed::SimpleRawWr{const_cast<f9sv_Seed*>(rpt.SeedArray_[this->TabIdxBS_])},
-                                 aux.Note_, rx, rxbuf);
-   }
    #define f9sv_DealFlag_IsOld   static_cast<f9sv_DealFlag>(0xff)
    f9sv_DealFlag DecodeDealPack(InfoAux&& aux, svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {
-      if (!this->IsBSMktSeqNewer(aux, rx, rpt, rxbuf))
-         return f9sv_DealFlag_IsOld;
+      if (this->FldBSMktSeq_) {
+         if (!aux.Note_.IsRxMktSeqNewer(*this->FldBSMktSeq_, seed::SimpleRawWr{const_cast<f9sv_Seed*>(rpt.SeedArray_[this->TabIdxBS_])},
+                                        rx, rxbuf))
+            return f9sv_DealFlag_IsOld;
+      }
 
       DayTime  dealTime = *aux.SeInfoTime_;
       aux.PutDecField(*this->FldDealInfoTime_, dealTime);
@@ -586,9 +584,14 @@ struct RcSvStreamDecoder_MdRts : public RcMdRtsDecoder {
          fnOnReport(&rx.Session_, &rpt);
    }
    // -----
+   bool IsBSMktSeqNewer(const InfoAux& aux, svc::RxSubrData& rx, DcQueue& rxbuf) const {
+      if (!this->FldBSMktSeq_)
+         return true;
+      return aux.Note_.IsRxMktSeqNewer(*this->FldBSMktSeq_, aux.RawWr_, rx, rxbuf);
+   }
    void DecodeUpdateBS(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {
       InfoAux  aux(rx, rpt, rxbuf, this->TabIdxBS_);
-      if (!this->IsBSMktSeqNewer(aux, rx, rpt, rxbuf))
+      if (!this->IsBSMktSeqNewer(aux, rx, rxbuf))
          return;
       aux.PutDecField(*this->FldBSInfoTime_, *aux.SeInfoTime_);
       const uint8_t first = ReadOrRaise<uint8_t>(rxbuf);
@@ -651,7 +654,7 @@ struct RcSvStreamDecoder_MdRts : public RcMdRtsDecoder {
    bool IsIdxDealMktSeqNewer(const InfoAux& aux, svc::RxSubrData& rx, DcQueue& rxbuf) const {
       if (!this->FldIdxDealMktSeq_)
          return true;
-      return this->IsMktSeqNewer(*this->FldIdxDealMktSeq_, aux.RawWr_, aux.Note_, rx, rxbuf);
+      return aux.Note_.IsRxMktSeqNewer(*this->FldIdxDealMktSeq_, aux.RawWr_, rx, rxbuf);
    }
    static void BitvToIndexValue(const seed::Field& fld, seed::RawWr& wr, DcQueue& rxbuf) {
       fon9_BitvNumR numr;
