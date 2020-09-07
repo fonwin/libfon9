@@ -26,5 +26,19 @@ fon9_API StrView HowWaitToStr(HowWait value);
 /// \retval retval.IsError()        綁定失敗原因.
 fon9_API Result3 SetCpuAffinity(int cpuAffinity);
 
+/// \ingroup Misc
+/// 將 big5 字串轉成 utf8.
+/// 轉換後 outbuf 尾端不包含 EOS.
+fon9_API size_t Big5ToUtf8NoEOS(StrView strBig5, char* outbuf, size_t outbufsz);
+/// \ingroup Misc
+/// 將 big5 字串轉成 utf8.
+/// 轉換後 outbuf 尾端如果還有空間, 則會填入一個 EOS.
+inline size_t Big5ToUtf8EOS(const StrView& strBig5, char* outbuf, size_t outbufsz) {
+   size_t retval = Big5ToUtf8NoEOS(strBig5, outbuf, outbufsz);
+   if (retval < outbufsz)
+      outbuf[retval] = '\0';
+   return retval;
+}
+
 } // namespace
 #endif//__fon9_Tools_hpp__

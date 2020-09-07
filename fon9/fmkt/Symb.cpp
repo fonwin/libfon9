@@ -19,6 +19,12 @@ static void OnSymbEv(SymbTree& tree, Symb& symb, void (SymbData::*fnEv)(SymbTree
          (dat->*fnEv)(tree, symb);
    }
 }
+void Symb::OnSymbDailyClear(SymbTree& tree, const Symb& symb) {
+   (void)tree; (void)symb; assert(this == &symb);
+}
+void Symb::OnSymbSessionClear(SymbTree& tree, const Symb& symb) {
+   (void)tree; (void)symb; assert(this == &symb);
+}
 void Symb::DailyClear(SymbTree& owner, unsigned tdayYYYYMMDD) {
    this->TDayYYYYMMDD_ = tdayYYYYMMDD;
    this->TradingSessionId_ = f9fmkt_TradingSessionId_Normal;

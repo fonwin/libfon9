@@ -62,6 +62,9 @@ public:
    fon9::fmkt::SymbData* GetSymbData(int tabid) override;
    fon9::fmkt::SymbData* FetchSymbData(int tabid) override;
 
+   void SessionClear(fon9::fmkt::SymbTree& owner, f9fmkt_TradingSessionId tsesId) override;
+   void DailyClear(fon9::fmkt::SymbTree& owner, unsigned tdayYYYYMMDD) override;
+
    /// 移除商品, 通常是因為商品下市, 預設觸發:
    /// - this->MdRtStream_.BeforeRemove(owner, *this);
    /// - this->Contract_->OnSymbRemove(*this);

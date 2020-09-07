@@ -113,15 +113,15 @@ inline void FmtRt_PkContOnReceived(ExgMdHandlerPkCont& handler, ExgMdSymbs& symb
       fon9::seed::SimpleRawRd  rd{*symb};
       if (symb->TradingSessionId_ != kTradingSessionId) {
          symb->TradingSessionId_ = kTradingSessionId;
-         f9fmkt::MdRtsPackFieldValue(rts, *tabBase, *tabBase->Fields_.Get("Session"), rd);
+         f9fmkt::MdRtsPackFieldValue(rts, *tabBase->Fields_.Get("Session"), rd);
       }
       if (twsFlags != f9fmkt::GetMatchingMethod(symb->TwsFlags_)) {
          symb->TwsFlags_ = (symb->TwsFlags_ - f9fmkt::TwsBaseFlag::MatchingMethodMask) | twsFlags;
-         f9fmkt::MdRtsPackFieldValue(rts, *tabBase, *tabBase->Fields_.Get("TwsFlags"), rd);
+         f9fmkt::MdRtsPackFieldValue(rts, *tabBase->Fields_.Get("TwsFlags"), rd);
       }
       if (symb->TradingSessionSt_ != tradingSessionSt) {
          symb->TradingSessionSt_ = tradingSessionSt;
-         f9fmkt::MdRtsPackFieldValue(rts, *tabBase, *tabBase->Fields_.Get("SessionSt"), rd);
+         f9fmkt::MdRtsPackFieldValue(rts, *tabBase->Fields_.Get("SessionSt"), rd);
       }
       symb->MdRtStream_.Publish(ToStrView(symb->SymbId_),
                                 f9sv_RtsPackType_FieldValue_AndInfoTime,

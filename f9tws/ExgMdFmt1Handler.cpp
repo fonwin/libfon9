@@ -2,21 +2,26 @@
 // \author fonwinz@gmail.com
 #include "f9tws/ExgMdFmt1Handler.hpp"
 #include "f9tws/ExgMdFmt1.hpp"
+#include "fon9/Tools.hpp"
 
 namespace f9tws {
 
 ExgMdBaseInfoParser::ExgMdBaseInfoParser(ExgMdSymbs& symbs, const StkNo& stkNo)
-      : SymbLk_{symbs.SymbMap_.Lock()}
-      , Symb_{static_cast<ExgMdSymb*>(symbs.FetchSymb(SymbLk_, ToStrView(stkNo)).get())}
-      , PrevTradingMarket_{Symb_->TradingMarket_}
-      , PrevShUnit_{Symb_->ShUnit_}
-      , PrevRefData_(Symb_->Ref_.Data_) {
+   : Symbs_{symbs}
+   , SymbLk_{symbs.SymbMap_.Lock()}
+   , Symb_{static_cast<ExgMdSymb*>(symbs.FetchSymb(SymbLk_, ToStrView(stkNo)).get())}
+   , PrevTradingMarket_{Symb_->TradingMarket_}
+   , PrevShUnit_{Symb_->ShUnit_}
+   , PrevRefData_(Symb_->Ref_.Data_)
+   , PrevNameUTF8_{Symb_->NameUTF8_} {
 }
 void ExgMdBaseInfoParser::Publish(ExgMdSystem& mdsys, const ExgMdHeader& pk, unsigned pksz) const {
    if (this->PrevTradingMarket_ == this->Symb_->TradingMarket_
        && this->PrevShUnit_ == this->Symb_->ShUnit_
        && this->PrevRefData_ == this->Symb_->Ref_.Data_)
       return;
+   fon9::Big5ToUtf8EOS(fon9::StrView_eos_or_all(static_cast<const ExgMdFmt1_C3*>(&pk)->ChineseName_, ' '),
+                       this->Symb_->NameUTF8_.Chars_, sizeof(this->Symb_->NameUTF8_));
    if (mdsys.IsReloading())
       return;
    fon9::RevBufferList rbuf{128};
@@ -33,6 +38,15 @@ void ExgMdBaseInfoParser::Publish(ExgMdSystem& mdsys, const ExgMdHeader& pk, uns
    // 基本資料有異動時儲存, 用在程式重啟時載入, 重建商品基本資料.
    // 以免重啟程式時, 因為沒有任何商品資料, 造成客戶端無法訂閱!
    mdsys.BaseInfoPkLog(pk, pksz);
+
+   if (this->PrevNameUTF8_ != this->Symb_->NameUTF8_) {
+      fon9::fmkt::MdRtsPackFieldValue(rbuf, *this->Symbs_.FldBaseNameUTF8_,
+                                      fon9::seed::SimpleRawRd{*this->Symb_});
+      this->Symb_->MdRtStream_.PublishAndSave(ToStrView(this->Symb_->SymbId_),
+                                              f9sv_RtsPackType_FieldValue_NoInfoTime,
+                                              f9sv_MdRtsKind_Ref | f9sv_MdRtsKind_NoInfoTime,
+                                              std::move(rbuf));
+   }
 }
 //--------------------------------------------------------------------------//
 using ExgMdFmt1Parser = ExgMdBaseInfoParser;

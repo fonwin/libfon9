@@ -14,15 +14,23 @@ f9tws_API fon9::seed::Fields IndexDeal_MakeFields(bool isAddMarketSeq) {
    flds.Add(fon9_MakeField(IndexDeal, Data_.Pri_,  "DealPri"));
    return flds;
 }
+f9tws_API fon9::seed::Fields IndexRef_MakeFields() {
+   fon9::seed::Fields flds;
+   flds.Add(fon9_MakeField(IndexRef, Data_.PriRef_, "PriRef"));
+   return flds;
+}
 //--------------------------------------------------------------------------//
 fon9::seed::LayoutSP ExgMdIndex::MakeLayout(bool isAddMarketSeq) {
    using namespace fon9;
    using namespace fon9::seed;
    using namespace fon9::fmkt;
    constexpr auto kTabFlag = TabFlag::NoSapling_NoSeedCommand_Writable;
+   Fields baseFields = MakeFields();
+   baseFields.Add(fon9_MakeField2(ExgMdIndex, NameUTF8));
    return LayoutSP{new LayoutN(
       fon9_MakeField(Symb, SymbId_, "Id"), TreeFlag::AddableRemovable | TreeFlag::Unordered,
-      TabSP{new Tab{Named{fon9_kCSTR_TabName_Base}, MakeFields(),                         kTabFlag}},
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_Base}, std::move(baseFields),                kTabFlag}},
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_Ref},  IndexRef_MakeFields(),                kTabFlag}},
       TabSP{new Tab{Named{fon9_kCSTR_TabName_Deal}, IndexDeal_MakeFields(isAddMarketSeq), kTabFlag}},
       f9fmkt_MAKE_TABS_OpenHighLow(),
       TabSP{new Tab{Named{fon9_kCSTR_TabName_Rt},   MdRtStream::MakeFields(),             kTabFlag}}
@@ -30,6 +38,7 @@ fon9::seed::LayoutSP ExgMdIndex::MakeLayout(bool isAddMarketSeq) {
 }
 static const int32_t kExgMdIndexOffset[]{
    0, // Base
+   fon9_OffsetOf(ExgMdIndex, Ref_),
    fon9_OffsetOf(ExgMdIndex, Deal_),
    f9fmkt_MAKE_OFFSET_OpenHighLow(ExgMdIndex),
    fon9_OffsetOf(ExgMdIndex, MdRtStream_),
@@ -52,6 +61,11 @@ void ExgMdIndex::SessionClear(fon9::fmkt::SymbTree& owner, f9fmkt_TradingSession
    this->TradingSessionId_ = tsesId;
    this->TradingSessionSt_ = f9fmkt_TradingSessionSt_Clear;
    this->MdRtStream_.OnSymbSessionClear(owner, *this);
+}
+void ExgMdIndex::DailyClear(fon9::fmkt::SymbTree& owner, unsigned tdayYYYYMMDD) {
+   const auto  name = this->NameUTF8_;
+   base::DailyClear(owner, tdayYYYYMMDD);
+   this->NameUTF8_ = name;
 }
 void ExgMdIndex::OnBeforeRemove(fon9::fmkt::SymbTree& owner, unsigned tdayYYYYMMDD) {
    (void)tdayYYYYMMDD;

@@ -221,5 +221,17 @@ public:
    virtual TreeSP GetSapling() override;
 };
 
+/// \ingroup seed
+/// 尋找使用 NamedMaTree 的樹, 直到找到 path 的最後節點.
+/// 若中間有非 NamedMaTree 或 NamedSeed 則返回 nullptr;
+fon9_API NamedSeedSP GetNamedSeedNode(MaTreeSP node, StrView path);
+
+template <class T>
+inline TreeSPT<T> GetNamedSapling(MaTreeSP node, StrView path) {
+   if (auto seedNode = GetNamedSeedNode(node, path))
+      return dynamic_pointer_cast<T>(seedNode->GetSapling());
+   return nullptr;
+}
+
 } } // namespaces
 #endif//__fon9_seed_MaTree_hpp__

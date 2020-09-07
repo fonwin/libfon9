@@ -90,9 +90,11 @@ template <class ParkT, class... ArgsT>
 inline NamedSeedSPT<ParkT> FetchNamedPark(MaTree& maTree, StrView parkName, ArgsT&&... ctorArgs) {
    NamedSeedSPT<ParkT> newPark;
    for (;;) {
-      NamedSeedSPT<ParkT> park = maTree.Get<ParkT>(parkName);
-      if (park)
-         return park;
+      if (auto node = maTree.Get(parkName)) {
+         if (NamedSeedSPT<ParkT> park = dynamic_pointer_cast<ParkT>(node))
+            return park;
+         return nullptr;
+      }
       if (fon9_LIKELY(!newPark))
          newPark.reset(new ParkT(maTree, parkName, std::forward<ArgsT>(ctorArgs)...));
       if (fon9_LIKELY(maTree.Add(newPark)))

@@ -16,6 +16,10 @@ fon9::seed::Fields TwfSymbRef_MakeFields() {
    flds.Add(fon9_MakeField(TwfSymbRef, Data_.PriLmts_[1].Dn_, "PriDnLmt1"));
    flds.Add(fon9_MakeField(TwfSymbRef, Data_.PriLmts_[2].Up_, "PriUpLmt2"));
    flds.Add(fon9_MakeField(TwfSymbRef, Data_.PriLmts_[2].Dn_, "PriDnLmt2"));
+
+   flds.Add(fon9_MakeField(TwfSymbRef, Data_.PPriClose_,      "PPriClose"));
+   flds.Add(fon9_MakeField(TwfSymbRef, Data_.PQtyTotal_,      "PQtyTotal"));
+   flds.Add(fon9_MakeField(TwfSymbRef, Data_.OpenInterest_,   "OpenInterest"));
    return flds;
 }
 

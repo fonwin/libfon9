@@ -31,7 +31,7 @@ void ExgMdFmt19Handler::OnPkReceived(const ExgMdHeader& pkhdr, unsigned pksz) {
    symb->BreakSt_.Data_.RestartHHMMSS_ = resumeHHMMSS;
 
    // -----
-   fon9::seed::Tab*  tabBreakSt = this->MdSys_.Symbs_->TabBreakSt_;
+   const fon9::seed::Tab*  tabBreakSt = this->MdSys_.Symbs_->TabBreakSt_;
    if (tabBreakSt == nullptr)
       return;
    fon9::RevBufferList rts{pksz};

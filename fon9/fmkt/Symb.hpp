@@ -66,12 +66,8 @@ class fon9_API Symb : public SymbData, public intrusive_ref_counter<Symb> {
    fon9_NON_COPY_NON_MOVE(Symb);
 
 protected:
-   void OnSymbDailyClear(SymbTree& tree, const Symb& symb) override {
-      (void)tree; (void)symb; assert(this == &symb);
-   }
-   void OnSymbSessionClear(SymbTree& tree, const Symb& symb) override {
-      (void)tree; (void)symb; assert(this == &symb);
-   }
+   void OnSymbDailyClear(SymbTree& tree, const Symb& symb) override;
+   void OnSymbSessionClear(SymbTree& tree, const Symb& symb) override;
 
 public:
    /// 交易日.

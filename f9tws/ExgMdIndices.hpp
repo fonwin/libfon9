@@ -26,10 +26,31 @@ public:
 typedef fon9::fmkt::SimpleSymbData<IndexDealData>  IndexDeal;
 f9tws_API fon9::seed::Fields IndexDeal_MakeFields(bool isAddMarketSeq);
 //--------------------------------------------------------------------------//
+struct IndexRef_Data {
+   fon9::fmkt::Pri   PriRef_{};
+
+   void Clear() {
+      fon9::ForceZeroNonTrivial(this);
+   }
+   bool operator==(const IndexRef_Data& rhs) const {
+      return memcmp(this, &rhs, sizeof(*this)) == 0;
+   }
+   bool operator!=(const IndexRef_Data& rhs) const {
+      return !this->operator==(rhs);
+   }
+};
+typedef fon9::fmkt::SimpleSymbData<IndexRef_Data>  IndexRef;
+f9tws_API fon9::seed::Fields IndexRef_MakeFields();
+//--------------------------------------------------------------------------//
+using IndexNameUTF8 = fon9::CharAry<88>;
+
 class f9tws_API ExgMdIndex : public fon9::fmkt::Symb, public fon9::fmkt::SymbDataOHL {
    fon9_NON_COPY_NON_MOVE(ExgMdIndex);
    using base = fon9::fmkt::Symb;
 public:
+   /// 中文名稱.
+   IndexNameUTF8           NameUTF8_{nullptr};
+   IndexRef                Ref_;
    IndexDeal               Deal_;
    fon9::fmkt::MdRtStream  MdRtStream_;
 
@@ -49,6 +70,7 @@ public:
    /// - 設定 this->TradingSessionSt_ = f9fmkt_TradingSessionSt_Clear;
    /// - 不會觸發 this->GetSymbData(tabid=0..N)->OnSymbSessionClear();
    void SessionClear(fon9::fmkt::SymbTree& owner, f9fmkt_TradingSessionId tsesId) override;
+   void DailyClear(fon9::fmkt::SymbTree& owner, unsigned tdayYYYYMMDD) override;
    void OnBeforeRemove(fon9::fmkt::SymbTree& owner, unsigned tdayYYYYMMDD) override;
 
    static fon9::seed::LayoutSP MakeLayout(bool isAddMarketSeq);

@@ -2,6 +2,10 @@
 /// \author fonwinz@gmail.com
 #include "fon9/Tools.hpp"
 
+#ifndef fon9_WINDOWS
+#include <iconv.h>
+#endif
+
 namespace fon9 {
 
 static const StrView howWaitStrMap[]{
@@ -43,6 +47,31 @@ fon9_API Result3 SetCpuAffinity(int cpuAffinity) {
       return GetSysErrC(iErr);
 #endif
    return Result3::kSuccess();
+}
+
+//--------------------------------------------------------------------------//
+
+fon9_API size_t Big5ToUtf8NoEOS(StrView strBig5, char* outbuf, size_t outbufsz) {
+   if (outbufsz <= 0)
+      return 0;
+   size_t szStrBig5 = strBig5.size();
+   #if defined(fon9_WINDOWS)
+      static thread_local std::wstring wbuf{128, '\0'};
+      if (wbuf.size() < szStrBig5 * 2)
+         wbuf.resize((szStrBig5 + 128) * 2);
+      int   len = MultiByteToWideChar(950, 0,
+                                      strBig5.begin(), static_cast<int>(szStrBig5),
+                                      &*wbuf.begin(), static_cast<int>(wbuf.size()));
+      return static_cast<size_t>(WideCharToMultiByte(CP_UTF8, 0, wbuf.c_str(), len,
+                                                     outbuf, static_cast<int>(outbufsz),
+                                                     NULL, NULL));
+   #else
+      static iconv_t iConv = iconv_open("utf8", "big5");
+      const char*    pSrc = strBig5.begin();
+      char*          pDst = outbuf;
+      iconv(iConv, const_cast<char**>(&pSrc), &szStrBig5, &pDst, &outbufsz);
+      return static_cast<size_t>(pDst - outbuf);
+   #endif
 }
 
 } // namespace

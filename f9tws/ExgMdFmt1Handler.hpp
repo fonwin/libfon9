@@ -24,12 +24,14 @@ public:
 //--------------------------------------------------------------------------//
 struct ExgMdBaseInfoParser {
    fon9_NON_COPY_NON_MOVE(ExgMdBaseInfoParser);
+   ExgMdSymbs&        Symbs_;
    ExgMdSymbs::Locker SymbLk_;
    ExgMdSymb* const   Symb_;
    const f9fmkt_TradingMarket       PrevTradingMarket_;
    char                             Padding___[3];
    const uint32_t                   PrevShUnit_;
    const fon9::fmkt::SymbRef::Data  PrevRefData_;
+   const StkNameUTF8                PrevNameUTF8_;
 
    ExgMdBaseInfoParser(ExgMdSymbs& symbs, const StkNo& stkNo);
 

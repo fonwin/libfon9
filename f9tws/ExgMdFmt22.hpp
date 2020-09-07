@@ -8,6 +8,7 @@
 namespace f9tws {
 fon9_PACK(1);
 
+/// 盤中零股交易個股基本資料.
 struct ExgMdFmt22v1 : public ExgMdHeader {
    StkNo    StkNo_;
    /// 股票中文簡稱(BIG5 編碼);

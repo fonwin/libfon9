@@ -2,6 +2,7 @@
 // \author fonwinz@gmail.com
 #include "f9tws/ExgMdFmtIxHandler.hpp"
 #include "f9tws/ExgMdFmtIxNoList.hpp"
+#include "fon9/Tools.hpp"
 
 namespace f9tws {
 namespace f9fmkt = fon9::fmkt;
@@ -21,20 +22,47 @@ void ExgMdFmt21Handler::OnPkReceived(const ExgMdHeader& pkhdr, unsigned pksz) {
       case ExgMdMarket_TwOTC: mkt = f9fmkt_TradingMarket_TwOTC; break;
       default: return;
       }
-      if (ix.TradingMarket_ == mkt)
+      fon9::RevBufferList rbuf{128};
+      f9sv_MdRtsKind      mdKind = f9sv_MdRtsKind{};
+      fon9::fmkt::Pri pclose{fon9::PackBcdTo<uint64_t>(fmt21.YesterdayClosingIndexV2_), 2};
+      if (ix.Ref_.Data_.PriRef_ != pclose) {
+         mdKind |= f9sv_MdRtsKind_Ref;
+         ix.Ref_.Data_.PriRef_ = pclose;
+         fon9::fmkt::MdRtsPackFieldValue(rbuf,
+                                         *ixs.LayoutSP_->GetTab(fon9_kCSTR_TabName_Ref)->Fields_.Get("PriRef"),
+                                         fon9::seed::SimpleRawRd{ix.Ref_});
+      }
+      if (ix.TradingMarket_ != mkt || ix.NameUTF8_.Chars_[0] == '\0') {
+         mdKind |= f9sv_MdRtsKind_Base;
+         fon9::seed::SimpleRawRd rdBase{ix};
+         auto* tabBase = ixs.LayoutSP_->GetTab(fon9_kCSTR_TabName_Base);
+         if (ix.TradingMarket_ != mkt) {
+            ix.TradingMarket_ = mkt;
+            fon9::fmkt::MdRtsPackFieldValue(rbuf, *tabBase->Fields_.Get("Market"), rdBase);
+         }
+         if (ix.NameUTF8_.Chars_[0] == '\0') {
+            fon9::Big5ToUtf8EOS(fon9::StrView_eos_or_all(fmt21.NameBig5_, ' '),
+                                ix.NameUTF8_.Chars_, sizeof(ix.NameUTF8_));
+            fon9::fmkt::MdRtsPackFieldValue(rbuf, *tabBase->Fields_.Get("NameUTF8"), rdBase);
+         }
+      }
+      if (mdKind == f9sv_MdRtsKind{})
          return;
-      ix.TradingMarket_ = mkt;
+      ix.MdRtStream_.PublishAndSave(ToStrView(ix.SymbId_),
+                                    f9sv_RtsPackType_FieldValue_NoInfoTime,
+                                    mdKind | f9sv_MdRtsKind_NoInfoTime,
+                                    std::move(rbuf));
+   #ifdef DEBUG_PRINT_IDX
+      puts(fon9::RevPrintTo<std::string>(
+         '"', fon9::StrView_all(fmt21.IdxNo_.Chars_), "\": ", fmt21.GetMarket(),
+         '/', ix.Ref_.Data_.PriRef_, fon9::FmtDef{8,2},
+         '/', fon9::PackBcdTo<uint8_t>(fmt21.FormatCode_),
+         '/', ix.NameUTF8_, // fon9::StrView_all(fmt21.NameBig5_),
+         '/', fon9::StrView_all(fmt21.NameEng_)
+         ).c_str());
+   #endif
    } // auto unlock.
    this->MdSys_.BaseInfoPkLog(pkhdr, pksz);
-
-#ifdef DEBUG_PRINT_IDX
-   puts(fon9::RevPrintTo<std::string>(
-      '"', fon9::StrView_all(fmt21.IdxNo_.Chars_), "\", // ", fmt21.GetMarket(),
-      '/', fon9::PackBcdTo<uint8_t>(fmt21.FormatCode_),
-      '/', fon9::StrView_all(fmt21.NameBig5_),
-      '/', fon9::StrView_all(fmt21.NameEng_)
-      ).c_str());
-#endif
 }
 //--------------------------------------------------------------------------//
 struct ExgMdIndexUpdater {
@@ -90,8 +118,8 @@ void ExgMdFmtIxHandler::OnPkReceived(const ExgMdHeader& pkhdr, unsigned pksz) {
          puts(fon9::RevPrintTo<std::string>(
             "[", fmtIx.GetMarket(),
             "][", fon9::StrView_all(fmtIx.IdxNo_.Chars_),
-            "][", ix->Deal_.Data_.DealTime_,
-            "][", ix->Deal_.Data_.DealPri_, fon9::FmtDef{8,2}, "]"
+            "][", ix->Deal_.Data_.Time_,
+            "][", ix->Deal_.Data_.Pri_, fon9::FmtDef{8,2}, "]"
             ).c_str());
       #endif
    }

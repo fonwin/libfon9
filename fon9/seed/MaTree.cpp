@@ -147,4 +147,20 @@ void MaTree::OnTreeOp(FnTreeOp fnCallback) {
    fnCallback(TreeOpResult{this, OpResult::no_error}, &op);
 }
 
+//--------------------------------------------------------------------------//
+
+fon9_API NamedSeedSP GetNamedSeedNode(MaTreeSP node, StrView path) {
+   while (!path.empty()) {
+      StrView nodeName = StrFetchNoTrim(path, '/');
+      if (nodeName.empty())
+         continue;
+      if (path.empty())
+         return node->Get(nodeName);
+      node = node->GetSapling<MaTree>(nodeName);
+      if (!node)
+         break;
+   }
+   return nullptr;
+}
+
 } } // namespaces

@@ -68,6 +68,30 @@ void ExgMdSymb::OnBeforeRemove(fon9::fmkt::SymbTree& owner, unsigned tdayYYYYMMD
    this->MdRtStream_.BeforeRemove(owner, *this);
    this->Contract_.OnSymbRemove(*this);
 }
+//----------------//
+// 保留部分資料, SessionClear(); DailyClear(); 之後還原.
+struct ExgMdSymb_ClearKeep {
+   fon9_NON_COPY_NON_MOVE(ExgMdSymb_ClearKeep);
+   ExgMdSymb&     Symb_;
+   const uint32_t PriceOrigDiv_, StrikePriceDiv_;
+   ExgMdSymb_ClearKeep(ExgMdSymb& symb)
+      : Symb_(symb)
+      , PriceOrigDiv_{symb.PriceOrigDiv_}
+      , StrikePriceDiv_{symb.StrikePriceDiv_} {
+   }
+   ~ExgMdSymb_ClearKeep() {
+      this->Symb_.PriceOrigDiv_ = this->PriceOrigDiv_;
+      this->Symb_.StrikePriceDiv_ = this->StrikePriceDiv_;
+   }
+};
+void ExgMdSymb::SessionClear(fon9::fmkt::SymbTree& owner, f9fmkt_TradingSessionId tsesId) {
+   ExgMdSymb_ClearKeep keeper{*this};
+   base::SessionClear(owner, tsesId);
+}
+void ExgMdSymb::DailyClear(fon9::fmkt::SymbTree& owner, unsigned tdayYYYYMMDD) {
+   ExgMdSymb_ClearKeep keeper{*this};
+   base::DailyClear(owner, tdayYYYYMMDD);
+}
 //--------------------------------------------------------------------------//
 ExgMdSymbs::ExgMdSymbs(std::string rtiPathFmt, bool isAddMarketSeq)
    : base(ExgMdSymb::MakeLayout(isAddMarketSeq), std::move(rtiPathFmt),

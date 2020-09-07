@@ -85,7 +85,7 @@ seed::OpResult MdRtStream::SubscribeStream(SubConn*           pSubConn,
    recover->Filter_ = StrToMdRtsKind(&args);
    if (StrTrimHead(&args).Get1st() == ',')
       StrTrimHead(&args, args.begin() + 1);
-   recover->StartInfoTime_ = StrTo(&args, DayTime::Null());
+   recover->SetStartInfoTime(StrTo(&args, DayTime::Null()));
    recover->RunAfter(TimeInterval{});
    return seed::OpResult::no_error;
 }

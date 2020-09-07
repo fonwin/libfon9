@@ -37,27 +37,29 @@ static void McI084SSParserO(ExgMcMessage& e) {
    auto*    symbs = e.Channel_.GetChannelMgr()->Symbs_.get();
    auto     locker = symbs->SymbMap_.Lock();
    for (unsigned prodL = 0; prodL < prodCount; ++prodL) {
-      auto& symb = *static_cast<ExgMdSymb*>(symbs->FetchSymb(locker, fon9::StrView_eos_or_all(prodEntry->ProdId_.Chars_, ' ')).get());
-      auto  mdCount = fon9::PackBcdTo<unsigned>(prodEntry->NoMdEntries_);
-      if (e.Channel_.GetChannelMgr()->CheckSymbTradingSessionId(symb)) {
-         ExgMdToSnapshotBS(mdTime, mdCount, prodEntry->MdEntry_, symb, PackBcdToMarketSeq(prodEntry->LastProdMsgSeq_));
-         RevBufferList rbuf{128};
-         MdRtsPackSnapshotBS(rbuf, symb.BS_.Data_);
-         PackMktSeq(rbuf, symbs->CtrlFlags_, symb.BS_.Data_.MarketSeq_);
-         symb.MdRtStream_.Publish(ToStrView(symb.SymbId_), f9sv_RtsPackType_SnapshotBS, f9sv_MdRtsKind_BS, mdTime, std::move(rbuf));
-         if (pI083) {
-            static_assert(sizeof(pI083->NoMdEntries_) == 1, "");
-            *pI083->NoMdEntries_ = *prodEntry->NoMdEntries_;
-            memcpy(pI083->MdEntry_, prodEntry->MdEntry_, sizeof(ExgMdEntry) * mdCount);
-            pI083->ProdId_ = prodEntry->ProdId_;
-            memcpy(pI083->ProdMsgSeq_, prodEntry->LastProdMsgSeq_, sizeof(pI083->ProdMsgSeq_));
-            const unsigned pksz = static_cast<unsigned>(sizeof(ExgMcI083) + sizeof(ExgMdTail)
-                                                        + (sizeof(pI083->MdEntry_[0]) * mdCount)
-                                                        - sizeof(pI083->MdEntry_));
-            fon9::ToPackBcd(pI083->BodyLength_, pksz - sizeof(ExgMcNoBody));
-            ExgMcMessage e083{*pI083, pksz, rtch, 0};
-            e083.Symb_ = &symb;
-            rtch.NotifyConsumers(e083);
+      const auto  mdCount = fon9::PackBcdTo<unsigned>(prodEntry->NoMdEntries_);
+      if (const auto  lastProdMsgSeq = PackBcdToMarketSeq(prodEntry->LastProdMsgSeq_)) {
+         auto& symb = *static_cast<ExgMdSymb*>(symbs->FetchSymb(locker, fon9::StrView_eos_or_all(prodEntry->ProdId_.Chars_, ' ')).get());
+         if (e.Channel_.GetChannelMgr()->CheckSymbTradingSessionId(symb)) {
+            ExgMdToSnapshotBS(mdTime, mdCount, prodEntry->MdEntry_, symb, lastProdMsgSeq);
+            RevBufferList rbuf{128};
+            MdRtsPackSnapshotBS(rbuf, symb.BS_.Data_);
+            PackMktSeq(rbuf, symbs->CtrlFlags_, symb.BS_.Data_.MarketSeq_);
+            symb.MdRtStream_.Publish(ToStrView(symb.SymbId_), f9sv_RtsPackType_SnapshotBS, f9sv_MdRtsKind_BS, mdTime, std::move(rbuf));
+            if (pI083) {
+               static_assert(sizeof(pI083->NoMdEntries_) == 1, "");
+               *pI083->NoMdEntries_ = *prodEntry->NoMdEntries_;
+               memcpy(pI083->MdEntry_, prodEntry->MdEntry_, sizeof(ExgMdEntry) * mdCount);
+               pI083->ProdId_ = prodEntry->ProdId_;
+               memcpy(pI083->ProdMsgSeq_, prodEntry->LastProdMsgSeq_, sizeof(pI083->ProdMsgSeq_));
+               const unsigned pksz = static_cast<unsigned>(sizeof(ExgMcI083) + sizeof(ExgMdTail)
+                                                           + (sizeof(pI083->MdEntry_[0]) * mdCount)
+                                                           - sizeof(pI083->MdEntry_));
+               fon9::ToPackBcd(pI083->BodyLength_, pksz - sizeof(ExgMcNoBody));
+               ExgMcMessage e083{*pI083, pksz, rtch, 0};
+               e083.Symb_ = &symb;
+               rtch.NotifyConsumers(e083);
+            }
          }
       }
       prodEntry = reinterpret_cast<const ExgMcI084::OrderDataEntry*>(prodEntry->MdEntry_ + mdCount);
@@ -87,7 +89,7 @@ static void McI084SSParserP(ExgMcMessage& e) {
             --lv;
          if (dst == lv)
             return false;
-         fon9::fmkt::MdRtsPackFieldValueNid(this->Rts_, this->TabRef_, fld);
+         fon9::fmkt::MdRtsPackFieldValueNid(this->Rts_, fld);
          return true;
       }
    };

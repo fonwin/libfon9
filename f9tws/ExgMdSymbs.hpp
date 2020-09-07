@@ -14,11 +14,31 @@
 
 namespace f9tws {
 
+using StkNameUTF8 = fon9::CharAry<32>;
+
+struct TwsSymbRef_Data : public fon9::fmkt::SymbRef_Data {
+   /// 昨日收盤價.
+   fon9::fmkt::Pri   PPriClose_{};
+   /// 昨日總量.
+   fon9::fmkt::Qty   PQtyTotal_{};
+
+   TwsSymbRef_Data() {
+      this->Clear();
+   }
+   void Clear() {
+      fon9::ForceZeroNonTrivial(this);
+   }
+};
+using TwsSymbRef = fon9::fmkt::SimpleSymbData<TwsSymbRef_Data>;
+f9tws_API fon9::seed::Fields TwsSymbRef_MakeFields();
+
 class f9tws_API ExgMdSymb : public fon9::fmkt::SymbTws, public fon9::fmkt::SymbDataOHL {
    fon9_NON_COPY_NON_MOVE(ExgMdSymb);
    using base = fon9::fmkt::SymbTws;
 public:
-   fon9::fmkt::SymbRef     Ref_;
+   /// 中文名稱.
+   StkNameUTF8             NameUTF8_{nullptr};
+   TwsSymbRef              Ref_;
    fon9::fmkt::SymbTwsBS   BS_;
    fon9::fmkt::SymbDeal    Deal_;
    fon9::fmkt::SymbBreakSt BreakSt_;
@@ -39,6 +59,7 @@ public:
    /// - 設定 this->TradingSessionSt_ = f9fmkt_TradingSessionSt_Clear;
    /// - 不會觸發 this->GetSymbData(tabid=0..N)->OnSymbSessionClear();
    void SessionClear(fon9::fmkt::SymbTree& owner, f9fmkt_TradingSessionId tsesId) override;
+   void DailyClear(fon9::fmkt::SymbTree& owner, unsigned tdayYYYYMMDD) override;
 
    /// 移除商品, 通常是因為商品下市.
    /// 預設觸發 this->MdRtStream_.BeforeRemove(owner, *this);
@@ -52,7 +73,8 @@ class f9tws_API ExgMdSymbs : public fon9::fmkt::MdSymbsT<ExgMdSymb> {
    using base = fon9::fmkt::MdSymbsT<ExgMdSymb>;
 
 public:
-   fon9::seed::Tab* const  TabBreakSt_;
+   const fon9::seed::Tab* const     TabBreakSt_;
+   const fon9::seed::Field* const   FldBaseNameUTF8_;
    ExgMdSymbs(std::string rtiPathFmt, bool isAddMarketSeq);
 
    fon9::fmkt::SymbSP MakeSymb(const fon9::StrView& symbid) override;

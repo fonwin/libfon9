@@ -83,11 +83,11 @@ RcMdRtsDecoder_TabFields::RcMdRtsDecoder_TabFields(svc::TreeRec& tree) {
       static const char kCSTR_PriUpLmt[] = "PriUpLmt";
       static const char kCSTR_PriDnLmt[] = "PriDnLmt";
       this->TabIdxRef_   = static_cast<f9sv_TabSize>(tab->GetIndex());
-      this->FldPriRef_   = GetFieldOrRaise(*tab, "PriRef");
-      this->FldPriUpLmt_ = GetFieldOrRaise(*tab, kCSTR_PriUpLmt);
-      this->FldPriDnLmt_ = GetFieldOrRaise(*tab, kCSTR_PriDnLmt);
-      this->FldLvUpLmt_  = GetFieldOrNull (*tab, "LvUpLmt");
-      this->FldLvDnLmt_  = GetFieldOrNull (*tab, "LvDnLmt");
+      this->FldPriRef_   = GetFieldOrNull(*tab, "PriRef");
+      this->FldPriUpLmt_ = GetFieldOrNull(*tab, kCSTR_PriUpLmt);
+      this->FldPriDnLmt_ = GetFieldOrNull(*tab, kCSTR_PriDnLmt);
+      this->FldLvUpLmt_  = GetFieldOrNull(*tab, "LvUpLmt");
+      this->FldLvDnLmt_  = GetFieldOrNull(*tab, "LvDnLmt");
       NumOutBuf   nbuf;
       char* const pend = nbuf.end();
       FieldPriLmt fldLmt;
@@ -495,7 +495,7 @@ struct RcSvStreamDecoder_MdRts : public RcMdRtsDecoder {
                                                  ? f9sv_BSFlag_Calculated : f9sv_BSFlag{}));
    }
    // -----
-   static void ClearFieldValues(const seed::RawWr& wr, FieldPQList::const_iterator ibeg, FieldPQList::const_iterator iend) {
+   static void ClearFieldPQs(const seed::RawWr& wr, FieldPQList::const_iterator ibeg, FieldPQList::const_iterator iend) {
       for (; ibeg != iend; ++ibeg) {
          ibeg->FldPri_->SetNull(wr);
          ibeg->FldQty_->SetNull(wr);
@@ -532,7 +532,7 @@ struct RcSvStreamDecoder_MdRts : public RcMdRtsDecoder {
             assert(!flds->empty());
             unsigned count = static_cast<unsigned>(bstype & 0x0f) + 1;
             auto     ibeg = flds->cbegin() + count;
-            this->ClearFieldValues(aux.RawWr_, ibeg, flds->cend());
+            this->ClearFieldPQs(aux.RawWr_, ibeg, flds->cend());
             do {
                --ibeg;
                ibeg->FldPri_->BitvToCell(aux.RawWr_, rxbuf);
@@ -561,16 +561,16 @@ struct RcSvStreamDecoder_MdRts : public RcMdRtsDecoder {
             RevPrint(rx.LogBuf_, "|rtBS.", ToHex(bstype), "={");
       }
       // -----
-      #define check_ClearFieldValues(type) \
+      #define check_ClearFieldPQs(type) \
       while (!IsEnumContains(bsFlags, f9sv_BSFlag_##type)) { \
-         this->ClearFieldValues(aux.RawWr_, this->Fld##type##s_.cbegin(), this->Fld##type##s_.cend()); \
+         this->ClearFieldPQs(aux.RawWr_, this->Fld##type##s_.cbegin(), this->Fld##type##s_.cend()); \
          break; \
       }
       // -----
-      check_ClearFieldValues(OrderBuy);
-      check_ClearFieldValues(OrderSell);
-      check_ClearFieldValues(DerivedBuy);
-      check_ClearFieldValues(DerivedSell);
+      check_ClearFieldPQs(OrderBuy);
+      check_ClearFieldPQs(OrderSell);
+      check_ClearFieldPQs(DerivedBuy);
+      check_ClearFieldPQs(DerivedSell);
       // -----
       this->ReportBS(rx, rpt, aux.RawWr_, bsFlags);
    }

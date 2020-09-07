@@ -59,12 +59,16 @@ class LogFileImpl : public LogFileAppender {
    LogFileImpl(FileRotate& frConfig) {
       LogFileImpl::gLogFile = this;
       frConfig.CheckTime(UtcNow());
-      SetLogWriter(&LogFileImpl::LogWriteToFile, frConfig.GetFileNameMaker().GetTimeChecker().GetTimeZoneOffset());
+      SetLogWriter(&LogFileImpl::LogWriteToFile, frConfig.GetFileNameMaker().GetTimeChecker().GetTimeZoneOffset(),
+                   &LogFileImpl::LogWriteToFile_Flusher);
    }
 
    static void LogWriteToFile(const LogArgs& logArgs, BufferList&& buf) {
       LogFileImpl::gLogFile->CheckRotateTime(logArgs.UtcTime_);
       LogFileImpl::gLogFile->Append(std::move(buf));
+   }
+   static void LogWriteToFile_Flusher() {
+      LogFileImpl::gLogFile->WaitFlushed();
    }
 
    static void AddLogInfo(File& fd, RevBufferList& rbuf, TimeStamp utctm, char chHeadNL) {
@@ -86,7 +90,7 @@ class LogFileImpl : public LogFileAppender {
       TimeZoneOffset tzadj = this->GetRotateTimeChecker().GetTimeZoneOffset();
       // 避免: InitLogWriteToFile(); => SetLogWriter(others); => InitLogWriteToFile();
       // 所以這裡開檔成功後, 在設定一次 SetLogWriter(); 讓第2次的 InitLogWriteToFile(); 能順利重設 LogWriter.
-      SetLogWriter(&LogFileImpl::LogWriteToFile, tzadj);
+      SetLogWriter(&LogFileImpl::LogWriteToFile, tzadj, &LogFileImpl::LogWriteToFile_Flusher);
 
       TimeStamp      utcnow = UtcNow();
       RevBufferList  rbuf{kLogBlockNodeSize};

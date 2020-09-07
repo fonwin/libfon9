@@ -95,10 +95,9 @@ struct I140_BreakSt_PreparePk : public I140_CheckPublish {
    const fon9::DayTime           InfoTime_;
    I140_BreakSt_PreparePk(const fon9::seed::Layout& layout, f9fmkt_TradingSessionSt st, fon9::DayTime infoTime)
       : TSessionSt_{st}, InfoTime_{infoTime} {
-      const auto* tabBase = layout.GetTab(fon9_kCSTR_TabName_Base);
-      const auto* fldSessionSt = tabBase->Fields_.Get("SessionSt");
+      const auto* fldSessionSt = layout.GetTab(fon9_kCSTR_TabName_Base)->Fields_.Get("SessionSt");
       fon9::ToBitv(this->Rts_, st);
-      f9fmkt::MdRtsPackFieldValueNid(this->Rts_, *tabBase, *fldSessionSt);
+      f9fmkt::MdRtsPackFieldValueNid(this->Rts_, *fldSessionSt);
       this->PkSessionSt_ = ToStrView(this->Rts_);
    }
    void SetupBreakSt(const fon9::seed::Layout& layout) {
@@ -107,7 +106,7 @@ struct I140_BreakSt_PreparePk : public I140_CheckPublish {
       for (auto L = tabBreakSt->Fields_.size(); L > 0;) {
          const auto* fld = tabBreakSt->Fields_.Get(--L);
          fld->CellToBitv(rd, this->Rts_);
-         f9fmkt::MdRtsPackFieldValueNid(this->Rts_, *tabBreakSt, *fld);
+         f9fmkt::MdRtsPackFieldValueNid(this->Rts_, *fld);
       }
       this->PkBreakSt_.Reset(this->Rts_.GetCurrent(), this->PkSessionSt_.begin());
    }
@@ -228,19 +227,19 @@ static void I140_40r_DynRange(ExgMcMessage& e, f9fmkt_DynBandSt st) {
          const auto* tab = layout.GetTab(fon9_kCSTR_TabName_DynBand);
          const auto* fld = tab->Fields_.Get("St");
          ToBitv(this->Rts_, this->DynBand_.Data_.DynBandSt_ = st);
-         f9fmkt::MdRtsPackFieldValueNid(this->Rts_, *tab, *fld);
+         f9fmkt::MdRtsPackFieldValueNid(this->Rts_, *fld);
 
          fld = tab->Fields_.Get("Time");
          ToBitv(this->Rts_, this->DynBand_.Data_.StHHMMSS_ = fon9::PackBcdTo<uint32_t>(i40r.HHMMSS_));
-         f9fmkt::MdRtsPackFieldValueNid(this->Rts_, *tab, *fld);
+         f9fmkt::MdRtsPackFieldValueNid(this->Rts_, *fld);
 
          fld = tab->Fields_.Get("Reason");
          ToBitv(this->Rts_, this->DynBand_.Data_.Reason_ = f9fmkt_DynBandStopReason_None);
-         f9fmkt::MdRtsPackFieldValueNid(this->Rts_, *tab, *fld);
+         f9fmkt::MdRtsPackFieldValueNid(this->Rts_, *fld);
 
          fld = tab->Fields_.Get("SideType");
          ToBitv(this->Rts_, this->DynBand_.Data_.SideType_ = i40r.SideType_);
-         f9fmkt::MdRtsPackFieldValueNid(this->Rts_, *tab, *fld);
+         f9fmkt::MdRtsPackFieldValueNid(this->Rts_, *fld);
 
          switch (i40r.SideType_) {
          case f9fmkt_DynBandSide::f9fmkt_DynBandSide_All:
@@ -249,7 +248,7 @@ static void I140_40r_DynRange(ExgMcMessage& e, f9fmkt_DynBandSt st) {
             this->DynBand_.Data_.RangeL_.Assign<1>(fon9::PackBcdTo<uint8_t>(i40r.Range9V9_));
             fld = tab->Fields_.Get("RangeL");
             ToBitv(this->Rts_, this->DynBand_.Data_.RangeL_);
-            f9fmkt::MdRtsPackFieldValueNid(this->Rts_, *tab, *fld);
+            f9fmkt::MdRtsPackFieldValueNid(this->Rts_, *fld);
             if (i40r.SideType_ != f9fmkt_DynBandSide::f9fmkt_DynBandSide_All)
                break;
             // i40r.SideType_ == f9fmkt_DynBandSide::f9fmkt_DynBandSide_All
@@ -259,7 +258,7 @@ static void I140_40r_DynRange(ExgMcMessage& e, f9fmkt_DynBandSt st) {
             this->DynBand_.Data_.RangeS_.Assign<1>(fon9::PackBcdTo<uint8_t>(i40r.Range9V9_));
             fld = tab->Fields_.Get("RangeS");
             ToBitv(this->Rts_, this->DynBand_.Data_.RangeS_);
-            f9fmkt::MdRtsPackFieldValueNid(this->Rts_, *tab, *fld);
+            f9fmkt::MdRtsPackFieldValueNid(this->Rts_, *fld);
             break;
          }
          ToBitv(this->Rts_, infoTime);
@@ -321,15 +320,15 @@ static void I140_40x_DynBand(ExgMcMessage& e, f9fmkt_DynBandSt st) {
          const auto* tab = layout.GetTab(fon9_kCSTR_TabName_DynBand);
          const auto* fld = tab->Fields_.Get("St");
          ToBitv(this->Rts_, this->DynBand_.Data_.DynBandSt_ = st);
-         f9fmkt::MdRtsPackFieldValueNid(this->Rts_, *tab, *fld);
+         f9fmkt::MdRtsPackFieldValueNid(this->Rts_, *fld);
 
          fld = tab->Fields_.Get("Time");
          ToBitv(this->Rts_, this->DynBand_.Data_.StHHMMSS_ = fon9::PackBcdTo<uint32_t>(i40x.HHMMSS_));
-         f9fmkt::MdRtsPackFieldValueNid(this->Rts_, *tab, *fld);
+         f9fmkt::MdRtsPackFieldValueNid(this->Rts_, *fld);
 
          fld = tab->Fields_.Get("Reason");
          ToBitv(this->Rts_, this->DynBand_.Data_.Reason_ = i40x.Reason_);
-         f9fmkt::MdRtsPackFieldValueNid(this->Rts_, *tab, *fld);
+         f9fmkt::MdRtsPackFieldValueNid(this->Rts_, *fld);
 
          ToBitv(this->Rts_, infoTime);
       }
@@ -382,7 +381,7 @@ static void I140_10x_LmtRange(ExgMcMessage& e, int lvWill) {
          const auto* fldLvLmt = tabRef.Fields_.Get(fldName);
          assert(fldLvLmt != nullptr);
          fon9::ToBitv(this->Rts_, lvLmt);
-         f9fmkt::MdRtsPackFieldValueNid(this->Rts_, tabRef, *fldLvLmt);
+         f9fmkt::MdRtsPackFieldValueNid(this->Rts_, *fldLvLmt);
       }
       static bool CheckSetLvLmt(int8_t& dst, int8_t src) {
          if ((src == 0) || (dst == src))

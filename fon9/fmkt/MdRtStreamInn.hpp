@@ -132,6 +132,17 @@ struct MdRtRecover : public TimerEntry {
       return new MdRtRecover(mgr, std::move(subr), std::move(reader));
    }
 
+   void SetStartInfoTime(DayTime tm) {
+      if (tm.IsNull()) {
+         this->IsStarted_ = true;
+         this->LastPos_ = 0;
+      }
+      else {
+         this->IsStarted_ = false;
+         this->StartInfoTime_ = tm;
+      }
+   }
+
 private:
    fon9_MSC_WARN_DISABLE(4582) // 'StartInfoTime_' : constructor is not implicitly called
    MdRtRecover(MdRtStreamInnMgr& mgr, MdRtSubrSP subr, StreamSP reader)

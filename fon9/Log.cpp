@@ -39,17 +39,20 @@ static void LogWriteToStdout(const LogArgs& /*logArgs*/, BufferList&& buf) {
    assert(dcQueue.empty());
 }
 static FnLogWriter      FnLogWriter_ = &LogWriteToStdout;
+static FnLogFlusher     FnLogFlusher_ = nullptr;
 static TimeZoneOffset   LogTimeZoneAdjust_;
 void (*gWaitLogSystemReady)();
 
-fon9_API void SetLogWriter(FnLogWriter fnLogWriter, TimeZoneOffset tzadj) {
+fon9_API void SetLogWriter(FnLogWriter fnLogWriter, TimeZoneOffset tzadj, FnLogFlusher fnLogFlusher) {
    FnLogWriter_ = fnLogWriter ? fnLogWriter : &LogWriteToStdout;
    LogTimeZoneAdjust_ = tzadj;
+   FnLogFlusher_ = fnLogFlusher;
 }
 fon9_API void UnsetLogWriter(FnLogWriter fnLogWriter) {
    if (FnLogWriter_ == fnLogWriter) {
       FnLogWriter_ = &LogWriteToStdout;
       LogTimeZoneAdjust_ = TimeZoneOffset{};
+      FnLogFlusher_ = nullptr;
    }
 }
 
@@ -68,12 +71,16 @@ fon9_API void LogWrite(LogLevel level, RevBufferList&& rbuf) {
 }
 
 fon9_API void WaitLogFlush() {
-   LogArgs        la{LogLevel::Info};
-   CountDownLatch waiter{1};
-   BufferList     buf;
-   buf.push_back(BufferNodeWaiter::Alloc(waiter));
-   LogWrite(la, std::move(buf));
-   waiter.Wait();
+   if (FnLogFlusher_)
+      FnLogFlusher_();
+   else {
+      LogArgs        la{LogLevel::Info};
+      CountDownLatch waiter{1};
+      BufferList     buf;
+      buf.push_back(BufferNodeWaiter::Alloc(waiter));
+      LogWrite(la, std::move(buf));
+      waiter.Wait();
+   }
 }
 
 }// namespace

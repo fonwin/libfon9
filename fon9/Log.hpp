@@ -65,12 +65,13 @@ fon9_WARN_POP;
 /// Log 訊息的最後寫入函式型別.
 /// logArgs.Time_ = 此筆記錄的時間, 可用來判斷是否需要開啟新檔案.
 typedef void (*FnLogWriter) (const LogArgs& logArgs, BufferList&& buf);
+typedef void (*FnLogFlusher) ();
 
 /// \ingroup Misc
 /// 設定 Log 訊息的最後寫入函式, 預設: 寫到 stdout(預設值不是 thread safe: 可能會 interlace)
 /// 如果 fnLogWriter = nullptr 則還原為預設 stdout 輸出.
 /// NOT thread safe!
-fon9_API void SetLogWriter(FnLogWriter fnLogWriter, TimeZoneOffset tzadj);
+fon9_API void SetLogWriter(FnLogWriter fnLogWriter, TimeZoneOffset tzadj, FnLogFlusher fnLogFlusher = nullptr);
 /// \ingroup Misc
 /// 如果現在的 LogWriter == fnLogWriter, 則還原成預設值: 寫到 stdout.
 fon9_API void UnsetLogWriter(FnLogWriter fnLogWriter);

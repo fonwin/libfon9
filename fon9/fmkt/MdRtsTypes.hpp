@@ -67,16 +67,15 @@ fon9_API void MdRtsPackSnapshotBS(RevBuffer& rbuf, const SymbBSData& symbBS);
 /// - 可以呼叫多次 MdRtsPackTabValues() 打包不同的 tab;
 fon9_API void MdRtsPackTabValues(RevBuffer& rbuf, const seed::Tab& tab, const SymbData& dat);
 
-inline void MdRtsPackFieldValueNid(RevBuffer& rbuf, const seed::Tab& tab, const seed::Field& fld) {
-   assert(unsigned_cast(tab.GetIndex()) <= 0x0f && unsigned_cast(fld.GetIndex()) <= 0x0f);
-   *rbuf.AllocPacket<uint8_t>() = static_cast<uint8_t>((tab.GetIndex() << 4) | fld.GetIndex());
+inline void MdRtsPackFieldValueNid(RevBuffer& rbuf, const seed::Field& fld) {
+   assert(unsigned_cast(fld.Tab_->GetIndex()) <= 0x0f && unsigned_cast(fld.GetIndex()) <= 0x0f);
+   *rbuf.AllocPacket<uint8_t>() = static_cast<uint8_t>((fld.Tab_->GetIndex() << 4) | fld.GetIndex());
 }
 inline void MdRtsPackFieldValue(RevBuffer& rbuf,
-                                const seed::Tab& tab,
                                 const seed::Field& fld,
                                 const seed::RawRd& rd) {
    fld.CellToBitv(rd, rbuf);
-   MdRtsPackFieldValueNid(rbuf, tab, fld);
+   MdRtsPackFieldValueNid(rbuf, fld);
 }
 
 } } // namespaces
