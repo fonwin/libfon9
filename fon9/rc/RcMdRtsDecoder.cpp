@@ -9,6 +9,8 @@
 
 namespace fon9 { namespace rc {
 
+#define f9sv_TabSize_Null     static_cast<f9sv_TabSize>(-1)
+
 /// 若資料不足, 則觸發 exception: Raise<BitvNeedsMore>("RcMdRtsDecoder.Read");
 template <typename ValueT>
 inline ValueT ReadOrRaise(DcQueue& rxbuf) {
@@ -54,7 +56,9 @@ RcMdRtsDecoder_TabFields::RcMdRtsDecoder_TabFields(svc::TreeRec& tree) {
    this->FldBaseTwsFlags_       = GetFieldOrNull (*tab, "TwsFlags");
 
    // 期貨契約資料表, 沒有 Deal tab.
-   if ((tab = GetTabOrNull(*tree.Layout_, fon9_kCSTR_TabName_Deal)) != nullptr) {
+   if ((tab = GetTabOrNull(*tree.Layout_, fon9_kCSTR_TabName_Deal)) == nullptr)
+      this->TabIdxDeal_      = f9sv_TabSize_Null;
+   else {
       this->TabIdxDeal_      = static_cast<f9sv_TabSize>(tab->GetIndex());
       this->FldDealTime_     = GetFieldOrRaise(*tab, "DealTime");
       this->FldDealPri_      = GetFieldOrRaise(*tab, "DealPri");
@@ -68,7 +72,9 @@ RcMdRtsDecoder_TabFields::RcMdRtsDecoder_TabFields(svc::TreeRec& tree) {
       this->FldDealLmtFlags_ = GetFieldOrNull(*tab, "LmtFlags");
       this->FldIdxDealMktSeq_= GetFieldOrNull(*tab, "MktSeq");
    }
-   if ((tab = GetTabOrNull(*tree.Layout_, fon9_kCSTR_TabName_BS)) != nullptr) {
+   if ((tab = GetTabOrNull(*tree.Layout_, fon9_kCSTR_TabName_BS)) == nullptr)
+      this->TabIdxBS_      = f9sv_TabSize_Null;
+   else {
       this->TabIdxBS_      = static_cast<f9sv_TabSize>(tab->GetIndex());
       this->FldBSInfoTime_ = GetFieldOrRaise(*tab, "InfoTime");
       this->FldBSFlags_    = GetFieldOrRaise(*tab, "Flags");
@@ -704,6 +710,19 @@ struct RcSvStreamDecoder_MdRts : public RcMdRtsDecoder {
          RevPrint(rx.LogBuf_, "|infoTime=", dealTime);
    }
    // -----
+   static void ClearTabValues(f9sv_ClientReport& rpt, f9sv_TabSize tabIndex) {
+      if (tabIndex == f9sv_TabSize_Null)
+         return;
+      seed::SimpleRawWr wr{*const_cast<f9sv_Seed*>(rpt.SeedArray_[tabIndex])};
+      const f9sv_Tab&   tab = rpt.Layout_->TabArray_[tabIndex];
+      const f9sv_Field* flds = tab.FieldArray_;
+      auto              ifld = tab.FieldCount_;
+      while (ifld > 0) {
+         const f9sv_Field& fld = flds[--ifld];
+         assert(reinterpret_cast<const seed::Field*>(fld.InternalOwner_)->GetIndex() == fld.Named_.Index_);
+         reinterpret_cast<const seed::Field*>(fld.InternalOwner_)->SetNull(wr);
+      }
+   }
    void DecodeTradingSessionId(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {
       InfoAux  aux(rx, rpt, rxbuf, this->TabIdxBase_);
       uint32_t tdayYYYYMMDD = ReadOrRaise<uint32_t>(rxbuf);
@@ -712,11 +731,15 @@ struct RcSvStreamDecoder_MdRts : public RcMdRtsDecoder {
       this->FldBaseTDay_->PutNumber(aux.RawWr_, tdayYYYYMMDD, 0);
       this->FldBaseSession_->StrToCell(aux.RawWr_, StrView{&sesId, 1});
       this->FldBaseSessionSt_->PutNumber(aux.RawWr_, sesSt, 0);
+      /// 收到 TradingSession異動 或 DailyClear 事件, 必須重設 MktSeq, 因為交易所序號會重編;
+      if (rx.NotifyKind_ == seed::SeedNotifyKind::StreamData) {
+         if (this->FldBSMktSeq_)
+            aux.Note_.ResetMktSeq(0);
+         ClearTabValues(rpt, this->TabIdxBS_);
+         ClearTabValues(rpt, this->TabIdxDeal_);
+      }
       assert(rxbuf.empty());
       this->ReportEv(rx, rpt);
-      /// 收到 TradingSession異動 或 DailyClear 事件, 必須重設 MktSeq, 因為交易所序號會重編;
-      if (this->FldBSMktSeq_ && rx.NotifyKind_ == seed::SeedNotifyKind::StreamData)
-         aux.Note_.ResetMktSeq(0);
    }
    void DecodeBaseInfoTw(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {
       InfoAux  auxBase(rx, rpt, rxbuf, this->TabIdxBase_);
