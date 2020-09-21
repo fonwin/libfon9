@@ -20,6 +20,11 @@ fon9::seed::Fields TwfSymbRef_MakeFields() {
    flds.Add(fon9_MakeField(TwfSymbRef, Data_.PPriClose_,      "PPriClose"));
    flds.Add(fon9_MakeField(TwfSymbRef, Data_.PQtyTotal_,      "PQtyTotal"));
    flds.Add(fon9_MakeField(TwfSymbRef, Data_.OpenInterest_,   "OpenInterest"));
+
+   for (unsigned L = 3; L < TwfSymbRef_Data::kPriLmtCount; ++L) {
+      flds.Add(fon9_MakeField(TwfSymbRef, Data_.PriLmts_[L].Up_, fon9::RevPrintTo<std::string>("PriUpLmt", L)));
+      flds.Add(fon9_MakeField(TwfSymbRef, Data_.PriLmts_[L].Dn_, fon9::RevPrintTo<std::string>("PriDnLmt", L)));
+   }
    return flds;
 }
 

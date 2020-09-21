@@ -21,7 +21,7 @@ struct TwfSymbRef_Data {
    /// 期交所漲跌停價, 在文件「逐筆行情資訊傳輸作業手冊」版本 Ver:1.2.0 (2020/08/03) 改成使用 I012 提供.
    /// 漲跌停階數為 PackBcd<2>; 所以最多為 99 階. 原則上最多不超過 20;
    enum {
-      kPriLmtCount = 3
+      kPriLmtCount = 20
    };
 
    struct PriLmt {

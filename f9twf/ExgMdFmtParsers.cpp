@@ -39,9 +39,9 @@ static const ExgMdLmtInfo::LimitDef* I012PriLmtParser(const ExgMdLmtInfo::LimitD
    auto* const prlmtsEnd = prlmts + fon9::numofele(symb.Ref_.Data_.PriLmts_);
    while (count > 0) {
       ExgMdPriceTo(prlmts->*pri, pklmts->Price_, symb.PriceOrigDiv_);
-      ++pklmts;
       if (++prlmts == prlmtsEnd)
-         break;
+         return reinterpret_cast<const ExgMdLmtInfo::LimitDef*>(pklmts + count);
+      ++pklmts;
       --count;
    }
    while (prlmts != prlmtsEnd) {
