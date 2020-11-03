@@ -43,8 +43,8 @@ fon9_IoManager::DeviceItemSP fon9_IoManager::CreateSession(const fon9_IoSessionP
 }
 void fon9_IoManager::DestroyDevice(fon9::io::DeviceSP dev, std::string cause, int isWait) {
    dev->AsyncDispose(std::move(cause));
-   dev->WaitGetDeviceId();
    if (isWait) {
+      dev->WaitGetDeviceId();
       while (dev->use_count() > 1)
          std::this_thread::yield();
    }

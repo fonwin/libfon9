@@ -65,9 +65,10 @@ namespace f9rc
       public void CloseWait() => Close(true);
       public void CloseNoWait() => Close(false);
       /// 關閉 rc 連線物件.
-      /// 在返回前, 仍然可能在其他 thread 收到事件.
-      /// isWait = true 表示要等確定銷毀後才返回.
-      /// isWait = false 表示在返回後仍可能收到事件, 如果您是在事件通知時呼叫, 則不能等候銷毀(會造成死結).
+      /// 在您撰寫「事件處理函式」時應注意: 是否正在等候銷毀.
+      /// 如果您是在「事件處理函式」中呼叫, 則不能等候銷毀(會造成死結).
+      /// isWait = true  表示要等確定銷毀後才返回, 在返回前, 仍然可能在其他 thread 收到事件.
+      /// isWait = false 表示在返回後仍可能收到事件, 使用此方式關閉連線, 「事件處理函式」必須仔細考慮 session 是否有效.
       public void Close(bool isWait)
       {
          unsafe
