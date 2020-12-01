@@ -65,8 +65,8 @@ std::string PluginsHolder::LoadPlugins(StrView fileName, StrView entryName) {
    return std::string{};
 }
 //--------------------------------------------------------------------------//
-const PluginsDesc* PluginsPark::Register(StrView name, const PluginsDesc* plugins) {
-   return SimpleFactoryRegister(name, plugins);
+const PluginsDesc* PluginsPark::Register(StrView name, const PluginsDesc* plugins, unsigned prioriry) {
+   return SimpleFactoryRegister(name, plugins, prioriry);
 }
 
 } } // namespaces

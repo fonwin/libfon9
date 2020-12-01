@@ -104,7 +104,7 @@ public:
    ///   同時使用 fprintf(stderr, ...); 輸出錯誤訊息.
    /// - 若 plugins != nullptr 且 name 沒重複, 則註冊成功, 傳回 plugins.
    /// - plugins 必須在註冊後依然保持不變. 註冊表僅保留 plugins 的指標, 沒有複製其內容.
-   static const PluginsDesc* Register(StrView name, const PluginsDesc* plugins);
+   static const PluginsDesc* Register(StrView name, const PluginsDesc* plugins, unsigned prioriry = 0);
 };
 fon9_WARN_POP;
 
