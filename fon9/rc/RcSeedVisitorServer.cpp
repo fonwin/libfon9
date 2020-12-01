@@ -10,6 +10,11 @@ namespace fon9 { namespace rc {
 
 RcSeedVisitorServerAgent::~RcSeedVisitorServerAgent() {
 }
+RcFunctionNoteSP RcSeedVisitorServerAgent::OnCreateRcSeedVisitorServerNote(RcSession& ses,
+                                                                           const auth::AuthResult& authr,
+                                                                           seed::AclConfig&& aclcfg) {
+   return RcFunctionNoteSP{new RcSeedVisitorServerNote(ses, authr, std::move(aclcfg))};
+}
 void RcSeedVisitorServerAgent::OnRecvFunctionCall(RcSession& ses, RcFunctionParam& param) {
    (void)param;
    if (auto* authNote = ses.GetNote<RcServerNote_SaslAuth>(f9rc_FunctionCode_SASL)) {
@@ -17,20 +22,27 @@ void RcSeedVisitorServerAgent::OnRecvFunctionCall(RcSession& ses, RcFunctionPara
       if (auto agAcl = authr.AuthMgr_->Agents_->Get<auth::PolicyAclAgent>(fon9_kCSTR_PolicyAclAgent_Name)) {
          seed::AclConfig  aclcfg;
          agAcl->GetPolicy(authr, aclcfg);
-         RevBufferList  rbuf{256};
-         // 最後一行: "|FcQryCount/FcQryMS|MaxSubrCount"
-         // 回補流量管制, 暫時不考慮告知 Client, 因為回補流量管制由 Server 處理.
-         RevPrint(rbuf, fon9_kCSTR_ROWSPL /* Path="" */ fon9_kCSTR_CELLSPL,
-                  aclcfg.FcQuery_.FcCount_, '/', aclcfg.FcQuery_.FcTimeMS_, fon9_kCSTR_CELLSPL,
-                  aclcfg.MaxSubrCount_);
-         agAcl->MakeGridView(rbuf, aclcfg);
-         RevPrint(rbuf, fon9_kCSTR_LEAD_TABLE fon9_kCSTR_PolicyAclAgent_Name fon9_kCSTR_ROWSPL);
-         PutBigEndian(rbuf.AllocPacket<SvFunc>(), SvFuncCode::Acl);
-         ses.Send(this->FunctionCode_, std::move(rbuf));
-         ses.ResetNote(this->FunctionCode_, RcFunctionNoteSP{new RcSeedVisitorServerNote(ses, authr, std::move(aclcfg))});
+         if (auto note = this->OnCreateRcSeedVisitorServerNote(ses, authr, std::move(aclcfg))) {
+            RevBufferList  rbuf{256};
+            // 最後一行: "|FcQryCount/FcQryMS|MaxSubrCount"
+            // 回補流量管制, 暫時不考慮告知 Client, 因為回補流量管制由 Server 處理.
+            RevPrint(rbuf, fon9_kCSTR_ROWSPL /* Path="" */ fon9_kCSTR_CELLSPL,
+                     aclcfg.FcQuery_.FcCount_, '/', aclcfg.FcQuery_.FcTimeMS_, fon9_kCSTR_CELLSPL,
+                     aclcfg.MaxSubrCount_);
+            agAcl->MakeGridView(rbuf, aclcfg);
+            RevPrint(rbuf, fon9_kCSTR_LEAD_TABLE fon9_kCSTR_PolicyAclAgent_Name fon9_kCSTR_ROWSPL);
+            PutBigEndian(rbuf.AllocPacket<SvFunc>(), SvFuncCode::Acl);
+            ses.Send(this->FunctionCode_, std::move(rbuf));
+            ses.ResetNote(this->FunctionCode_, std::move(note));
+         }
+         else {
+            // 若衍生者在 OnCreateRcSeedVisitorServerNote() 返回 nullptr,
+            // 則應由衍生者自行處理 ses.ForceLogout(原因);
+         }
       }
-      else
+      else {
          ses.ForceLogout("Auth PolicyAclAgent not found.");
+      }
    }
    else {
       ses.ForceLogout("Auth SASL note not found.");

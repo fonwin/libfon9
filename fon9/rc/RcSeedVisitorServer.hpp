@@ -11,11 +11,17 @@
 
 namespace fon9 { namespace rc {
 
+class fon9_API RcSeedVisitorServerNote;
+
 /// \ingroup rc
 /// FunctionAgent: SeedVisitor Server.
-class RcSeedVisitorServerAgent : public RcFunctionAgent {
+class fon9_API RcSeedVisitorServerAgent : public RcFunctionAgent {
    fon9_NON_COPY_NON_MOVE(RcSeedVisitorServerAgent);
    using base = RcFunctionAgent;
+protected:
+   virtual RcFunctionNoteSP OnCreateRcSeedVisitorServerNote(RcSession& ses,
+                                                            const auth::AuthResult& authr,
+                                                            seed::AclConfig&& aclcfg);
 public:
    RcSeedVisitorServerAgent() : base{f9rc_FunctionCode_SeedVisitor} {
    }
@@ -25,7 +31,7 @@ public:
    void OnSessionLinkBroken(RcSession& ses) override;
 };
 
-class RcSeedVisitorServerNote : public RcFunctionNote {
+class fon9_API RcSeedVisitorServerNote : public RcFunctionNote {
    fon9_NON_COPY_NON_MOVE(RcSeedVisitorServerNote);
    struct SeedVisitor;
    using SeedVisitorSP = intrusive_ptr<SeedVisitor>;
