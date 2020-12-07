@@ -9,6 +9,7 @@ set(fon9src
  TimeStamp.cpp
  RevFormat.cpp
  HostId.cpp
+ SimpleFactory.cpp
 
  BitvEncode.cpp
  BitvDecode.cpp

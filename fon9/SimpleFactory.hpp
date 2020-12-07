@@ -7,6 +7,8 @@
 
 namespace fon9 {
 
+fon9_API void SimpleFactoryPrintDupName(StrView name, unsigned priority);
+
 template <class Factory>
 Factory SimpleFactoryRegister(StrView name, Factory factory, unsigned priority = 0) {
    using Key = CharVector;
@@ -21,8 +23,9 @@ Factory SimpleFactoryRegister(StrView name, Factory factory, unsigned priority =
       ref.first = factory;
       ref.second = priority;
    }
-   else
-      fprintf(stderr, "SimpleFactoryRegister: dup name: %s\n", name.ToString().c_str());
+   else if (ref.second == priority) {
+      SimpleFactoryPrintDupName(name, priority);
+   }
    return ref.first;
 }
 

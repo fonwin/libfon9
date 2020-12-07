@@ -137,7 +137,7 @@ struct BenchmarkRequest {
    char                     Market_{'T'};
    char                     Session_{'N'};
    std::string              SesName_{"ApiSes"};
-   std::string              UserId_{"fonix"};
+   std::string              UserId_{"fon9"};
    std::string              FromIp_{"127.0.0.1"};
    std::string              UsrDef_{"user-define"};
    fon9::CharAry<4>         BrkNo_{"1234"};

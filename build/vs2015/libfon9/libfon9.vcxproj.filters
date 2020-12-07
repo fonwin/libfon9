@@ -1831,6 +1831,9 @@
     <ClCompile Include="..\..\..\fon9\fmkt\SymbFuoClosing.cpp">
       <Filter>Source Files\fmkt\_SymbData%28BS,Deal...%29</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\fon9\SimpleFactory.cpp">
+      <Filter>Source Files\_base\_Tools / Utility</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\..\CMakeLists.txt" />
