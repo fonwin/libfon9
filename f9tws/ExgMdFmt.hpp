@@ -19,6 +19,7 @@ namespace f9tws {
 fon9_PACK(1);
 
 using ExgMdHHMMSSu6 = fon9::fmkt::TwExgMdTimeHHMMSSu6;
+using ExgMdHHMMSS = fon9::fmkt::TwExgMdTimeHHMMSS;
 
 enum ExgMdMarket : uint8_t {
    ExgMdMarket_TwTSE = 1,

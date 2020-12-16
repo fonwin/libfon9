@@ -732,7 +732,7 @@ struct RcSvStreamDecoder_MdRts : public RcMdRtsDecoder {
       this->FldBaseSession_->StrToCell(aux.RawWr_, StrView{&sesId, 1});
       this->FldBaseSessionSt_->PutNumber(aux.RawWr_, sesSt, 0);
       /// 收到 TradingSession異動 或 DailyClear 事件, 必須重設 MktSeq, 因為交易所序號會重編;
-      if (rx.NotifyKind_ == seed::SeedNotifyKind::StreamData) {
+      if (rx.NotifyKind_ == seed::SeedNotifyKind::StreamData) { // 即時(StreamData)訊息才需要清盤, 回補(StreamRecover)不用.
          if (this->FldBSMktSeq_)
             aux.Note_.ResetMktSeq(0);
          ClearTabValues(rpt, this->TabIdxBS_);

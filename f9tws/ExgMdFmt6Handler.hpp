@@ -14,6 +14,11 @@ public:
    virtual ~ExgMdFmt6Handler();
 };
 
+bool CheckPublishSymbSessionSt(ExgMdSymbs& symbs, ExgMdSymb& symb,
+                               const fon9::fmkt::TwsBaseFlag matchingMethod,
+                               const f9fmkt_TradingSessionSt tradingSessionSt,
+                               const f9fmkt_TradingSessionId tradingSessionId);
+   
 /// - kTradingSessionId == f9fmkt_TradingSessionId_Normal; MdFmt = Fmt6;  symbs = *handler.MdSys_.Symbs_;
 /// - kTradingSessionId == f9fmkt_TradingSessionId_OddLot; MdFmt = Fmt23; symbs = *handler.MdSys_.SymbsOdd_;
 template <f9fmkt_TradingSessionId kTradingSessionId, class MdFmt>
@@ -90,9 +95,6 @@ inline void FmtRt_PkContOnReceived(ExgMdHandlerPkCont& handler, ExgMdSymbs& symb
       printf("%02x/", symb->Deal_.Data_.Flags_);
 #endif
 
-   const f9fmkt::TwsBaseFlag twsFlags = ((mdfmt.StatusMask_ & 0x10)
-                                         ? f9fmkt::TwsBaseFlag::ContinuousMarket
-                                         : f9fmkt::TwsBaseFlag::AggregateAuction);
    f9fmkt_TradingSessionSt tradingSessionSt = symb->TradingSessionSt_;
    if (const auto stm = mdfmt.StatusMask_ & (0x40 | 0x20 | 0x08 | 0x04)) {
       switch (stm) {
@@ -102,35 +104,14 @@ inline void FmtRt_PkContOnReceived(ExgMdHandlerPkCont& handler, ExgMdSymbs& symb
       case 0x04: tradingSessionSt = f9fmkt_TradingSessionSt_Closed;     break;
       }
    }
+   const f9fmkt::TwsBaseFlag matchingMethod = ((mdfmt.StatusMask_ & 0x10)
+                                               ? f9fmkt::TwsBaseFlag::ContinuousMarket
+                                               : f9fmkt::TwsBaseFlag::AggregateAuction);
+   CheckPublishSymbSessionSt(symbs, *symb, matchingMethod, tradingSessionSt, kTradingSessionId);
 
-   fon9::RevBufferList rts{pksz};
-
-   if (fon9_UNLIKELY(twsFlags != f9fmkt::GetMatchingMethod(symb->TwsFlags_)
-                     || symb->TradingSessionSt_ != tradingSessionSt
-                     || symb->TradingSessionId_ != kTradingSessionId)) {
-      const auto* tabBase = symbs.LayoutSP_->GetTab(0);
-      assert(tabBase->Name_ == fon9_kCSTR_TabName_Base);
-      fon9::seed::SimpleRawRd  rd{*symb};
-      if (symb->TradingSessionId_ != kTradingSessionId) {
-         symb->TradingSessionId_ = kTradingSessionId;
-         f9fmkt::MdRtsPackFieldValue(rts, *tabBase->Fields_.Get("Session"), rd);
-      }
-      if (twsFlags != f9fmkt::GetMatchingMethod(symb->TwsFlags_)) {
-         symb->TwsFlags_ = (symb->TwsFlags_ - f9fmkt::TwsBaseFlag::MatchingMethodMask) | twsFlags;
-         f9fmkt::MdRtsPackFieldValue(rts, *tabBase->Fields_.Get("TwsFlags"), rd);
-      }
-      if (symb->TradingSessionSt_ != tradingSessionSt) {
-         symb->TradingSessionSt_ = tradingSessionSt;
-         f9fmkt::MdRtsPackFieldValue(rts, *tabBase->Fields_.Get("SessionSt"), rd);
-      }
-      symb->MdRtStream_.Publish(ToStrView(symb->SymbId_),
-                                f9sv_RtsPackType_FieldValue_AndInfoTime,
-                                f9sv_MdRtsKind_TradingSession,
-                                dealTime, std::move(rts));
-   }
-
-   f9sv_RtsPackType rtsPackType;
-   f9sv_MdRtsKind   pkKind;
+   fon9::RevBufferList  rts{pksz};
+   f9sv_RtsPackType     rtsPackType;
+   f9sv_MdRtsKind       pkKind;
    if (mdfmt.HasBS()) {
       symb->BS_.Data_.InfoTime_ = dealTime;
       symb->BS_.Data_.Flags_ = (isCalc ? f9sv_BSFlag_Calculated : f9sv_BSFlag{});

@@ -12,6 +12,7 @@ set(f9tws_src
  # 零股
  ExgMdFmt22Handler.cpp
  ExgMdFmt23Handler.cpp
+ ExgMdFmt13Handler.cpp
 
  # 指數
  ExgMdFmtIxHandler.cpp
