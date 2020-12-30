@@ -92,6 +92,16 @@ void ExgMdSymb::DailyClear(fon9::fmkt::SymbTree& owner, unsigned tdayYYYYMMDD) {
    ExgMdSymb_ClearKeep keeper{*this};
    base::DailyClear(owner, tdayYYYYMMDD);
 }
+void ExgMdSymb::OnOpenSeqReset(fon9::fmkt::SymbTree& owner) {
+   fon9_WARN_DISABLE_SWITCH;
+   switch (this->TradingSessionSt_) {
+   case f9fmkt_TradingSessionSt_Open: // 只有在盤中的商品才需要 OpenSeqReset.
+      this->TradingSessionSt_ = f9fmkt_TradingSessionSt_OpenSeqReset;
+      this->MdRtStream_.OnOpenSeqReset(owner, *this);
+      break;
+   }
+   fon9_WARN_POP;
+}
 //--------------------------------------------------------------------------//
 ExgMdSymbs::ExgMdSymbs(std::string rtiPathFmt, bool isAddMarketSeq)
    : base(ExgMdSymb::MakeLayout(isAddMarketSeq), std::move(rtiPathFmt),

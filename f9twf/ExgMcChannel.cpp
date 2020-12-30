@@ -318,13 +318,15 @@ ExgMcChannelState ExgMcChannel::OnPkHb(const ExgMcHead& pk, unsigned pksz) {
    return this->State_;
 }
 ExgMcChannelState ExgMcChannel::OnPkSeqReset(const ExgMcHead& pk, unsigned pksz) {
-   if (0); // SeqReset 之後, API 商品訂閱者的序號要怎麼處理呢?
    fon9_LOG_WARN(this->ChannelMgr_->Name_, ".I002.SeqReset|channelId=", this->ChannelId_);
-   RecoversImpl rs{std::move(*this->Recovers_.Lock())};
-   for (auto& cur : rs) {
-      cur->GetDevice()->AsyncClose("I002.SeqReset");
-      cur->GetDevice()->WaitGetDeviceId(); // 等候 AsyncClose() 完成.
-      cur->GetDevice()->AsyncOpen(std::string{});
+
+   {  // close and clear all this->Recovers_;
+      RecoversImpl rs{std::move(*this->Recovers_.Lock())};
+      for (auto& cur : rs) {
+         cur->GetDevice()->AsyncClose("I002.SeqReset");
+         cur->GetDevice()->WaitGetDeviceId(); // 等候 AsyncClose() 完成.
+         cur->GetDevice()->AsyncOpen(std::string{});
+      }
    }
 
    const SeqT seq = pk.GetChannelSeq();
@@ -337,6 +339,14 @@ ExgMcChannelState ExgMcChannel::OnPkSeqReset(const ExgMcHead& pk, unsigned pksz)
       // SeqReset 需要自行觸發 DispatchMcMessage(裡面會觸發 NotifyConsumers).
       ExgMcMessage e(pk, pksz, *this, seq);
       this->DispatchMcMessage(e);
+      // 透過送出 TradingSessionId 觸發 API 端的清盤.
+      ExgMdSymbs&          symbs = *e.Channel_.GetChannelMgr()->Symbs_;
+      ExgMdSymbs::Locker   lksymbs{symbs.SymbMap_.Lock()};
+      auto iend = lksymbs->end();
+      for (auto ibeg = lksymbs->begin(); ibeg != iend;) {
+         auto& symb = *static_cast<ExgMdSymb*>(ibeg->second.get());
+         symb.OnOpenSeqReset(symbs);
+      }
    }
    return this->State_;
 }

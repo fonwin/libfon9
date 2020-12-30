@@ -51,6 +51,10 @@ public:
    void OnSymbDailyClear(SymbTree& tree, const Symb& symb) override;
    void OnSymbSessionClear(SymbTree& tree, const Symb& symb) override;
 
+   /// 必須由 symb.OnOpenSeqReset() 呼叫, 在呼叫前, 先設定:
+   /// symb.TradingSessionSt_ = f9fmkt_TradingSessionSt_OpenSeqReset;
+   void OnOpenSeqReset(fon9::fmkt::SymbTree& tree, const Symb& symb);
+
    DayTime InfoTime() const {
       return this->InfoTime_;
    }

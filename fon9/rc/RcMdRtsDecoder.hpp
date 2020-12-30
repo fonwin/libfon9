@@ -126,7 +126,7 @@ public:
       this->PriScale_ = v;
    }
 
-   /// - 訂閱成功取得商品 Snapshit 時, 更新現在的 MktSeq.
+   /// - 訂閱成功取得商品 Snapshot 時, 更新現在的 MktSeq.
    /// - 每日清檔時.
    /// - 換盤時(日盤 => 夜盤).
    void ResetMktSeq(uint64_t mktseq) {

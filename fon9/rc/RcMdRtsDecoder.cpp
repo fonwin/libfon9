@@ -735,8 +735,13 @@ struct RcSvStreamDecoder_MdRts : public RcMdRtsDecoder {
       if (rx.NotifyKind_ == seed::SeedNotifyKind::StreamData) { // 即時(StreamData)訊息才需要清盤, 回補(StreamRecover)不用.
          if (this->FldBSMktSeq_)
             aux.Note_.ResetMktSeq(0);
-         ClearTabValues(rpt, this->TabIdxBS_);
-         ClearTabValues(rpt, this->TabIdxDeal_);
+         if (sesSt == f9fmkt_TradingSessionSt_OpenSeqReset) {
+            // OpenSeqReset 不用清除 BS & Deal, 由交易所決定是否要清除, 如果交易所要清除, 則交易所應會送出相關訊息.
+         }
+         else {
+            ClearTabValues(rpt, this->TabIdxBS_);
+            ClearTabValues(rpt, this->TabIdxDeal_);
+         }
       }
       assert(rxbuf.empty());
       this->ReportEv(rx, rpt);

@@ -64,6 +64,10 @@ public:
 
    void SessionClear(fon9::fmkt::SymbTree& owner, f9fmkt_TradingSessionId tsesId) override;
    void DailyClear(fon9::fmkt::SymbTree& owner, unsigned tdayYYYYMMDD) override;
+   /// 收到期交所 SeqReset, 則觸發此事件.
+   /// 若此商品的 SessionSt 是 f9fmkt_TradingSessionSt_Open:
+   /// 則送出 TradingSessionId & f9fmkt_TradingSessionSt_OpenSeqReset 事件.
+   void OnOpenSeqReset(fon9::fmkt::SymbTree& owner);
 
    /// 移除商品, 通常是因為商品下市, 預設觸發:
    /// - this->MdRtStream_.BeforeRemove(owner, *this);

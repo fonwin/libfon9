@@ -123,6 +123,8 @@ fon9_ENUM(f9fmkt_TradingSessionSt, uint8_t) {
    f9fmkt_TradingSessionSt_DelayOpen       = 0x72,
    /// 一般盤中.
    f9fmkt_TradingSessionSt_Open            = 0x82,
+   /// 異常重新開盤, 例如: 期交所發生異常, 期交所會用 SeqReset 訊息通知, 此時 fon9 會用此狀態通知.
+   f9fmkt_TradingSessionSt_OpenSeqReset    = 0x92,
 
    /// 暫停交易, 可能會恢復, 恢復後的狀態為 f9fmkt_TradingSessionSt_Open.
    f9fmkt_TradingSessionSt_Halted          = 0xb1,

@@ -98,6 +98,10 @@ void MdRtStream::OnSymbSessionClear(SymbTree& tree, const Symb& symb) {
    (void)tree; assert(&tree == &this->InnMgr_.MdSymbs_);
    this->OnSessionChanged(symb);
 }
+void MdRtStream::OnOpenSeqReset(SymbTree& tree, const Symb& symb) {
+   (void)tree; assert(&tree == &this->InnMgr_.MdSymbs_ && symb.TradingSessionSt_ == f9fmkt_TradingSessionSt_OpenSeqReset);
+   this->OnSessionChanged(symb);
+}
 void MdRtStream::OnSessionChanged(const Symb& symb) {
    const void*   prevStream = this->RtStorage_.GetStream().get();
    RevBufferList rts{64};
