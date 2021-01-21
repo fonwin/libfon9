@@ -368,6 +368,7 @@
     <ClInclude Include="..\..\..\fon9\Unaligned.hpp" />
     <ClInclude Include="..\..\..\fon9\Utility.hpp" />
     <ClInclude Include="..\..\..\fon9\WaitPolicy.hpp" />
+    <ClInclude Include="..\..\..\fon9\web\HtmlEncoder.hpp" />
     <ClInclude Include="..\..\..\fon9\web\HttpDate.hpp" />
     <ClInclude Include="..\..\..\fon9\web\HttpHandlerStatic.hpp" />
     <ClInclude Include="..\..\..\fon9\web\HttpMessage.hpp" />
@@ -608,6 +609,7 @@
     <ClCompile Include="..\..\..\fon9\ToStrFmt.cpp" />
     <ClCompile Include="..\..\..\fon9\TsAppend.cpp" />
     <ClCompile Include="..\..\..\fon9\TsReceiver.cpp" />
+    <ClCompile Include="..\..\..\fon9\web\HtmlEncoder.cpp" />
     <ClCompile Include="..\..\..\fon9\web\HttpDate.cpp" />
     <ClCompile Include="..\..\..\fon9\web\HttpHandlerStatic.cpp" />
     <ClCompile Include="..\..\..\fon9\web\HttpMessage.cpp" />

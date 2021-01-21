@@ -75,6 +75,8 @@ public:
    ///   - "400 Bad Request"
    static io::RecvBufferSize SendErrorPrefix(io::Device& dev, HttpRequest& req,
                                              StrView httpStatus, RevBufferList&& currbuf);
+   #define fon9_kCSTR_HTTP_404_NotFound   "404 Not found"
+   #define fon9_kCSTR_HTTP_400_BadRequest "400 Bad Request"
 };
 
 /// \ingroup web

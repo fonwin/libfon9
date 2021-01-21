@@ -1133,6 +1133,9 @@
     <ClInclude Include="..\..\..\fon9\fmkt\FmdTypes.hpp">
       <Filter>Header Files\fmkt\_Md</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\web\HtmlEncoder.hpp">
+      <Filter>Header Files\web</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -1833,6 +1836,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\SimpleFactory.cpp">
       <Filter>Source Files\_base\_Tools / Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\web\HtmlEncoder.cpp">
+      <Filter>Source Files\web</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

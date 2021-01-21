@@ -2,6 +2,7 @@
 /// \author fonwinz@gmail.com
 #include "fon9/web/HttpHandlerStatic.hpp"
 #include "fon9/web/HttpDate.hpp"
+#include "fon9/web/HtmlEncoder.hpp"
 #include "fon9/ConfigLoader.hpp"
 #include "fon9/RevPrint.hpp"
 
@@ -59,13 +60,14 @@ io::RecvBufferSize HttpHandlerStatic::OnHttpHandlerNotFound(io::Device& dev, Htt
       errfn = "Open";
 __FILE_ERROR:
       RevBufferList rbuf{128};
-      RevPrint(rbuf, "<body>"
-               "Target: ", req.TargetOrig_, "<br>"
-               "File: ", fname, "<br>"
-               "Seed: ", this->Name_, "<br>"
-               "Error: ", errfn, ':', res,
-               "</body></html>");
-      return this->SendErrorPrefix(dev, req, "404 Not found", std::move(rbuf));
+      RevPrint(rbuf, "<br>Seed: ",  this->Name_,
+                     "<br>Error: ", errfn, ':', res,
+                     "</body></html>");
+      RevEncodeHtml(rbuf, ToStrView(fname));
+      RevPrint(rbuf, "<br>File: ");
+      RevEncodeHtml(rbuf, ToStrView(req.TargetOrig_));
+      RevPrint(rbuf, "<body>Target: ");
+      return this->SendErrorPrefix(dev, req, fon9_kCSTR_HTTP_404_NotFound, std::move(rbuf));
    }
    StrView contentType{"text/html; charset=utf-8"};
    std::string::size_type pos = fname.rfind('.');

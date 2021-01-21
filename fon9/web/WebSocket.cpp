@@ -16,7 +16,7 @@ fon9_API bool IsUpgradeToWebSocket(const HttpMessage& msg) {
    return iequals(msg.FindHeadField("upgrade"), "websocket");
 }
 fon9_API io::RecvBufferSize OnBadWebSocketRequest(io::Device& dev, HttpRequest& req) {
-   HttpHandler::SendErrorPrefix(dev, req, "400 Bad Request", RevBufferList{128});
+   HttpHandler::SendErrorPrefix(dev, req, fon9_kCSTR_HTTP_400_BadRequest, RevBufferList{128});
    dev.AsyncClose("Bad WebSocket request.");
    return io::RecvBufferSize::NoLink;
 }

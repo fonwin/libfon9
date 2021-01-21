@@ -3,6 +3,7 @@
 #include "fon9/web/HttpHandler.hpp"
 #include "fon9/web/UrlCodec.hpp"
 #include "fon9/web/HttpDate.hpp"
+#include "fon9/web/HtmlEncoder.hpp"
 #include "fon9/seed/FieldMaker.hpp"
 #include "fon9/FilePath.hpp"
 
@@ -92,24 +93,22 @@ io::RecvBufferSize HttpDispatcher::OnHttpHandlerNotFound(io::Device& dev, HttpRe
    RevBufferList rbuf{128};
    if (!req.IsMethod("HEAD")) {
       if (req.TargetCurr_.empty()) {
-         RevPrint(rbuf,
-                  "<body>"
-                  "Handler not support: ",
-                  req.TargetOrig_,
-                  "</body></html>");
+         RevPrint(rbuf, "</body></html>");
+         RevEncodeHtml(rbuf, ToStrView(req.TargetOrig_));
+         RevPrint(rbuf, "<body>Handler not support: ");
       }
       else {
          const char* pcurr = req.TargetCurr_.begin() - 1;
-         RevPrint(rbuf,
-                  "<body>"
-                  "Handler not found: ",
-                  StrView{req.TargetOrig_.begin(), pcurr},
-                  "<b class='error'>", StrView{pcurr, req.TargetCurr_.end()}, "</b>",
-                  StrView{req.TargetCurr_.end(), req.TargetOrig_.end()},
-                  "</body></html>");
+         RevPrint(rbuf, "</body></html>");
+         RevEncodeHtml(rbuf, StrView{req.TargetCurr_.end(), req.TargetOrig_.end()});
+         RevPrint(rbuf, "</b>");
+         RevEncodeHtml(rbuf, StrView{pcurr, req.TargetCurr_.end()});
+         RevPrint(rbuf, "<b class='error'>");
+         RevEncodeHtml(rbuf, StrView{req.TargetOrig_.begin(), pcurr});
+         RevPrint(rbuf, "<body>Handler not found: ");                  
       }
    }
-   return this->SendErrorPrefix(dev, req, "404 Not found", std::move(rbuf));
+   return this->SendErrorPrefix(dev, req, fon9_kCSTR_HTTP_404_NotFound, std::move(rbuf));
 }
 
 } } // namespaces

@@ -106,6 +106,7 @@ set(fon9src
  web/HttpSession.cpp
  web/HttpParser.cpp
  web/HttpMessage.cpp
+ web/HtmlEncoder.cpp
  web/UrlCodec.cpp
  web/HttpDate.cpp
  web/HttpHandler.cpp
