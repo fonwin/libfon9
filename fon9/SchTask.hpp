@@ -113,8 +113,13 @@ public:
    virtual ~SchTask();
 
    /// 啟動 SchTask.
-   /// 剛建立(或停止後)的 SchTask 一律在 SchOut 狀態, 所以剛建立(或停止後)的第一次觸發將會是 sch in 事件.
-   /// 返回啟動前的狀態.
+   /// 剛建立(或停止後)的 SchTask 一律在 SchOut 狀態.
+   /// - 剛建立(或停止後)的第一次觸發必定是 sch in 事件.
+   /// - 返回 Start() 前的狀態:
+   ///   - 若為初次剛啟動:
+   ///     - 且 this->Start() 檢查結果未到達 SchIn, 則返回 SchSt::Unknown;
+   ///     - 若 this->Start() 檢查結果已到達 SchIn, 則返回 SchSt::Stop; 且在 1 sec 後觸發 SchIn 事件.
+   ///   - 若為已啟動過, 則返回 Start() 前的狀態.
    SchSt Start(const StrView& cfgstr);
 
    /// 強迫在 ti 之後, 再次觸發 OnSchTask_StateChanged() 事件.

@@ -43,8 +43,10 @@ enum class TwsApCode : char {
    Regular = '0',
    /// '7' 盤後定價交易子系統.
    FixedPrice = '7',
-   /// '2' 零股交易子系統.
-   OddLot = '2',
+   /// '2' 盤後零股交易子系統.
+   OddLot2 = '2',
+   /// 'C' 盤中零股交易子系統.
+   OddLotC = 'C',
 
    /// '3' 成交回報子系統
    Match3 = '3',

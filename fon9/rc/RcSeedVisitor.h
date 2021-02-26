@@ -410,7 +410,7 @@ f9sv_GetField_StrN(const struct f9sv_Seed* seed, const f9sv_Field* fld, char* ou
 #ifdef __cplusplus
 #define fon9_OFFSET_CAST(type, src, ofs)  reinterpret_cast<type*>(reinterpret_cast<uintptr_t>(src) + ofs)
 #else
-#define fon9_OFFSET_CAST(type, src, ofs)  (type*)((uintptr_t)(src) + ofs)
+#define fon9_OFFSET_CAST(type, src, ofs)  (type*)((intptr_t)(src) + ofs)
 #endif
 
 #define f9sv_GET_FIELD_1_FN(fnName, type) \

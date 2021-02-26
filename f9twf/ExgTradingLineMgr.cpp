@@ -8,5 +8,9 @@ void ExgTradingLineMgr::OnParentSeedClear() {
    this->OnBeforeDestroy();
    baseIo::OnParentSeedClear();
 }
+void ExgTradingLineMgr::OnTDayChanged(fon9::TimeStamp tday, std::string cause) {
+   (void)tday;
+   this->DisposeAndReopen(std::move(cause));
+}
 
 } // namespaces

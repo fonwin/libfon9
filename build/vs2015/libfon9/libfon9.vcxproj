@@ -162,6 +162,7 @@
     <ClInclude Include="..\..\..\fon9\fmkt\FmdRtsPackType.h" />
     <ClInclude Include="..\..\..\fon9\fmkt\FmdTypes.h" />
     <ClInclude Include="..\..\..\fon9\fmkt\FmdTypes.hpp" />
+    <ClInclude Include="..\..\..\fon9\fmkt\FmktTools.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\FmktTypes.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\MdRtsTypes.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\MdRtStream.hpp" />
@@ -394,6 +395,7 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\..\CMakeLists.txt" />
+    <Text Include="..\..\..\fon9\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\fon9\Appender.cpp" />
@@ -458,6 +460,7 @@
     <ClCompile Include="..\..\..\fon9\fix\IoFixSession.cpp" />
     <ClCompile Include="..\..\..\fon9\FlowControlCalc.cpp" />
     <ClCompile Include="..\..\..\fon9\FlowCounter.cpp" />
+    <ClCompile Include="..\..\..\fon9\fmkt\FmktTools.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\MdRtsTypes.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\MdRtStream.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\MdRtStreamInn.cpp" />

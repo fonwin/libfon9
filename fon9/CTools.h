@@ -27,7 +27,7 @@ static inline void fon9_SleepMS(useconds_t ms) {
 static inline uint64_t fon9_GetSystemUS() {
    struct timeval tv;
    gettimeofday(&tv, (struct timezone*)NULL);
-   return tv.tv_sec * (uint64_t)1000000 + tv.tv_usec;
+   return (uint64_t)tv.tv_sec * (uint64_t)1000000 + (uint64_t)tv.tv_usec;
 }
 #endif
 fon9_AFTER_INCLUDE_STD;

@@ -28,10 +28,11 @@ struct fon9_API FileImpLoader : public intrusive_ref_counter<FileImpLoader> {
 using FileImpLoaderSP = intrusive_ptr<FileImpLoader>;
 
 enum class FileImpMonitorFlag : char {
+   /// 不監控檔案異動, 僅在「進入排程時間時」匯入一次.
    None = 0,
-   /// 匯入檔有異動時, 全部重新載入.
+   /// 當匯入檔有異動時, 全部重新載入.
    Reload = 'R',
-   /// 匯入檔大小有異動時, 載入尾端新增的部分.
+   /// 當匯入檔大小有異動時, 載入尾端新增的部分.
    AddTail = 'A',
 };
 
@@ -44,8 +45,8 @@ fon9_WARN_DISABLE_PADDING;
 ///   - Result(Description) = Import result;
 /// - SeedCommand: "reload" 可手動載入.
 /// - 衍生者須完成:
-///   - `FileImpLoaderSP OnBeforeLoad(uint64_t fileSize, FileImpMonitorFlag& monFlag) override;`
-///   - `void OnAfterLoad(RevBuffer& rbuf, FileImpLoaderSP loader) override;`
+///   - `FileImpLoaderSP OnBeforeLoad(uint64_t addSize, FileImpMonitorFlag& monFlag) override;`
+///   - `void OnAfterLoad(RevBuffer& rbufDesp, FileImpLoaderSP loader, FileImpMonitorFlag monFlag) override;`
 class fon9_API FileImpSeed : public MaConfigSeed {
    fon9_NON_COPY_NON_MOVE(FileImpSeed);
    using base = MaConfigSeed;
@@ -56,6 +57,7 @@ class fon9_API FileImpSeed : public MaConfigSeed {
    TimeStamp      LastFileTime_;
    /// 檔案異動使用「增量載入」時, 記錄上次載入的位置, 及尚未處理的不完整訊息.
    File::PosType  LastPos_{};
+   File::PosType  LastFileSize_{};
    std::string    LastRemain_;
 
    /// ulk 處在 unlock 狀態, 如果需要更新 this->SetDescription() 之類, 要先 ulk.lock();
@@ -65,32 +67,24 @@ class fon9_API FileImpSeed : public MaConfigSeed {
                       ConfigLocker&&         ulk) override;
    void OnConfigValueChanged(MaConfigTree::Locker&& lk, StrView val) override;
 
-   /// 如果不支援 FileImpMonitorFlag::AddTail;
-   /// - 傳回 nullptr;
-   /// - 或:
-   ///   - 呼叫 this->SetAddTailToReload(); 
-   ///   - 返回「重新載入」的處理程序.
-   virtual FileImpLoaderSP OnBeforeLoad(uint64_t fileSize, FileImpMonitorFlag& monFlag) = 0;
-   virtual void OnAfterLoad(RevBuffer& rbuf, FileImpLoaderSP loader) = 0;
-
-protected:
-   virtual void Reload(ConfigLocker&& lk, std::string fname, FileImpMonitorFlag monFlag);
-
-   /// ForceLoadOnce == true 表示暫時不考慮 Sch 的設定, 啟動計時器, 並強制載入一次.
-   /// - 預設為 false; 衍生者可在建構時(或其他適當時機), 將此旗標設為 true: 強制重載.
-   /// - 在每次 Reload() 時, 會清除此旗標: ForceLoadOnce = false;
-   void SetForceLoadOnce(ConfigLocker&& lk, bool v);
+   virtual FileImpLoaderSP OnBeforeLoad(RevBuffer& rbufDesp, uint64_t addSize, FileImpMonitorFlag monFlag) = 0;
+   virtual void OnAfterLoad(RevBuffer& rbufDesp, FileImpLoaderSP loader, FileImpMonitorFlag monFlag) = 0;
 
    void ClearAddTailRemain() {
       this->LastPos_ = 0;
       this->LastRemain_.clear();
    }
-   void SetAddTailToReload(FileImpMonitorFlag& monFlag) {
-      if (monFlag == FileImpMonitorFlag::AddTail) {
-         this->ClearAddTailRemain();
-         monFlag = FileImpMonitorFlag::Reload;
-      }
-   }
+
+   bool IsInSch(TimeStamp tm);
+
+protected:
+   /// 返回值: 建議下次檢查時間, TimeInterval{} 表示不用再檢查.
+   virtual TimeInterval Reload(ConfigLocker&& lk, std::string fname, bool isClearAddTailRemain);
+
+   /// ForceLoadOnce == true 表示暫時不考慮 Sch 的設定, 啟動計時器, 並強制載入一次.
+   /// - 預設為 false; 衍生者可在建構時(或其他適當時機), 將此旗標設為 true: 強制重載.
+   /// - 在每次 Reload() 時, 會清除此旗標: ForceLoadOnce = false;
+   void SetForceLoadOnce(ConfigLocker&& lk, bool v);
 
    /// 通常在衍生者建構時提供預設值.
    void SetSchCfgStr(const StrView& cfgstr) {
@@ -100,7 +94,12 @@ protected:
 public:
    template <class... ArgsT>
    FileImpSeed(FileImpTree& owner, ArgsT&&... args)
+      : FileImpSeed(owner, std::forward<ArgsT>(args)...) {
+   }
+   template <class... ArgsT>
+   FileImpSeed(FileImpMonitorFlag defaultMonFlag, FileImpTree& owner, ArgsT&&... args)
       : base(owner, std::forward<ArgsT>(args)...) {
+      this->Value_.push_back(static_cast<char>(defaultMonFlag));
    }
 
    ~FileImpSeed();
@@ -119,7 +118,7 @@ public:
    TimeStamp LastFileTime() const {
       return this->LastFileTime_;
    }
-   /// 清除 AddTail 已載入的資料, 並使用排程機制重新載入.
+   /// 清除 AddTail 已載入的資料, 並使用排程機制(下次排程檢查時)重新載入.
    /// 預設不會改變 lk 的鎖定狀態.
    virtual void ClearReload(ConfigLocker&& lk);
 
@@ -128,29 +127,31 @@ public:
    /// - 返回時 this->GetDescription() 顯示結果.
    /// - 如果重複進入, 則後進者會立即返回, this->GetDescription() 顯示 "Loading";
    /// - 若 fname 與現在的(Title)不同, 則會更新 Title, 並儲存設定.
-   void LoadFrom(ConfigLocker&& ulk, StrView fname);
+   /// - 若 !forChkSch.IsNullOrZero() 則會用 forChkSch 檢查: 是否在排程時間內.
+   void LoadFrom(ConfigLocker&& ulk, StrView fname, TimeStamp forChkSch);
 
    static LayoutSP MakeLayout(TabFlag tabFlag = TabFlag::NoSapling | TabFlag::Writable);
 };
 using FileImpSeedSP = intrusive_ptr<FileImpSeed>;
 fon9_WARN_POP;
 
+class fon9_API FileImpMgr;
+
 class fon9_API FileImpTree : public MaConfigTree {
    fon9_NON_COPY_NON_MOVE(FileImpTree);
    using base = MaConfigTree;
 public:
-   FileImpTree(MaConfigMgrBase& mgr, LayoutSP layout = FileImpSeed::MakeLayout())
-      : base{mgr, std::move(layout)} {
-   }
+   FileImpTree(FileImpMgr& mgr, LayoutSP layout = FileImpSeed::MakeLayout());
 
    /// 全部載入完畢後才返回.
-   void LoadAll();
+   /// 若 !forChkSch.IsNullOrZero(); 則仍會判斷個別 FileImpSeed 是否在排程時間內.
+   void LoadAll(TimeStamp forChkSch);
 };
 using FileImpTreeSP = intrusive_ptr<FileImpTree>;
 
 /// 管理一組匯入資料的設定、狀態、載入.
-/// - SeedCommand: "reload" 全部載入.
-/// - 排程時間到, 會切換到 DefaultThreadPool 載入, 避免佔用 DefaultTimerThread 的執行權.
+/// - SeedCommand: "reload" 全部載入: 仍會判斷個別 FileImpSeed 是否在排程時間內.
+/// - 排程時間到, 會啟動 MonitorTimer, 在 MonitorTimer 裡面檢查各個 FileImpSeed 的載入排程.
 /// - 透過 MaConfigSeed::SetConfigValue() 設定排程參數.
 class fon9_API FileImpMgr : public MaConfigSeed_SchTask, public MaConfigMgrBase {
    fon9_NON_COPY_NON_MOVE(FileImpMgr);
@@ -192,9 +193,10 @@ public:
    }
 
    /// 全部載入完畢後才返回.
-   void LoadAll();
+   /// 若 !forChkSch.IsNullOrZero(); 則仍會判斷個別 FileImpSeed 是否在排程時間內.
+   void LoadAll(StrView cause, TimeStamp forChkSch);
 
-   /// 清除 AddTail 已載入的資料, 並使用排程機制重新載入.
+   /// 清除 AddTail 已載入的資料, 並使用排程機制(下次排程檢查時)重新載入.
    void ClearReloadAll();
 
    void CheckStartMonitor(FileImpTree::Locker&&);

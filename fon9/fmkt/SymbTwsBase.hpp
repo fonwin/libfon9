@@ -25,7 +25,7 @@ inline TwsBaseFlag GetMatchingMethod(TwsBaseFlag f) {
 /// \ingroup fmkt
 /// 台灣證券預設的商品基本資料.
 /// - ShUnit
-struct SymbTwsBase {
+struct fon9_API SymbTwsBase {
    /// 台灣證券「一張」的單位數(股數)
    uint32_t    ShUnit_{0};
    TwsBaseFlag TwsFlags_{};

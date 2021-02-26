@@ -97,6 +97,7 @@
     <ClCompile Include="..\..\..\f9tws\ExgTradingLineMgr.cpp" />
     <ClCompile Include="..\..\..\f9tws\ExgLineTmp.cpp" />
     <ClCompile Include="..\..\..\f9tws\ExgLineTmpFactory.cpp" />
+    <ClCompile Include="..\..\..\f9tws\TwsTools.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\f9tws\ExgMdFmt1.hpp" />
@@ -132,6 +133,8 @@
     <ClInclude Include="..\..\..\f9tws\ExgLineTmp.hpp" />
     <ClInclude Include="..\..\..\f9tws\ExgLineTmpFactory.hpp" />
     <ClInclude Include="..\..\..\f9tws\ExgTypes.hpp" />
+    <ClInclude Include="..\..\..\f9tws\TwsTools.hpp" />
+    <ClInclude Include="..\..\..\f9tws\TwsTypes.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\f9tws\README.md" />

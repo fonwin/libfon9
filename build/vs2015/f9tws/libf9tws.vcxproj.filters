@@ -110,6 +110,9 @@
     <ClCompile Include="..\..\..\f9tws\ExgMdFmt13Handler.cpp">
       <Filter>Source Files\_MktData</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\f9tws\TwsTools.cpp">
+      <Filter>Source Files\_base</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\f9tws\ExgTradingLineMgr.hpp">
@@ -210,6 +213,12 @@
     </ClInclude>
     <ClInclude Include="..\..\..\f9tws\ExgMdFmt13Handler.hpp">
       <Filter>Header Files\_MktData</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\f9tws\TwsTools.hpp">
+      <Filter>Header Files\_base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\f9tws\TwsTypes.h">
+      <Filter>Header Files\_base</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

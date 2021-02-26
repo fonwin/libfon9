@@ -1,4 +1,4 @@
-﻿/// \file fon9/ConfigLoader.cpp
+﻿/// \file fon9/ConfigLoader.hpp
 /// \author fonwinz@gmail.com
 #ifndef __fon9_ConfigLoader_hpp__
 #define __fon9_ConfigLoader_hpp__

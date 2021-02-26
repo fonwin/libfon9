@@ -44,6 +44,9 @@ public:
    /// - this->RegularLineMgr_.OnBeforeDestroy();
    /// - this->AfterHourLineMgr_.OnBeforeDestroy();
    void OnParentSeedClear() override;
+
+   /// 交易日變更時通知, 必要時在這裡會重建連線: this->DisposeAndReopen(std::move(cause));
+   void OnTDayChanged(fon9::TimeStamp tday, std::string cause);
 };
 fon9_WARN_POP;
 

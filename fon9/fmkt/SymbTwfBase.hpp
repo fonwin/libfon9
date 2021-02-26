@@ -11,7 +11,7 @@ using SymbSeqNo_t = uint16_t;
 
 /// \ingroup fmkt
 /// 台灣期交所預設的商品基本資料.
-struct SymbTwfBase {
+struct fon9_API SymbTwfBase {
    /// 下市日期.
    uint32_t EndYYYYMMDD_{0};
 

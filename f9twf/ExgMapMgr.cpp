@@ -6,6 +6,7 @@ namespace f9twf {
 using namespace fon9::seed;
 
 fon9_WARN_DISABLE_PADDING;
+// 期交所相關檔案(P06,P07/PA7,P08,PA8...), 預設: 當檔案有異動時, 自動重新載入.
 class ExgMapMgr_ImpSeed : public FileImpSeed {
    fon9_NON_COPY_NON_MOVE(ExgMapMgr_ImpSeed);
    using base = FileImpSeed;
@@ -15,16 +16,14 @@ public:
 
    template <class... ArgsT>
    ExgMapMgr_ImpSeed(ExgSystemType systemType, ArgsT&&... args)
-      : base(std::forward<ArgsT>(args)...)
+      : base(fon9::seed::FileImpMonitorFlag::Reload, std::forward<ArgsT>(args)...)
       , ExgSystemType_{systemType} {
-      // 期交所相關檔案(P06,P07/PA7,P08,PA8...), 預設: 當檔案有異動時, 自動重新載入.
-      this->Value_.push_back(static_cast<char>(FileImpMonitorFlag::Reload));
    }
    ExgMapMgr& GetExgMapMgr() const {
       return *static_cast<ExgMapMgr*>(&this->OwnerTree_.ConfigMgr_);
    }
-   void OnAfterLoad(fon9::RevBuffer& rbuf, FileImpLoaderSP loader) override {
-      (void)rbuf; (void)loader;
+   void OnAfterLoad(fon9::RevBuffer& rbufDesp, FileImpLoaderSP loader, FileImpMonitorFlag monFlag) override {
+      (void)rbufDesp; (void)loader; (void)monFlag;
    }
 };
 
@@ -33,8 +32,9 @@ struct ExgMapMgr_ImpSeedT : public ExgMapMgr_ImpSeed {
    fon9_NON_COPY_NON_MOVE(ExgMapMgr_ImpSeedT);
    using base = ExgMapMgr_ImpSeed;
    using base::base;
-   FileImpLoaderSP OnBeforeLoad(uint64_t fileSize, FileImpMonitorFlag& monFlag) override {
-      return new Loader(*this, fileSize, monFlag);
+   FileImpLoaderSP OnBeforeLoad(fon9::RevBuffer& rbufDesp, uint64_t addSize, FileImpMonitorFlag monFlag) override {
+      (void)rbufDesp;
+      return new Loader(*this, addSize, monFlag);
    }
 };
 fon9_WARN_POP;
@@ -44,7 +44,7 @@ struct ExgMapMgr::P06Loader : public FileImpLoader {
    ExgMapMgr_ImpSeed&   Owner_;
    ExgMapBrkFcmId       MyMap_;
    ExgMapBrkFcmId*      PMapBrkFcmId_;
-   P06Loader(ExgMapMgr_ImpSeed& owner, size_t fileSize, FileImpMonitorFlag monFlag)
+   P06Loader(ExgMapMgr_ImpSeed& owner, size_t addSize, FileImpMonitorFlag monFlag)
       : Owner_{owner} {
       if (monFlag == FileImpMonitorFlag::AddTail) {
          Maps::Locker maps{this->Owner_.GetExgMapMgr().Maps_};
@@ -52,7 +52,7 @@ struct ExgMapMgr::P06Loader : public FileImpLoader {
       }
       else {
          this->PMapBrkFcmId_ = &this->MyMap_;
-         this->MyMap_.reserve(fileSize / sizeof(TmpP06) + 1);
+         this->MyMap_.reserve(addSize / sizeof(TmpP06) + 1);
       }
    }
    ~P06Loader() {
@@ -79,7 +79,7 @@ struct ExgMapMgr::P07Loader : public FileImpLoader {
    ExgMapSessionDn         MyMap_;
    ExgMapSessionDn*        PMapSessionDn_;
    const ExgMapBrkFcmId*   PMapBrkFcmId_;
-   P07Loader(ExgMapMgr_ImpSeed& owner, size_t fileSize, FileImpMonitorFlag monFlag)
+   P07Loader(ExgMapMgr_ImpSeed& owner, size_t addSize, FileImpMonitorFlag monFlag)
       : Owner_{owner} {
       if (monFlag == FileImpMonitorFlag::AddTail) {
          Maps::Locker maps{this->Owner_.GetExgMapMgr().Maps_};
@@ -87,7 +87,7 @@ struct ExgMapMgr::P07Loader : public FileImpLoader {
       }
       else {
          this->PMapSessionDn_ = &this->MyMap_;
-         this->MyMap_.reserve(fileSize / sizeof("f906000.session1.tmp.fut.taifex,30002"));
+         this->MyMap_.reserve(addSize / sizeof("f906000.session1.tmp.fut.taifex,30002"));
       }
    }
    ~P07Loader() {
@@ -131,11 +131,11 @@ struct ExgMapMgr::ImpSeedP08 : public ExgMapMgr_ImpSeed {
       P08Recs*          P08Recs_;
       fon9::TimeStamp   UpdatedTime_;
 
-      Loader(ImpSeedP08& owner, size_t fileSize)
+      Loader(ImpSeedP08& owner, size_t addSize)
          : Owner_{owner}
          , IdSize_{owner.Name_[1] == 'A' ? sizeof(ExgProdIdL) : sizeof(ExgProdIdS)}
          , UpdatedTime_{owner.LastFileTime()} {
-         size_t       rsz = fileSize / (this->IdSize_ + sizeof(TmpP08Base)) + 1;
+         size_t       rsz = addSize / (this->IdSize_ + sizeof(TmpP08Base)) + 1;
          Maps::Locker maps{this->Owner_.GetExgMapMgr().Maps_};
          this->P08Recs_ = &maps->MapP08Recs_[ExgSystemTypeToIndex(this->Owner_.ExgSystemType_)];
          this->P08Recs_->reserve(rsz);
@@ -185,15 +185,18 @@ struct ExgMapMgr::ImpSeedP08 : public ExgMapMgr_ImpSeed {
          prec->UpdatedTime_ = this->UpdatedTime_;
       }
    };
-   FileImpLoaderSP OnBeforeLoad(uint64_t fileSize, FileImpMonitorFlag& monFlag) override {
-      if (monFlag == FileImpMonitorFlag::AddTail)
+   FileImpLoaderSP OnBeforeLoad(fon9::RevBuffer& rbufDesp, uint64_t addSize, FileImpMonitorFlag monFlag) override {
+      if (monFlag == FileImpMonitorFlag::AddTail) {
+         fon9::RevPrint(rbufDesp, "|err=P08 not support AddTail.");
          return nullptr;
-      return new Loader(*this, fileSize);
+      }
+      return new Loader(*this, addSize);
    }
 
-   void Reload(ConfigLocker&& lk, std::string fname, FileImpMonitorFlag monFlag) override {
+   fon9::TimeInterval Reload(ConfigLocker&& lk, std::string fname, bool isClearAddTailRemain) override {
       if (!this->GetExgMapMgr().TDay_.IsNullOrZero())
-         base::Reload(std::move(lk), std::move(fname), monFlag);
+         return base::Reload(std::move(lk), std::move(fname), isClearAddTailRemain);
+      return fon9::TimeInterval_Second(1);
    }
    void ClearReload(ConfigLocker&& lk) override {
       this->SetDescription(std::string{});

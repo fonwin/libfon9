@@ -53,6 +53,7 @@ fon9_API void fon9_CAPI_CALL fon9_BreakApp(const char* appBreakMsg) {
    kill(getpid(), SIGINT);
 }
 static void fon9_UnixSignalTermHandler(int sign) {
+   (void)sign;
    if (fon9_AppBreakMsg == NULL)
       fon9_AppBreakMsg = "<Signal TERM>";
    if (!freopen("/dev/null", "r", stdin)) {

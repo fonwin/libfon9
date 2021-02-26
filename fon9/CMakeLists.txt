@@ -197,6 +197,8 @@ set(fon9src
  fmkt/SymbQuoteReq.cpp
  fmkt/TradingRequest.cpp
  fmkt/TradingLine.cpp
+ fmkt/FmktTools.cpp
+
  fmkt/MdRtsTypes.cpp
  fmkt/MdRtStream.cpp
  fmkt/MdRtStreamInn.cpp
@@ -245,8 +247,8 @@ add_executable(Fon9Co framework/Fon9CoRun.cpp framework/Fon9Co_main.cpp)
 target_link_libraries(Fon9Co pthread fon9)
 
 #########################################################################
-############################### Uint Test ###############################
-if(CMAKE_FON9_BUILD_UINT_TEST)
+############################### Unit Test ###############################
+if(CMAKE_FON9_BUILD_UNIT_TEST)
    # unit tests: Tools / Utility
    add_executable(Subr_UT Subr_UT.cpp)
    target_link_libraries(Subr_UT pthread)
@@ -388,5 +390,5 @@ if(CMAKE_FON9_BUILD_UINT_TEST)
    add_executable(IoFixSession_UT fix/IoFixSession_UT.cpp)
    target_link_libraries(IoFixSession_UT fon9_s)
 endif()
-############################## Uint Test END ############################
+############################## Unit Test END ############################
 #########################################################################
