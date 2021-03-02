@@ -19,8 +19,8 @@ bool CheckPublishSymbSessionSt(ExgMdSymbs& symbs, ExgMdSymb& symb,
                                const f9fmkt_TradingSessionSt tradingSessionSt,
                                const f9fmkt_TradingSessionId tradingSessionId) {
    if (fon9_LIKELY(fon9::fmkt::GetMatchingMethod(symb.TwsFlags_) == matchingMethod
-                   || symb.TradingSessionSt_ == tradingSessionSt
-                   || symb.TradingSessionId_ == tradingSessionId))
+                   && symb.TradingSessionSt_ == tradingSessionSt
+                   && symb.TradingSessionId_ == tradingSessionId))
       return false;
    fon9::RevBufferList rts{64};
    const auto* tabBase = symbs.LayoutSP_->GetTab(0);
