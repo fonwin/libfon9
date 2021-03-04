@@ -536,5 +536,28 @@ inline IntT SPic9StrTo(const CharAry<arysz, CharT, kChFiller>& str) {
    return SPic9StrTo<arysz, IntT>(str.Chars_);
 }
 
+// -------------------------------------------------------------------------------------------------------------------
+/// 對於一般 enum : char 的型別而言,
+/// StrTo() 直接使用 str.Get1st() 應該才是比較正確的做法,
+/// 但有可能會需要自訂轉換規則,
+/// 例如: retval = static_cast<EnumChar>(fon9::toupper(str.Get1st));
+///       或類似 fon9/ConfigUtils.cpp: EnabledYN StrTo(...); 的做法;
+/// 所以在此不提供 enum : char 預設的 StrTo();
+/// 若有需求, 可用 fon9_DEFINE_EnumChar_ToStrRev_StrTo() 巨集來定義.
+#define fon9_DEFINE_EnumChar_StrTo(EnumChar)                                                                         \
+static inline EnumChar StrTo(fon9::StrView str, EnumChar defaultValue = EnumChar{}, const char** endptr = nullptr) { \
+   if (endptr)                                                                                                       \
+      *endptr = str.IsNullOrEmpty() ? str.begin() : (str.begin() + 1);                                               \
+   return str.IsNullOrEmpty() ? defaultValue : static_cast<EnumChar>(static_cast<char>(str.Get1st()));               \
+}                                                                                                                    \
+// -------------------------------------------------------------------------------------------------------------------
+#define fon9_DEFINE_EnumChar_StrTo_toupper(EnumChar)                                                                 \
+static inline EnumChar StrTo(fon9::StrView str, EnumChar defaultValue = EnumChar{}, const char** endptr = nullptr) { \
+   if (endptr)                                                                                                       \
+      *endptr = str.IsNullOrEmpty() ? str.begin() : (str.begin() + 1);                                               \
+   return str.IsNullOrEmpty() ? defaultValue : static_cast<EnumChar>(fon9::toupper(str.Get1st()));                   \
+}                                                                                                                    \
+// -------------------------------------------------------------------------------------------------------------------
+
 } // namespace fon9
 #endif//__fon9_StrTo_hpp__
