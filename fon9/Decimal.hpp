@@ -259,15 +259,15 @@ public:
 //--------------------------------------------------------------------------//
 
 /// \ingroup AlNum
-/// Decimal數字轉成字串.
+/// Decimal數字轉成字串, 如果 value.IsNull(), 則: 無輸出, 直接返回 pout.
 template <typename IntTypeT, DecScaleT ScaleN>
 inline char* ToStrRev(char* pout, const Decimal<IntTypeT, ScaleN>& value) {
-   return DecToStrRev(pout, value.GetOrigValue(), ScaleN);
+   return value.IsNull() ? pout : DecToStrRev(pout, value.GetOrigValue(), ScaleN);
 }
 
 template <typename IntTypeT, DecScaleT ScaleN>
 inline char* ToStrRev(char* pout, const Decimal<IntTypeT, ScaleN>& value, const FmtDef& fmt) {
-   return DecToStrRev(pout, abs_cast(value.GetOrigValue()), value.GetOrigValue() < 0, ScaleN, fmt);
+   return value.IsNull() ? pout : DecToStrRev(pout, abs_cast(value.GetOrigValue()), value.GetOrigValue() < 0, ScaleN, fmt);
 }
 
 template <typename IntTypeT, DecScaleT ScaleN, class AuxT = StrToDecIntAux<IntTypeT>, class ResultT = Decimal<IntTypeT, ScaleN>>

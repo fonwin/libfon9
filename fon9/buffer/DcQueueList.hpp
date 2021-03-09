@@ -78,14 +78,17 @@ public:
    }
    /// 取得第一個節點.
    const BufferNode* cfront() const {
-      return this->BlockList_.front();
-   }
-   /// 移出 BufferList.
-   BufferList MoveOut() {
-      if (BufferNode* front = this->BlockList_.front()) {
+      if (BufferNode* front = const_cast<BufferNode*>(this->BlockList_.cfront())) {
          assert(this->MemCurrent_ != nullptr);
          if (BufferNodeSize szUsed = static_cast<BufferNodeSize>(this->MemCurrent_ - front->GetDataBegin()))
             front->MoveDataBeginOffset(szUsed);
+         return front;
+      }
+      return nullptr;
+   }
+   /// 移出 BufferList.
+   BufferList MoveOut() {
+      if (this->cfront()) {
          this->ClearCurrBlock();
          return std::move(this->BlockList_);
       }

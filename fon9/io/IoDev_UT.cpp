@@ -223,8 +223,8 @@ e.g.
    case 's':   dev.reset(new TcpServer(iosv, ses, mgr)); break;
    }
 
-   dev->AsyncOpen(argv[2]);
    dev->Initialize();
+   dev->AsyncOpen(argv[2]);
    dev->WaitGetDeviceId();// 等候 dev->AsyncOpen() 執行完畢.
    std::this_thread::sleep_for(std::chrono::milliseconds{10}); // 等候其他 thread 啟動.
 
