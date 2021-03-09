@@ -94,11 +94,11 @@ protected:
 public:
    template <class... ArgsT>
    FileImpSeed(FileImpTree& owner, ArgsT&&... args)
-      : FileImpSeed(owner, std::forward<ArgsT>(args)...) {
+      : base(owner, std::forward<ArgsT>(args)...) {
    }
    template <class... ArgsT>
    FileImpSeed(FileImpMonitorFlag defaultMonFlag, FileImpTree& owner, ArgsT&&... args)
-      : base(owner, std::forward<ArgsT>(args)...) {
+      : FileImpSeed(owner, std::forward<ArgsT>(args)...) {
       this->Value_.push_back(static_cast<char>(defaultMonFlag));
    }
 
