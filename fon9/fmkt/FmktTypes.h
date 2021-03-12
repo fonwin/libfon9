@@ -269,7 +269,7 @@ fon9_ENUM(f9fmkt_TradingRequestSt, uint8_t) {
    f9fmkt_TradingRequestSt_ExchangeCanceled2 = 0xfb,
    f9fmkt_TradingRequestSt_ExchangeCanceled3 = 0xfc,
 
-   // 保留: f9fmkt_OrderSt_Canceled = 0xfd,
+   // 保留: f9fmkt_OrderSt_UserCanceled = 0xfd,
 
    /// 下單要求流程已結束, 但後續又有變動.
    /// 類似 FIX 的 ExecType=D(Restated).
@@ -373,20 +373,19 @@ fon9_ENUM(f9fmkt_OrderSt, uint8_t) {
    f9fmkt_OrderSt_AsCanceled = 0xf5,
    // 保留: = 0xf6,
 
-   f9fmkt_OrderSt_Canceling = f9fmkt_TradingRequestSt_ExchangeCanceling,
-   // = f9fmkt_TradingRequestSt_ExchangeCanceled  = 0xfa,
-   // = f9fmkt_TradingRequestSt_ExchangeCanceled2 = 0xfb,
-   // = f9fmkt_TradingRequestSt_ExchangeCanceled3 = 0xfc,
-      
-   /// 不須區分 UserCanceled / ExchangeCanceled;
-   /// 只需要一個完全刪單 Canceled:
-   /// - 若委託異動對應的是「新單要求 or 成交回報」則為交易所刪單.
-   /// - 否則(委託異動對應的是刪改要求)就是使用者刪單.
-   f9fmkt_OrderSt_Canceled = 0xfd,
+   /// 若在 OmsErrCodeAct 有設定 St=ExchangeCanceled; 或 ExchangeCanceling;
+   /// 則在 OmsRequestRunnerInCore::Update(); 會設定 UpdateOrderSt_ = St;
+   /// 此時就會使用到這些狀態.
+   f9fmkt_OrderSt_Canceling         = f9fmkt_TradingRequestSt_ExchangeCanceling,
+   f9fmkt_OrderSt_ExchangeCanceled  = f9fmkt_TradingRequestSt_ExchangeCanceled,
+   f9fmkt_OrderSt_ExchangeCanceled2 = f9fmkt_TradingRequestSt_ExchangeCanceled2,
+   f9fmkt_OrderSt_ExchangeCanceled3 = f9fmkt_TradingRequestSt_ExchangeCanceled3,
+   /// 一般用於使用者的刪單要求成功刪單完成.
+   f9fmkt_OrderSt_UserCanceled      = 0xfd,
 
    // 保留: = f9fmkt_TradingRequestSt_Restated = 0xfe,
 
-   f9fmkt_OrderSt_DoneForDay       = 0xff,
+   f9fmkt_OrderSt_DoneForDay = 0xff,
    // 這裡的狀態碼, 必須與 f9fmkt_TradingRequestSt 一起考慮.
    // 因為新單的 RequestSt 改變時, 通常會拿新單的 RequestSt 直接更新 OrderSt.
 };
@@ -397,7 +396,7 @@ inline int f9fmkt_OrderSt_IsAnyRejected(f9fmkt_OrderSt st) {
    return f9fmkt_TradingRequestSt_IsAnyRejected((f9fmkt_TradingRequestSt)st);
 }
 inline int f9fmkt_OrderSt_IsCanceled(f9fmkt_OrderSt st) {
-   return f9fmkt_OrderSt_AsCanceled <= st && st <= f9fmkt_OrderSt_Canceled;
+   return f9fmkt_OrderSt_AsCanceled <= st && st <= f9fmkt_OrderSt_UserCanceled;
 }
 
 #ifdef __cplusplus
