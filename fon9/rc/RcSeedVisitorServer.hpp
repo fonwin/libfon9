@@ -35,9 +35,9 @@ class fon9_API RcSeedVisitorServerNote : public RcFunctionNote {
    fon9_NON_COPY_NON_MOVE(RcSeedVisitorServerNote);
    struct SeedVisitor;
    using SeedVisitorSP = intrusive_ptr<SeedVisitor>;
-   SeedVisitorSP     Visitor_;
    FlowCounter       FcQry_;
    FlowControlCalc   FcRecover_;
+   SeedVisitorSP     Visitor_;
 
    struct UnsubRunnerSP;
    struct TicketRunnerSubscribe;

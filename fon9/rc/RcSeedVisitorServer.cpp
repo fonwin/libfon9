@@ -22,16 +22,21 @@ void RcSeedVisitorServerAgent::OnRecvFunctionCall(RcSession& ses, RcFunctionPara
       if (auto agAcl = authr.AuthMgr_->Agents_->Get<auth::PolicyAclAgent>(fon9_kCSTR_PolicyAclAgent_Name)) {
          seed::AclConfig  aclcfg;
          agAcl->GetPolicy(authr, aclcfg);
+
+         // aclcfg 在呼叫 this->OnCreateRcSeedVisitorServerNote(); 時已用掉,
+         // 不能在 this->OnCreateRcSeedVisitorServerNote(); 之後使用,
+         // 所以提前建立 rbuf;
+         RevBufferList  rbuf{256};
+         // 最後一行: "|FcQryCount/FcQryMS|MaxSubrCount"
+         // 回補流量管制 aclcfg.FcRecover_, 暫時不考慮告知 Client, 因為回補流量管制由 Server 處理.
+         RevPrint(rbuf, fon9_kCSTR_ROWSPL /* Path="" */ fon9_kCSTR_CELLSPL,
+                  aclcfg.FcQuery_.FcCount_, '/', aclcfg.FcQuery_.FcTimeMS_, fon9_kCSTR_CELLSPL,
+                  aclcfg.MaxSubrCount_);
+         agAcl->MakeGridView(rbuf, aclcfg);
+         RevPrint(rbuf, fon9_kCSTR_LEAD_TABLE fon9_kCSTR_PolicyAclAgent_Name fon9_kCSTR_ROWSPL);
+         PutBigEndian(rbuf.AllocPacket<SvFunc>(), SvFuncCode::Acl);
+
          if (auto note = this->OnCreateRcSeedVisitorServerNote(ses, authr, std::move(aclcfg))) {
-            RevBufferList  rbuf{256};
-            // 最後一行: "|FcQryCount/FcQryMS|MaxSubrCount"
-            // 回補流量管制, 暫時不考慮告知 Client, 因為回補流量管制由 Server 處理.
-            RevPrint(rbuf, fon9_kCSTR_ROWSPL /* Path="" */ fon9_kCSTR_CELLSPL,
-                     aclcfg.FcQuery_.FcCount_, '/', aclcfg.FcQuery_.FcTimeMS_, fon9_kCSTR_CELLSPL,
-                     aclcfg.MaxSubrCount_);
-            agAcl->MakeGridView(rbuf, aclcfg);
-            RevPrint(rbuf, fon9_kCSTR_LEAD_TABLE fon9_kCSTR_PolicyAclAgent_Name fon9_kCSTR_ROWSPL);
-            PutBigEndian(rbuf.AllocPacket<SvFunc>(), SvFuncCode::Acl);
             ses.Send(this->FunctionCode_, std::move(rbuf));
             ses.ResetNote(this->FunctionCode_, std::move(note));
          }
@@ -79,12 +84,12 @@ struct RcSeedVisitorServerNote::SeedVisitor : public seed::SeedVisitor {
 RcSeedVisitorServerNote::RcSeedVisitorServerNote(RcSession& ses,
                                                  const auth::AuthResult& authr,
                                                  seed::AclConfig&& aclcfg)
-   : Visitor_{new SeedVisitor(ses.GetDevice(), authr, std::move(aclcfg))}
-   , FcQry_(static_cast<unsigned>(aclcfg.FcQuery_.FcCount_ * 2), // *2: for 緩衝.
+   : FcQry_(static_cast<unsigned>(aclcfg.FcQuery_.FcCount_ * 2), // *2: for 緩衝.
             TimeInterval_Millisecond(aclcfg.FcQuery_.FcTimeMS_))
    , FcRecover_(aclcfg.FcRecover_.FcCount_ * 1000u,
                 TimeInterval_Millisecond(aclcfg.FcRecover_.FcTimeMS_),
-                aclcfg.FcRecover_.FcTimeMS_ /* 讓時間分割單位=1ms */) {
+                aclcfg.FcRecover_.FcTimeMS_ /* 讓時間分割單位=1ms */)
+   , Visitor_{new SeedVisitor(ses.GetDevice(), authr, std::move(aclcfg))} {
 }
 RcSeedVisitorServerNote::~RcSeedVisitorServerNote() {
 }

@@ -318,7 +318,9 @@ void RcSeedVisitorClientNote::OnRecvQrySubrAck(RcClientSession& ses, DcQueue& rx
    auto     maplk = this->TreeMap_.Lock();
    TreeRec& tree = maplk->fetch(ToStrView(reqKey.TreePath_));
    if (IsBitvIntegerNeg(rxbuf)) { // TreePath 查詢失敗, 清除此 tree 全部的要求.
-      assert(tree.Layout_.get() == nullptr && tree.PodMap_.empty());
+      // 有可能 tree 的某些 key 有權限, 所以底下的 assert() 不一定成立.
+      // 但為了簡化規則, 此時依然: 清除此 tree 全部的要求.
+      // assert(tree.Layout_.get() == nullptr && tree.PodMap_.empty());
       f9sv_Result res{};
       BitvTo(rxbuf, res);
       if (isNeedsLogResult)

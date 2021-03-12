@@ -54,6 +54,11 @@ public:
    using PolicyConfig = seed::AclConfig;
    bool GetPolicy(const AuthResult& authr, PolicyConfig& res);
    void MakeGridView(RevBuffer& rbuf, const PolicyConfig& aclcfg);
+
+   /// 在 GetPolicy() 返回前, 可以由其他人來調整 res;
+   using PoAclAdjuster = std::function<void(const AuthResult& authr, PolicyConfig& res)>;
+   using PoAclAdjusters = Subject<PoAclAdjuster>;
+   PoAclAdjusters PoAclAdjusters_;
 };
 
 } } // namespaces

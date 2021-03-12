@@ -126,6 +126,7 @@ bool PolicyAclAgent::GetPolicy(const AuthResult& authr, PolicyConfig& res) {
    seed::AccessList acl{std::move(res.Acl_)};
    for (auto& v : acl)
       res.Acl_.kfetch(CharVectorReplace(ToStrView(v.first), kUserId, userId)).second = v.second;
+   PoAclAdjusters_.Publish(authr, res);
    return true;
 }
 void PolicyAclAgent::MakeGridView(RevBuffer& rbuf, const PolicyConfig& aclcfg) {

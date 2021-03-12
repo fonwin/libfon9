@@ -80,14 +80,18 @@ void TreeRec::ParseLayout(StrView cfgstr) {
       NamedToC(ctab.Named_, *stab);
       ctab.FieldCount_ = static_cast<unsigned>(stab->Fields_.size());
       rtab.Fields_.resize(ctab.FieldCount_);
-      ctab.FieldArray_ = &*rtab.Fields_.begin();
-      unsigned fldidx = 0;
-      while (const auto* fld = stab->Fields_.Get(fldidx)) {
-         auto* cfld = &rtab.Fields_[fldidx];
-         FieldToC(*cfld, *fld);
-         cfld->Offset_ += static_cast<int32_t>(sizeof(SeedRec)); // = SeedRec::DyMemPos_;
-         cfld->InternalOwner_ = fld;
-         ++fldidx;
+      if (ctab.FieldCount_ == 0)
+         ctab.FieldArray_ = nullptr;
+      else {
+         ctab.FieldArray_ = &*rtab.Fields_.begin();
+         unsigned fldidx = 0;
+         while (const auto* fld = stab->Fields_.Get(fldidx)) {
+            auto* cfld = &rtab.Fields_[fldidx];
+            FieldToC(*cfld, *fld);
+            cfld->Offset_ += static_cast<int32_t>(sizeof(SeedRec)); // = SeedRec::DyMemPos_;
+            cfld->InternalOwner_ = fld;
+            ++fldidx;
+         }
       }
    }
    this->Layout_ = std::move(layout);
