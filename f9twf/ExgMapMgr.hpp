@@ -18,20 +18,25 @@ struct TmpP08Fields {
    fon9::CharAry<8>  begin_date_;
    /// 下市日期(yyyymmdd).
    fon9::CharAry<8>  end_date_;
-   /// 第一漲停價, 參考商品價格欄位小數位數.
-   fon9::CharAry<9>  raise_price1_;
-   /// 第一跌停價, 參考商品價格欄位小數位數.
-   fon9::CharAry<9>  fall_price1_;
+
+   // 109.08.03 移除漲跌停價, 改放在 P11/PB1 設定.
+   // /// 第一漲停價, 參考商品價格欄位小數位數.
+   // fon9::CharAry<9>  raise_price1_;
+   // /// 第一跌停價, 參考商品價格欄位小數位數.
+   // fon9::CharAry<9>  fall_price1_;
+
    /// 權利金(開盤參考價), 參考商品價格欄位小數位數.
    fon9::CharAry<9>  premium_;
-   /// 第二漲停價, 參考商品價格欄位小數位數.
-   fon9::CharAry<9>  raise_price2_;
-   /// 第二跌停價, 參考商品價格欄位小數位數.
-   fon9::CharAry<9>  fall_price2_;
-   /// 第三漲停價, 參考商品價格欄位小數位數.
-   fon9::CharAry<9>  raise_price3_;
-   /// 第三跌停價, 參考商品價格欄位小數位數.
-   fon9::CharAry<9>  fall_price3_;
+
+   // /// 第二漲停價, 參考商品價格欄位小數位數.
+   // fon9::CharAry<9>  raise_price2_;
+   // /// 第二跌停價, 參考商品價格欄位小數位數.
+   // fon9::CharAry<9>  fall_price2_;
+   // /// 第三漲停價, 參考商品價格欄位小數位數.
+   // fon9::CharAry<9>  raise_price3_;
+   // /// 第三跌停價, 參考商品價格欄位小數位數.
+   // fon9::CharAry<9>  fall_price3_;
+
    /// 契約種類 I:指數類 R:利率類 B:債券類 C:商品類 S:股票類 E:匯率類.
    fon9::CharAry<1>  prod_kind_;
    /// 是否可報價 Y:可報價 N:不可報價.
@@ -50,7 +55,7 @@ struct TmpP08Fields {
    fon9::CharAry<3>  market_order_ceiling_;
 };
 struct TmpP08Base : public TmpP08Fields {
-   fon9::CharAry<33> filler_;
+   fon9::CharAry<87> filler_;
 };
 struct TmpP08 : public ExgProdIdS, public TmpP08Base {
 };
@@ -68,7 +73,7 @@ struct P08Rec {
    ShortId           ShortId_;
    LongId            LongId_;
    TmpP08Fields      Fields_;
-   char              padding___[3];
+   char              padding___[1];
    /// 最後異動時的檔案時間.
    fon9::TimeStamp   UpdatedTime_;
 };
@@ -112,11 +117,13 @@ class f9twf_API ExgMapMgr : public fon9::seed::FileImpMgr {
    static fon9::seed::FileImpTreeSP MakeSapling(ExgMapMgr& rthis);
 
 protected:
+   using MapsLocker = Maps::Locker;
    /// 當 P08 載入後的通知.
    /// - 載入後立即通知, 可能僅有 LongId_ 或 ShortId_ 或兩者都有.
    /// - 此時 lk 在鎖定狀態.
    /// - 預設 do nothing.
    virtual void OnP08Updated(const P08Recs& p08recs, ExgSystemType sysType, Maps::ConstLocker&& lk);
+   virtual void OnP06Updated(const ExgMapBrkFcmId& mapBrkFcmId, Maps::Locker&& lk);
 
 public:
    template <class... ArgsT>

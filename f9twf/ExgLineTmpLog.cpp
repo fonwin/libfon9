@@ -4,6 +4,16 @@
 
 namespace f9twf {
 
+void ExgLineTmpLog::CheckL30_EndOutBoundNum(TmpMsgSeqNum_t endn) {
+   if (this->Curr_.LastRxMsgSeqNum_ > endn) {
+      fon9::RevBufferList rbuf{128};
+      fon9::RevPrint(rbuf, "|L30|EndOutBoundNum=", endn, "|my=", this->Curr_.LastRxMsgSeqNum_);
+      rbuf.AllocPacket<TmpLogPacketHeader>()
+         ->Initialize(TmpLogPacketType::Info, fon9::CalcDataSize(rbuf.cfront()), fon9::UtcNow());
+      this->Append(rbuf.MoveOut());
+      this->Curr_.LastRxMsgSeqNum_ = endn;
+   }
+}
 std::string ExgLineTmpLog::Open(const ExgLineTmpArgs& lineArgs,
                                 std::string           logFileName,
                                 fon9::TimeStamp       tday,

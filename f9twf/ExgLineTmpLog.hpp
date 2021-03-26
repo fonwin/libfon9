@@ -77,6 +77,10 @@ public:
    TmpMsgSeqNum_t LastRxMsgSeqNum() const {
       return this->Curr_.LastRxMsgSeqNum_;
    }
+   /// 如果期交所的 L30.EndOutBoundNum < this->LastRxMsgSeqNum();
+   /// 則表示期交所有異常? 或本地的 log 有異常?
+   /// 則強制使用期交所的序號.
+   void CheckL30_EndOutBoundNum(TmpMsgSeqNum_t endn);
    /// 若序號不連續, 則返回 false;
    /// 若序號連續, 設定新序號, 則返回 true;
    bool CheckSetRxSeqNum(TmpMsgSeqNum_t seqn) {

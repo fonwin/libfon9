@@ -12,6 +12,8 @@ std::string ExgLineTmpArgs::Verify() const {
       return "Unknown SessionId";
    if (this->Pass_ > 9999)
       return "Unknown Pass";
+   if (!this->FcInterval_.IsNullOrZero() && this->FcInterval_.GetOrigValue() < 0)
+      return "Bad FcInterval";
    return std::string{};
 }
 fon9::ConfigParser::Result ExgLineTmpArgs::OnTagValue(fon9::StrView tag, fon9::StrView& value) {
@@ -27,6 +29,8 @@ fon9::ConfigParser::Result ExgLineTmpArgs::OnTagValue(fon9::StrView tag, fon9::S
       this->IsUseSymNum_ = (value.Get1st() == 'Y');
       return fon9::ConfigParser::Result::Success;
    }
+   else if (tag == "FcInterval")
+      this->FcInterval_ = fon9::StrTo(&value, this->FcInterval_);
    else
       return fon9::ConfigParser::Result::EUnknownTag;
    return value.empty() ? fon9::ConfigParser::Result::Success : fon9::ConfigParser::Result::EInvalidValue;

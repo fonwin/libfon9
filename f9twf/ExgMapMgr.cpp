@@ -56,10 +56,11 @@ struct ExgMapMgr::P06Loader : public FileImpLoader {
       }
    }
    ~P06Loader() {
-      if (this->PMapBrkFcmId_ == &this->MyMap_) {
-         Maps::Locker maps{this->Owner_.GetExgMapMgr().Maps_};
+      ExgMapMgr&   exgMapMgr = this->Owner_.GetExgMapMgr();
+      Maps::Locker maps{exgMapMgr.Maps_};
+      if (this->PMapBrkFcmId_ == &this->MyMap_)
          maps->MapBrkFcmId_.swap(this->MyMap_);
-      }
+      exgMapMgr.OnP06Updated(maps->MapBrkFcmId_, std::move(maps));
    }
    size_t OnLoadBlock(char* pbuf, size_t bufsz, bool isEOF) override {
       if (this->PMapBrkFcmId_ == &this->MyMap_)
@@ -158,10 +159,13 @@ struct ExgMapMgr::ImpSeedP08 : public ExgMapMgr_ImpSeed {
          (void)bufsz; (void)isEOF;
          assert(bufsz == this->IdSize_ + sizeof(TmpP08Base));
          const TmpP08Fields*  p08flds = reinterpret_cast<const TmpP08Fields*>(pbuf + this->IdSize_);
-         unsigned             pseq = fon9::Pic9StrTo<unsigned>(p08flds->pseq_);
+         const unsigned       pseq = fon9::Pic9StrTo<unsigned>(p08flds->pseq_);
          const bool           isNew = (pseq >= this->P08Recs_->size());
-         if (isNew)
+         if (isNew) {
+            if (pseq >= fon9::DecDivisor<unsigned, p08flds->pseq_.max_size()>::Divisor)
+               return;
             this->P08Recs_->resize(pseq + 1);
+         }
          P08Rec*  prec = &(*this->P08Recs_)[pseq];
          size_t   idLenNew = static_cast<size_t>(fon9::StrFindTrimTail(pbuf, pbuf + this->IdSize_) - pbuf);
          if (!isNew) {
@@ -279,6 +283,9 @@ FileImpTreeSP ExgMapMgr::MakeSapling(ExgMapMgr& rthis) {
 //--------------------------------------------------------------------------//
 void ExgMapMgr::OnP08Updated(const P08Recs& p08recs, ExgSystemType sysType, Maps::ConstLocker&& lk) {
    (void)p08recs; (void)sysType; (void)lk;
+}
+void ExgMapMgr::OnP06Updated(const ExgMapBrkFcmId& mapBrkFcmId, Maps::Locker&& lk) {
+   (void)mapBrkFcmId; (void)lk;
 }
 bool ExgMapMgr::AppendDn(ExgSystemType sys, const ExgLineTmpArgs& lineArgs, std::string& devcfg) const {
    unsigned idx = ExgSystemTypeToIndex(sys);

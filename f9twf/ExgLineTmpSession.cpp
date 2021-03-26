@@ -176,7 +176,8 @@ void ExgLineTmpSession::OnRecvTmpLinkSys(const TmpHeaderSt& pktmp) {
       break;
    case TmpMessageType_L(30):
    {
-      TmpL40& L40 = buf.Alloc<TmpL40>();
+      TmpL40&  L40 = buf.Alloc<TmpL40>();
+      this->Log_.CheckL30_EndOutBoundNum(TmpGetValueU(static_cast<const TmpL30*>(&pktmp)->EndOutBoundNum_));
       L40.Initialize(*static_cast<const TmpL30*>(&pktmp), this->Log_.LastRxMsgSeqNum());
       // 計算 KEY-VALUE = (APPEND-NO * PASSWORD)取千與百二位數字。
       L40.KeyValue_ = static_cast<uint8_t>(((TmpGetValueU(L40.AppendNo_)

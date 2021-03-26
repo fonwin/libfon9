@@ -9,11 +9,12 @@ namespace f9twf {
 
 fon9_WARN_DISABLE_PADDING;
 struct ExgLineTmpArgs {
-   TmpApCode      ApCode_;
-   TmpSessionId   SessionId_;
-   TmpFcmId       SessionFcmId_;
-   uint16_t       Pass_;
-   bool           IsUseSymNum_;
+   TmpApCode            ApCode_;
+   TmpSessionId         SessionId_;
+   TmpFcmId             SessionFcmId_;
+   uint16_t             Pass_;
+   bool                 IsUseSymNum_;
+   fon9::TimeInterval   FcInterval_;
 
    void Clear() {
       memset(this, 0, sizeof(*this));

@@ -117,6 +117,11 @@ public:
       TmpPutValue(pktmp->MsgSeqNum_, this->Log_.FetchTxSeqNum());
       this->SendTmpNoSeqNum(now, std::move(buf));
    }
+   void SendTmpSeqNum0(fon9::TimeStamp now, ExgLineTmpRevBuffer&& buf) {
+      TmpHeader* pktmp = reinterpret_cast<TmpHeader*>(const_cast<char*>(buf.RBuf_.GetCurrent()));
+      pktmp->MsgSeqNum_.Clear();
+      this->SendTmpNoSeqNum(now, std::move(buf));
+   }
 };
 fon9_WARN_POP;
 

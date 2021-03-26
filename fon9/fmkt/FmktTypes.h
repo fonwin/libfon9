@@ -208,7 +208,7 @@ fon9_ENUM(f9fmkt_TradingRequestSt, uint8_t) {
    /// 則首次收到的交易所刪單回報, 使用此狀態.
    /// - 例: 報價單 Bid/Offer 分2筆回報, 首次的 Bid 回報使用此狀態;
    ///       Offer 使用 f9fmkt_TradingRequestSt_ExchangeCanceled.
-   f9fmkt_TradingRequestSt_PartExchangeCancel  = 0xa7,
+   f9fmkt_TradingRequestSt_PartExchangeCanceled = 0xa7,
 
    /// 下單要求流程已結束.
    f9fmkt_TradingRequestSt_Done = 0xda,
@@ -353,7 +353,7 @@ fon9_ENUM(f9fmkt_OrderSt, uint8_t) {
 
    f9fmkt_OrderSt_NewPartExchangeAccepted = f9fmkt_TradingRequestSt_PartExchangeAccepted,
    f9fmkt_OrderSt_NewPartExchangeRejected = f9fmkt_TradingRequestSt_PartExchangeRejected,
-   // = f9fmkt_TradingRequestSt_PartExchangeCancel  = 0xa7,
+   // = f9fmkt_TradingRequestSt_PartExchangeCanceled = 0xa7,
 
    f9fmkt_OrderSt_NewDone                 = f9fmkt_TradingRequestSt_Done,
  //f9fmkt_OrderSt_NewBroken               = f9fmkt_TradingRequestSt_Broken,

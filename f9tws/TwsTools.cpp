@@ -332,11 +332,16 @@ void TwsSymbKindLvPriStep::Setup(StkNo stkno) {
       //    二碼年度別＋二碼期別
       // 分割公債：一碼證券識別碼（P 代表分割本金公債、I 代表分割利息公債）＋二碼到期（民國）年＋一碼到期月＋二碼到期日。
       this->Kind_ = f9tws_SymbKind_GS;
-      this->LvPriSteps_ = LvPriSteps_GBonds;      return;   case 'G':
+      this->LvPriSteps_ = LvPriSteps_GBonds;
+      return;
+   case 'G':
       // 金融債券及分割金融債券： G 加五位文數字。
       //    金融債券五位文數字為一碼行業別＋二碼公司別＋二碼券別，
-      //    分割金融債券五位文數字為二碼公司別＋二碼券別＋一碼本金或利息別。      this->Kind_ = f9tws_SymbKind_BB;
-      this->LvPriSteps_ = LvPriSteps_GBonds;      return;   case 'F':
+      //    分割金融債券五位文數字為二碼公司別＋二碼券別＋一碼本金或利息別。
+      this->Kind_ = f9tws_SymbKind_BB;
+      this->LvPriSteps_ = LvPriSteps_GBonds;
+      return;
+   case 'F':
       // 新台幣計價之[外國債券]及第二十二項以外之外幣計價債券： F 後加五位文數字。
       // 五位文數字為: 三碼公司別＋二碼券別；
       // 分割債券五位文數字為: 二碼公司別＋二碼券別＋一碼本金或利息別。
