@@ -39,17 +39,24 @@ namespace f9rc
    {
       None = 0,
       All = 0xffff,
+
       /// 連線(斷線)相關事件.
       Link = 0x0001,
       AllRcSession = 0x0007,
-      AllOmsRc = 0x0f00,
 
       AllSeedVisitor   = 0x00f8,
+      SvAll            = AllSeedVisitor,
       SvConfig         = 0x0008,
       SvQuery          = 0x0010,
       SvQueryData      = 0x0020,
       SvSubscribe      = 0x0040,
       SvSubscribeData  = 0x0080,
+
+      AllOmsRc    = 0x0f00,
+      OmsAll      = AllOmsRc,
+      OmsConfig   = 0x0400,
+      OmsRequest  = 0x0100,
+      OmsReport   = 0x0200,
    }
 
    public class ClientSession : IDisposable

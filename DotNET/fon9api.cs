@@ -6,7 +6,7 @@ namespace fon9
 {
    using uint32_t = System.UInt32;
 
-   public class Api
+   public static class Api
    {
       /// 啟動 fon9 C API 函式庫.
       /// - 請使用時注意: 不考慮 multi thread 同時呼叫 fon9_Initialize()/fon9_Finalize();
@@ -74,7 +74,7 @@ namespace fon9
       }
    }
 
-   public class Tools
+   public static class Tools
    {
       public const int STD_INPUT_HANDLE = -10;
       [DllImport("kernel32.dll", SetLastError = true)]

@@ -284,7 +284,7 @@ namespace f9sv
       }
    }
 
-   public class Api
+   public static class Api
    {
       /// 啟動 f9sv(fon9 SeedVisitor Rc client) 函式庫.
       /// - 請使用時注意: 禁止 multi thread 同時呼叫 f9sv_Initialize()/fon9_Finalize();

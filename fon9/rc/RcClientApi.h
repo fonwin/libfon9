@@ -93,12 +93,14 @@ typedef struct {
 } f9rc_FunctionNoteParams;
 
 /// 設定需要記錄那些 log.
-/// - 0x0007 for RcSession.
-/// - 0x00f8 for SeedVisitor
-/// - 0x0f00 for OmsRc
+/// - 0x0007 for RcSession    : f9rc_ClientLogFlag_*
+/// - 0x00f8 for SeedVisitor  : f9sv_ClientLogFlag_*  定義在 fon9/rc/RcSeedVisitor.h
+/// - 0x0f00 for OmsRc        : f9oms_ClientLogFlag_* 定義在 f9omstw/f9omsrc/OmsRc.h
 fon9_ENUM(f9rc_ClientLogFlag, uint32_t) {
    f9rc_ClientLogFlag_None = 0,
-   f9rc_ClientLogFlag_All = 0xffff,
+   f9rc_ClientLogFlag_All  = 0xffff,
+   f9sv_ClientLogFlag_All  = 0x00f8,
+   f9oms_ClientLogFlag_All = 0x0f00,
 
    /// 連線(斷線)相關事件.
    f9rc_ClientLogFlag_Link = 0x0001,
