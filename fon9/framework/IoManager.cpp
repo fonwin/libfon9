@@ -191,12 +191,13 @@ IoManager::DeviceOpenResult IoManager::CheckOpenDevice(DeviceItem& item) {
    if(res == DeviceOpenResult::Disabled)
       return res;
    if (res == DeviceOpenResult::AlreadyExists) {
-      if (item.OpenArgs_ == item.Config_.DeviceArgs_)
+      if (item.CfgDevArgs_ == item.Config_.DeviceArgs_)
          return DeviceOpenResult::AlreadyExists;
-      // 不用 return; OpenArgs_ 有變動, 重新開啟.
+      // 不用 return: 因為 Config 的 DeviceArgs_ 有變動, 需要重新開啟.
    }
    if (item.Device_) {
       AssignStStr(item.DeviceSt_, UtcNow(), "Async opening");
+      item.CfgDevArgs_ = item.Config_.DeviceArgs_;
       item.Device_->AsyncOpen(item.Config_.DeviceArgs_.ToString());
    }
    return res;

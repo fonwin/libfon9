@@ -127,6 +127,7 @@ protected:
       CharVector     DeviceSt_;
       seed::TreeSP   Sapling_;
       CharVector     OpenArgs_;
+      CharVector     CfgDevArgs_;
 
       /// - 如果此值==0 表示:
       ///   - this->Device_ 是從 DeviceItem 設定建立而來.
