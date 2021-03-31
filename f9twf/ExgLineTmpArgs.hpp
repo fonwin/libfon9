@@ -17,7 +17,7 @@ struct ExgLineTmpArgs {
    fon9::TimeInterval   FcInterval_;
 
    void Clear() {
-      memset(this, 0, sizeof(*this));
+      fon9::ForceZeroNonTrivial(this);
    }
    fon9::ConfigParser::Result OnTagValue(fon9::StrView tag, fon9::StrView& value);
    std::string Verify() const;
