@@ -14,11 +14,11 @@ fon9_MSC_WARN_DISABLE(4201); // nonstandard extension used: nameless struct/unio
 fon9_PACK(1);
 struct TwExgMdTimeHHMMSS {
    union {
-      fon9::PackBcd<6>     HHMMSS_;
+      PackBcd<6>     HHMMSS_;
       struct {
-         fon9::PackBcd<2>  HH_;
-         fon9::PackBcd<2>  MM_;
-         fon9::PackBcd<2>  SS_;
+         PackBcd<2>  HH_;
+         PackBcd<2>  MM_;
+         PackBcd<2>  SS_;
       };
    };
 
@@ -37,6 +37,9 @@ struct TwExgMdTimeHHMMSSu6 : public TwExgMdTimeHHMMSS {
    DayTime ToDayTime() const {
       return TwExgMdTimeHHMMSS::ToDayTime()
          + TimeInterval_Microsecond(PackBcdTo<uint32_t>(this->U6_));
+   }
+   void FromHHMMSSu6(uint64_t hhmmss_u6) {
+      ToPackBcd<sizeof(*this) * 2, uint64_t>(this, hhmmss_u6);
    }
 };
 fon9_PACK_POP;

@@ -303,11 +303,11 @@ struct IoManagerTree::TreeOp : public seed::TreeOp {
          DeviceMap::Locker{static_cast<IoManagerTree*>(&this->Tree_)->DeviceMap_},
          *this, pSubConn, tab, subr);
    }
-   seed::OpResult Unsubscribe(SubConn subConn, seed::Tab& tab) override {
+   seed::OpResult Unsubscribe(SubConn* pSubConn, seed::Tab& tab) override {
       if (&tab != this->Tree_.LayoutSP_->GetTab(kTabStatusIndex))
          return seed::OpResult::not_supported_subscribe;
       return static_cast<IoManagerTree*>(&this->Tree_)->StatusSubj_.SafeUnsubscribe(
-         DeviceMap::Locker{static_cast<IoManagerTree*>(&this->Tree_)->DeviceMap_}, subConn);
+         DeviceMap::Locker{static_cast<IoManagerTree*>(&this->Tree_)->DeviceMap_}, pSubConn);
    }
 };
 fon9_WARN_POP;

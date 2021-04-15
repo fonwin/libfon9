@@ -229,12 +229,18 @@ public:
    /// 訂閱異動通知.
    virtual OpResult Subscribe(SubConn* pSubConn, Tab& tab, FnSeedSubr subr);
    /// 取消異動通知.
-   virtual OpResult Unsubscribe(SubConn subConn, Tab& tab);
+   virtual OpResult Unsubscribe(SubConn* pSubConn, Tab& tab);
+   OpResult UnsubscribeUnsafe(SubConn subConn, Tab& tab) {
+      return this->Unsubscribe(&subConn, tab);
+   }
 
    /// 訂閱 Stream 通知.
    virtual OpResult SubscribeStream(SubConn* pSubConn, Tab& tab, StrView args, FnSeedSubr subr);
    /// 取消 Stream 通知.
-   virtual OpResult UnsubscribeStream(SubConn subConn, Tab& tab);
+   virtual OpResult UnsubscribeStream(SubConn* pSubConn, Tab& tab);
+   OpResult UnsubscribeStreamUnsafe(SubConn subConn, Tab& tab) {
+      return this->UnsubscribeStream(&subConn, tab);
+   }
 };
 
 inline OpResult SubscribeUnsupported(SubConn* pSubConn) {

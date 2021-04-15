@@ -182,9 +182,9 @@ struct PluginsMgr::PluginsTree : public Tree {
          subr(SeedNotifySubscribeOK{*this, tab});
          return OpResult::no_error;
       }
-      OpResult Unsubscribe(SubConn subConn, Tab& tab) override {
+      OpResult Unsubscribe(SubConn* pSubConn, Tab& tab) override {
          (void)tab; assert(&tab == this->Tree_.LayoutSP_->GetTab(0));
-         static_cast<PluginsTree*>(&this->Tree_)->TreeSubj_.Unsubscribe(subConn);
+         static_cast<PluginsTree*>(&this->Tree_)->TreeSubj_.Unsubscribe(pSubConn);
          return OpResult::no_error;
       }
    };

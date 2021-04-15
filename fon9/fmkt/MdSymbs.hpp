@@ -67,7 +67,7 @@ public:
 
    /// 訂閱整棵樹, 建構時必須提供 MdSymbsCtrlFlag::AllowSubrTree 旗標.
    seed::OpResult SubscribeStream(SubConn* pSubConn, seed::Tab&, StrView args, seed::FnSeedSubr&&);
-   seed::OpResult UnsubscribeStream(SubConn, seed::Tab&);
+   seed::OpResult UnsubscribeStream(SubConn* pSubConn, seed::Tab&);
    /// - 此處會檢查 assert(this->SymbMap_.IsLocked()); 未鎖定的呼叫, 必定為設計上的問題.
    /// - 若 pkType == f9sv_RtsPackType_Count; 則必須從 e.NotifyKind_ 取得通知種類.
    void UnsafePublish(f9sv_RtsPackType pkType, seed::SeedNotifyArgs& e);
@@ -133,11 +133,11 @@ public:
          return static_cast<MdSymbT*>(this->Symb_.get())->MdRtStream_.SubscribeStream(
             this->LockedMap_, pSubConn, tab, *this, args, std::move(subr));
       }
-      seed::OpResult UnsubscribeStream(SubConn subConn, seed::Tab& tab) override {
+      seed::OpResult UnsubscribeStream(SubConn* pSubConn, seed::Tab& tab) override {
          if (static_cast<MdSymbsT*>(this->Sender_)->RtTab_ != &tab)
             return seed::OpResult::not_supported_subscribe_stream;
          return static_cast<MdSymbT*>(this->Symb_.get())->MdRtStream_.UnsubscribeStream(
-            this->LockedMap_, subConn);
+            this->LockedMap_, pSubConn);
       }
    };
    //-----------------------------//
@@ -151,8 +151,8 @@ public:
       seed::OpResult SubscribeStream(SubConn* pSubConn, seed::Tab& tab, StrView args, seed::FnSeedSubr subr) override {
          return static_cast<MdSymbsT*>(&this->Tree_)->SubscribeStream(pSubConn, tab, args, std::move(subr));
       }
-      seed::OpResult UnsubscribeStream(SubConn subConn, seed::Tab& tab) override {
-         return static_cast<MdSymbsT*>(&this->Tree_)->UnsubscribeStream(subConn, tab);
+      seed::OpResult UnsubscribeStream(SubConn* pSubConn, seed::Tab& tab) override {
+         return static_cast<MdSymbsT*>(&this->Tree_)->UnsubscribeStream(pSubConn, tab);
       }
    };
    //-----------------------------//

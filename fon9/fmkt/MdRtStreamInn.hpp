@@ -87,9 +87,9 @@ struct MdRtSubrSP : public intrusive_ptr<MdRtSubr> {
 using MdRtUnsafeSubj = seed::UnsafeSeedSubjT<MdRtSubrSP>;
 
 template <class UnsafeSubj>
-inline seed::OpResult MdRtUnsafeSubj_UnsubscribeStream(UnsafeSubj& subj, SubConn subConn) {
+inline seed::OpResult MdRtUnsafeSubj_UnsubscribeStream(UnsafeSubj& subj, SubConn* pSubConn) {
    typename UnsafeSubj::Subscriber psub;
-   if (!subj.MoveOutSubscriber(subConn, psub))
+   if (!subj.MoveOutSubscriber(pSubConn, psub))
       return seed::OpResult::no_subscribe;
    assert(psub.get() != nullptr && psub->IsUnsubscribed() == false);
    psub->SetUnsubscribed(); // 告知回補程序: 已經取消訂閱, 不用再處理回補了!

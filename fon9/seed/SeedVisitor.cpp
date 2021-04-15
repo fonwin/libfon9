@@ -367,7 +367,7 @@ void VisitorSubr::Unsubscribe() {
       this->SubConn_ = nullptr;
       tree->OnTreeOp([subConn, tab](const TreeOpResult&, TreeOp* op) {
          if (op)
-            op->Unsubscribe(subConn, *tab);
+            op->UnsubscribeUnsafe(subConn, *tab);
       });
    }
 }

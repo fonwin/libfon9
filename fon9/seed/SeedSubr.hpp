@@ -180,6 +180,11 @@ public:
       (void)lk; assert(lk.owns_lock());
       return this->Unsubscribe(subConn) ? OpResult::no_error : OpResult::no_subscribe;
    }
+   template<class Locker>
+   OpResult SafeUnsubscribe(const Locker& lk, SubConn* pSubConn) {
+      (void)lk; assert(lk.owns_lock());
+      return this->Unsubscribe(pSubConn) ? OpResult::no_error : OpResult::no_subscribe;
+   }
 };
 using UnsafeSeedSubj = UnsafeSeedSubjT<FnSeedSubr>;
 //--------------------------------------------------------------------------//

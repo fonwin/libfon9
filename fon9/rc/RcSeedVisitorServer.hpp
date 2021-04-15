@@ -54,8 +54,8 @@ class fon9_API RcSeedVisitorServerNote : public RcFunctionNote {
       seed::OpResult Unsubscribe(seed::SubscribableOp* opSubr, seed::Tab& tab) {
          if (opSubr) {
             if (this->IsStream_)
-               return opSubr->UnsubscribeStream(this->SubConn_, tab);
-            return opSubr->Unsubscribe(this->SubConn_, tab);
+               return opSubr->UnsubscribeStream(&this->SubConn_, tab);
+            return opSubr->Unsubscribe(&this->SubConn_, tab);
          }
          return seed::OpResult::no_subscribe;
       }

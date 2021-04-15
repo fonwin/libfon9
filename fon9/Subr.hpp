@@ -159,8 +159,12 @@ public:
    }
    /// 取消訂閱, 並將 Subscriber 取出.
    bool MoveOutSubscriber(SubConn connection, SubscriberT& subr) {
+      return this->MoveOutSubscriber(&connection, subr);
+   }
+   bool MoveOutSubscriber(SubConn* pConnection, SubscriberT& subr) {
       Locker subrs(this->Subrs_);
-      auto   ifind = subrs->find(connection);
+      auto   ifind = subrs->find(*pConnection);
+      *pConnection = SubConn{};
       if (ifind == subrs->end())
          return false;
       subr = std::move(ifind->second);

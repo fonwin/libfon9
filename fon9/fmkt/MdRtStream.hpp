@@ -22,8 +22,8 @@ class fon9_API MdRtStream : public SymbData {
    void Save(RevBufferList&& rts, f9sv_MdRtsKind pkKind);
 
    seed::OpResult SubscribeStream(SubConn* pSubConn, seed::Tab& tabRt, SymbPodOp& op, StrView args, seed::FnSeedSubr&& subr);
-   seed::OpResult UnsubscribeStream(SubConn subConn) {
-      return MdRtUnsafeSubj_UnsubscribeStream(this->UnsafeSubj_, subConn);
+   seed::OpResult UnsubscribeStream(SubConn* pSubConn) {
+      return MdRtUnsafeSubj_UnsubscribeStream(this->UnsafeSubj_, pSubConn);
    }
 
    /// 在設定好 symb 盤別 (TDay + TradingSessionId) 之後通知.
@@ -68,9 +68,9 @@ public:
    }
 
    template<class Locker>
-   seed::OpResult UnsubscribeStream(const Locker& lk, SubConn subConn) {
+   seed::OpResult UnsubscribeStream(const Locker& lk, SubConn* pSubConn) {
       (void)lk; assert(lk.owns_lock());
-      return this->UnsubscribeStream(subConn);
+      return this->UnsubscribeStream(pSubConn);
    }
 
    /// 打包並發行:

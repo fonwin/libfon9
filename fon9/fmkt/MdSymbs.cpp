@@ -183,11 +183,11 @@ seed::OpResult MdSymbsBase::SubscribeStream(SubConn* pSubConn, seed::Tab& tab, S
    }
    return seed::OpResult::no_error;
 }
-seed::OpResult MdSymbsBase::UnsubscribeStream(SubConn subConn, seed::Tab& tab) {
+seed::OpResult MdSymbsBase::UnsubscribeStream(SubConn* pSubConn, seed::Tab& tab) {
    if (&tab != this->RtTab_)
       return seed::OpResult::not_supported_subscribe_stream;
    auto   symbslk = this->SymbMap_.ConstLock();
-   return MdRtUnsafeSubj_UnsubscribeStream(this->UnsafeSubj_, subConn);
+   return MdRtUnsafeSubj_UnsubscribeStream(this->UnsafeSubj_, pSubConn);
 }
 //--------------------------------------------------------------------------//
 void MdSymbsBase::SaveTo(std::string fname) {

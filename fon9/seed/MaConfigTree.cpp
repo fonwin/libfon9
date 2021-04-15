@@ -58,10 +58,10 @@ void MaConfigTree::OnTreeOp(FnTreeOp fnCallback) {
          return static_cast<MaConfigTree*>(&this->Tree_)->TreeSubj_.SafeSubscribe(
             static_cast<MaConfigTree*>(&this->Tree_)->Lock(), *this, pSubConn, tab, subr);
       }
-      OpResult Unsubscribe(SubConn subConn, Tab& tab) override {
+      OpResult Unsubscribe(SubConn* pSubConn, Tab& tab) override {
          (void)tab;
          return static_cast<MaConfigTree*>(&this->Tree_)->TreeSubj_.SafeUnsubscribe(
-            static_cast<MaConfigTree*>(&this->Tree_)->Lock(), subConn);
+            static_cast<MaConfigTree*>(&this->Tree_)->Lock(), pSubConn);
       }
    };
    TreeCfgOp op{*this};
