@@ -1,4 +1,4 @@
-﻿/// \file fon9/framework/SeedSession.cpp
+﻿/// \file fon9/framework/SeedSession.hpp
 /// \author fonwinz@gmail.com
 #ifndef __fon9_framework_SeedSession_hpp__
 #define __fon9_framework_SeedSession_hpp__
@@ -63,9 +63,14 @@ public:
    State FeedLine(StrView cmdln);
 
 protected:
+   using Request = seed::TicketRunner;
+   using RequestSP = intrusive_ptr<Request>;
+
    virtual void OnAuthEventInLocking(State st, DcQueue&& msg) = 0;
    virtual void OnRequestDone(const seed::TicketRunner& req, DcQueue&& extmsg) = 0;
    virtual void OnRequestError(const seed::TicketRunner& req, DcQueue&& errmsg) = 0;
+   /// 預設: return seed::TicketRunnerError::UnknownCommand(*this);
+   virtual RequestSP OnUnknownCommand(seed::SeedFairy::Request& req);
 
    /// 預設傳回 25.
    virtual uint16_t GetDefaultGridViewRowCount();
@@ -80,8 +85,6 @@ protected:
    }
 
 private:
-   using Request = seed::TicketRunner;
-   using RequestSP = intrusive_ptr<Request>;
    struct StateImpl {
       State       State_{State::None};
       std::string PendingCommandLines_;

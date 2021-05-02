@@ -32,10 +32,10 @@ enum class TwsOType : char {
    /// 避險套利借券賣出.
    SBL6 = '6',
 
-   /// 現股當沖.
-   DayTradeGn = 'a',
    /// 信用當沖.
-   DayTradeCD = 'A',
+   DayTradeCD = 'c',
+   /// 現股當沖.
+   DayTradeGn = 'd',
 };
 
 enum class TwsApCode : char {

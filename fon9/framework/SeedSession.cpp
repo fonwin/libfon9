@@ -367,6 +367,10 @@ SeedSession::RequestSP SeedSession::MakeRequest(StrView cmdln) {
                            ));
       return this->LastGV_;
    }
+   return this->OnUnknownCommand(req);
+}
+SeedSession::RequestSP SeedSession::OnUnknownCommand(seed::SeedFairy::Request& req) {
+   (void)req;
    return seed::TicketRunnerError::UnknownCommand(*this);
 }
 void SeedSession::ExecuteCommand(St::Locker& st, StrView cmdln) {
