@@ -67,8 +67,13 @@ class fon9_API FileImpSeed : public MaConfigSeed {
                       ConfigLocker&&         ulk) override;
    void OnConfigValueChanged(MaConfigTree::Locker&& lk, StrView val) override;
 
+   /// 如果返回 nullptr, 表示現在無法匯入.
+   /// - 如果在返回前呼叫 this->SetReloadCheck(); 則會在排程時間內, 持續定期呼叫 this->OnBeforeLoad();
+   /// - 如果沒呼叫 this->SetReloadCheck(); 則只有在檔案有異動時, 才會再次呼叫 this->OnBeforeLoad();
    virtual FileImpLoaderSP OnBeforeLoad(RevBuffer& rbufDesp, uint64_t addSize, FileImpMonitorFlag monFlag) = 0;
    virtual void OnAfterLoad(RevBuffer& rbufDesp, FileImpLoaderSP loader, FileImpMonitorFlag monFlag) = 0;
+   /// 當匯入檔存在, 但檔案大小為 0 時, 呼叫此處. 預設 do nothing.
+   virtual void OnLoadEmptyFile();
 
    void ClearAddTailRemain() {
       this->LastPos_ = 0;
@@ -78,7 +83,12 @@ class fon9_API FileImpSeed : public MaConfigSeed {
    bool IsInSch(TimeStamp tm);
 
 protected:
-   /// 返回值: 建議下次檢查時間, TimeInterval{} 表示不用再檢查.
+   void SetReloadCheck() {
+      this->LastFileSize_ = 0;
+   }
+
+   /// 返回值: 建議下次檢查時間,
+   /// 返回 TimeInterval{} 表示可以不用再檢查, 但是否會再次呼叫 Reload() 則視設定及操作而定.
    virtual TimeInterval Reload(ConfigLocker&& lk, std::string fname, bool isClearAddTailRemain);
 
    /// ForceLoadOnce == true 表示暫時不考慮 Sch 的設定, 啟動計時器, 並強制載入一次.
@@ -195,6 +205,7 @@ public:
    /// 全部載入完畢後才返回.
    /// 若 !forChkSch.IsNullOrZero(); 則仍會判斷個別 FileImpSeed 是否在排程時間內.
    void LoadAll(StrView cause, TimeStamp forChkSch);
+   void StopAndWait_SchTask() override;
 
    /// 清除 AddTail 已載入的資料, 並使用排程機制(下次排程檢查時)重新載入.
    void ClearReloadAll();

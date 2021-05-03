@@ -215,6 +215,11 @@ public:
    ~MaConfigSeed_SchTask();
 
    TimeStamp GetNextSchInTime();
+
+   /// 關閉排程檢查.
+   /// 有時必須等後相關資料準備好之後, 才能開始排程檢查.
+   virtual void StopAndWait_SchTask();
+   virtual bool Restart_SchTask(TimeInterval ti);
 };
 
 } } // namespaces

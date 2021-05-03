@@ -159,6 +159,12 @@ void MaConfigMgr::MaConfigMgr_Release() {
 
 MaConfigSeed_SchTask::~MaConfigSeed_SchTask() {
 }
+void MaConfigSeed_SchTask::StopAndWait_SchTask() {
+   this->StopAndWait();
+}
+bool MaConfigSeed_SchTask::Restart_SchTask(TimeInterval ti) {
+   return this->Restart(ti);
+}
 void MaConfigSeed_SchTask::OnParentTreeClear(Tree& tree) {
    this->DisposeAndWait();
    base::OnParentTreeClear(tree);

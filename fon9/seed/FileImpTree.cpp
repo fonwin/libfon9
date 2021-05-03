@@ -23,6 +23,10 @@ void FileImpMgr::MaConfigMgr_AddRef() {
 void FileImpMgr::MaConfigMgr_Release() {
    intrusive_ptr_release(this);
 }
+void FileImpMgr::StopAndWait_SchTask() {
+   base::StopAndWait_SchTask();
+   this->MonitorTimer_.StopAndWait();
+}
 
 void FileImpMgr::OnSeedCommand(SeedOpResult&          res,
                                StrView                cmdln,
@@ -249,7 +253,7 @@ TimeInterval FileImpSeed::MonitorCheck(ConfigLocker&& lk, TimeStamp now) {
             }
             else {
                assert(monFlag == FileImpMonitorFlag::Reload);
-               if (this->LastFileTime_ == ftm)
+               if (this->LastFileTime_ == ftm && this->LastFileSize_ == fsz)
                   return kTimeInterval_FileNotChanged;
             }
          }
@@ -339,6 +343,7 @@ TimeInterval FileImpSeed::Reload(ConfigLocker&& lk, std::string fname, bool isCl
    const auto fsz = this->LastFileSize_ = res.GetResult();
    this->LastFileTime_ = fd.GetLastModifyTime();
    if (fsz == 0) {
+      this->OnLoadEmptyFile();
       RevPrint(rbuf, "|err=file is empty.");
       goto __ADD_DESC_HEAD_INFO_AND_RETURN;
    }
@@ -408,6 +413,8 @@ TimeInterval FileImpSeed::Reload(ConfigLocker&& lk, std::string fname, bool isCl
    // 讀取成功, 接下來延遲 1ms, 再次嘗試, 如果再次嘗試時檔案內容沒變, 才會延遲 kTimeInterval_FileNotChanged
    retval = TimeInterval_Millisecond(1);
    goto __ADD_DESC_HEAD_INFO_AND_RETURN;
+}
+void FileImpSeed::OnLoadEmptyFile() {
 }
 void FileImpSeed::ClearReload(ConfigLocker&& lk) {
    (void)lk;
