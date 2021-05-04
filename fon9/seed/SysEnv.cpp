@@ -72,7 +72,7 @@ void SysEnv::Initialize(int argc, char** argv) {
    this->Add(new SysEnvItem{fon9_kCSTR_SysEnvItem_ProcessId, rbuf.ToStrT<std::string>()});
 
    rbuf.Rewind();
-   RevPrint(rbuf, LocalNow(), FmtTS{"K-T."});
+   RevPrint(rbuf, UtcNow(), kFmtYsMsD_HH_MM_SS_us_L);
    this->Add(new SysEnvItem{"StartTime", rbuf.ToStrT<std::string>()});
 }
 

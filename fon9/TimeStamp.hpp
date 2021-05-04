@@ -405,6 +405,20 @@ struct fon9_API FmtTS : public FmtDef {
    /// - 如果尾端有 "." 或 ".0" 則自動小數位, 如果尾端沒有 ".precision" 則不顯示小數位.
    FmtTS(StrView fmtstr);
 };
+/// 使用格式{"f-T.+'L'"}: yyyymmdd-hh:mm:ss.uuuuuu (自動小數位), 輸出時調成 Local time;
+extern fon9_API const FmtTS   kFmtYMD_HH_MM_SS_us_L;
+/// 使用格式{"f-T."}: yyyymmdd-hh:mm:ss.uuuuuu (自動小數位)
+extern fon9_API const FmtTS   kFmtYMD_HH_MM_SS_us;
+/// 使用格式{"f-T.6"}: yyyymmdd-hh:mm:ss.uuuuuu (小數固定 6 位)
+extern fon9_API const FmtTS   kFmtYMD_HH_MM_SS_us6;
+/// 使用格式{"f-T+'L'"}: yyyymmdd-hh:mm:ss (沒有小數位), 輸出時調成 Local time;
+extern fon9_API const FmtTS   kFmtYMD_HH_MM_SS_L;
+/// 使用格式{"K-T+'L'"}: yyyy/mm/dd-hh:mm:ss (沒有小數位), 輸出時調成 Local time;
+extern fon9_API const FmtTS   kFmtYsMsD_HH_MM_SS_L;
+/// 使用格式{"K-T.+'L'"}: yyyy/mm/dd-hh:mm:ss.uuuuuu (自動小數位), 輸出時調成 Local time;
+extern fon9_API const FmtTS   kFmtYsMsD_HH_MM_SS_us_L;
+/// 使用格式{"f-t"}: yyyymmdd-hhmmss (沒有小數位).
+extern fon9_API const FmtTS   kFmtYMD_HMS;
 
 template <> struct FmtSelector<TimeStamp> {
    using FmtType = FmtTS;

@@ -174,6 +174,13 @@ fon9_API char* ToStrRev_FIXMS(char* pout, TimeStamp ts) {
 }
 
 //--------------------------------------------------------------------------//
+fon9_API const FmtTS   kFmtYMD_HH_MM_SS_us_L{"f-T.+'L'"};
+fon9_API const FmtTS   kFmtYMD_HH_MM_SS_us{"f-T."};
+fon9_API const FmtTS   kFmtYMD_HH_MM_SS_us6{"f-T.6"};
+fon9_API const FmtTS   kFmtYMD_HH_MM_SS_L{"f-T+'L'"};
+fon9_API const FmtTS   kFmtYsMsD_HH_MM_SS_L{"K-T+'L'"};
+fon9_API const FmtTS   kFmtYsMsD_HH_MM_SS_us_L{"K-T.+'L'"};
+fon9_API const FmtTS   kFmtYMD_HMS{"f-t"};
 
 FmtTS::FmtTS(StrView fmtstr) {
    TsFmtItem item;

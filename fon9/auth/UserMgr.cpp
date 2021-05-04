@@ -187,7 +187,7 @@ AuthR UserTree::AuthUpdate(fon9_Auth_R rcode, const AuthRequest& req, AuthResult
                ERR_RETURN(fon9_Auth_ENeedChgPass, "need-change-pass");
             RevBufferList rbuf{128};
             RevPrint(rbuf, "Last logon: ",
-                     user->EvLastAuth_.Time_, FmtTS{"K T+'L'"},
+                     user->EvLastAuth_.Time_, kFmtYsMsD_HH_MM_SS_L,
                      " from ", user->EvLastAuth_.From_);
             authz.ExtInfo_ = BufferTo<std::string>(rbuf.MoveOut());
             user->EvLastAuth_.Time_ = now;

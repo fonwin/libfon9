@@ -188,9 +188,9 @@ TimeStamp MaConfigSeed_SchTask::GetNextSchInTime() {
 void MaConfigSeed_SchTask::SetNextTimeInfo(TimeStamp tmNext, StrView exInfo) {
    RevBufferFixedSize<sizeof(NumOutBuf) * 2>  strNextTime;
    if (!tmNext.IsNullOrZero())
-      RevPrint(strNextTime, "|Next=", tmNext, FmtTS{"f-T+'L'"});
+      RevPrint(strNextTime, "|Next=", tmNext, kFmtYMD_HH_MM_SS_L);
 
-   std::string desc = RevPrintTo<std::string>(LocalNow(), FmtTS{"f-T.6"}, '|', exInfo, strNextTime);
+   std::string desc = RevPrintTo<std::string>(LocalNow(), kFmtYMD_HH_MM_SS_us6, '|', exInfo, strNextTime);
    auto locker{this->OwnerTree_.Lock()};
    fon9_LOG_INFO("FileImpMgr|Info=", exInfo,
                  "|Name=", this->OwnerTree_.ConfigMgr_.Name(), '/', this->Name_,

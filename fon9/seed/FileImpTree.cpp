@@ -284,7 +284,7 @@ void FileImpSeed::LoadFrom(ConfigLocker&& ulk, StrView fname, TimeStamp forChkSc
    }
    else {
       fon9::GetLocalTimeZoneOffset();
-      this->SetDescription(RevPrintTo<std::string>(forChkSch + GetLocalTimeZoneOffset(), FmtTS{"f-T.6"}, "|OutSch"));
+      this->SetDescription(RevPrintTo<std::string>(forChkSch + GetLocalTimeZoneOffset(), kFmtYMD_HH_MM_SS_us6, "|OutSch"));
    }
    if (isNeedsWriteConfig)
       this->OwnerTree_.WriteConfig(ulk, this);
@@ -329,7 +329,7 @@ TimeInterval FileImpSeed::Reload(ConfigLocker&& lk, std::string fname, bool isCl
    __ERROR_FNC:;
       RevPrint(rbuf, '|', errfnc, ' ', res);
    __ADD_DESC_HEAD_INFO_AND_RETURN:;
-      RevPrint(rbuf, LocalNow(), FmtTS{"f-T.6"}, "|fname=", fname);
+      RevPrint(rbuf, LocalNow(), kFmtYMD_HH_MM_SS_us6, "|fname=", fname);
       lk.lock();
       this->SetDescription(BufferTo<std::string>(rbuf.MoveOut()));
       this->OwnerTree_.UpdateConfigSeed(lk, *this, nullptr, nullptr);
@@ -356,7 +356,7 @@ TimeInterval FileImpSeed::Reload(ConfigLocker&& lk, std::string fname, bool isCl
    File::PosType  kRdSize = (fsz - this->LastPos_) + kRemainSize;
    if ((exitAutoRun.Loader_ = this->OnBeforeLoad(rbuf, kRdSize, monFlag)).get() == nullptr) {
       RevPrint(rbuf,
-               "|ftime=", this->LastFileTime_, FmtTS{"f-T.+'L'"},
+               "|ftime=", this->LastFileTime_, kFmtYMD_HH_MM_SS_us_L,
                "|fsize=", fsz,
                "|mon=", monFlag);
       goto __ADD_DESC_HEAD_INFO_AND_RETURN;
@@ -407,7 +407,7 @@ TimeInterval FileImpSeed::Reload(ConfigLocker&& lk, std::string fname, bool isCl
    if (monFlag == FileImpMonitorFlag::AddTail)
       RevPrint(rbuf, "(add)");
    RevPrint(rbuf,
-            "|ftime=", this->LastFileTime_, FmtTS{"f-T.+'L'"},
+            "|ftime=", this->LastFileTime_, kFmtYMD_HH_MM_SS_us_L,
             "|fsize=", fsz,
             "|LnCount=", exitAutoRun.Loader_->LnCount_);
    // 讀取成功, 接下來延遲 1ms, 再次嘗試, 如果再次嘗試時檔案內容沒變, 才會延遲 kTimeInterval_FileNotChanged
