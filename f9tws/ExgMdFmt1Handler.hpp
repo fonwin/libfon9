@@ -21,6 +21,22 @@ public:
    using ExgMdHandlerAnySeq::ExgMdHandlerAnySeq;
    virtual ~ExgMdFmt1TpexHandler();
 };
+
+class f9tws_API ExgMdFmt1V9TwseHandler : public ExgMdHandlerAnySeq {
+   fon9_NON_COPY_NON_MOVE(ExgMdFmt1V9TwseHandler);
+   void OnPkReceived(const ExgMdHeader& pk, unsigned pksz) override;
+public:
+   using ExgMdHandlerAnySeq::ExgMdHandlerAnySeq;
+   virtual ~ExgMdFmt1V9TwseHandler();
+};
+
+class f9tws_API ExgMdFmt1V9TpexHandler : public ExgMdHandlerAnySeq {
+   fon9_NON_COPY_NON_MOVE(ExgMdFmt1V9TpexHandler);
+   void OnPkReceived(const ExgMdHeader& pk, unsigned pksz) override;
+public:
+   using ExgMdHandlerAnySeq::ExgMdHandlerAnySeq;
+   virtual ~ExgMdFmt1V9TpexHandler();
+};
 //--------------------------------------------------------------------------//
 struct ExgMdBaseInfoParser {
    fon9_NON_COPY_NON_MOVE(ExgMdBaseInfoParser);
@@ -45,8 +61,22 @@ struct ExgMdBaseInfoParser {
    void ParseShUnit(const MdFmt& pk) {
       this->Symb_->ShUnit_ = fon9::PackBcdTo<uint32_t>(pk.TradingUnit_);
    }
+   template <class MdFmt>
+   void ParseCTGCD(const MdFmt& pk) {
+      (void)pk;
+   }
 
    void Publish(ExgMdSystem& mdsys, const ExgMdHeader& pk, unsigned pksz) const;
+};
+
+struct ExgMdBaseInfoParserV9 : public ExgMdBaseInfoParser {
+   fon9_NON_COPY_NON_MOVE(ExgMdBaseInfoParserV9);
+
+   using ExgMdBaseInfoParser::ExgMdBaseInfoParser;
+   template <class MdFmt>
+   void ParseCTGCD(const MdFmt& pk) {
+      this->Symb_->StkCTGCD_ = pk.StkCTGCD_ == '0' ? fon9::fmkt::StkCTGCD::Normal : static_cast<fon9::fmkt::StkCTGCD>(pk.StkCTGCD_);
+   }
 };
 
 /// stockEntries = Fmt1.StockEntries_;
@@ -66,9 +96,10 @@ static inline void EdgMdParseBaseInfo(f9fmkt_TradingMarket mkt, ExgMdHandler& ha
       return;
    Parser parser{symbs, mdfmt.StkNo_};
    parser.Symb_->TradingMarket_ = mkt;
-   
+
    parser.ParseRef(mdfmt);
    parser.ParseShUnit(mdfmt);
+   parser.ParseCTGCD(mdfmt);
 
    parser.Publish(handler.MdSys_, mdfmt, pksz);
 }

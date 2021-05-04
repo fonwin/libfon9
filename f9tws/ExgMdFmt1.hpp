@@ -93,8 +93,21 @@ struct ExgMdFmt1_C3Foreign {
    /// 外國股票識別碼: Y=外國股票。
    char IsForeignStock_;
 };
+struct ExgMdFmt1_C3CTGCD {
+   /// 板別註記:
+   /// 以 ASCII 1 BYTE 表示，預設值為"0"。紀錄值為"3"時表示該股為創新板股票
+   char StkCTGCD_;
+};
 struct ExgMdFmt1v8_Twse
    : public ExgMdFmt1_C3
+   , public ExgMdFmt1_C3Ref
+   , public ExgMdFmt1_C3Foreign
+   , public ExgMdFmt1_C3Tail
+{
+};
+struct ExgMdFmt1v9_Twse
+   : public ExgMdFmt1_C3
+   , public ExgMdFmt1_C3CTGCD
    , public ExgMdFmt1_C3Ref
    , public ExgMdFmt1_C3Foreign
    , public ExgMdFmt1_C3Tail
@@ -108,6 +121,14 @@ struct ExgMdFmt1_TPEX_317 {
 struct ExgMdFmt1v8_Tpex
    : public ExgMdFmt1_C3
    , public ExgMdFmt1_TPEX_317
+   , public ExgMdFmt1_C3Ref
+   , public ExgMdFmt1_C3Tail
+{
+};
+struct ExgMdFmt1v9_Tpex
+   : public ExgMdFmt1_C3
+   , public ExgMdFmt1_TPEX_317
+   , public ExgMdFmt1_C3CTGCD
    , public ExgMdFmt1_C3Ref
    , public ExgMdFmt1_C3Tail
 {

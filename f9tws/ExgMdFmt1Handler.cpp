@@ -66,5 +66,21 @@ void ExgMdFmt1TpexHandler::OnPkReceived(const ExgMdHeader& pkhdr, unsigned pksz)
                                        *this, *this->MdSys_.Symbs_,
                                        *static_cast<const ExgMdFmt1v8_Tpex*>(&pkhdr), pksz);
 }
+//--------------------------------------------------------------------------//
+ExgMdFmt1V9TwseHandler::~ExgMdFmt1V9TwseHandler() {
+}
+void ExgMdFmt1V9TwseHandler::OnPkReceived(const ExgMdHeader& pkhdr, unsigned pksz) {
+   EdgMdParseBaseInfo<ExgMdBaseInfoParserV9>(f9fmkt_TradingMarket_TwSEC,
+                                             *this, *this->MdSys_.Symbs_,
+                                             *static_cast<const ExgMdFmt1v9_Twse*>(&pkhdr), pksz);
+}
+//--------------------------------------------------------------------------//
+ExgMdFmt1V9TpexHandler::~ExgMdFmt1V9TpexHandler() {
+}
+void ExgMdFmt1V9TpexHandler::OnPkReceived(const ExgMdHeader& pkhdr, unsigned pksz) {
+   EdgMdParseBaseInfo<ExgMdBaseInfoParserV9>(f9fmkt_TradingMarket_TwOTC,
+                                             *this, *this->MdSys_.Symbs_,
+                                             *static_cast<const ExgMdFmt1v9_Tpex*>(&pkhdr), pksz);
+}
 
 } // namespaces

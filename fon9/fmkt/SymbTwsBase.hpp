@@ -21,6 +21,14 @@ fon9_ENABLE_ENUM_BITWISE_OP(TwsBaseFlag);
 inline TwsBaseFlag GetMatchingMethod(TwsBaseFlag f) {
    return f & TwsBaseFlag::MatchingMethodMask;
 }
+enum class StkCTGCD : char {
+   /// 一般板.
+   Normal = '\0',
+   /// 上市創新板.
+   Innovation = '3',
+   /// 上櫃戰略板.
+   Pioneer = '3'
+};
 
 /// \ingroup fmkt
 /// 台灣證券預設的商品基本資料.
@@ -29,7 +37,8 @@ struct fon9_API SymbTwsBase {
    /// 台灣證券「一張」的單位數(股數)
    uint32_t    ShUnit_{0};
    TwsBaseFlag TwsFlags_{};
-   char        Padding___[3];
+   StkCTGCD    StkCTGCD_{};
+   char        Padding___[2];
 
    void SymbTwsBaseDailyClear() {
    }

@@ -80,7 +80,7 @@ fon9_PACK_POP;
 
 enum {
    kExgMdMaxFmtNo = 30,
-   kExgMdMaxVer = 8,
+   kExgMdMaxVer = 9,
 };
 
 /// 透過 [Mkt(1=TWSE,2=OTC)][FmtNo=1..21][Ver=1..8] 來尋找 handler.
