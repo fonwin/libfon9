@@ -93,8 +93,11 @@ struct I140_BreakSt_PreparePk : public I140_CheckPublish {
    const f9fmkt_TradingSessionSt TSessionSt_;
    char                          Padding___[7];
    const fon9::DayTime           InfoTime_;
-   I140_BreakSt_PreparePk(const fon9::seed::Layout& layout, f9fmkt_TradingSessionSt st, fon9::DayTime infoTime)
-      : TSessionSt_{st}, InfoTime_{infoTime} {
+   ExgMcChannelMgr* const        ChannelMgr_;
+   I140_BreakSt_PreparePk(const fon9::seed::Layout& layout, f9fmkt_TradingSessionSt st, ExgMcMessage& e)
+      : TSessionSt_{st}
+      , InfoTime_{e.Pk_.InformationTime_.ToDayTime()}
+      , ChannelMgr_{e.Channel_.GetChannelMgr()} {
       const auto* fldSessionSt = layout.GetTab(fon9_kCSTR_TabName_Base)->Fields_.Get("SessionSt");
       fon9::ToBitv(this->Rts_, st);
       f9fmkt::MdRtsPackFieldValueNid(this->Rts_, *fldSessionSt);
@@ -111,6 +114,8 @@ struct I140_BreakSt_PreparePk : public I140_CheckPublish {
       this->PkBreakSt_.Reset(this->Rts_.GetCurrent(), this->PkSessionSt_.begin());
    }
    void CheckPublish(ExgMdSymb& symb) override {
+      if (this->ChannelMgr_ && !this->ChannelMgr_->CheckSymbTradingSessionId(symb))
+         return;
       fon9::RevBufferList  rts{64};
       f9sv_MdRtsKind       pkKind = f9sv_MdRtsKind_TradingSession;
       if (symb.TradingSessionSt_ == this->TSessionSt_) {
@@ -140,7 +145,7 @@ static void I140_200_TradingSessionSt(ExgMcMessage& e) {
    const auto& i200 = I140CastTo<ExgMdSysInfo200>(*static_cast<const ExgMcI140*>(&e.Pk_));
    auto&       symbs = *e.Channel_.GetChannelMgr()->Symbs_;
 
-   I140_BreakSt_PreparePk  ppk{*symbs.LayoutSP_, f9fmkt_TradingSessionSt_Halted, e.Pk_.InformationTime_.ToDayTime()};
+   I140_BreakSt_PreparePk  ppk{*symbs.LayoutSP_, f9fmkt_TradingSessionSt_Halted, e};
    ppk.BreakSt_.Data_.Reason_ = i200.Reason_;
    ppk.BreakSt_.Data_.BreakHHMMSS_ = fon9::PackBcdTo<uint32_t>(i200.BreakHHMMSS_);
    ppk.SetupBreakSt(*symbs.LayoutSP_);
@@ -150,7 +155,7 @@ static void I140_201_TradingSessionSt(ExgMcMessage& e) {
    const auto& i201 = I140CastTo<ExgMdSysInfo201>(*static_cast<const ExgMcI140*>(&e.Pk_));
    auto&       symbs = *e.Channel_.GetChannelMgr()->Symbs_;
 
-   I140_BreakSt_PreparePk  ppk{*symbs.LayoutSP_, f9fmkt_TradingSessionSt_Open, e.Pk_.InformationTime_.ToDayTime()};
+   I140_BreakSt_PreparePk  ppk{*symbs.LayoutSP_, f9fmkt_TradingSessionSt_Open, e};
    ppk.BreakSt_.Data_.Reason_ = i201.Reason_;
    ppk.BreakSt_.Data_.ReopenHHMMSS_ = fon9::PackBcdTo<uint32_t>(i201.ReopenHHMMSS_);
    ppk.BreakSt_.Data_.RestartHHMMSS_ = fon9::PackBcdTo<uint32_t>(i201.StartHHMMSS_);
@@ -162,7 +167,7 @@ static void I140_30x_TradingSessionSt(ExgMcMessage& e, f9fmkt_TradingSessionSt s
    const auto& i30x = I140CastTo<ExgMdSysInfo30x>(*static_cast<const ExgMcI140*>(&e.Pk_));
    auto&       symbs = *e.Channel_.GetChannelMgr()->Symbs_;
 
-   I140_BreakSt_PreparePk  ppk{*symbs.LayoutSP_, st, e.Pk_.InformationTime_.ToDayTime()};
+   I140_BreakSt_PreparePk  ppk{*symbs.LayoutSP_, st, e};
    ppk.BreakSt_.Data_.Reason_ = i30x.Reason_;
    ppk.SetupBreakSt(*symbs.LayoutSP_);
 
