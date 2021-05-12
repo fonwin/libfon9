@@ -26,13 +26,14 @@ inline bool IsContractBaseChanged(const ExgMdContract& con, const ExgMdSymb& sym
       || con.PriceOrigDiv_ != symb.PriceOrigDiv_
       || con.StrikePriceDiv_ != symb.StrikePriceDiv_;
 }
-void ExgMdContract::OnSymbBaseChanged(const ExgMdSymb& src) {
-   this->SetBaseValues(src.TradingMarket_, src.FlowGroup_, src.PriceOrigDiv_, src.StrikePriceDiv_);
+void ExgMdContract::OnSymbBaseChanged(const ExgMdSymb& src, ExgMdSymbsMgr* symbsMgr) {
+   this->SetBaseValues(src.TradingMarket_, src.FlowGroup_, src.PriceOrigDiv_, src.StrikePriceDiv_, symbsMgr);
 }
 void ExgMdContract::SetBaseValues(f9fmkt_TradingMarket mkt,
                                   SymbFlowGroup_t flowGroup,
                                   uint32_t priceOrigDiv,
-                                  uint32_t strikePriceDiv) {
+                                  uint32_t strikePriceDiv,
+                                  ExgMdSymbsMgr* symbsMgr) {
    if (this->TradingMarket_ == mkt
        && this->FlowGroup_ == flowGroup
        && this->PriceOrigDiv_ == priceOrigDiv
@@ -42,13 +43,50 @@ void ExgMdContract::SetBaseValues(f9fmkt_TradingMarket mkt,
    this->FlowGroup_ = flowGroup;
    this->PriceOrigDiv_ = priceOrigDiv;
    this->StrikePriceDiv_ = strikePriceDiv;
+   fon9::RevBufferFixedSize<128> cRts;
+   fon9::StrView                 cStr;
    for (ExgMdSymb* psymb : this->Symbs_) {
-      if (IsContractBaseChanged(*this, *psymb)) {
-         this->AssignBaseToSymb(*psymb);
-         // TODO: 通知 this->Symbs_ 的 Contract 基本資料有異動?
-         // - 會來到這裡的情況, 只有: (1)「期貨價差」商品; (2)遺漏I010基本資料的商品;
-         // - 目前只有 StrikePriceDiv_, PriceOrigDiv_, TradingMarket_, FlowGroup_;
-         // - 所以還不需要額外產生事件通知.
+      if (symbsMgr && !symbsMgr->CheckSymbTradingSessionId(*psymb))
+         continue;
+      if (!IsContractBaseChanged(*this, *psymb))
+         continue;
+      const auto oldFlowGroup = psymb->FlowGroup_;
+      this->AssignBaseToSymb(*psymb);
+      // TODO: 通知 this->Symbs_ 的 Contract 基本資料有異動?
+      // - 會來到這裡的情況, 只有: (1)「期貨價差」商品; (2)遺漏(尚未收到)I010基本資料的商品;
+      // - 目前只有 StrikePriceDiv_, PriceOrigDiv_, TradingMarket_, FlowGroup_;
+      // - 所以還不需要額外產生事件通知.
+      if (oldFlowGroup == psymb->FlowGroup_ || symbsMgr == nullptr)
+         continue;
+      // 夜盤, 期貨價差商品, FlowGroup 會變動,
+      // 但是期交所沒有提供[期貨價差商品]基本資料訊息, 所以只有在這裡才有機會通知.
+      // 因此需要針對[期貨價差商品]觸發 FlowGroup 異動事件.
+      switch (psymb->SymbId_.size()) {
+      case 8:  // "TXFF3/I3"
+      case 11: // "MXFC6/MX4C6"
+         if (psymb->SymbId_.begin()[5] != '/')
+            continue;
+         if (cStr.empty()) {
+            auto& flds = symbsMgr->Symbs_->LayoutSP_->GetTab(fon9_kCSTR_TabName_Base)->Fields_;
+            // -----
+            fon9::ToBitv(cRts, psymb->FlowGroup_);
+            fon9::fmkt::MdRtsPackFieldValueNid(cRts, *flds.Get("FlowGroup"));
+            // -----
+            fon9::ToBitv(cRts, psymb->TradingSessionId_);
+            fon9::fmkt::MdRtsPackFieldValueNid(cRts, *flds.Get("Session"));
+            // -----
+            fon9::ToBitv(cRts, psymb->TradingSessionSt_);
+            fon9::fmkt::MdRtsPackFieldValueNid(cRts, *flds.Get("SessionSt"));
+            // -----
+            cStr = ToStrView(cRts);
+         }
+         fon9::RevBufferList rts{64};
+         fon9::RevPrint(rts, cStr);
+         psymb->MdRtStream_.Publish(ToStrView(psymb->SymbId_),
+                                    f9sv_RtsPackType_FieldValue_NoInfoTime,
+                                    f9sv_MdRtsKind_All_NoInfoTime,
+                                    fon9::DayTime::Null(), std::move(rts));
+         break;
       }
    }
 }
@@ -59,7 +97,7 @@ void ExgMdContract::OnSymbsReload() {
             this->AssignBaseToSymb(*psymb);
             continue;
          }
-         this->OnSymbBaseChanged(*psymb);
+         this->OnSymbBaseChanged(*psymb, nullptr);
          break;
       }
    }

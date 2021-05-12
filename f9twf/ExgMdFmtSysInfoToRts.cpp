@@ -93,11 +93,11 @@ struct I140_BreakSt_PreparePk : public I140_CheckPublish {
    const f9fmkt_TradingSessionSt TSessionSt_;
    char                          Padding___[7];
    const fon9::DayTime           InfoTime_;
-   ExgMcChannelMgr* const        ChannelMgr_;
+   ExgMdSymbsMgr* const          SymbsMgr_;
    I140_BreakSt_PreparePk(const fon9::seed::Layout& layout, f9fmkt_TradingSessionSt st, ExgMcMessage& e)
       : TSessionSt_{st}
       , InfoTime_{e.Pk_.InformationTime_.ToDayTime()}
-      , ChannelMgr_{e.Channel_.GetChannelMgr()} {
+      , SymbsMgr_{e.Channel_.GetChannelMgr()} {
       const auto* fldSessionSt = layout.GetTab(fon9_kCSTR_TabName_Base)->Fields_.Get("SessionSt");
       fon9::ToBitv(this->Rts_, st);
       f9fmkt::MdRtsPackFieldValueNid(this->Rts_, *fldSessionSt);
@@ -114,7 +114,7 @@ struct I140_BreakSt_PreparePk : public I140_CheckPublish {
       this->PkBreakSt_.Reset(this->Rts_.GetCurrent(), this->PkSessionSt_.begin());
    }
    void CheckPublish(ExgMdSymb& symb) override {
-      if (this->ChannelMgr_ && !this->ChannelMgr_->CheckSymbTradingSessionId(symb))
+      if (this->SymbsMgr_ && !this->SymbsMgr_->CheckSymbTradingSessionId(symb))
          return;
       fon9::RevBufferList  rts{64};
       f9sv_MdRtsKind       pkKind = f9sv_MdRtsKind_TradingSession;

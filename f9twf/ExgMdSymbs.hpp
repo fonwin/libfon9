@@ -17,6 +17,8 @@
 
 namespace f9twf {
 
+class f9twf_API ExgMdSymbs;
+
 /// 檢查並設定 symb 的 TradingSessionId.
 /// \retval true 應繼續處理 rxTradingSessionId 的其他資料.
 ///   - 現在的 symb.TradingSession_ 正確: symb.TradingSessionId_ == rxTradingSessionId;
@@ -24,8 +26,8 @@ namespace f9twf {
 ///   - 返回後, 必定 symb.TradingSessionId_ == rxTradingSessionId;
 /// \retval false 應拋棄 rxTradingSessionId 的其他資料.
 ///   - 現在 symb 所在的盤別較新, 不變動 symb.TradingSessionId_;
-inline bool CheckSymbTradingSessionId(fon9::fmkt::SymbTree& tree, fon9::fmkt::Symb& symb,
-                                      f9fmkt_TradingSessionId rxTradingSessionId) {
+static inline bool CheckSymbTradingSessionId(fon9::fmkt::SymbTree& tree, fon9::fmkt::Symb& symb,
+                                             f9fmkt_TradingSessionId rxTradingSessionId) {
    if (fon9_LIKELY(symb.TradingSessionId_ == rxTradingSessionId))
       return true;
    if (symb.TradingSessionId_ == f9fmkt_TradingSessionId_AfterHour)
@@ -113,6 +115,24 @@ public:
    void OnTreeOp(fon9::seed::FnTreeOp fnCallback) override;
 };
 using ExgMdSymbsSP = fon9::intrusive_ptr<ExgMdSymbs>;
+//--------------------------------------------------------------------------//
+/// 台灣期交所行情管理員基底.
+class f9twf_API ExgMdSymbsMgr : public fon9::intrusive_ref_counter<ExgMdSymbsMgr> {
+   fon9_NON_COPY_NON_MOVE(ExgMdSymbsMgr);
+   char           Padding____[3];
+public:
+   const f9fmkt_TradingSessionId TradingSessionId_;
+   /// = sysName + "_" + groupName;
+   const std::string    Name_;
+   const ExgMdSymbsSP   Symbs_;
+
+   ExgMdSymbsMgr(ExgMdSymbsSP symbs, fon9::StrView sysName, fon9::StrView groupName, f9fmkt_TradingSessionId tsesId);
+   virtual ~ExgMdSymbsMgr();
+
+   bool CheckSymbTradingSessionId(ExgMdSymb& symb) {
+      return f9twf::CheckSymbTradingSessionId(*this->Symbs_, symb, this->TradingSessionId_);
+   }
+};
 //--------------------------------------------------------------------------//
 struct ExgMdEntry;
 

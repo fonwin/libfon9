@@ -72,7 +72,7 @@ f9twf_API void I010BasicInfoParserToRts_V7(ExgMcMessage& e) {
                                e.Pk_.InformationTime_.ToDayTime(),
                                std::move(rbuf));
       if (isBaseChanged)
-         symb.Contract_.OnSymbBaseChanged(symb);
+         symb.Contract_.OnSymbBaseChanged(symb, e.Channel_.GetChannelMgr());
    }
 }
 
@@ -95,7 +95,7 @@ f9twf_API void I010BasicInfoParserToRts_V8(ExgMcMessage& e) {
                                e.Pk_.InformationTime_.ToDayTime(),
                                std::move(rbuf));
       if (isBaseChanged)
-         symb.Contract_.OnSymbBaseChanged(symb);
+         symb.Contract_.OnSymbBaseChanged(symb, e.Channel_.GetChannelMgr());
    }
 }
 f9twf_API void I012BasePriLmts(ExgMcMessage& e) {

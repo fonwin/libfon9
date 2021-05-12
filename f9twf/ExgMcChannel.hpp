@@ -265,15 +265,10 @@ public:
 
 //--------------------------------------------------------------------------//
 /// 台灣期交所逐筆行情 Channel 管理員.
-class f9twf_API ExgMcChannelMgr : public fon9::intrusive_ref_counter<ExgMcChannelMgr> {
+class f9twf_API ExgMcChannelMgr : public ExgMdSymbsMgr {
    fon9_NON_COPY_NON_MOVE(ExgMcChannelMgr);
-   char           Padding____[3];
+   using base = ExgMdSymbsMgr;
 public:
-   const f9fmkt_TradingSessionId TradingSessionId_;
-   /// = sysName + "_" + groupName;
-   const std::string    Name_;
-   const ExgMdSymbsSP   Symbs_;
-
    /// 預設沒有任何的 McMessageParser, 您應該在建構之後, 透過 RegMcMessageParser() 註冊需要解析的封包格式.
    ExgMcChannelMgr(ExgMdSymbsSP symbs, fon9::StrView sysName, fon9::StrView groupName, f9fmkt_TradingSessionId tsesId);
    ~ExgMcChannelMgr();
@@ -330,10 +325,6 @@ public:
    /// - 以上 2 者都完成後, 才可播放(載入&即時)即時行情.
    void ChannelCycled(ExgMcChannel& src);
    void OnSnapshotDone(ExgMcChannel& src, uint64_t lastRtSeq);
-
-   bool CheckSymbTradingSessionId(ExgMdSymb& symb) {
-      return f9twf::CheckSymbTradingSessionId(*this->Symbs_, symb, this->TradingSessionId_);
-   }
 
 private:
    using McDispatcher = ExgMdMessageDispatcher<FnMcMessageParser>;

@@ -520,9 +520,7 @@ bool ExgMcChannel::OnPkContSnapshot(const ExgMcHead& pk) {
 //    - [即時行情 Channel] 是否可以進入發行狀態.
 //    - [即時行情 Channel] 要從哪個序號開始發行.
 ExgMcChannelMgr::ExgMcChannelMgr(ExgMdSymbsSP symbs, fon9::StrView sysName, fon9::StrView groupName, f9fmkt_TradingSessionId tsesId)
-   : TradingSessionId_{tsesId}
-   , Name_{sysName.ToString() + "_" + groupName.ToString()}
-   , Symbs_{std::move(symbs)} {
+   : base(std::move(symbs), sysName, groupName, tsesId) {
    // 即時行情.
    this->Channels_[ 1].Ctor(this,  1, ExgMcChannelStyle::PkLog | ExgMcChannelStyle::WaitSnapshot);
    this->Channels_[ 2].Ctor(this,  2, ExgMcChannelStyle::PkLog | ExgMcChannelStyle::WaitSnapshot);

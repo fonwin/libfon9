@@ -157,6 +157,14 @@ void ExgMdSymbs::MdTreeOp::Get(fon9::StrView strKeyText, fon9::seed::FnPodOp fnC
    this->OnPodOp(strKeyText, std::move(symb), std::move(fnCallback), lockedMap);
 }
 //--------------------------------------------------------------------------//
+ExgMdSymbsMgr::ExgMdSymbsMgr(ExgMdSymbsSP symbs, fon9::StrView sysName, fon9::StrView groupName, f9fmkt_TradingSessionId tsesId)
+   : TradingSessionId_{tsesId}
+   , Name_{sysName.ToString() + "_" + groupName.ToString()}
+   , Symbs_{std::move(symbs)} {
+}
+ExgMdSymbsMgr::~ExgMdSymbsMgr() {
+}
+//--------------------------------------------------------------------------//
 f9twf_API const void* ExgMdToSnapshotBS(fon9::DayTime mdTime, unsigned mdCount, const ExgMdEntry* mdEntry,
                                         fon9::fmkt::SymbTwfBS& symbBS, uint32_t priceOrigDiv, fon9::fmkt::MarketDataSeq mktseq) {
    symbBS.Data_.Clear(mdTime);

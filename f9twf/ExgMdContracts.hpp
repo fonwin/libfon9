@@ -10,7 +10,7 @@
 namespace f9twf {
 
 class f9twf_API ExgMdSymb;
-class f9twf_API ExgMdSymbs;
+class f9twf_API ExgMdSymbsMgr;
 using ContractSize = fon9::Decimal<uint64_t, 4>;
 using SymbFlowGroup_t = fon9::fmkt::SymbFlowGroup_t;
 //--------------------------------------------------------------------------//
@@ -49,9 +49,10 @@ public:
    /// 當商品基本資料有異動時, 通知 Contract.
    /// - 如果 Contract 尚未收到基本資料, 則可從 symb 取得部分基本資料.
    ///   例如: StrikePriceDiv_; PriceOrigDiv_;
-   void OnSymbBaseChanged(const ExgMdSymb& symb);
+   void OnSymbBaseChanged(const ExgMdSymb& symb, ExgMdSymbsMgr* symbsMgr);
    void SetBaseValues(f9fmkt_TradingMarket mkt, SymbFlowGroup_t flowGroup,
-                      uint32_t priceOrigDiv, uint32_t strikePriceDiv);
+                      uint32_t priceOrigDiv, uint32_t strikePriceDiv,
+                      ExgMdSymbsMgr* symbsMgr);
    /// 在建立新的商品時, 將 Contract 的基本資料填入 symb;
    void AssignBaseToSymb(ExgMdSymb& symb) const;
 };
