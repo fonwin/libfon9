@@ -102,10 +102,23 @@ class SeedImporterSession : public io::Session {
    SeedImporterArgs  Args_;
    LinePeeker        LinePeeker_;
    VisitorSP         Visitor_;
+   uint32_t          LineCount_;
+   uint32_t          LineDisplayed_;
+   uint32_t          SsCount_;
+   uint32_t          RsCount_;
 public:
    SeedImporterSession(SeedImporterArgs&& args) : Args_(std::move(args)) {
    }
    SeedImporterSession(const SeedImporterArgs& args) : Args_(args) {
+   }
+   void OnDevice_CommonTimer(io::Device& dev, TimeStamp now) override {
+      (void)now;
+      if (this->LineDisplayed_ != this->LineCount_) {
+         RevBufferFixedSize<256> rbuf;
+         RevPrint(rbuf, "Lc=", this->LineDisplayed_ = this->LineCount_, "|ss=", this->SsCount_, "|rs=", this->RsCount_);
+         dev.Manager_->OnSession_StateUpdated(dev, ToStrView(rbuf), LogLevel::Info);
+      }
+      dev.CommonTimerRunAfter(TimeInterval_Second(1));
    }
    void OnDevice_StateChanged(io::Device&, const io::StateChangedArgs& e) override {
       if (e.BeforeState_ == io::State::LinkReady) {
@@ -114,21 +127,28 @@ public:
       }
    }
    io::RecvBufferSize OnDevice_LinkReady(io::Device& dev) override {
+      this->LineCount_ = this->LineDisplayed_ = this->SsCount_ = this->RsCount_ = 0;
       this->Visitor_.reset(new SeedImporterVisitor(this->Args_, dev));
+      dev.CommonTimerRunAfter(TimeInterval_Second(1));
       return io::RecvBufferSize::Default;
    }
    io::RecvBufferSize OnDevice_Recv(io::Device&, DcQueueList& rxbuf) override {
       while (const char* pln = this->LinePeeker_.PeekUntil(rxbuf, '\n')) {
+         ++this->LineCount_;
          StrView cmdln{pln, this->LinePeeker_.LineSize_};
          if (StrTrimTail(&cmdln).empty())
             goto __POP_CONSUMED_AND_CONTINUE;
          // SeedImporter 僅支援 "ss", "rs"
          if (cmdln.size() > 2) {
-            switch (cmdln.Get1st()) {
+            switch (auto ch0 = cmdln.Get1st()) {
             case 's': case 'r':
                if (cmdln.begin()[1] == 's') {
                   seed::SeedFairy::Request req(*this->Visitor_, cmdln);
                   if (fon9_LIKELY(req.Runner_)) {
+                     if (ch0 == 's')
+                        ++this->SsCount_;
+                     else
+                        ++this->RsCount_;
                      req.Runner_->Bookmark_.assign(cmdln.begin(), 2);
                      req.Runner_->Run();
                      goto __POP_CONSUMED_AND_CONTINUE;
