@@ -107,7 +107,7 @@ f9twf_API void I012BasePriLmts(ExgMcMessage& e) {
    memcpy(priLmts, symb.Ref_.Data_.PriLmts_, sizeof(priLmts));
    if (!I012PriLmtsLockedParser(e, lk))
       return;
-   if (memcpy(priLmts, symb.Ref_.Data_.PriLmts_, sizeof(priLmts)) == 0)
+   if (memcmp(priLmts, symb.Ref_.Data_.PriLmts_, sizeof(priLmts)) == 0)
       return;
    fon9::RevBufferList rbuf{128};
    PackPriLmts(rbuf, symb.Ref_.Data_);
