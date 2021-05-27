@@ -82,10 +82,10 @@ void ExgMdContract::SetBaseValues(f9fmkt_TradingMarket mkt,
          }
          fon9::RevBufferList rts{64};
          fon9::RevPrint(rts, cStr);
-         psymb->MdRtStream_.Publish(ToStrView(psymb->SymbId_),
+         psymb->MdRtStream_.PublishAndSave(ToStrView(psymb->SymbId_),
                                     f9sv_RtsPackType_FieldValue_NoInfoTime,
-                                    f9sv_MdRtsKind_All_NoInfoTime,
-                                    fon9::DayTime::Null(), std::move(rts));
+                                    f9sv_MdRtsKind_Base,
+                                    std::move(rts));
          break;
       }
    }

@@ -798,6 +798,11 @@ struct RcSvStreamDecoder_MdRts : public RcMdRtsDecoder {
    // -----
    static bool FieldBitvToCell(svc::RxSubrData& rx, DcQueue& rxbuf, const seed::Field* fld, seed::RawWr& wr) {
       assert(fld != nullptr);
+      if (fon9_UNLIKELY(fld == nullptr)) {
+         RevPrint(rx.LogBuf_, "|err=Unknown fld");
+         rx.FlushLog();
+         return false;
+      }
       ByteVector old;
       fld->AppendRawBytes(wr, old);
       fld->BitvToCell(wr, rxbuf);
@@ -821,6 +826,11 @@ struct RcSvStreamDecoder_MdRts : public RcMdRtsDecoder {
          auto const  tabidx = unsigned_cast(nTabFld >> 4);
          auto* const tab = rx.SubrRec_->Tree_->Layout_->GetTab(tabidx);
          assert(tab != nullptr);
+         if (fon9_UNLIKELY(tab == nullptr)) {
+            RevPrint(rx.LogBuf_, "|tabidx=", tabidx, "|err=Unknown tab");
+            rx.FlushLog();
+            return;
+         }
          fldIdxList[0] = 0;
          do {
             seed::SimpleRawWr wr{SetRptTabSeed(rpt, tabidx)};
