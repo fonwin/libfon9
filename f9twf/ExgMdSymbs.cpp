@@ -70,20 +70,37 @@ void ExgMdSymb::OnBeforeRemove(fon9::fmkt::SymbTree& owner, unsigned tdayYYYYMMD
 }
 //----------------//
 // 保留部分資料, SessionClear(); DailyClear(); 之後還原.
+fon9_WARN_DISABLE_PADDING;
 struct ExgMdSymb_ClearKeep {
    fon9_NON_COPY_NON_MOVE(ExgMdSymb_ClearKeep);
-   ExgMdSymb&     Symb_;
-   const uint32_t PriceOrigDiv_, StrikePriceDiv_;
+   ExgMdSymb&              Symb_;
+   const uint32_t          PriceOrigDiv_, StrikePriceDiv_;
+   ExgMdContract* const    Contract_;
    ExgMdSymb_ClearKeep(ExgMdSymb& symb)
       : Symb_(symb)
       , PriceOrigDiv_{symb.PriceOrigDiv_}
-      , StrikePriceDiv_{symb.StrikePriceDiv_} {
+      , StrikePriceDiv_{symb.StrikePriceDiv_}
+      // 新建商品後的清盤, 需根據契約還原基本資料.
+      , Contract_(symb.TradingSessionId_ == f9fmkt_TradingSessionId_Unknown
+                  ? &symb.Contract_ : nullptr) {
    }
    ~ExgMdSymb_ClearKeep() {
       this->Symb_.PriceOrigDiv_ = this->PriceOrigDiv_;
       this->Symb_.StrikePriceDiv_ = this->StrikePriceDiv_;
+      if (this->Contract_) {
+         this->Symb_.FlowGroup_ = this->Contract_->FlowGroup_;
+         for (ExgMdSymb* psymb : this->Contract_->Symbs_) {
+            if (&this->Symb_ != psymb) {
+               this->Symb_.TradingSessionId_ = psymb->TradingSessionId_;
+               this->Symb_.TradingSessionSt_ = psymb->TradingSessionSt_;
+               break;
+            }
+         }
+      }
    }
 };
+fon9_WARN_POP;
+
 void ExgMdSymb::SessionClear(fon9::fmkt::SymbTree& owner, f9fmkt_TradingSessionId tsesId) {
    ExgMdSymb_ClearKeep keeper{*this};
    base::SessionClear(owner, tsesId);

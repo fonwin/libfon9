@@ -86,9 +86,8 @@ f9twf_API void I011ContractParser(ExgMcMessage& e) {
    con.AcceptQuote_ = (i011.AcceptQuoteFlagYN_ == 'Y' ? fon9::EnabledYN::Yes : fon9::EnabledYN{});
    con.ContractSize_.Assign<4>(fon9::PackBcdTo<uint64_t>(i011.ContractSizeV4_));
    con.StkNo_ = i011.StkNo_;
-   con.SetBaseValues((i011.TransmissionCode_ == '1' ? f9fmkt_TradingMarket_TwFUT : f9fmkt_TradingMarket_TwOPT),
-                     con.FlowGroup_, ToPriceOrigDiv(i011), ToStrikePriceDiv(i011),
-                     e.Channel_.GetChannelMgr());
+   con.SetContractBaseValues((i011.TransmissionCode_ == '1' ? f9fmkt_TradingMarket_TwFUT : f9fmkt_TradingMarket_TwOPT),
+                             ToPriceOrigDiv(i011), ToStrikePriceDiv(i011));
    //puts(RevPrintTo<std::string>(
    //   '[', i011.ContractId_, "]"
    //   "[", i011.StkNo_, "]"

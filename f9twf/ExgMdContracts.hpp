@@ -46,13 +46,17 @@ public:
    void OnSymbsReload();
    /// 通常用在移除過期商品.
    void OnSymbRemove(ExgMdSymb& symb);
+
    /// 當商品基本資料有異動時, 通知 Contract.
    /// - 如果 Contract 尚未收到基本資料, 則可從 symb 取得部分基本資料.
    ///   例如: StrikePriceDiv_; PriceOrigDiv_;
    void OnSymbBaseChanged(const ExgMdSymb& symb, ExgMdSymbsMgr* symbsMgr);
-   void SetBaseValues(f9fmkt_TradingMarket mkt, SymbFlowGroup_t flowGroup,
-                      uint32_t priceOrigDiv, uint32_t strikePriceDiv,
-                      ExgMdSymbsMgr* symbsMgr);
+
+   /// 收到期交所的契約基本資料時的通知.
+   /// 避免夜盤線路、日盤線路, 都有送出 I011(契約基本資料), 造成 SessionId 不正確,
+   /// 所以這裡僅更新資料, 不判斷 SessionId 是否變動.
+   void SetContractBaseValues(f9fmkt_TradingMarket mkt, uint32_t priceOrigDiv, uint32_t strikePriceDiv);
+
    /// 在建立新的商品時, 將 Contract 的基本資料填入 symb;
    void AssignBaseToSymb(ExgMdSymb& symb) const;
 };
