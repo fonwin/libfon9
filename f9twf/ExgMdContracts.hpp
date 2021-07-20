@@ -89,7 +89,8 @@ public:
    /// 建立(or取得) Contract.
    /// - 在建立 symb 時呼叫.
    /// - 並將 symb 加入 Contract: retval->Symbs_.push_back(&symb);
-   ExgMdContract& FetchContract(ExgMdSymb& symb);
+   ExgMdContract& FetchContractAndAppendSymb(ExgMdSymb& symb);
+
    ExgMdContract& FetchContract(ContractId conId);
    ExgMdContract& FetchContract(fon9::StrView symbid) {
       if (fon9_LIKELY(symbid.size() > 3))

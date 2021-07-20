@@ -91,9 +91,9 @@ public:
 
    fon9::fmkt::SymbSP MakeSymb(const fon9::StrView& symbid) override;
 
-   ExgMdContract& FetchContract(ExgMdSymb& symb) {
+   ExgMdContract& FetchContractAndAppendSymb(ExgMdSymb& symb) {
       assert(this->SymbMap_.IsLocked());
-      return this->Contracts_.FetchContract(symb);
+      return this->Contracts_.FetchContractAndAppendSymb(symb);
    }
    ExgMdContract& FetchContract(ContractId conId) {
       assert(this->SymbMap_.IsLocked());

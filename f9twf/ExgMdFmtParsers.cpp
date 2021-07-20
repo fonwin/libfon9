@@ -55,6 +55,8 @@ f9twf_API bool I012PriLmtsLockedParser(ExgMcMessage& e, const ExgMdLocker&) {
    auto& symb = *e.Symb_;
    if (!e.Channel_.GetChannelMgr()->CheckSymbTradingSessionId(symb))
       return false;
+   if (symb.PriceOrigDiv_ == 0) // 等收到正確的價格小數位之後才能處理. (還沒收到 I010:BasicInfo?)
+      return false;
    auto* pkFall = I012PriLmtParser(&pk.Raise_, &TwfSymbRef_Data::PriLmt::Up_, symb);
    I012PriLmtParser(pkFall, &TwfSymbRef_Data::PriLmt::Dn_, symb);
    return true;

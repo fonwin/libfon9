@@ -129,7 +129,7 @@ ExgMdContract& ExgMdContracts::FetchContract(ContractId conId) {
       ifind = this->ContractMap_.insert(ContractSP{new ExgMdContract{conId}}).first;
    return *ifind->get();
 }
-ExgMdContract& ExgMdContracts::FetchContract(ExgMdSymb& symb) {
+ExgMdContract& ExgMdContracts::FetchContractAndAppendSymb(ExgMdSymb& symb) {
    ExgMdContract& retval = this->FetchContract(ToStrView(symb.SymbId_));
    retval.Symbs_.push_back(&symb);
    retval.AssignBaseToSymb(symb);

@@ -55,7 +55,7 @@ fon9_MSC_WARN_DISABLE(4355); // 'this': used in base member initializer list
 ExgMdSymb::ExgMdSymb(const fon9::StrView& symbid, ExgMdSymbs& owner)
    : base{symbid}
    , MdRtStream_{owner.RtInnMgr_}
-   , Contract_{owner.FetchContract(*this)} {
+   , Contract_{owner.FetchContractAndAppendSymb(*this)} {
    this->TDayYYYYMMDD_ = owner.RtInnMgr_.TDayYYYYMMDD();
    this->MdRtStream_.OpenRtStorage(*this);
 }
@@ -88,9 +88,18 @@ struct ExgMdSymb_ClearKeep {
       this->Symb_.PriceOrigDiv_ = this->PriceOrigDiv_;
       this->Symb_.StrikePriceDiv_ = this->StrikePriceDiv_;
       if (this->Contract_) {
+         // - 這裡處理的是: 後來加入 Contract 的商品.
+         // - 若是在更早加入 Contract, 則會:
+         //   在「收到 I010 觸發 ExgMdContract::OnSymbBaseChanged()」時,
+         //   調整全部 Contract.Symbs 的 TradingSessionId;
          this->Symb_.FlowGroup_ = this->Contract_->FlowGroup_;
          for (ExgMdSymb* psymb : this->Contract_->Symbs_) {
-            if (&this->Symb_ != psymb) {
+            // 在 this->Contract_->Symbs_ 前面的 symb, 有可能透過非行情管道建立(例如: TwfC10Importer),
+            // 造成 psymb->TradingSessionId_, psymb->TradingSessionSt_ 尚未設定正確.
+            // 所以要排處這些 symb;
+            if (psymb != &this->Symb_
+             && psymb->TradingSessionId_ != f9fmkt_TradingSessionId_Unknown
+             && psymb->TradingSessionSt_ != f9fmkt_TradingSessionSt_Unknown) {
                this->Symb_.TradingSessionId_ = psymb->TradingSessionId_;
                this->Symb_.TradingSessionSt_ = psymb->TradingSessionSt_;
                break;

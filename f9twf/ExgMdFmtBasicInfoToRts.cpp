@@ -103,11 +103,11 @@ f9twf_API void I012BasePriLmts(ExgMcMessage& e) {
    ExgMdLocker    lk{e, pk.ProdId_};
    auto&          symb = *e.Symb_;
 
-   TwfSymbRef_Data::PriLmt priLmts[TwfSymbRef_Data::kPriLmtCount];
-   memcpy(priLmts, symb.Ref_.Data_.PriLmts_, sizeof(priLmts));
+   TwfSymbRef_Data::PriLmt oldPriLmts[TwfSymbRef_Data::kPriLmtCount];
+   memcpy(oldPriLmts, symb.Ref_.Data_.PriLmts_, sizeof(oldPriLmts));
    if (!I012PriLmtsLockedParser(e, lk))
       return;
-   if (memcmp(priLmts, symb.Ref_.Data_.PriLmts_, sizeof(priLmts)) == 0)
+   if (memcmp(oldPriLmts, symb.Ref_.Data_.PriLmts_, sizeof(oldPriLmts)) == 0)
       return;
    fon9::RevBufferList rbuf{128};
    PackPriLmts(rbuf, symb.Ref_.Data_);
