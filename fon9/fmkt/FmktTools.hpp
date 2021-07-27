@@ -22,5 +22,17 @@ struct LvPriStep {
 ///   若跌停計算結果 <= *pDnLmt, 則會用首個 steps->Step_;
 fon9_API void CalcLmt(const LvPriStep* steps, Pri ref, double rate, Pri* pUpLmt, Pri* pDnLmt);
 
+/// \ingroup fmkt
+/// 尋找最接近但不超過的價格檔位.
+static inline Pri FindPriTickSize(const LvPriStep* steps, Pri pri) {
+   if (fon9_LIKELY(steps)) {
+      while (pri > steps->LvTop_) {
+         ++steps;
+      }
+      return steps->Step_;
+   }
+   return pri;
+}
+
 } } // namespaces
 #endif//__fon9_fmkt_FmktTools_hpp__

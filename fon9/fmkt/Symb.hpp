@@ -16,6 +16,7 @@ namespace fon9 { namespace fmkt {
 class fon9_API SymbPodOp;
 class fon9_API SymbTree;
 class fon9_API Symb;
+struct LvPriStep;
 
 /// \ingroup fmkt
 /// 為了讓 SymbTree::PodOp 裡面的 seed::SimpleRawRd{*symbdata} 可以正確運作,
@@ -97,6 +98,17 @@ public:
 
    static seed::Fields MakeFields();
 
+   /// 價格跳動檔位設定.
+   /// 預設為 nullptr, 僅在系統有需求時才會設定;
+   const LvPriStep* LvPriSteps() const {
+      return this->LvPriSteps_;
+   }
+   /// 只允許設定一次.
+   void SetLvPriSteps(const LvPriStep* lv) {
+      assert(this->LvPriSteps_ == nullptr);
+      this->LvPriSteps_ = lv;
+   }
+
    /// 每日清檔, 預設:
    /// - 設定 this->TDayYYYYMMDD_;
    /// - 設定 this->TradingSessionId_ = f9fmkt_TradingSessionId_Normal;
@@ -119,6 +131,9 @@ public:
    /// 衍生者應觸發 PodRemoved 事件.
    /// 預設 do nothing.
    virtual void OnBeforeRemove(SymbTree& owner, unsigned tdayYYYYMMDD);
+
+private:
+   const LvPriStep*  LvPriSteps_{nullptr};
 };
 using SymbSP = intrusive_ptr<Symb>;
 

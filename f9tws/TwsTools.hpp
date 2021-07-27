@@ -20,6 +20,10 @@ struct f9tws_API TwsSymbKindLvPriStep {
    char                          Padding____[7];
    const fon9::fmkt::LvPriStep*  LvPriSteps_;
    
+   TwsSymbKindLvPriStep() = default;
+   TwsSymbKindLvPriStep(StkNo stkno) {
+      this->Setup(stkno);
+   }
    void Setup(StkNo stkno);
 };
 
