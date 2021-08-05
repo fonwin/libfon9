@@ -140,6 +140,15 @@ static FieldSP MakeFieldImpl(StrView& fldcfg, char chSpl, char chTail) {
 
    case 'C':   return MakeFieldChars(fldcfg, chSpl, chTail);
    case 'B':   return MakeFieldBytes(fldcfg, chSpl, chTail);
+   case 'E':
+      if (fldcfg.Get1st() == 'S') { // Type = "ES";
+         fldcfg.SetBegin(fldcfg.begin() + 1);
+         Named named{DeserializeNamed(fldcfg, chSpl, chTail)};
+         if (named.Name_.empty())
+            return FieldSP{};
+         return FieldSP{new FieldStrEnum{std::move(named)}};
+      }
+      return FieldSP{};
    case 'T':   return MakeFieldTime(fldcfg, chSpl, chTail);
    case 'S':
    case 'U':

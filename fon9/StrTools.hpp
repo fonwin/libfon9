@@ -446,7 +446,7 @@ fon9_API StrView SbrFetchNoTrim(StrView& src, char chDelim, const StrBrArg& brAr
 ///   - src = 不變.
 fon9_API StrView SbrFetchInsideNoTrim(StrView& src, const StrBrArg& brArg = StrBrArg::Default_);
 /// \ingroup AlNum
-/// 先移除 src 開頭空白, 然後使用 FetchFirstBrNoTrim() 取出「括號或引號」內的字串.
+/// 先移除 src 開頭空白, 然後使用 SbrFetchInsideNoTrim() 取出「括號或引號」內的字串.
 inline StrView SbrTrimHeadFetchInside(StrView& src, const StrBrArg& brArg = StrBrArg::Default_) {
    if (!StrTrimHead(&src).empty())
       return SbrFetchInsideNoTrim(src, brArg);

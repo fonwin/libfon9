@@ -110,4 +110,23 @@ int FieldDyBlob::CompareRawBytes(const RawRd& rd, const void* rhs, size_t rsz) c
    return fon9_CompareBytes(lhs.MemPtr_, lhs.MemUsed_, rhs, rsz);
 }
 
+//--------------------------------------------------------------------------//
+
+void FieldStrEnum::EnumList::RebuildEnumList(StrView cfgs) {
+   this->OrigEnumStr_ = cfgs.ToString();
+   cfgs = &this->OrigEnumStr_;
+   this->IdEnumMap_.clear();
+   StrView tag = SbrTrimHeadFetchInside(cfgs);
+   if (!tag.IsNull())
+      cfgs = tag;
+   StrView val;
+   while (SbrFetchTagValue(cfgs, tag, val))
+      this->IdEnumMap_.kfetch(tag).second = val;
+}
+
+void FieldStrEnum::CellRevPrint(const RawRd& rd, StrView fmt, RevBuffer& out) const {
+   (void)fmt;
+   RevPrint(out, this->EnumList_.GetEnumValue(this->GetValue(rd)));
+}
+
 } } // namespaces

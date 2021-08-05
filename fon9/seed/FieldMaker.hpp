@@ -115,7 +115,8 @@ public:
 ///    - Ti = TimeInterval
 ///    - Ts = TimeStamp
 ///    - Td = DayTime
-///    - fon9_kCSTR_UDStrFieldMaker_Head + "??" = 使用註冊機制的動態欄位. 參考 FieldMakerRegister; FieldSchCfgStr.cpp
+///    - ES = FieldStrEnum
+///    - x or X = fon9_kCSTR_UDStrFieldMaker_Head + "??" = 使用註冊機制的動態欄位. 參考 FieldMakerRegister; FieldSchCfgStr.cpp
 /// - 例:
 ///    - C4    BrkNo |券商代號
 ///    - U4    IvacNo|投資人帳號|投資人帳號含檢查碼
