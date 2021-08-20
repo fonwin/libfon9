@@ -6,6 +6,12 @@
 #include "fon9/auth/PolicyAcl.hpp"
 #include "fon9/seed/FieldMaker.hpp"
 
+#ifdef _DEBUG
+// 通知 Server 端暫停執行訂閱, 等收到[取消訂閱]後, 才執行上次暫停的[訂閱要求].
+// 提供給 RcSv_UT 驗證流程使用.
+fon9_API bool gIs_RcSv_UT_Server_ReorderRunOnce;
+#endif
+
 namespace fon9 { namespace rc {
 
 RcSeedVisitorServerAgent::~RcSeedVisitorServerAgent() {
@@ -93,302 +99,49 @@ RcSeedVisitorServerNote::RcSeedVisitorServerNote(RcSession& ses,
 }
 RcSeedVisitorServerNote::~RcSeedVisitorServerNote() {
 }
-//--------------------------------------------------------------------------//
-struct RcSeedVisitorServerNote::UnsubRunnerSP : public intrusive_ptr<SubrReg> {
-   using base = intrusive_ptr<SubrReg>;
-   UnsubRunnerSP(SubrRegSP preg) : base{std::move(preg)} {
-   }
-   void operator()(const seed::PodOpResult& res, seed::PodOp* pod) {
-      this->Unsubscribe(*res.Sender_, res.OpResult_, pod);
-   }
-   void operator()(const seed::TreeOpResult& res, seed::TreeOp* opTree) {
-      SubrReg* reg = this->get();
-      if (seed::IsSubrTree(reg->SeedKey_.begin()))
-         this->Unsubscribe(*res.Sender_, res.OpResult_, opTree);
-      else
-         opTree->Get(ToStrView(reg->SeedKey_), UnsubRunnerSP{*this});
-   }
-   void Unsubscribe(seed::Tree& tree, seed::OpResult opres, seed::SubscribableOp* opSubr) {
-      // 必定可以取消註冊, 因為需要取消者, 必定已經訂閱成功.
-      // 但是有可能在系統結束時: Tree 已經清除, 但取消訂閱正在執行, 此時 opSubr 可能會是 nullptr;
-      // assert(opSubr != nullptr);
-
-      SubrReg* preg = this->get();
-      assert(preg->Tree_.get() == &tree);
-      seed::Tab* tab = tree.LayoutSP_->GetTab(preg->TabIndex_);
-
-      if (preg->SvFunc_ == SvFuncCode::Empty) { // 因 LinkBroken 的取消註冊, 不用 lock, 不用回覆.
-         preg->Unsubscribe(opSubr, *tab);
-         return;
-      }
-      assert(preg->SvFunc_ == SvFuncCode::Unsubscribe);
-
-      RcSession&  ses = *static_cast<RcSession*>(preg->Device_->Session_.get());
-      auto& note = *static_cast<RcSeedVisitorServerNote*>(ses.GetNote(f9rc_FunctionCode_SeedVisitor));
-      // 取消訂閱, 並回覆結果.
-      {
-         auto   subrs = note.SubrList_.Lock();
-         assert(preg->SubrIndex_ < subrs->size() && (*subrs)[preg->SubrIndex_].get() == preg);
-         if (preg->SubrIndex_ >= subrs->size())
-            return;
-         auto& rpSubr = (*subrs)[preg->SubrIndex_];
-         if (rpSubr.get() != preg)
-            return;
-         rpSubr.reset(); // 等同於: (*subrs)[preg->SubrIndex_].reset();
-      }
-      opres = preg->Unsubscribe(opSubr, *tab);
-      (void)opres;
-      RevBufferList ackbuf{64};
-      ToBitv(ackbuf, preg->SubrIndex_);
-      PutBigEndian(ackbuf.AllocBuffer(sizeof(SvFuncCode)), SvFuncCode::Unsubscribe);
-      if (!preg->IsSubjectClosed_)
-         ses.Send(f9rc_FunctionCode_SeedVisitor, std::move(ackbuf));
-   }
-};
 void RcSeedVisitorServerNote::OnSessionLinkBroken() {
    SubrListImpl  subrs = std::move(*this->SubrList_.Lock());
-   for (SubrRegSP& preg : subrs) {
+   for (RcSvsSubrSP& preg : subrs) {
       if (preg) {
          preg->SvFunc_ = SvFuncCode::Empty; // 設定成: 因 LinkBroken 的取消註冊.
          if (seed::Tree* tree = preg->Tree_.get())
-            tree->OnTreeOp(UnsubRunnerSP{std::move(preg)});
+            tree->OnTreeOp(RcSvsUnsubRunnerSP{std::move(preg)});
       }
    }
    this->Visitor_->Device_.reset();
 }
 //--------------------------------------------------------------------------//
-static void MakeAckLayout(RevBufferList& rbuf, seed::Layout& layout) {
-   const auto  szBefore = CalcDataSize(rbuf.cfront());
-   std::string cfgstr;
-   for (auto L = layout.GetTabCount(); L > 0;) {
-      seed::Tab* tab = layout.GetTab(--L);
-      seed::AppendFieldsConfig(cfgstr, tab->Fields_, '|', '\n');
-      RevPrint(rbuf, "\n{\n", cfgstr, "}\n");
-      RevPrintNamed(rbuf, *tab, '|');
-      RevPrint(rbuf, tab->Flags_, '|');
-      cfgstr.clear();
-   }
-   seed::AppendFieldConfig(cfgstr, *layout.KeyField_, '|', '\n');
-   RevPrint(rbuf, layout.Flags_, '|', cfgstr);
-   ByteArraySizeToBitvT(rbuf, CalcDataSize(rbuf.cfront()) - szBefore);
-}
-
-struct RcSvTickRunner {
-   fon9_NON_COPY_NON_MOVE(RcSvTickRunner);
-   RcSvTickRunner() = default;
-   io::DeviceSP   Device_; // 為了確保在 Query 執行期間, device/session 不會死亡.
-   seed::LayoutSP Layout_;
-   SvFunc         SvFunc_;
-   bool           IsAllTabs_;
-   char           Padding__[6];
-   RevBufferList  AckBuffer_{256};
-   RcSession& Session() const {
-      return *static_cast<RcSession*>(this->Device_->Session_.get());
-   }
-   RcSeedVisitorServerNote& SessionNote() const {
-      auto* note = this->Session().GetNote(f9rc_FunctionCode_SeedVisitor);
-      return *static_cast<RcSeedVisitorServerNote*>(note);
-   }
-   void CheckAckLayout(seed::TreeOp& opTree) {
-      if (HasSvFuncFlag(this->SvFunc_, SvFuncFlag::Layout))
-         this->Layout_ = opTree.Tree_.LayoutSP_;
-   }
-   void SetAckTabNotFound() {
-      // 若 client 為 pending req: 在收到 layout 後, 處理 pendings 時, 若 tab not found 則會直接觸發事件.
-      // 若 client 已有 layout, 則會先判斷 tab 是否存在, 若不存在則不會送出, 會在當場觸發 tab not found. 
-      // 所以填入 fon9_BitvV_NumberNull, 然後 client 端在 RcSeedVisitorClientNote::OnRecvQrySubrAck() 處理.
-      RevPutBitv(this->AckBuffer_, fon9_BitvV_NumberNull);
-   }
-   void SendRcSvAck(const CharVector& origReqKey) {
-      if (this->SvFunc_ == SvFunc::Empty)
-         return;
-      if (this->Layout_)
-         MakeAckLayout(this->AckBuffer_, *this->Layout_);
-      RevPrint(this->AckBuffer_, origReqKey);
-      PutBigEndian(this->AckBuffer_.AllocBuffer(sizeof(this->SvFunc_)), this->SvFunc_);
-      this->Session().Send(f9rc_FunctionCode_SeedVisitor, std::move(this->AckBuffer_));
-      this->SvFunc_ = SvFunc::Empty;
-   }
-};
-struct TickRunnerQuery : public seed::TicketRunnerRead, public RcSvTickRunner {
-   fon9_NON_COPY_NON_MOVE(TickRunnerQuery);
-   using base = seed::TicketRunnerRead;
-   // 為了在最後的 tab not found 時, 仍能提供 layout, 所以額外提供最後的 tabName;
-   // 由 TickRunnerQuery 自行判斷 tab not found.
-   CharVector  TabName_;
-   TickRunnerQuery(seed::SeedVisitor& visitor, StrView seed, StrView tabName)
-      : base{visitor, seed}
-      , TabName_{tabName} {
-   }
-   ~TickRunnerQuery() {
-      this->SendRcSvAck(this->Bookmark_); // Bookmark_ = origReqKey;
-   }
-   void OnLastStep(seed::TreeOp& op, StrView keyText, seed::Tab& tab0) override {
-      this->CheckAckLayout(op);
-      base::OnLastStep(op, keyText, tab0); // => OnLastSeedOp();
-   }
-   void OnLastSeedOp(const seed::PodOpResult& resPod, seed::PodOp* pod, seed::Tab& tab0) override {
-      (void)tab0;
-      if (this->IsAllTabs_) {
-         auto tabidx = resPod.Sender_->LayoutSP_->GetTabCount();
-         while (auto* ptab = resPod.Sender_->LayoutSP_->GetTab(--tabidx))
-            this->ReadSeed(resPod, pod, *ptab);
-      }
-      else if (auto* ptab = resPod.Sender_->LayoutSP_->GetTabByNameOrFirst(ToStrView(this->TabName_)))
-         this->ReadSeed(resPod, pod, *ptab);
-      else
-         this->SetAckTabNotFound();
-   }
-   void ReadSeed(const seed::PodOpResult& resPod, seed::PodOp* pod, seed::Tab& tab) {
-      base::OnLastSeedOp(resPod, pod, tab); // => OnReadOp(); or OnError();
-      ToBitv(this->AckBuffer_, tab.GetIndex());
-   }
-   void OnReadOp(const seed::SeedOpResult& res, const seed::RawRd* rd) override {
-      if (rd == nullptr)
-         this->OnError(res.OpResult_);
-      else {
-         // 查詢結果: 使用[文字]傳輸 seed 內容.
-         // 解析結果在 RcSeedVisitorClient.cpp: RcSeedVisitorClientNote::OnRecvQueryAck();
-         const auto  szBefore = CalcDataSize(this->AckBuffer_.cfront());
-         seed::FieldsCellRevPrint0NoSpl(res.Tab_->Fields_, *rd, this->AckBuffer_);
-         ByteArraySizeToBitvT(this->AckBuffer_, CalcDataSize(this->AckBuffer_.cfront()) - szBefore);
-      }
-   }
-   void OnError(seed::OpResult res) override {
-      ToBitv(this->AckBuffer_, res);
-   }
-};
-struct RcSeedVisitorServerNote::TicketRunnerSubscribe : public seed::TicketRunnerTree, public RcSvTickRunner {
-   fon9_NON_COPY_NON_MOVE(TicketRunnerSubscribe);
-   using base = TicketRunnerTree;
-   const RcSvReqKey  ReqKey_;
-   StrView           SubscribeStreamArgs_{nullptr};
-   TicketRunnerSubscribe(seed::SeedVisitor& visitor, RcSvReqKey&& reqKey)
-      : base(visitor, ToStrView(reqKey.TreePath_),
-             seed::IsSubrTree(reqKey.SeedKey_.begin()) ? seed::AccessRight::SubrTree : seed::AccessRight::Read)
-      , ReqKey_(std::move(reqKey)) {
-   }
-   ~TicketRunnerSubscribe() {
-      this->SendRcSvAck(this->Bookmark_); // Bookmark_ = origReqKey;
-   }
-   void Subscribe(seed::Tree& tree, seed::Tab& tab, seed::SubscribableOp& opSubr) {
-      auto& note = this->SessionNote();
-      auto  subrs = note.SubrList_.Lock();
-      if (subrs->empty()) { // 已因 LinkBroken 清除訂閱.
-         // 不用訂閱, 也不用回覆結果.
-         assert(this->Session().GetSessionSt() != RcSessionSt::ApReady);
-         this->SvFunc_ = SvFunc::Empty;
-         return;
-      }
-      SubrRegSP& rpSubr = (*subrs)[this->ReqKey_.SubrIndex_];
-      SubrReg*   psubr = rpSubr.get();
-      assert(psubr != nullptr && psubr->Tree_.get() == nullptr);
-      if (psubr == nullptr)
-         return;
-      psubr->Tree_.reset(&tree);
-      psubr->TabIndex_ = static_cast<f9sv_TabSize>(tab.GetIndex());
-      psubr->IsStream_ = !this->SubscribeStreamArgs_.IsNull();
-
-      seed::OpResult opErrC;
-      if (psubr->SvFunc_ == SvFuncCode::Unsubscribe)
-         // 尋找 tree 的過程中, 收到 [取消訂閱] 要求.
-         // 訂閱要求失敗: 因為取消訂閱.
-         opErrC = static_cast<seed::OpResult>(f9sv_Result_InUnsubscribe);
-      else {
-         note.Runner_ = this;
-         auto fnSubr = std::bind(&RcSeedVisitorServerNote::OnSubscribeNotify,
-                                 SubrRegSP{psubr}, std::placeholders::_1);
-         if (psubr->IsStream_)
-            opErrC = opSubr.SubscribeStream(&psubr->SubConn_, tab, this->SubscribeStreamArgs_, std::move(fnSubr));
-         else
-            opErrC = opSubr.Subscribe(&psubr->SubConn_, tab, std::move(fnSubr));
-         note.Runner_ = nullptr;
-         if (opErrC == seed::OpResult::no_error) {
-            // 訂閱成功, 已在 NotifyKind = SubscribeOK 回覆結果, 所以這裡直接結束.
-            return;
-         }
-      }
-      rpSubr.reset(); // 等同於: (*subrs)[this->ReqKey_.SubrIndex_].reset();
-      // 訂閱失敗 & 立即回覆的 tab(seeds) 筆數=0.
-      ToBitv(this->AckBuffer_, opErrC);
-      RevPutBitv(this->AckBuffer_, fon9_BitvV_Number0);
-   }
-   void OnFoundTree(seed::TreeOp& opTree) override {
-      this->CheckAckLayout(opTree);
-      StrView tabName = ToStrView(this->ReqKey_.TabName_);
-      if (seed::IsSubscribeStream(tabName)) {
-         // "$TabName:StreamDecoderName:Args";  例如: "$Rt:MdRts:args"
-         // SubscribeStream 的額外參數 = "StreamDecoderName:Args";
-         this->SubscribeStreamArgs_.Reset(tabName.begin() + 1, tabName.end());
-         tabName = StrFetchNoTrim(this->SubscribeStreamArgs_, ':');
-      }
-      seed::Tab* tab = opTree.Tree_.LayoutSP_->GetTabByNameOrFirst(tabName);
-      if (!tab) {
-         auto  subrs = this->SessionNote().SubrList_.Lock();
-         if (subrs->empty()) { // 已因 LinkBroken 清除訂閱, 不用回覆結果.
-            assert(this->Session().GetSessionSt() != RcSessionSt::ApReady);
-            this->SvFunc_ = SvFunc::Empty;
-            return;
-         }
-         this->SetAckTabNotFound();
-         (*subrs)[this->ReqKey_.SubrIndex_].reset();
-         return;
-      }
-      if (seed::IsSubrTree(this->ReqKey_.SeedKey_.begin()))
-         this->Subscribe(opTree.Tree_, *tab, opTree);
-      else {
-         opTree.Get(ToStrView(this->ReqKey_.SeedKey_),
-                    std::bind(&TicketRunnerSubscribe::OnLastSeedOp, intrusive_ptr<TicketRunnerSubscribe>(this),
-                              std::placeholders::_1, std::placeholders::_2, std::ref(*tab)));
-      }
-   }
-   void OnLastSeedOp(const seed::PodOpResult& resPod, seed::PodOp* pod, seed::Tab& tab) override {
-      if (pod)
-         this->Subscribe(*resPod.Sender_, tab, *pod);
-      else {
-         struct ErrPod : public seed::SubscribableOp {
-            fon9_NON_COPY_NON_MOVE(ErrPod);
-            const seed::OpResult Result_;
-            char                 Padding____[4];
-            ErrPod(seed::OpResult res) : Result_{res} {
-            }
-            seed::OpResult Subscribe(SubConn*, seed::Tab&, seed::FnSeedSubr) override {
-               return this->Result_;
-            }
-            seed::OpResult SubscribeStream(SubConn*, seed::Tab&, StrView, seed::FnSeedSubr) override {
-               return this->Result_;
-            }
-         };
-         ErrPod errp{resPod.OpResult_};
-         this->Subscribe(*resPod.Sender_, tab, errp);
-      }
-   }
-   void OnError(seed::OpResult res) override {
-      ToBitv(this->AckBuffer_, res);
-      auto subrs = this->SessionNote().SubrList_.Lock();
-      if (this->ReqKey_.SubrIndex_ < subrs->size())
-         (*subrs)[this->ReqKey_.SubrIndex_].reset();
-   }
-};
 void RcSeedVisitorServerNote::OnRecvUnsubscribe(RcSession& ses, f9sv_SubrIndex usidx) {
+   (void)ses;
    auto  subrs = this->SubrList_.Lock();
    if (usidx >= subrs->size()) {
-      ses.ForceLogout("f9sv_Unsubscribe bad SubrIndex.");
+      // ses.ForceLogout("f9sv_Unsubscribe bad SubrIndex.");
+      // return;
+   __ACK_UNSUBR_ID:;
+      // 不存在的訂閱編號, 有可能是[訂閱失敗]的回覆還在路上, Client 就已送來取消訂閱要求.
+      // 這種情況也要回覆 [取消訂閱成功]?
+      // => 不用回覆, 由 Client 收到 [訂閱失敗] 時, 自行處理.
+      // => 這裡直接忽略此 [取消訂閱] 的要求!
+      // RevBufferList ackbuf{64};
+      // ToBitv(ackbuf, usidx);
+      // PutBigEndian(ackbuf.AllocBuffer(sizeof(SvFuncCode)), SvFuncCode::Unsubscribe);
+      // ses.Send(f9rc_FunctionCode_SeedVisitor, std::move(ackbuf));
       return;
    }
-   SubrRegSP psubr = (*subrs)[usidx].get();
+   RcSvsSubrSP psubr = (*subrs)[usidx].get();
    if (psubr.get() == nullptr || psubr->SvFunc_ != SvFuncCode::Subscribe) {
-      ses.ForceLogout("f9sv_Unsubscribe no subscribe.");
-      return;
+      // ses.ForceLogout("f9sv_Unsubscribe no subscribe.");
+      // return;
+      goto __ACK_UNSUBR_ID;
    }
    psubr->SvFunc_ = SvFuncCode::Unsubscribe;
    if (auto tree = psubr->Tree_.get()) {
       // 已訂閱成功, 執行取消訂閱步驟.
       subrs.unlock(); // 必須先 unlock, 因為 tree->OnTreeOp() 可能會就地呼叫 op.
-      tree->OnTreeOp(UnsubRunnerSP{psubr});
+      tree->OnTreeOp(RcSvsUnsubRunnerSP{psubr});
    }
    else {
-      // TicketRunnerSubscribe 還在尋找 tree 準備訂閱,
+      // RcSvsSubscribeRunner 還在尋找 tree 準備訂閱,
       // 因為有設定 psubr->SvFunc_ = SvFuncCode::Unsubscribe;
       // 所以等找到 tree 時, 可以判斷 [不需要訂閱了], 那時再回覆 Unsubscribe 即可.
    }
@@ -403,93 +156,166 @@ void RcSeedVisitorServerNote::OnRecvFunctionCall(RcSession& ses, RcFunctionParam
    param.RecvBuffer_.PopConsumed(sizeof(SvFunc));
    param.RemainParamSize_ -= sizeof(SvFunc);
 
+#ifdef _DEBUG // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+   struct RunnerKeepOnce {
+      seed::TicketRunnerSP Runner_;
+      seed::OpResult       Result_;
+      char                 Padding___[4];
+      void FlushRunner() {
+         if (this->Runner_) {
+            if (this->Result_ == seed::OpResult::no_error)
+               this->Runner_->Run();
+            else
+               this->Runner_->OnError(this->Result_);
+            this->Runner_.reset();
+            gIs_RcSv_UT_Server_ReorderRunOnce = false;
+         }
+      }
+      bool PushRunner(seed::TicketRunnerSP& runner, seed::OpResult runResult) {
+         if (gIs_RcSv_UT_Server_ReorderRunOnce) {
+            if (!this->Runner_) {
+               this->Runner_ = std::move(runner);
+               this->Result_ = runResult;
+               return true;
+            }
+         }
+         return false;
+      }
+   };
+   static RunnerKeepOnce   runnerKeep;
+#endif // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
    if (fcCode == SvFuncCode::Unsubscribe) {
       // 取消訂閱, 只需要提供 usidx;
       f9sv_SubrIndex usidx{kSubrIndexNull};
       BitvTo(param.RecvBuffer_, usidx);
       this->OnRecvUnsubscribe(ses, usidx);
+      #ifdef _DEBUG
+         runnerKeep.FlushRunner();
+      #endif
       return;
    }
-   // 保留 origReqKey 存放在 TicketRunner::Bookmark_, 在回復結果時當成 key 返回.
+   // 保留 origReqKey 存放在 TicketRunner::Bookmark_, 在回覆結果時當成 key 返回.
    CharVector origReqKey;
    param.RecvBuffer_.Read(origReqKey.alloc(param.RemainParamSize_), param.RemainParamSize_);
 
    DcQueueFixedMem rxbuf{ToStrView(origReqKey)};
    RcSvReqKey      reqKey;
    reqKey.LoadSeedName(rxbuf);
-
-   RcSvTickRunner*      svTicket{nullptr};
-   seed::TicketRunnerSP runner;
-   seed::OpResult       runResult = seed::OpResult::no_error;
-   StrView              msgLogout;
-   fon9_WARN_DISABLE_SWITCH;
-   switch (fcCode) {
-   case SvFuncCode::Query:
-      if (FcQry_.Fetch(param.RecvTime_).GetOrigValue() > 0)
-         msgLogout = "f9sv_Query flow control.";
-      else {
-         CharVector seedPath{ToStrView(reqKey.TreePath_)};
-         seedPath.push_back('/');
-         seedPath.append(ToStrView(reqKey.SeedKey_));
-         // TODO: 是否允許使用範圍(key range)查詢? [from - to] or [from + count].
-         TickRunnerQuery* req = new TickRunnerQuery{*this->Visitor_, ToStrView(seedPath), ToStrView(reqKey.TabName_)};
-         runner.reset(req);
-         svTicket = req;
-      }
-      break;
-   case SvFuncCode::Subscribe:
+   // 因為 rxbuf 可能還包含其他非 ReqKey 的資料, 所以在此使用 origReqKeyEnd 紀錄實際 ReqKey 的尾端.
+   // 當有其他仍為 key 的資料時(例: reqKey.SubrIndex_), 則需要調整 origReqKeyEnd;
+   const char*     origReqKeyEnd = reinterpret_cast<const char*>(rxbuf.Peek1());
+   RcSvsTicket     ticket;
+   seed::OpResult  runResult = seed::OpResult::no_error;
+   if (fcCode == SvFuncCode::Subscribe) {
       BitvTo(rxbuf, reqKey.SubrIndex_);
+      origReqKeyEnd = reinterpret_cast<const char*>(rxbuf.Peek1());
       const auto  maxSubrCount = this->Visitor_->GetAclConfig().MaxSubrCount_;
       auto        subrs = this->SubrList_.Lock();
       // 不符合訂閱規範者, 立即斷線: ForceLogout()
-      if (maxSubrCount > 0 && reqKey.SubrIndex_ >= maxSubrCount)
-         msgLogout = "f9sv_Subscribe over MaxSubrCount.";
-      else if (reqKey.SubrIndex_ > subrs->size() + 100) {
+      if (maxSubrCount > 0 && reqKey.SubrIndex_ >= maxSubrCount) {
+         ses.ForceLogout("f9sv_Subscribe over MaxSubrCount.");
+         return;
+      }
+      if (reqKey.SubrIndex_ > subrs->size() + 100) {
          // 一般而言, reqKey.SubrIndex_ 會依序增加.
          // 但如果 client端取消「內部 pending 訂閱」, 因該訂閱尚未送出, 則有可能造成後續的訂閱跳號.
          // 為了避免發生此情況, 所以在此設定一個允許的「最大跳號 = N」數量: subrs->size() + N;
          // 但這樣仍無法避免「惡意」連線造成的記憶體用盡的問題, 所以一般而言應設定 MaxSubrCount 權限.
-         msgLogout = "f9sv_Subscribe bad SubrIndex.";
+         ses.ForceLogout("f9sv_Subscribe bad SubrIndex.");
+         return;
+      }
+      RcSvsSubrSP* ppSubr;
+      if (reqKey.SubrIndex_ >= subrs->size()) {
+         subrs->resize(reqKey.SubrIndex_ + 1);
+         ppSubr = &(*subrs)[reqKey.SubrIndex_];
       }
       else {
-         SubrRegSP* ppSubr;
-         if (reqKey.SubrIndex_ >= subrs->size()) {
-            subrs->resize(reqKey.SubrIndex_ + 1);
-            ppSubr = &(*subrs)[reqKey.SubrIndex_];
-         }
-         else {
-            ppSubr = &(*subrs)[reqKey.SubrIndex_];
-            if (auto* psubr = ppSubr->get()) {
-               if (!psubr->IsSubjectClosed_) {
-                  msgLogout = "f9sv_Subscribe dup subscribe.";
-                  break;
-               }
+         ppSubr = &(*subrs)[reqKey.SubrIndex_];
+         if (auto* psubr = ppSubr->get()) {
+            if (!psubr->IsSubjectClosed_) {
+               ses.ForceLogout("f9sv_Subscribe dup subscribe.");
+               return;
             }
          }
-         ppSubr->reset(new SubrReg(reqKey.SubrIndex_, ToStrView(reqKey.SeedKey_), ses.GetDevice()));
-         TicketRunnerSubscribe* req = new TicketRunnerSubscribe{*this->Visitor_, std::move(reqKey)};
-         runner.reset(req);
-         svTicket = req;
-         if (req->ReqKey_.IsAllTabs_)
-            runResult = seed::OpResult::not_found_tab;
       }
-      break;
+      ppSubr->reset(new RcSvsSubr(reqKey.SubrIndex_, ToStrView(reqKey.SeedKey_), ses.GetDevice()));
+      if (reqKey.IsAllTabs_)
+         runResult = seed::OpResult::not_found_tab;
+      ticket.Assign(new RcSvsSubscribeRunner{*this->Visitor_, std::move(reqKey)});
+   }
+   else {
+      const auto fcti = this->FcQry_.Fetch(param.RecvTime_);
+      if (fcti.GetOrigValue() > 0) {
+         // 當有回覆 layout 時, 表示 client 端可能有 pending, 此時應適度放寬流量.
+         // 因為 client 通常只會查詢少數資料表(系統中也不會有太多資料表),
+         // 所以在此用「超過次數」來處理「適度放寬」.
+         if (++this->FcOverCount_ > 30) {
+            ses.ForceLogout(RevPrintTo<std::string>("RcSvs Flow control:fn=", fcCode, "|ti=", fcti));
+            return;
+         }
+      }
+      fon9_WARN_DISABLE_SWITCH;
+      switch (fcCode) {
+      case SvFuncCode::Query: {
+            CharVector seedPath = reqKey.SeedPath();
+            // TODO: 是否允許使用範圍(key range)查詢? [from - to] or [from + count].
+            ticket.Assign(new RcSvsTicketRunnerQuery{*this->Visitor_, ToStrView(seedPath), ToStrView(reqKey.TabName_)});
+         }
+         break;
+      case SvFuncCode::Write: {
+            std::string values;
+            BitvTo(rxbuf, values);
+            // values.empty(); => 取得 seed 內容;
+            ticket.Assign(new RcSvsTicketRunnerWrite{*this->Visitor_, ToStrView(reqKey.SeedTabPath()), std::move(values)});
+         }
+         break;
+      case SvFuncCode::Remove:
+         ticket.Assign(new RcSvsTicketRunnerRemove{*this->Visitor_, ToStrView(reqKey.SeedTabPath())});
+         break;
+      case SvFuncCode::Command: {
+            std::string cmdln;
+            BitvTo(rxbuf, cmdln);
+            StrView     svCmdLn = ToStrView(cmdln);
+            if (StrTrimHead(&svCmdLn).empty()) // 不支援 cmdln.empty(), 所以改成 "?" = help;
+               cmdln.push_back('?');
+            ticket.Assign(new RcSvsTicketRunnerCommand{*this->Visitor_, ToStrView(reqKey.SeedTabPath()), std::move(cmdln)});
+         }
+         break;
+      case SvFuncCode::GridView: {
+            RcSvsTicketRunnerGridView::ReqMaxRowCountT reqMaxRowCount = 0;
+            BitvTo(rxbuf, reqMaxRowCount);
+            ticket.Assign(new RcSvsTicketRunnerGridView(*this->Visitor_, ToStrView(reqKey.TreePath_), reqMaxRowCount,
+                                                        ToStrView(reqKey.SeedKey_), ToStrView(reqKey.TabName_)));
+         }
+         break;
+      }
    }
    fon9_WARN_POP;
 
-   if (!msgLogout.empty()) {
-      assert(svTicket == nullptr);
-      ses.ForceLogout(msgLogout.ToString());
+   if (ticket.Runner_) {
+      ticket.Req_->Device_    = ses.GetDevice();
+      ticket.Req_->SvFunc_    = fc;
+      ticket.Req_->IsAllTabs_ = reqKey.IsAllTabs_;
+      if (origReqKeyEnd) // 調整實際的 ReqKey 長度.
+         origReqKey.resize(static_cast<size_t>(origReqKeyEnd - origReqKey.begin()));
+      ticket.Runner_->Bookmark_ = std::move(origReqKey);
+      #ifdef _DEBUG
+         if (runnerKeep.PushRunner(ticket.Runner_, runResult))
+            return;
+      #endif
+      if (runResult == seed::OpResult::no_error) {
+         ticket.Runner_->Run();
+      }
+      else {
+         ticket.Runner_->OnError(runResult);
+      }
+      #ifdef _DEBUG
+         runnerKeep.FlushRunner();
+      #endif
    }
-   else if (svTicket) {
-      svTicket->Device_ = ses.GetDevice();
-      svTicket->SvFunc_ = fc;
-      svTicket->IsAllTabs_ = reqKey.IsAllTabs_;
-      runner->Bookmark_ = std::move(origReqKey);
-      if (runResult == seed::OpResult::no_error)
-         runner->Run();
-      else
-         runner->OnError(runResult);
+   else {
+      ses.ForceLogout(RevPrintTo<std::string>("RcSvs unknown fn=", fcCode));
    }
 }
 //--------------------------------------------------------------------------//
@@ -509,7 +335,7 @@ static size_t PutGridViewBuffer(RevBufferList& rbuf, SeedNotifyArgsT& e) {
    return sz + ByteArrayToBitv_NoEmpty(rbuf, gvStr->c_str(), sz);
 }
 
-void RcSeedVisitorServerNote::OnSubscribeNotify(SubrRegSP preg, const seed::SeedNotifyArgs& e) {
+void RcSeedVisitorServerNote::OnSubscribeNotify(RcSvsSubrSP preg, const seed::SeedNotifyArgs& e) {
    RevBufferList ackbuf{128};
    RcSession&    ses = *static_cast<RcSession*>(preg->Device_->Session_.get());
    switch (e.NotifyKind_) {
@@ -520,29 +346,27 @@ void RcSeedVisitorServerNote::OnSubscribeNotify(SubrRegSP preg, const seed::Seed
       assert(dynamic_cast<const seed::SeedNotifySubscribeOK*>(&e) != nullptr);
       if (auto* note = static_cast<RcSeedVisitorServerNote*>(ses.GetNote(f9rc_FunctionCode_SeedVisitor))) {
          assert(note->Runner_ != nullptr);
+         auto& runnerAckBuf = note->Runner_->AckBuffer_;
          // 訂閱成功 {立即回覆的 tab(seeds) 內容;}
-         const auto gvsz = PutGridViewBuffer(note->Runner_->AckBuffer_,
-                                             *static_cast<const seed::SeedNotifySubscribeOK*>(&e));
+         // 若為非Stream訂閱, 則格式會與 RcSvsReq::PackSeedValues(); 相同.
+         const auto gvsz = PutGridViewBuffer(runnerAckBuf, *static_cast<const seed::SeedNotifySubscribeOK*>(&e));
          if (e.NotifyKind_ == seed::SeedNotifyKind::SubscribeStreamOK) {
             if (gvsz == 0)
-               RevPutBitv(note->Runner_->AckBuffer_, fon9_BitvV_ByteArrayEmpty);
+               RevPutBitv(runnerAckBuf, fon9_BitvV_ByteArrayEmpty);
             goto __ACK_SUCCESS_0;
          }
          if (gvsz == 0) {
          __ACK_SUCCESS_0:;
             // 訂閱成功, 告知有 0 筆立即回覆的 tab(seeds) 內容.
-            ToBitv(note->Runner_->AckBuffer_, seed::OpResult::no_error);
-            RevPutBitv(note->Runner_->AckBuffer_, fon9_BitvV_Number0);
+            ToBitv(runnerAckBuf, seed::OpResult::no_error);
+            RevPutBitv(runnerAckBuf, fon9_BitvV_Number0);
          }
          else { // 訂閱成功, 告知有1筆立即回覆的 tab(seeds) 內容.
-            ToBitv(note->Runner_->AckBuffer_, static_cast<unsigned>(e.Tab_->GetIndex()));
-            ToBitv(note->Runner_->AckBuffer_, seed::OpResult::no_error);
-            ToBitv(note->Runner_->AckBuffer_, 1u);
+            ToBitv(runnerAckBuf, static_cast<f9sv_TabSize>(e.Tab_->GetIndex()));
+            ToBitv(runnerAckBuf, seed::OpResult::no_error);
+            ToBitv(runnerAckBuf, 1u);
          }
          note->Runner_->SendRcSvAck(note->Runner_->Bookmark_);
-      }
-      else {
-         assert(note != nullptr);
       }
       return;
    case seed::SeedNotifyKind::TableChanged:
@@ -615,4 +439,3 @@ static bool RcSvServerAgent_Start(fon9::seed::PluginsHolder& holder, fon9::StrVi
 extern "C" fon9_API fon9::seed::PluginsDesc f9p_RcSvServerAgent;
 static fon9::seed::PluginsPark f9pAutoPluginsReg{"RcSvServerAgent", &f9p_RcSvServerAgent};
 fon9::seed::PluginsDesc f9p_RcSvServerAgent{"", &RcSvServerAgent_Start, nullptr, nullptr,};
-

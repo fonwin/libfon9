@@ -38,25 +38,29 @@ namespace f9rc
    public enum ClientLogFlag : uint32_t
    {
       None = 0,
-      All = 0xffff,
+      All = 0x7fffffff,
 
       /// 連線(斷線)相關事件.
-      Link = 0x0001,
-      AllRcSession = 0x0007,
+      Link = 0x00000001,
+      AllRcSession = 0x00000007,
 
-      AllSeedVisitor   = 0x00f8,
+      AllSeedVisitor   = 0x00000ff8,
       SvAll            = AllSeedVisitor,
-      SvConfig         = 0x0008,
-      SvQuery          = 0x0010,
-      SvQueryData      = 0x0020,
-      SvSubscribe      = 0x0040,
-      SvSubscribeData  = 0x0080,
+      SvConfig         = 0x00000008,
+      SvQuery          = 0x00000010,
+      SvQueryData      = 0x00000020,
+      SvSubscribe      = 0x00000040,
+      SvSubscribeData  = 0x00000080,
+      SvWrite          = 0x00000100,
+      SvRemove         = 0x00000200,
+      SvGridView       = 0x00000400,
+      SvCommand        = 0x00000800,
 
-      AllOmsRc    = 0x0f00,
+      AllOmsRc    = 0x000f0000,
       OmsAll      = AllOmsRc,
-      OmsConfig   = 0x0400,
-      OmsRequest  = 0x0100,
-      OmsReport   = 0x0200,
+      OmsConfig   = 0x00040000,
+      OmsRequest  = 0x00010000,
+      OmsReport   = 0x00020000,
    }
 
    public class ClientSession : IDisposable

@@ -195,8 +195,8 @@ struct MdRtsDecoderAuxNote {
    RcSvStreamDecoderNote_MdRts&  Note_;
 
    MdRtsDecoderAuxNote(svc::RxSubrData& rx, f9sv_ClientReport& rpt)
-      : Note_(*static_cast<RcSvStreamDecoderNote_MdRts*>(rx.SubrSeedRec_->StreamDecoderNote_.get())) {
-      assert(dynamic_cast<RcSvStreamDecoderNote_MdRts*>(rx.SubrSeedRec_->StreamDecoderNote_.get()) != nullptr);
+      : Note_(*static_cast<RcSvStreamDecoderNote_MdRts*>(rx.SeedRec_->StreamDecoderNote_.get())) {
+      assert(dynamic_cast<RcSvStreamDecoderNote_MdRts*>(rx.SeedRec_->StreamDecoderNote_.get()) != nullptr);
       rpt.SeedArray_ = this->Note_.SelectSeedArray(rx);
    }
    MdRtsDecoderAuxNote(MdRtsDecoderAuxNote& src, f9sv_ClientReport& rpt, f9sv_TabSize tabidx)
@@ -249,7 +249,7 @@ struct RcSvStreamDecoder_MdRts : public RcMdRtsDecoder {
          DcQueueFixedMem dcq{ack};
          this->DecodeSnapshotSymb(subr, dcq, ses, rpt, isNeedsLogResult);
       }
-      else if (auto fnOnHandler = subr.Seeds_[subr.TabIndex_]->Handler_.FnOnReport_) {
+      else if (auto fnOnHandler = subr.SubrHandler_.FnOnReport_) {
          // 僅訂閱歷史, 則沒有提供現在的 Pod snapshot.
          // 或訂閱整棵樹, 但沒有要求(或不提供)全部商品現在資料.
          fnOnHandler(&ses, &rpt);
@@ -266,7 +266,7 @@ struct RcSvStreamDecoder_MdRts : public RcMdRtsDecoder {
                            bool isNeedsLogResult) {
       if (!rpt.SeedArray_)
          rpt.SeedArray_ = svc::ToSeedArray(subr.Seeds_);
-      const auto     fnOnHandler = subr.Seeds_[subr.TabIndex_]->Handler_.FnOnReport_;
+      const auto     fnOnHandler = subr.SubrHandler_.FnOnReport_;
       const bool     isSubrTree = seed::IsSubrTree(rpt.SeedKey_.Begin_);
       CharVector     tempKeyText; // 在 isSubrTree==true 時使用.
       const auto     tabCount = rpt.Layout_->TabCount_;
@@ -411,7 +411,7 @@ struct RcSvStreamDecoder_MdRts : public RcMdRtsDecoder {
    }
    void NotifyStreamRpt(svc::RxSubrData& rx, f9sv_ClientReport& rpt) {
       rx.FlushLog();
-      if (auto fnOnHandler = rx.SubrSeedRec_->Handler_.FnOnReport_)
+      if (auto fnOnHandler = rx.SubrRec_->SubrHandler_.FnOnReport_)
          fnOnHandler(&rx.Session_, &rpt);
    }
    // -----
@@ -446,7 +446,7 @@ struct RcSvStreamDecoder_MdRts : public RcMdRtsDecoder {
          this->FldDealLmtFlags_->PutNumber(aux.RawWr_, lmtFlags, 0);
       }
 
-      auto     fnOnReport = rx.SubrSeedRec_->Handler_.FnOnReport_;
+      auto     fnOnReport = rx.SubrRec_->SubrHandler_.FnOnReport_;
       unsigned count = ReadOrRaise<byte>(rxbuf);
       if (rx.IsNeedsLog_) {
          RevPrint(rx.LogBuf_, "|rtDeal=", ToHex(dealFlags), "|count=", count + 1);
@@ -586,7 +586,7 @@ struct RcSvStreamDecoder_MdRts : public RcMdRtsDecoder {
    }
    static void ReportEv(svc::RxSubrData& rx, f9sv_ClientReport& rpt) {
       rx.FlushLog();
-      if (auto fnOnReport = rx.SubrSeedRec_->Handler_.FnOnReport_)
+      if (auto fnOnReport = rx.SubrRec_->SubrHandler_.FnOnReport_)
          fnOnReport(&rx.Session_, &rpt);
    }
    // -----
@@ -682,7 +682,7 @@ struct RcSvStreamDecoder_MdRts : public RcMdRtsDecoder {
          RevPrint(rx.LogBuf_, "|infoTime=", dealTime, "|value=");
          rx.FlushLog();
       }
-      if (auto fnOnReport = rx.SubrSeedRec_->Handler_.FnOnReport_)
+      if (auto fnOnReport = rx.SubrRec_->SubrHandler_.FnOnReport_)
          fnOnReport(&rx.Session_, &rpt);
       assert(rxbuf.empty());
    }
@@ -690,7 +690,7 @@ struct RcSvStreamDecoder_MdRts : public RcMdRtsDecoder {
       InfoAux  aux{rx, rpt, rxbuf, this->TabIdxDeal_};
       if (!this->IsIdxDealMktSeqNewer(aux, rx, rxbuf))
          return;
-      const auto  fnOnReport = rx.SubrSeedRec_->Handler_.FnOnReport_;
+      const auto  fnOnReport = rx.SubrRec_->SubrHandler_.FnOnReport_;
       DayTime     dealTime = *aux.SeInfoTime_;
       aux.PutDecField(*this->FldDealTime_, dealTime);
       CharVector  tempKeyText;
@@ -817,7 +817,7 @@ struct RcSvStreamDecoder_MdRts : public RcMdRtsDecoder {
       return isChanged;
    }
    void DecodeFieldValue_NoInfoTime(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {
-      auto        fnOnReport = rx.SubrSeedRec_->Handler_.FnOnReport_;
+      auto        fnOnReport = rx.SubrRec_->SubrHandler_.FnOnReport_;
       NoteAux     aux{rx, rpt};
       auto        nTabFld = ReadOrRaise<uint8_t>(rxbuf);
       f9sv_Index  fldIdxList[32];
@@ -850,12 +850,12 @@ struct RcSvStreamDecoder_MdRts : public RcMdRtsDecoder {
       }
    }
    void DecodeFieldValue_AndInfoTime(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {
-      auto* note = static_cast<RcSvStreamDecoderNote_MdRts*>(rx.SubrSeedRec_->StreamDecoderNote_.get());
+      auto* note = static_cast<RcSvStreamDecoderNote_MdRts*>(rx.SeedRec_->StreamDecoderNote_.get());
       BitvToDayTimeOrUnchange(rxbuf, *note->SelectInfoTime(rx));
       DecodeFieldValue_NoInfoTime(rx, rpt, rxbuf);
    }
    void DecodeTabValues_NoInfoTime(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {
-      auto     fnOnReport = rx.SubrSeedRec_->Handler_.FnOnReport_;
+      auto     fnOnReport = rx.SubrRec_->SubrHandler_.FnOnReport_;
       NoteAux  aux{rx, rpt};
       while (!rxbuf.empty()) {
          auto  tabidx = ReadOrRaise<uint8_t>(rxbuf);
@@ -874,7 +874,7 @@ struct RcSvStreamDecoder_MdRts : public RcMdRtsDecoder {
       }
    }
    void DecodeTabValues_AndInfoTime(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {
-      auto* note = static_cast<RcSvStreamDecoderNote_MdRts*>(rx.SubrSeedRec_->StreamDecoderNote_.get());
+      auto* note = static_cast<RcSvStreamDecoderNote_MdRts*>(rx.SeedRec_->StreamDecoderNote_.get());
       BitvToDayTimeOrUnchange(rxbuf, *note->SelectInfoTime(rx));
       DecodeTabValues_NoInfoTime(rx, rpt, rxbuf);
    }

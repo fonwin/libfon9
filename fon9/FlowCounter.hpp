@@ -68,6 +68,14 @@ public:
    bool Resize(const FlowCounterArgs& args) {
       return this->Resize(args.FcCount_, TimeInterval_Millisecond(args.FcTimeMS_));
    }
+   /// 清除已用流量, 重新計算管制.
+   void ClearFlow() {
+      if (auto sz = sizeof(TimeStamp) * this->SentTimes_.size())
+         memset(static_cast<void*>(&this->SentTimes_[0]), 0, sz);
+   }
+   TimeInterval TimeUnit() const {
+      return this->TimeUnit_;
+   }
    /// 檢查現在是否需要管制.
    /// 還要等 retval 才解除管制.
    /// retval.GetOrigValue() <= 0 表示不用管制.

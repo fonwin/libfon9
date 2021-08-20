@@ -30,6 +30,14 @@ enum class SvFuncCode : uint8_t {
    Unsubscribe = 4,
    /// 訂閱資料回覆 Server to Client.
    SubscribeData = 5,
+   /// 表格查詢.
+   GridView = 6,
+   /// 設定 seed 欄位內容.
+   Write = 7,
+   /// 移除指定的 seed.
+   Remove = 8,
+   /// 要求 seed 執行指令.
+   Command = 9,
 };
 
 /// SvFunc 功能碼.
@@ -157,6 +165,10 @@ struct fon9_API RcSvReqKey {
    bool           IsAllTabs_;
    char           Padding___[3];
    f9sv_SubrIndex SubrIndex_{kSubrIndexNull};
+   RcSvReqKey() = default;
+   RcSvReqKey(SvFunc fc, DcQueue& rxbuf) {
+      this->LoadFrom(fc, rxbuf);
+   }
 
    /// 從 rxbuf 載入 TreePath_, SeedKey_, TabName_; 不包含 SubrIndex_;
    /// - 如果 rxbuf 提供的 tab 為 index, 則會自動填入:
@@ -167,6 +179,18 @@ struct fon9_API RcSvReqKey {
    /// 除了 LoadSeedName() 之外,
    /// 若 GetSvFuncCode(fc) == SvFuncCode::Subscribe; 則在 SeedName 之後包含 this->SubrIndex_;
    void LoadFrom(SvFunc fc, DcQueue& rxbuf);
+
+   /// 返回 this->TreePath_ + "/" + this->SeedKey_;
+   CharVector SeedPath() const;
+   /// 返回 this->TreePath_ + "/" + this->SeedKey_ + "^" this->TabName_;
+   CharVector SeedTabPath() const {
+      CharVector seedPath = this->SeedPath();
+      if (!this->TabName_.empty()) {
+         seedPath.push_back('^');
+         seedPath.append(ToStrView(this->TabName_));
+      }
+      return seedPath;
+   }
 };
 /// 輸出: "|path=", reqKey.TreePath_, "|key=", reqKey.SeedKey_, "|tab=" ...
 fon9_API void RevPrint(RevBuffer& rbuf, const RcSvReqKey& reqKey);

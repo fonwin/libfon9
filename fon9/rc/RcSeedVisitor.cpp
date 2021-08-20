@@ -107,6 +107,18 @@ void RcSvReqKey::LoadSeedName(DcQueue& rxbuf) {
       break;
    }
 }
+CharVector RcSvReqKey::SeedPath() const {
+   CharVector seedPath{ToStrView(this->TreePath_)};
+   seedPath.push_back('/');
+   if (this->SeedKey_.empty())
+      seedPath.append("''");
+   else if (this->SeedKey_.size() == 1 && *this->SeedKey_.begin() == '\t') {
+      // tree op. 不用加上 key.
+   }
+   else
+      seedPath.append(ToStrView(this->SeedKey_));
+   return seedPath;
+}
 void RcSvReqKey::LoadFrom(SvFunc fc, DcQueue& rxbuf) {
    this->LoadSeedName(rxbuf);
    if (GetSvFuncCode(fc) == SvFuncCode::Subscribe) {

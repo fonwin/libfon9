@@ -8,6 +8,9 @@
 
 #ifdef __cplusplus
 extern "C" {
+#define f9sv_ROWNO_NOT_SUPPORT   (~static_cast<uint64_t>(0))
+#else
+#define f9sv_ROWNO_NOT_SUPPORT   ((uint64_t)-1)
 #endif
 
 typedef int32_t   f9sv_Index;
@@ -168,6 +171,9 @@ static inline f9sv_Tab* f9sv_Layout_FindTabName(const f9sv_Layout* layout, const
 typedef enum {
    f9sv_Result_NoError = 0,
 
+   f9sv_Result_RemovePod = 1,
+   f9sv_Result_RemoveSeed = 2,
+
    /// 呼叫 f9sv_Unsubscribe() 時, 通知 regHandler 訂閱取消中.
    /// 告知 regHandler: 後續的訂閱資料及取消結果由 unregHandler 接手.
    f9sv_Result_Unsubscribing = 9641,
@@ -207,6 +213,8 @@ typedef enum {
    f9sv_Result_PathFormatError = -3,
    /// = fon9::seed::OpResult::not_found_tab = -201,
    f9sv_Result_NotFoundTab = -201,
+   /// = fon9::seed::OpResult::not_found_key = -200,
+   f9sv_Result_NotFoundTreeOrKey = -200,
 
    /// 在呼叫 f9sv_Query(); 或 f9sv_Subscribe(); 時,
    /// - 沒有呼叫過 f9sv_Initialize();
@@ -216,22 +224,30 @@ typedef enum {
    /// 連線中斷. 查詢、訂閱, 都會收到此回報, 然後清除所有的要求(查詢、訂閱...).
    f9sv_Result_LinkBroken = -11,
 
-   /// 在呼叫 f9sv_Query(); 時, 若有流量管制.
-   /// - 先透過 FnOnReport_(f9sv_Result_FlowControl) 告知查詢失敗.
-   /// - 然後 f9sv_Query(); 返回>0, 告知應延遲多少 ms;
+   /// 在呼叫有流量管制的要求時(例: f9sv_Query()), 若發生流量管制:
+   /// - 先透過 FnOnReport_(f9sv_Result_FlowControl) 告知要求失敗.
+   /// - 然後要求返回(例:f9sv_Query())值 >0, 告知應延遲多少 ms;
    f9sv_Result_FlowControl = -12,
 
    /// f9sv_Query() 正在查詢, 尚未取得結果, 則後續相同的 seedName 直接返回失敗. 
    f9sv_Result_InQuery = -13,
+   /// 正在等後 f9sv_Write(), 尚未取得結果, 則後續相同的 seedName 直接返回失敗. 
+   f9sv_Result_InWrite = -14,
+   /// 正在等後 f9sv_Remove(), 尚未取得結果, 則後續相同的 seedName 直接返回失敗. 
+   f9sv_Result_InRemove = -15,
+   /// 正在等後 f9sv_Command(), 尚未取得結果, 則後續相同的 seedName 直接返回失敗. 
+   f9sv_Result_InCommand = -16,
+   /// 正在等後 f9sv_GridView(), 尚未取得結果, 則後續相同的 seedName 直接返回失敗. 
+   f9sv_Result_InGridView = -17,
 
    /// 超過可訂閱數量.
    /// 在收到 Server 端的「取消訂閱確認」之後, 才會扣除訂閱數量.
    /// 目前: 僅支援「Session累計訂閱數量」限制, 沒有檢查「個別 tree 的訂閱數量」.
    f9sv_Result_OverMaxSubrCount = -20,
 
-   /// 已經有訂閱, 則後續的 f9sv_Query()/f9sv_Subscribe() 直接返回失敗.
+   /// 已經有訂閱, 則後續的 f9sv_Subscribe() 直接返回失敗.
    f9sv_Result_InSubscribe = -21,
-   /// 正在取消訂閱, 必須等取消成功後, 才可再次執行 f9sv_Query()/f9sv_Subscribe(), 直接返回失敗.
+   /// 正在取消訂閱, 必須等取消成功後, 才可再次執行 f9sv_Subscribe(), 直接返回失敗.
    /// 或 Server 執行訂閱處理時, 收到取消.
    f9sv_Result_InUnsubscribe = -22,
 
@@ -262,12 +278,22 @@ static inline void f9sv_InitClientSessionParams(f9rc_ClientSessionParams* f9rcCl
 #define f9sv_ClientLogFlag_Subscribe      static_cast<f9rc_ClientLogFlag>(0x0040)
 /// 記錄「訂閱」的資料內容.
 #define f9sv_ClientLogFlag_SubscribeData  static_cast<f9rc_ClientLogFlag>(0x0080)
+#define f9sv_ClientLogFlag_Write          static_cast<f9rc_ClientLogFlag>(0x0100)
+#define f9sv_ClientLogFlag_Remove         static_cast<f9rc_ClientLogFlag>(0x0200)
+#define f9sv_ClientLogFlag_GridView       static_cast<f9rc_ClientLogFlag>(0x0400)
+#define f9sv_ClientLogFlag_Command        static_cast<f9rc_ClientLogFlag>(0x0800)
+#define f9sv_ClientLogFlag_RequestMask    static_cast<f9rc_ClientLogFlag>(0x0ff0) // 不包含 Config.
 #else
 #define f9sv_ClientLogFlag_Config         ((f9rc_ClientLogFlag)0x0008)
 #define f9sv_ClientLogFlag_Query          ((f9rc_ClientLogFlag)0x0010)
 #define f9sv_ClientLogFlag_QueryData      ((f9rc_ClientLogFlag)0x0020)
 #define f9sv_ClientLogFlag_Subscribe      ((f9rc_ClientLogFlag)0x0040)
 #define f9sv_ClientLogFlag_SubscribeData  ((f9rc_ClientLogFlag)0x0080)
+#define f9sv_ClientLogFlag_Write          ((f9rc_ClientLogFlag)0x0100)
+#define f9sv_ClientLogFlag_Remove         ((f9rc_ClientLogFlag)0x0200)
+#define f9sv_ClientLogFlag_GridView       ((f9rc_ClientLogFlag)0x0400)
+#define f9sv_ClientLogFlag_Command        ((f9rc_ClientLogFlag)0x0800)
+#define f9sv_ClientLogFlag_RequestMask    ((f9rc_ClientLogFlag)0x0ff0)
 #endif
 
 typedef struct {
@@ -281,12 +307,17 @@ typedef struct {
    char           Padding___[4];
 } f9sv_SeedName;
 
+fon9_MSC_WARN_DISABLE(4201); // nonstandard extension used: nameless struct/union;
 /// 收到訂閱或查詢的資料.
 typedef struct {
    f9sv_Result    ResultCode_;
-   /// Stream 回報時提供, 由 Stream 定義內容.
-   /// 例如: MdRts 回報, ((uint8_t)StreamPackType_) == f9sv_RtsPackType
-   uint16_t       StreamPackType_;
+   union {
+      /// Stream 回報時提供, 由 Stream 定義內容.
+      /// 例如: MdRts 回報, ((uint8_t)StreamPackType_) == f9sv_RtsPackType
+      uint16_t    StreamPackType_;
+      /// f9sv_GridView() 這次返回多少筆資料.
+      uint16_t    GridViewResultCount_;
+   };
    char           Padding___[2];
    /// 使用者訂閱時自訂的編號.
    void*          UserData_;
@@ -305,16 +336,33 @@ typedef struct {
    ///   - 此時可用 SeedArray_[bsTabIdx] 取得「上次買賣報價」的內容.
    ///   - 取得 Tab 的方式: (Tab_ - Tab_->Named_.Index_)[bsTabIdx];
    const struct f9sv_Seed** SeedArray_;
-   /// 由回報提供者額外提供的識別資料.
-   /// 例如:
-   ///   - ((uint8_t)StreamPackType_) ==
-   ///      f9sv_RtsPackType_FieldValue_NoInfoTime,
-   ///      f9sv_RtsPackType_FieldValue_AndInfoTime;
-   ///     - 則此處為 const f9sv_Index* fields = ((const f9sv_Index*)StreamPackExArgs_);
-   ///     - N = fields[0] = 異動的欄位數量;
-   ///     - fields[1..N] = 異動的欄位索引.
-   uintptr_t   StreamPackExArgs_;
+
+   union {
+      /// 由回報提供者額外提供的額外資料.
+      /// 例如:
+      ///   - ((uint8_t)StreamPackType_) ==
+      ///      f9sv_RtsPackType_FieldValue_NoInfoTime,
+      ///      f9sv_RtsPackType_FieldValue_AndInfoTime;
+      ///     - 則此處為 const f9sv_Index* fields = ((const f9sv_Index*)StreamPackExArgs_);
+      ///     - N = fields[0] = 異動的欄位數量;
+      ///     - fields[1..N] = 異動的欄位索引.
+      uintptr_t   StreamPackExArgs_;
+      /// f9sv_GridView() 查詢的表格共有多少筆資料.
+      /// GridViewTableSize_==f9sv_ROWNO_NOT_SUPPORT 表示不提供資料筆數.
+      uint64_t    GridViewTableSize_;
+   };
+   /// GridViewDistanceBegin_==f9sv_ROWNO_NOT_SUPPORT 表示不支援計算距離;
+   uint64_t GridViewDistanceBegin_;
+   uint64_t GridViewDistanceEnd_;
+
+   /// - f9sv_GridView()
+   ///   返回字串格式: 使用 '\x1' 分隔欄位; 使用 '\n' 分隔 seed;
+   ///   可透過 f9sv_GridView_Parser(); 協助處理.
+   /// - f9sv_Command()
+   ///   返回執行結果訊息字串.
+   fon9_CStrView  ExResult_;
 } f9sv_ClientReport;
+fon9_MSC_WARN_POP;
 
 /// 通知收到 SeedVisitor 的: 查詢結果、訂閱結果、訂閱訊息...
 /// - 在通知前會鎖定 session, 您應該盡快結束事件處理, 且不建議在此等候其他 thread.
@@ -346,14 +394,81 @@ f9sv_CAPI_FN(int) f9sv_Initialize(const char* logFileFmt);
 
 /// 送出查詢訊息.
 /// 查詢結果不一定會依照查詢順序回報.
+///
 /// \retval ==f9sv_Result_NoError 查詢要求已送出(或因尚未取得 Layout 而暫時保留).
-///            如果網路查詢返回夠快, 返回前可能已透過 FnOnReport_() 通知查詢結果(可能成功 or 失敗).
+///            如果網路查詢返回夠快, 返回前可能已透過 handler.FnOnReport_() 通知查詢結果(可能成功 or 失敗).
 /// \retval <f9sv_Result_NoError 無法查詢, 失敗原因請參考 f9sv_Result;
-///            會先用 FnOnReport_() 通知查詢失敗, 然後才返回.
-/// \retval >f9sv_Result_NoError 流量管制, 需要等 ((unsigned)retval) ms 之後才能再查詢.
-///            會先用 FnOnReport_() 通知查詢失敗, 然後才返回.
+///            會先用 handler.FnOnReport_() 通知查詢失敗, 然後才返回.
+/// \retval >f9sv_Result_NoError 流量管制, 需要等 ((unsigned)retval) ms 之後才能再查詢(or 設定欄位值).
+///            會先用 handler.FnOnReport_() 通知查詢失敗, 然後才返回.
 f9sv_CAPI_FN(f9sv_Result)
 f9sv_Query(f9rc_ClientSession* ses, const f9sv_SeedName* seedName, f9sv_ReportHandler handler);
+
+/// 查詢表格.
+/// - 由 Tree 針對資料表特性, 而有不同的支援:
+///   - 可能支援 seedName->SeedKey_ 「最接近或相同」的資料開始位置.
+///   - 或必須提供「必須存在的」seedName->SeedKey_;
+///
+/// \param reqMaxRowCount 最多查詢筆數, 但實際查詢返回筆數由 Server 決定.
+///   若 reqMaxRowCount < 0 則表示:
+///   從 seedName->SeedKey_ 往前 n-1(因為要包含 SeedKey_) 筆之後, 取得 n 筆.
+///   所以如果 reqMaxRowCount == -1, 其實與 ReqMaxRowCount_ == 1 結果相同.
+///   如果超過第1筆, 則取出的資料可能會超過 SeedKey_;
+///
+/// \retval ==f9sv_Result_NoError 查詢要求已送出(或因尚未取得 Layout 而暫時保留).
+///            如果網路查詢返回夠快, 返回前可能已透過 handler.FnOnReport_() 通知查詢結果(可能成功 or 失敗).
+/// \retval <f9sv_Result_NoError 無法查詢, 失敗原因請參考 f9sv_Result;
+///            會先用 handler.FnOnReport_() 通知查詢失敗, 然後才返回.
+/// \retval >f9sv_Result_NoError 流量管制, 需要等 ((unsigned)retval) ms 之後才能再查詢(or 設定欄位值).
+///            會先用 handler.FnOnReport_() 通知查詢失敗, 然後才返回.
+f9sv_CAPI_FN(f9sv_Result)
+f9sv_GridView(f9rc_ClientSession* ses, const f9sv_SeedName* seedName, f9sv_ReportHandler handler, int16_t reqMaxRowCount);
+
+/// 協助處理 f9sv_GridView() 返回的表格資料 rpt->ExResult_.
+/// f9sv_GridView() 的結果為字串格式.
+/// 將解析結果填入 rpt->Seed_, 返回 SeedKey 字串.
+/// 下次返回時, 上次的返回的 SeedKey 就會失效!
+///
+/// - (retval.Begin_ == NULL) 表示解析完畢.
+f9sv_CAPI_FN(fon9_CStrView)
+f9sv_GridView_Parser(const f9sv_ClientReport* rpt, fon9_CStrView* exResult);
+
+/// 設定 seed 欄位內容.
+/// strFieldValues 格式: "fieldName1=value1|fieldName2=value2...",
+/// 若 value 有特殊符號, 則可用引號包覆, 例如: "value has some special char, e.g. '|', '=' ...";
+/// 若任一個 fieldName 有錯, 則會放棄此次要求, 不會有任何變動.
+/// value 的值, 則會視 Server 端的解析結果, 來決定異動後的內容.
+///
+/// \retval ==f9sv_Result_NoError 設定要求已送出(或因尚未取得 Layout 而暫時保留).
+///            如果網路返回夠快, 返回前可能已透過 handler.FnOnReport_() 通知設定結果(可能成功 or 失敗).
+/// \retval <f9sv_Result_NoError 無法執行設定要求, 失敗原因請參考 f9sv_Result;
+///            會先用 handler.FnOnReport_() 通知設定失敗, 然後才返回.
+/// \retval >f9sv_Result_NoError 流量管制, 需要等 ((unsigned)retval) ms 之後, 才能再次執行設定欄位內容(or 查詢).
+///            會先用 handler.FnOnReport_() 通知設定失敗, 然後才返回.
+f9sv_CAPI_FN(f9sv_Result)
+f9sv_Write(f9rc_ClientSession* ses, const f9sv_SeedName* seedName, f9sv_ReportHandler handler, const char* strFieldValues);
+
+/// 移除指定的 seed.
+/// \retval ==f9sv_Result_NoError 移除要求已送出.
+///            如果網路返回夠快, 返回前可能已透過 handler.FnOnReport_() 通知結果(可能成功 or 失敗).
+/// \retval <f9sv_Result_NoError 無法執行移除要求, 失敗原因請參考 f9sv_Result;
+///            會先用 handler.FnOnReport_() 通知失敗, 然後才返回.
+/// \retval >f9sv_Result_NoError 流量管制, 需要等 ((unsigned)retval) ms 之後, 才能再次執行.
+///            會先用 handler.FnOnReport_() 通知失敗, 然後才返回.
+f9sv_CAPI_FN(f9sv_Result)
+f9sv_Remove(f9rc_ClientSession* ses, const f9sv_SeedName* seedName, f9sv_ReportHandler handler);
+
+/// 要求 seed 執行命令.
+/// strArgs 格式由各 seed 自行定義, 要執行命令前, 必須知道該 seed 可執行什麼指令。
+///
+/// \retval ==f9sv_Result_NoError 要求已送出(或因尚未取得 Layout 而暫時保留).
+///            如果網路返回夠快, 返回前可能已透過 handler.FnOnReport_() 通知結果(可能成功 or 失敗).
+/// \retval <f9sv_Result_NoError 無法執行要求, 失敗原因請參考 f9sv_Result;
+///            會先用 handler.FnOnReport_() 通知失敗, 然後才返回.
+/// \retval >f9sv_Result_NoError 流量管制, 需要等 ((unsigned)retval) ms 之後, 才能再次執行.
+///            會先用 handler.FnOnReport_() 通知失敗, 然後才返回.
+f9sv_CAPI_FN(f9sv_Result)
+f9sv_Command(f9rc_ClientSession* ses, const f9sv_SeedName* seedName, f9sv_ReportHandler handler, const char* strArgs);
 
 /// 訂閱要求.
 /// 訂閱通知流程:
@@ -379,13 +494,13 @@ f9sv_Subscribe(f9rc_ClientSession* ses, const f9sv_SeedName* seedName, f9sv_Repo
 /// 取消訂閱.
 /// 若在取消訂閱成功之前, 還有「收到訂閱的資料」, 則會使用「取消訂閱時的 unregHandler」通知.
 ///
-/// \retval ==f9sv_Result_NoError 取消訂閱要求已送出.
+/// \retval ==f9sv_Result_NoError 取消訂閱要求已送出, 或等候「確認成功」後送出.
 ///            - 返回前會先使用「訂閱時的 regHandler」通知 f9sv_Result_Unsubscribing;
 ///            - 如果網路返回夠快, 返回前可能已透過 unregHandler 通知「訂閱已取消 f9sv_Result_Unsubscribed」.
-/// \retval ==f9sv_Result_Unsubscribed 已取消「尚未送出的訂閱要求」.
+/// \retval ==f9sv_Result_Unsubscribed 已直接取消「尚未送出的訂閱要求」.
 ///            - 返回前會先使用「訂閱時的 regHandler」通知 f9sv_Result_Unsubscribing;
 ///            - 返回前已透過 unregHandler 通知「訂閱已取消 f9sv_Result_Unsubscribed」.
-/// \retval <f9sv_Result_NoError  無法取消訂閱, 失敗原因請參考 f9sv_Result;
+/// \retval <f9sv_Result_NoError 無法取消訂閱, 失敗原因請參考 f9sv_Result;
 ///            會先用 unregHandler 通知取消失敗, 然後才返回.
 f9sv_CAPI_FN(f9sv_Result)
 f9sv_Unsubscribe(f9rc_ClientSession* ses, const f9sv_SeedName* seedName, f9sv_ReportHandler unregHandler);

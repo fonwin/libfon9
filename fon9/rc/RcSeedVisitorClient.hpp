@@ -23,8 +23,6 @@ public:
    void OnSessionLinkBroken(RcSession& ses) override;
 };
 
-struct RcSvClientRequest;
-
 /// - 在 Rc Session 建立時, 就會將 RcSeedVisitorClientNote 建立好.
 /// - 在 ApReady/LinkBroken 時, 會呼叫 this->ClearRequests() 清除全部的訂閱及Layout.
 class RcSeedVisitorClientNote : public RcFunctionNote {
@@ -56,17 +54,28 @@ public:
       (void)locker; assert(locker.owns_lock());
       return this->FcQry_.Fetch();
    }
+   /// 檢查現在是否需要管制.
+   /// 還要等 retval 才解除管制.
+   /// retval.GetOrigValue() <= 0 表示不用管制.
+   TimeInterval FcQryCheck(const TreeLocker& locker, TimeStamp now) {
+      (void)locker; assert(locker.owns_lock());
+      return this->FcQry_.Check(now);
+   }
+   /// 配合 FcQryCheck().GetOrigValue() <= 0 使用.
+   /// 強制使用一筆流量.
+   void FcQryForceUsed(const TreeLocker& locker, TimeStamp now) {
+      (void)locker; assert(locker.owns_lock());
+      return this->FcQry_.ForceUsed(now);
+   }
 
-   f9sv_Result AddSubr(const TreeLocker& locker, RcSvClientRequest& req, const svc::PodRec* pod);
+   uint32_t MaxSubrCount() const {
+      return this->Config_.MaxSubrCount_;
+   }
 
 private:
-   struct RejectRequest;
-
    void OnRecvAclConfig(RcClientSession& ses, RcFunctionParam& param);
-   void OnRecvQrySubrAck(RcClientSession& ses, DcQueue& rxbuf, SvFunc fcAck, StrView fnName);
    void OnRecvUnsubrAck(RcClientSession& ses, DcQueue& rxbuf);
    void OnRecvSubrData(RcClientSession& ses, DcQueue& rxbuf, SvFunc fcAck);
-   void SendPendings(const TreeLocker& maplk, RcClientSession& ses, svc::TreeRec& tree, bool isTabNotFound);
 
    // ConfigGvTablesStr_: 提供給 fon9::rc::SvParseGvTables() 解析使用的訊息, 分隔符號變成 EOS.
    std::string          ConfigGvTablesStr_;

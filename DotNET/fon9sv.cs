@@ -224,30 +224,44 @@ namespace f9sv
    }
 
    /// 收到訂閱或查詢的資料.
-   [StructLayout(LayoutKind.Sequential)]
+   [StructLayout(LayoutKind.Explicit)]
    public struct ClientReport
    {
+      [FieldOffset(0)]
       public ResultCode ResultCode_;
       /// Stream 回報時提供, 由 Stream 定義內容.
+      [FieldOffset(4)]
       public uint16_t StreamPackType_;
-      uint16_t Padding___;
+      /// f9sv_GridView() 這次返回多少筆資料.
+      [FieldOffset(4)]
+      public uint16_t GridViewResultCount_;
+      // uint16_t Padding___;
+
       /// 使用者訂閱時自訂的編號.
+      [FieldOffset(8)]
       public IntPtr UserData_;
       /// 查詢或訂閱時提供的 TreePath (已正規化: 移除多餘的 '/', '.' 之類).
+      [FieldOffset(16)]
       public fon9.CStrView TreePath_;
       /// 不論 Server 端的 key 為何種型別, 回報事件都會提供字串.
+      [FieldOffset(32)]
       public fon9.CStrView SeedKey_;
       /// TreePath 的資料格式.
+      [FieldOffset(48)]
       public unsafe Layout* Layout_;
       /// 此次回報的是哪個 Tab* 的資料.
+      [FieldOffset(56)]
       public unsafe Tab* Tab_;
       /// 可透過 f9sv.GetField_*() 取得欄位內容.
+      [FieldOffset(64)]
       public IntPtr Seed_;
       /// 由事件發行者提供, 其他 seeds 的資料.
       /// - 例如: 某次「成交明細」異動, 此處可能提供該商品全部的資料,
       ///   - 此時可用 SeedArray_[bsTabIdx] 取得「上次買賣報價」的內容.
       ///   - 取得 Tab 的方式: (Tab_ - Tab_->Named_.Index_)[bsTabIdx];
+      [FieldOffset(72)]
       public IntPtr SeedArray_;
+
       /// 由回報提供者額外提供的識別資料.
       /// 例如:
       ///   - ((f9sv.RtsPackType)StreamPackType_) ==
@@ -256,7 +270,26 @@ namespace f9sv
       ///     - 則此處為 Int32* fields = ((Int32*)StreamPackExArgs_);
       ///     - N = fields[0] = 異動的欄位數量;
       ///     - fields[1..N] = 異動的欄位索引.
+      [FieldOffset(80)]
       public IntPtr StreamPackExArgs_;
+      /// f9sv_GridView() 查詢的表格共有多少筆資料.
+      /// GridViewTableSize_==f9sv.Api.ROWNO_NOT_SUPPORT 表示不提供資料筆數.
+      [FieldOffset(80)]
+      public uint64_t GridViewTableSize_;
+
+      /// GridViewDistanceBegin_==f9sv.Api.ROWNO_NOT_SUPPORT 表示不支援計算距離;
+      [FieldOffset(88)]
+      public uint64_t GridViewDistanceBegin_;
+      [FieldOffset(96)]
+      public uint64_t GridViewDistanceEnd_;
+
+      /// - f9sv_GridView()
+      ///   返回字串格式: 使用 '\x1' 分隔欄位; 使用 '\n' 分隔 seed;
+      ///   可透過 f9sv_GridView_Parser(); 協助處理.
+      /// - f9sv_Command()
+      ///   返回執行結果訊息字串.
+      [FieldOffset(104)]
+      public fon9.CStrView ExResult_;
 
       public unsafe IntPtr IndexSeed(int idx)
       {
@@ -286,6 +319,8 @@ namespace f9sv
 
    public static class Api
    {
+      public const uint64_t ROWNO_NOT_SUPPORT = ~(uint64_t)(0);
+
       /// 啟動 f9sv(fon9 SeedVisitor Rc client) 函式庫.
       /// - 請使用時注意: 禁止 multi thread 同時呼叫 f9sv_Initialize()/fon9_Finalize();
       /// - 可重覆呼叫 f9sv_Initialize(), 但須有對應的 fon9_Finalize();
@@ -299,26 +334,101 @@ namespace f9sv
 
       /// 送出查詢訊息.
       /// 查詢結果不一定會依照查詢順序回報.
+      ///
       /// \retval ==f9sv_Result_NoError 查詢要求已送出(或因尚未取得 Layout 而暫時保留).
-      ///            如果網路查詢返回夠快, 返回前可能已透過 FnOnReport_() 通知查詢結果(可能成功 or 失敗).
+      ///            如果網路查詢返回夠快, 返回前可能已透過 handler.FnOnReport_() 通知查詢結果(可能成功 or 失敗).
       /// \retval <f9sv_Result_NoError 無法查詢, 失敗原因請參考 f9sv_Result;
-      ///            會先用 FnOnReport_() 通知查詢失敗, 然後才返回.
-      /// \retval >f9sv_Result_NoError 流量管制, 需要等 ((unsigned)retval) ms 之後才能再查詢.
-      ///            會先用 FnOnReport_() 通知查詢失敗, 然後才返回.
+      ///            會先用 handler.FnOnReport_() 通知查詢失敗, 然後才返回.
+      /// \retval >f9sv_Result_NoError 流量管制, 需要等 ((unsigned)retval) ms 之後才能再查詢(or 設定欄位值).
+      ///            會先用 handler.FnOnReport_() 通知查詢失敗, 然後才返回.
       [DllImport(fon9.DotNetApi.kDllName, EntryPoint = "f9sv_Query", CharSet = CharSet.Ansi)]
       unsafe extern static ResultCode Query(f9rc.RcClientSession* ses, ref SeedName seedName, ReportHandler handler);
       unsafe public static ResultCode Query(f9rc.ClientSession ses, ref SeedName seedName, ReportHandler handler)
          => Query(ses.RcSes_, ref seedName, handler);
 
+      /// 查詢表格.
+      /// - 由 Tree 針對資料表特性, 而有不同的支援:
+      ///   - 可能支援 seedName->SeedKey_ 「最接近或相同」的資料開始位置.
+      ///   - 或必須提供「必須存在的」seedName->SeedKey_;
+      ///
+      /// \param reqMaxRowCount 最多查詢筆數, 但實際查詢返回筆數由 Server 決定.
+      ///   若 reqMaxRowCount < 0 則表示:
+      ///   從 seedName->SeedKey_ 往前 n-1(因為要包含 SeedKey_) 筆之後, 取得 n 筆.
+      ///   所以如果 reqMaxRowCount == -1, 其實與 ReqMaxRowCount_ == 1 結果相同.
+      ///   如果超過第1筆, 則取出的資料可能會超過 SeedKey_;
+      ///
+      /// \retval ==f9sv_Result_NoError 查詢要求已送出(或因尚未取得 Layout 而暫時保留).
+      ///            如果網路查詢返回夠快, 返回前可能已透過 handler.FnOnReport_() 通知查詢結果(可能成功 or 失敗).
+      /// \retval <f9sv_Result_NoError 無法查詢, 失敗原因請參考 f9sv_Result;
+      ///            會先用 handler.FnOnReport_() 通知查詢失敗, 然後才返回.
+      /// \retval >f9sv_Result_NoError 流量管制, 需要等 ((unsigned)retval) ms 之後才能再查詢(or 設定欄位值).
+      ///            會先用 handler.FnOnReport_() 通知查詢失敗, 然後才返回.
+      [DllImport(fon9.DotNetApi.kDllName, EntryPoint = "f9sv_GridView", CharSet = CharSet.Ansi)]
+      unsafe extern static ResultCode GridView(f9rc.RcClientSession* ses, ref SeedName seedName, ReportHandler handler, Int16 reqMaxRowCount);
+      unsafe public static ResultCode GridView(f9rc.ClientSession ses, ref SeedName seedName, ReportHandler handler, Int16 reqMaxRowCount)
+         => GridView(ses.RcSes_, ref seedName, handler, reqMaxRowCount);
+
+      /// 協助處理 f9sv_GridView() 返回的表格資料 rpt->ExResult_.
+      /// f9sv_GridView() 的結果為字串格式.
+      /// 將解析結果填入 rpt->Seed_, 返回 SeedKey 字串.
+      /// 下次返回時, 上次的返回的 SeedKey 就會失效!
+      ///
+      /// - (retval.Begin_ == IntPtr.Zero) 表示解析完畢.
+      [DllImport(fon9.DotNetApi.kDllName, EntryPoint = "f9sv_GridView_Parser", CharSet = CharSet.Ansi)]
+      public unsafe extern static fon9.CStrView GridView_Parser(ref ClientReport rpt, ref fon9.CStrView exResult);
+
+      /// 設定 seed 欄位內容.
+      /// strFieldValues 格式: "fieldName1=value1|fieldName2=value2...",
+      /// 若 value 有特殊符號, 則可用引號包覆, 例如: "value has some special char, e.g. '|', '=' ...";
+      /// 若任一個 fieldName 有錯, 則會放棄此次要求, 不會有任何變動.
+      /// value 的值, 則會視 Server 端的解析結果, 來決定異動後的內容.
+      ///
+      /// \retval ==f9sv_Result_NoError 設定要求已送出(或因尚未取得 Layout 而暫時保留).
+      ///            如果網路返回夠快, 返回前可能已透過 handler.FnOnReport_() 通知設定結果(可能成功 or 失敗).
+      /// \retval <f9sv_Result_NoError 無法執行設定要求, 失敗原因請參考 f9sv_Result;
+      ///            會先用 handler.FnOnReport_() 通知設定失敗, 然後才返回.
+      /// \retval >f9sv_Result_NoError 流量管制, 需要等 ((unsigned)retval) ms 之後, 才能再次執行設定欄位內容(or 查詢).
+      ///            會先用 handler.FnOnReport_() 通知設定失敗, 然後才返回.
+      [DllImport(fon9.DotNetApi.kDllName, EntryPoint = "f9sv_Write", CharSet = CharSet.Ansi)]
+      unsafe extern static ResultCode Write(f9rc.RcClientSession* ses, ref SeedName seedName, ReportHandler handler, [MarshalAs(UnmanagedType.LPStr)] string strFieldValues);
+      unsafe public static ResultCode Write(f9rc.ClientSession ses, ref SeedName seedName, ReportHandler handler, [MarshalAs(UnmanagedType.LPStr)] string strFieldValues)
+         => Write(ses.RcSes_, ref seedName, handler, strFieldValues);
+
+      /// 移除指定的 seed.
+      /// \retval ==f9sv_Result_NoError 移除要求已送出.
+      ///            如果網路返回夠快, 返回前可能已透過 handler.FnOnReport_() 通知結果(可能成功 or 失敗).
+      /// \retval <f9sv_Result_NoError 無法執行移除要求, 失敗原因請參考 f9sv_Result;
+      ///            會先用 handler.FnOnReport_() 通知失敗, 然後才返回.
+      /// \retval >f9sv_Result_NoError 流量管制, 需要等 ((unsigned)retval) ms 之後, 才能再次執行.
+      ///            會先用 handler.FnOnReport_() 通知失敗, 然後才返回.
+      [DllImport(fon9.DotNetApi.kDllName, EntryPoint = "f9sv_Remove", CharSet = CharSet.Ansi)]
+      unsafe extern static ResultCode Remove(f9rc.RcClientSession* ses, ref SeedName seedName, ReportHandler handler);
+      unsafe public static ResultCode Remove(f9rc.ClientSession ses, ref SeedName seedName, ReportHandler handler)
+         => Remove(ses.RcSes_, ref seedName, handler);
+
+      /// 要求 seed 執行命令.
+      /// strArgs 格式由各 seed 自行定義, 要執行命令前, 必須知道該 seed 可執行什麼指令。
+      ///
+      /// \retval ==f9sv_Result_NoError 要求已送出(或因尚未取得 Layout 而暫時保留).
+      ///            如果網路返回夠快, 返回前可能已透過 handler.FnOnReport_() 通知結果(可能成功 or 失敗).
+      /// \retval <f9sv_Result_NoError 無法執行要求, 失敗原因請參考 f9sv_Result;
+      ///            會先用 handler.FnOnReport_() 通知失敗, 然後才返回.
+      /// \retval >f9sv_Result_NoError 流量管制, 需要等 ((unsigned)retval) ms 之後, 才能再次執行.
+      ///            會先用 handler.FnOnReport_() 通知失敗, 然後才返回.
+      [DllImport(fon9.DotNetApi.kDllName, EntryPoint = "f9sv_Command", CharSet = CharSet.Ansi)]
+      unsafe extern static ResultCode Command(f9rc.RcClientSession* ses, ref SeedName seedName, ReportHandler handler, [MarshalAs(UnmanagedType.LPStr)] string strArgs);
+      unsafe public static ResultCode Command(f9rc.ClientSession ses, ref SeedName seedName, ReportHandler handler, [MarshalAs(UnmanagedType.LPStr)] string strArgs)
+         => Command(ses.RcSes_, ref seedName, handler, strArgs);
+
       /// 訂閱要求.
       /// 訂閱通知流程:
-      /// - f9sv_Subscribe(): rpt.Seed_ == NULL;
+      /// - f9sv_Subscribe(): rpt.Seed_ == IntPtr.Zero;
       ///   - 成功: rpt.ResultCode_ == f9sv_Result_NoError;
-      ///   - 失敗: rpt.ResultCode_ ＜ f9sv_Result_NoError;
+      ///   - 失敗: rpt.ResultCode_ < f9sv_Result_NoError;
       /// - 收到訂閱的資料:
-      ///   - rpt.Seed_ != NULL;
+      ///   - rpt.Seed_ != IntPtr.Zero;
       ///   - rpt.ResultCode_ == f9sv_Result_NoError;
-      /// - f9sv_Unsubscribe(): rpt.Seed_ == NULL;
+      /// - f9sv_Unsubscribe(): rpt.Seed_ == IntPtr.Zero;
       ///   - 使用訂閱時的 regHandler 通知: rpt.ResultCode_ == f9sv_Result_Unsubscribing;
       ///   - 之後不會再使用訂閱時的 regHandler 通知, 改成使用「取消訂閱時的 unregHandler」通知.
       ///   - 若在取消訂閱成功之前, 還有「收到訂閱的資料」, 則會使用「取消訂閱時的 unregHandler」通知.
@@ -326,7 +436,7 @@ namespace f9sv
       ///
       /// \retval >=f9sv_Result_NoError, 訂閱要求已送出.
       ///            如果網路返回夠快, 返回前可能已透過 FnOnReport_() 通知訂閱結果及訊息.
-      /// \retval ＜f9sv_Result_NoError 無法訂閱, 失敗原因請參考 f9sv_Result;
+      /// \retval <f9sv_Result_NoError 無法訂閱, 失敗原因請參考 f9sv_Result;
       ///            會先用 FnOnReport_() 通知訂閱失敗, 然後才返回.
       [DllImport(fon9.DotNetApi.kDllName, EntryPoint = "f9sv_Subscribe", CharSet = CharSet.Ansi)]
       unsafe static extern ResultCode Subscribe(f9rc.RcClientSession* ses, ref SeedName seedName, ReportHandler regHandler);
@@ -336,13 +446,13 @@ namespace f9sv
       /// 取消訂閱.
       /// 若在取消訂閱成功之前, 還有「收到訂閱的資料」, 則會使用「取消訂閱時的 unregHandler」通知.
       ///
-      /// \retval ==f9sv_Result_NoError 取消訂閱要求已送出.
+      /// \retval ==f9sv_Result_NoError 取消訂閱要求已送出, 或等候「確認成功」後送出.
       ///            - 返回前會先使用「訂閱時的 regHandler」通知 f9sv_Result_Unsubscribing;
       ///            - 如果網路返回夠快, 返回前可能已透過 unregHandler 通知「訂閱已取消 f9sv_Result_Unsubscribed」.
-      /// \retval ==f9sv_Result_Unsubscribed 已取消「尚未送出的訂閱要求」.
+      /// \retval ==f9sv_Result_Unsubscribed 已直接取消「尚未送出的訂閱要求」.
       ///            - 返回前會先使用「訂閱時的 regHandler」通知 f9sv_Result_Unsubscribing;
       ///            - 返回前已透過 unregHandler 通知「訂閱已取消 f9sv_Result_Unsubscribed」.
-      /// \retval ＜f9sv_Result_NoError  無法取消訂閱, 失敗原因請參考 f9sv_Result;
+      /// \retval <f9sv_Result_NoError 無法取消訂閱, 失敗原因請參考 f9sv_Result;
       ///            會先用 unregHandler 通知取消失敗, 然後才返回.
       [DllImport(fon9.DotNetApi.kDllName, EntryPoint = "f9sv_Unsubscribe", CharSet = CharSet.Ansi)]
       unsafe static extern ResultCode Unsubscribe(f9rc.RcClientSession* ses, ref SeedName seedName, ReportHandler unregHandler);

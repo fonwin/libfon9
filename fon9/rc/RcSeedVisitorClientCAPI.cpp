@@ -1,32 +1,8 @@
 ﻿// \file fon9/rc/RcSeedVisitorClientCAPI.cpp
 // \author fonwinz@gmail.com
-#include "fon9/rc/RcSeedVisitorClientReq.hpp"
-
-namespace fon9 { namespace rc {
-
-f9sv_Result RcSeedVisitorClientNote::AddSubr(const TreeLocker& locker, RcSvClientRequest& req, const svc::PodRec* pod) {
-   if (this->Config_.MaxSubrCount_ > 0) {
-      if (locker->SubrMap_.Size() >= this->Config_.MaxSubrCount_) {
-         req.ExtMsg_ = "|err=OverMaxSubrCount";
-         return f9sv_Result_OverMaxSubrCount;
-      }
-   }
-   req.SubrIndex_ = static_cast<f9sv_SubrIndex>(locker->SubrMap_.Alloc());
-   svc::SubrRec*  subr = locker->SubrMap_.GetObjPtr(req.SubrIndex_);
-   subr->IsStream_ = seed::IsSubscribeStream(req.OrigTabName_);
-   subr->SvFunc_ = GetSvFuncCode(req.SvFunc_);
-   assert(subr->SvFunc_ == SvFuncCode::Subscribe);
-   subr->Tree_ = req.Tree_;
-   subr->TabIndex_ = req.TabIndex_;
-   if (pod == nullptr)
-      subr->Seeds_ = nullptr;
-   else
-      subr->OnPodReady(*pod, req.SubrIndex_);
-   subr->SeedKey_.assign(req.OrigSeedKey_);
-   return f9sv_Result_NoError;
-}
-
-} } // namespaces
+#include "fon9/rc/RcSvcReq.hpp"
+#include "fon9/rc/RcSeedVisitorClient.hpp"
+using namespace fon9::rc;
 //--------------------------------------------------------------------------//
 extern "C" {
 
@@ -40,50 +16,102 @@ f9sv_Initialize(const char* logFileFmt) {
 
 f9sv_CAPI_FN(f9sv_Result)
 f9sv_Query(f9rc_ClientSession* ses, const f9sv_SeedName* seedName, f9sv_ReportHandler handler) {
-   struct Request : public fon9::rc::RcSvClientRequest {
-      fon9_NON_COPY_NON_MOVE(Request);
-      using fon9::rc::RcSvClientRequest::RcSvClientRequest;
-      f9sv_Result OnBeforeAssignTo(const TreeLocker& locker, const PodRec* pod) override {
-         (void)pod;
-         fon9::TimeInterval fcWait = this->Note_->FcQryFetch(locker);
-         if (fon9_LIKELY(fcWait.GetOrigValue() <= 0))
-            return f9sv_Result_NoError;
-         this->ExtMsg_ = "|err=Flow control";
-         return static_cast<f9sv_Result>(fcWait.ShiftUnit<3>() + 1);
-      }
-   };
-   Request  req(*static_cast<fon9::rc::RcClientSession*>(ses),
-                f9rc_ClientLogFlag{} != (ses->LogFlags_ & f9sv_ClientLogFlag_Query),
-                "f9sv_Query", fon9::rc::SvFuncCode::Query,
-                *seedName, handler);
-   return req.FinalCheckSendRequest(req.CheckReqSt());
+   return RcSvcReq::Run(RcSvcReqSP{new RcSvcReqSeed(
+      *static_cast<fon9::rc::RcClientSession*>(ses),
+      f9sv_ClientLogFlag_Query, "f9sv_Query", fon9::rc::SvFuncCode::Query,
+      *seedName, handler
+   )});
+}
+
+f9sv_CAPI_FN(f9sv_Result)
+f9sv_GridView(f9rc_ClientSession* ses, const f9sv_SeedName* seedName, f9sv_ReportHandler handler, int16_t reqMaxRowCount) {
+   return RcSvcReq::Run(RcSvcReqSP{new RcSvcReqGridView(
+      reqMaxRowCount,
+      *static_cast<fon9::rc::RcClientSession*>(ses),
+      f9sv_ClientLogFlag_GridView, "f9sv_GridView", fon9::rc::SvFuncCode::GridView,
+      *seedName, handler
+   )});
+}
+
+f9sv_CAPI_FN(fon9_CStrView)
+f9sv_GridView_Parser(const f9sv_ClientReport* rpt, fon9_CStrView* exResult) {
+   if (exResult->Begin_ == exResult->End_)
+      return fon9_CStrView{nullptr,nullptr};
+   fon9::StrView  rowSeed{*exResult};
+   if (const char* rowNext = rowSeed.Find(*fon9_kCSTR_ROWSPL)) {
+      exResult->Begin_ = rowNext + 1;
+      rowSeed.SetEnd(rowNext);
+   }
+   else {
+      exResult->Begin_ = exResult->End_ = nullptr;
+   }
+   static thread_local std::string strKey{64, '\0'};
+   if (const char* spl = rowSeed.Find(*fon9_kCSTR_CELLSPL)) {
+      strKey.assign(rowSeed.begin(), spl);
+      rowSeed.SetBegin(spl + 1);
+   }
+   else {
+      strKey.assign(rowSeed.begin(), rowSeed.end());
+      rowSeed.Reset(nullptr);
+   }
+
+   fon9::seed::SimpleRawWr wr{const_cast<struct f9sv_Seed*>(rpt->Seed_)};
+   const f9sv_Tab*         tab = rpt->Tab_;
+   const auto              fldCount = tab->FieldCount_;
+   for (uint32_t fldid = 0; fldid < fldCount; ++fldid) {
+      const f9sv_Field& fld = tab->FieldArray_[fldid];
+      assert(reinterpret_cast<const fon9::seed::Field*>(fld.InternalOwner_)->GetIndex() == fld.Named_.Index_);
+      reinterpret_cast<const fon9::seed::Field*>(fld.InternalOwner_)->StrToCell(wr, fon9::StrFetchNoTrim(rowSeed, *fon9_kCSTR_CELLSPL));
+   }
+   return fon9::ToStrView(strKey).ToCStrView();
+}
+
+f9sv_CAPI_FN(f9sv_Result)
+f9sv_Write(f9rc_ClientSession* ses, const f9sv_SeedName* seedName, f9sv_ReportHandler handler, const char* strFieldValues) {
+   return RcSvcReq::Run(RcSvcReqSP{new RcSvcReqExStrArg(
+      fon9::StrView_cstr(strFieldValues),
+      *static_cast<fon9::rc::RcClientSession*>(ses),
+      f9sv_ClientLogFlag_Write, "f9sv_Write", fon9::rc::SvFuncCode::Write,
+      *seedName, handler
+   )});
+}
+
+f9sv_CAPI_FN(f9sv_Result)
+f9sv_Command(f9rc_ClientSession* ses, const f9sv_SeedName* seedName, f9sv_ReportHandler handler, const char* strArgs) {
+   return RcSvcReq::Run(RcSvcReqSP{new RcSvcReqExStrArg(
+      fon9::StrView_cstr(strArgs),
+      *static_cast<fon9::rc::RcClientSession*>(ses),
+      f9sv_ClientLogFlag_Command, "f9sv_Command", fon9::rc::SvFuncCode::Command,
+      *seedName, handler
+   )});
+}
+
+f9sv_CAPI_FN(f9sv_Result)
+f9sv_Remove(f9rc_ClientSession* ses, const f9sv_SeedName* seedName, f9sv_ReportHandler handler) {
+   return RcSvcReq::Run(RcSvcReqSP{new RcSvcReqSeed(
+      *static_cast<fon9::rc::RcClientSession*>(ses),
+      f9sv_ClientLogFlag_Remove, "f9sv_Remove", fon9::rc::SvFuncCode::Remove,
+      *seedName, handler
+   )});
 }
 
 f9sv_CAPI_FN(f9sv_Result)
 f9sv_Subscribe(f9rc_ClientSession* ses, const f9sv_SeedName* seedName, f9sv_ReportHandler handler) {
    // TODO: 訂閱 seedName->SeedKey_ 是否允許使用 "*" or 其他 filter 規則?
-   struct Request : public fon9::rc::RcSvClientRequest {
-      fon9_NON_COPY_NON_MOVE(Request);
-      using fon9::rc::RcSvClientRequest::RcSvClientRequest;
-      f9sv_Result OnBeforeAssignTo(const TreeLocker& locker, const PodRec* pod) override {
-         return this->Note_->AddSubr(locker, *this, pod);
-      }
-   };
-   Request  req(*static_cast<fon9::rc::RcClientSession*>(ses),
-                f9rc_ClientLogFlag{} != (ses->LogFlags_ & f9sv_ClientLogFlag_Subscribe),
-                "f9sv_Subscribe", fon9::rc::SvFuncCode::Subscribe,
-                *seedName, handler);
-   return req.FinalCheckSendRequest(req.CheckSubrReqSt());
+   return RcSvcReq::Run(RcSvcReqSP{new RcSvcReqSubr(
+      *static_cast<fon9::rc::RcClientSession*>(ses),
+      f9sv_ClientLogFlag_Subscribe, "f9sv_Subscribe", fon9::rc::SvFuncCode::Subscribe,
+      *seedName, handler
+   )});
 }
 
 f9sv_CAPI_FN(f9sv_Result)
 f9sv_Unsubscribe(f9rc_ClientSession* ses, const f9sv_SeedName* seedName, f9sv_ReportHandler handler) {
-   using Request = fon9::rc::RcSvClientRequest;
-   Request  req(*static_cast<fon9::rc::RcClientSession*>(ses),
-                f9rc_ClientLogFlag{} != (ses->LogFlags_ & f9sv_ClientLogFlag_Subscribe),
-                "f9sv_Unsubscribe", fon9::rc::SvFuncCode::Unsubscribe,
-                *seedName, handler);
-   return req.FinalCheckSendRequest(req.CheckSubrReqSt());
+   return RcSvcReq::Run(RcSvcReqSP{new RcSvcReqUnsubr(
+      *static_cast<fon9::rc::RcClientSession*>(ses),
+      f9sv_ClientLogFlag_Subscribe, "f9sv_Unsubscribe", fon9::rc::SvFuncCode::Unsubscribe,
+      *seedName, handler
+   )});
 }
 
 f9sv_CAPI_FN(const char*)
@@ -94,6 +122,10 @@ f9sv_GetSvResultMessage(f9sv_Result res) {
 
    #define case_return(r)  case f9sv_Result_##r:    return #r;
    switch (res) {
+      case f9sv_Result_RemovePod:
+      case f9sv_Result_RemoveSeed:
+         // 使用 GetOpResultMessage();
+         break;
       case_return(NoError);
       case_return(Unsubscribing);
       case_return(Unsubscribed);
@@ -108,6 +140,7 @@ f9sv_GetSvResultMessage(f9sv_Result res) {
 
       case_return(AccessDenied);
       case_return(NotFoundTab);
+      case_return(NotFoundTreeOrKey);
       case_return(PathFormatError);
 
       case_return(BadInitParams);
@@ -117,6 +150,10 @@ f9sv_GetSvResultMessage(f9sv_Result res) {
       case_return(OverMaxSubrCount);
       case_return(InSubscribe);
       case_return(InUnsubscribe);
+      case_return(InWrite);
+      case_return(InRemove);
+      case_return(InCommand);
+      case_return(InGridView);
    }
    return GetOpResultMessage(static_cast<fon9::seed::OpResult>(res));
 }

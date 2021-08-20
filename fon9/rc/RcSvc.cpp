@@ -1,6 +1,7 @@
 ﻿// \file fon9/rc/RcSvc.cpp
 // \author fonwinz@gmail.com
 #include "fon9/rc/RcSvc.hpp"
+#include "fon9/rc/RcSvcReq.hpp"
 #include "fon9/rc/RcSvStreamDecoder.hpp"
 #include "fon9/seed/FieldMaker.hpp"
 #include "fon9/Log.hpp"
@@ -107,7 +108,7 @@ RxSubrData::RxSubrData(f9rc_ClientSession& ses, SvFunc fcAck, TreeLocker&& maplk
    , NotifyKind_{GetSvFuncSubscribeDataNotifyKind(fcAck)}
    , SubrIndex_{LoadSubrIndex(rxbuf)}
    , SubrRec_{maplk->SubrMap_.GetObjPtr(SubrIndex_)}
-   , SubrSeedRec_{SubrRec_ ? SubrRec_->Seeds_[SubrRec_->TabIndex_].get() : nullptr}
+   , SeedRec_{SubrRec_ ? SubrRec_->Seeds_[SubrRec_->TabIndex_].get() : nullptr}
    , SubrTab_{SubrRec_ ? SubrRec_->Tree_->Layout_->GetTab(SubrRec_->TabIndex_) : nullptr}
    , LockedMap_{std::move(maplk)}
    , IsNeedsLog_(f9rc_ClientLogFlag{} != (ses.LogFlags_ & f9sv_ClientLogFlag_SubscribeData)
@@ -118,14 +119,14 @@ RxSubrData::RxSubrData(f9rc_ClientSession& ses, SvFunc fcAck, TreeLocker&& maplk
       if (this->SubrRec_ == nullptr)
          RevPrint(this->LogBuf_, "|err=Bad subrIndex.");
    }
-   assert(this->SubrSeedRec_ == nullptr || (this->SubrSeedRec_->SubrIndex_ == this->SubrIndex_));
+   assert(this->SeedRec_ == nullptr || (this->SeedRec_->SubrIndex_ == this->SubrIndex_));
 }
 RxSubrData::RxSubrData(RxSubrData& src)
    : Session_(src.Session_)
    , NotifyKind_{src.NotifyKind_}
    , SubrIndex_{src.SubrIndex_}
    , SubrRec_{src.SubrRec_}
-   , SubrSeedRec_{src.SubrSeedRec_}
+   , SeedRec_{src.SeedRec_}
    , SubrTab_{src.SubrTab_}
    , IsNeedsLog_{src.IsNeedsLog_}
    , IsSubrTree_{src.IsSubrTree_} {
@@ -168,8 +169,8 @@ void RxSubrData::LoadGv(DcQueue& rxbuf) {
 }
 void RxSubrData::RemoveSubscribe() {
    this->LogSubrRec();
-   this->SubrRec_->ClearSvFunc();
-   this->SubrSeedRec_->ClearSvFunc();
+   this->SubrRec_->ClearSvFuncSubr();
+   this->SeedRec_->ClearSubscriber();
    this->LockedMap_->SubrMap_.RemoveObjPtr(this->SubrIndex_, this->SubrRec_);
 }
 

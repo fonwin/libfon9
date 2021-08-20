@@ -19,28 +19,39 @@ namespace fon9 { namespace rc {
 
 class fon9_API RcSvStreamDecoder;
 using RcSvStreamDecoderSP = std::unique_ptr<RcSvStreamDecoder>;
+
 class fon9_API RcSvStreamDecoderNote;
 using RcSvStreamDecoderNoteSP = std::unique_ptr<RcSvStreamDecoderNote>;
+
+class RcSvcReq;
+using RcSvcReqSP = std::unique_ptr<RcSvcReq>;
 
 //-----------------------------
 namespace svc {
 
 struct SeedRec : public f9sv_Seed {
    fon9_NON_COPY_NON_MOVE(SeedRec);
-   f9sv_ReportHandler      Handler_;
+   f9sv_ReportHandler      SeedHandler_;
    f9sv_SubrIndex          SubrIndex_{kSubrIndexNull};
-   SvFunc                  SvFunc_{};
+   SvFuncCode              WorkingSvFunc_{};
    char                    Padding___[3];
    RcSvStreamDecoderNoteSP StreamDecoderNote_;
 
    SeedRec() {
-      ZeroStruct(this->Handler_);
+      ZeroStruct(this->SeedHandler_);
    }
-
-   void ClearSvFunc() {
-      this->Handler_.FnOnReport_ = nullptr;
+   // 一般功能(除訂閱外), 只要回覆一次, 所以在回覆前, 先清除 seed 的狀態.
+   f9sv_FnOnReport OnBeforeReportToUser(f9sv_ClientReport& rpt, SeedRec& seed, SvFuncCode fcCode) {
+      auto fnOnReport = seed.SeedHandler_.FnOnReport_;
+      rpt.UserData_ = seed.SeedHandler_.UserData_;
+      if (seed.WorkingSvFunc_ == fcCode || !fnOnReport) {
+         this->SeedHandler_.FnOnReport_ = nullptr;
+         this->WorkingSvFunc_ = SvFuncCode::Empty;
+      }
+      return fnOnReport;
+   }
+   void ClearSubscriber() {
       this->SubrIndex_ = kSubrIndexNull;
-      this->SvFunc_ = SvFunc::Empty;
    }
 
    static SeedRec* MakeSeedRec(const seed::Tab& tab) {
@@ -67,7 +78,7 @@ inline const f9sv_Seed** ToSeedArray(SeedSP* seedArray) {
    // }
    // ----- 改判斷 SeedRec 的第1個 data member 的位置, 是否剛好緊接 f9sv_Seed 之後.
    fon9_GCC_WARN_DISABLE("-Winvalid-offsetof");
-   static_assert(offsetof(SeedRec, Handler_) == sizeof(f9sv_Seed) && sizeof(f9sv_Seed) != 0, "");
+   static_assert(offsetof(SeedRec, SeedHandler_) == sizeof(f9sv_Seed) && sizeof(f9sv_Seed) != 0, "");
    fon9_GCC_WARN_POP;
    #endif
    // -----
@@ -95,21 +106,7 @@ struct PodRec {
 using PodMap = std::unordered_map<CharVector, PodRec>;
 // -----
 /// 在收到 Layout 之前的查詢、訂閱, 都要先保留.
-struct PendingReq {
-   f9sv_ReportHandler   Handler_;
-   CharVector           SeedKey_;
-   CharVector           TabName_;
-   f9sv_TabSize         TabIndex_;
-   f9sv_SubrIndex       SubrIndex_;
-   SvFunc               SvFunc_;
-   char                 Padding___[7];
-   void AssignToSeed(SeedRec& seed) const {
-      seed.Handler_   = this->Handler_;
-      seed.SvFunc_    = this->SvFunc_;
-      seed.SubrIndex_ = this->SubrIndex_;
-   }
-};
-using PendingReqs = std::deque<PendingReq>;
+using PendingReqs = std::deque<RcSvcReqSP>;
 // -----
 struct TabRec {
    fon9_NON_COPYABLE(TabRec);
@@ -145,23 +142,32 @@ struct TreeRec {
 using TreeRecSP = std::unique_ptr<TreeRec>;
 // -----
 struct SubrRec {
-   TreeRec*       Tree_{};
-   CharVector     SeedKey_;
-   SeedSP*        Seeds_{}; // = PodRec::Seeds_
-   f9sv_TabSize   TabIndex_{};
-   /// 設定成 SvFuncCode::Unsubscribe 之後, 要拋棄所有的 [訂閱、訂閱資料] 事件.
-   SvFuncCode     SvFunc_{};
-   bool           IsStream_{false};
-   char           Padding___[2];
-   void ClearSvFunc() {
-      this->Tree_ = nullptr;
-      this->Seeds_ = nullptr;
-      this->SvFunc_ = SvFuncCode{};
+   SvFuncCode           SubrSvFunc_{};
+   bool                 IsStream_{false};
+   char                 Padding___[2];
+   f9sv_TabSize         TabIndex_{};
+
+   TreeRec*             Tree_{};
+   CharVector           SeedKey_;
+   SeedSP*              Seeds_{}; // = PodRec::Seeds_
+
+   f9sv_ReportHandler   SubrHandler_;
+
+   SubrRec() {
+      ZeroStruct(this->SubrHandler_);
+   }
+
+   void ClearSvFuncSubr() {
+      this->SubrSvFunc_ = SvFuncCode{};
+      this->Tree_       = nullptr;
+      this->Seeds_      = nullptr;
+      this->SubrHandler_.FnOnReport_ = nullptr;
    }
 
    /// 當有 layout 時, 訂閱記錄必須與 Pod(Seed) 建立關聯.
    void OnPodReady(const PodRec& pod, f9sv_SubrIndex subrIndex) {
       assert(this->Seeds_ == nullptr);
+      assert(this->Tree_ && this->TabIndex_ < this->Tree_->LayoutC_.TabCount_);
       this->Seeds_ = pod.Seeds_;
       pod.Seeds_[this->TabIndex_]->SubrIndex_ = subrIndex;
    }
@@ -201,7 +207,7 @@ struct RxSubrData {
    const f9sv_SubrIndex SubrIndex_;
    SubrRec* const       SubrRec_;
    /// 必定為 SubrRec_->Seeds_[SubrRec_->TabIndex_];
-   SeedRec* const       SubrSeedRec_;
+   SeedRec* const       SeedRec_;
    /// 必定為 SubrRec_->Tree_->Layout_->GetTab(SubrRec_->TabIndex_);
    seed::Tab* const     SubrTab_;
    RevBufferList        LogBuf_{kLogBlockNodeSize};

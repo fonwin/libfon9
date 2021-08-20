@@ -230,10 +230,14 @@ set(fon9src
  rc/RcClientApi.cpp
  rc/RcSeedVisitor.cpp
  rc/RcSeedVisitorServer.cpp
- rc/RcSvc.cpp
+ rc/RcSvsTicket.cpp
  rc/RcSeedVisitorClient.cpp
- rc/RcSeedVisitorClientReq.cpp
  rc/RcSeedVisitorClientCAPI.cpp
+ rc/RcSvcAck.cpp
+ rc/RcSvcReq.cpp
+ rc/RcSvcReqSeed.cpp
+ rc/RcSvcReqSubr.cpp
+ rc/RcSvc.cpp
  rc/RcSvStreamDecoder.cpp
  rc/RcMdRtsDecoder.cpp
 )
@@ -352,6 +356,9 @@ if(CMAKE_FON9_BUILD_UNIT_TEST)
 
    add_executable(Rc_UT rc/Rc_UT.cpp)
    target_link_libraries(Rc_UT fon9_s)
+
+   add_executable(RcSv_UT rc/RcSv_UT.cpp)
+   target_link_libraries(RcSv_UT fon9_s)
 
    # unit tests: seed
    add_executable(Seed_UT seed/Seed_UT.cpp)

@@ -70,6 +70,7 @@ $OUTPUT_DIR/Socket_UT
 # unit tests: seed
 $OUTPUT_DIR/Seed_UT
 $OUTPUT_DIR/Tree_UT
+$OUTPUT_DIR/RcSv_UT
 
 # unit tests: crypt / auth
 $OUTPUT_DIR/Crypto_UT

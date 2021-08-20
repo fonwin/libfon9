@@ -2,7 +2,7 @@
 // \author fonwinz@gmail.com
 #ifndef __fon9_rc_RcSvStreamDecoder_hpp__
 #define __fon9_rc_RcSvStreamDecoder_hpp__
-#include "fon9/rc/RcSvc.hpp"
+#include "fon9/rc/RcSvcReq.hpp"
 #include "fon9/SimpleFactory.hpp"
 
 namespace fon9 { namespace rc {

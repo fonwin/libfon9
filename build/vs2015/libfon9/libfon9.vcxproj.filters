@@ -174,12 +174,6 @@
     <Filter Include="Source Files\rc">
       <UniqueIdentifier>{69b4cf02-ff06-4fdd-8150-58bd2b6bdc30}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\rc\_SeedVisitorClient">
-      <UniqueIdentifier>{1e22e72d-e032-4d32-a8b7-172525ff000d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\rc\_SeedVisitorClient">
-      <UniqueIdentifier>{7237f3a3-ae38-4d72-9fd1-2794dde9e76b}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\fmkt\_SymbData%28BS,Deal...%29">
       <UniqueIdentifier>{f6d75c7c-c64c-4ae2-8401-99c82057d4b1}</UniqueIdentifier>
     </Filter>
@@ -215,6 +209,18 @@
     </Filter>
     <Filter Include="Source Files\fmkt\_Md">
       <UniqueIdentifier>{c65d0558-193f-4dcd-af73-a69cb4610de1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\rc\_RcSeedVisitor">
+      <UniqueIdentifier>{23f65528-8554-48a7-8e44-baefcd42e2d3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\rc\_RcSeedVisitor\_RcSeedVisitorClient">
+      <UniqueIdentifier>{7237f3a3-ae38-4d72-9fd1-2794dde9e76b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\rc\_RcSeedVisitor">
+      <UniqueIdentifier>{0b105ddc-8f26-42ab-9507-9ed5ee5b19f4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\rc\_RcSeedVisitor\_RcSeedVisitorClient">
+      <UniqueIdentifier>{1e22e72d-e032-4d32-a8b7-172525ff000d}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -974,15 +980,6 @@
     <ClInclude Include="..\..\..\fon9\rc\RcClientSession.hpp">
       <Filter>Header Files\rc</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\fon9\rc\RcSeedVisitor.h">
-      <Filter>Header Files\rc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\fon9\rc\RcSeedVisitor.hpp">
-      <Filter>Header Files\rc</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\fon9\rc\RcSeedVisitorServer.hpp">
-      <Filter>Header Files\rc</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\fon9\FileReadAll.hpp">
       <Filter>Header Files\_base\_File</Filter>
     </ClInclude>
@@ -990,22 +987,19 @@
       <Filter>Header Files\_base\_Tools / Utility</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\fon9\rc\RcSvStreamDecoder.hpp">
-      <Filter>Header Files\rc\_SeedVisitorClient</Filter>
+      <Filter>Header Files\rc\_RcSeedVisitor\_RcSeedVisitorClient</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\fon9\rc\RcMdRtsDecoder.h">
-      <Filter>Header Files\rc\_SeedVisitorClient</Filter>
+      <Filter>Header Files\rc\_RcSeedVisitor\_RcSeedVisitorClient</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\fon9\rc\RcSeedVisitorClient.hpp">
-      <Filter>Header Files\rc\_SeedVisitorClient</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\fon9\rc\RcSeedVisitorClientReq.hpp">
-      <Filter>Header Files\rc\_SeedVisitorClient</Filter>
+      <Filter>Header Files\rc\_RcSeedVisitor\_RcSeedVisitorClient</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\fon9\rc\RcMdRtsDecoder.hpp">
-      <Filter>Header Files\rc\_SeedVisitorClient</Filter>
+      <Filter>Header Files\rc\_RcSeedVisitor\_RcSeedVisitorClient</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\fon9\rc\RcSvc.hpp">
-      <Filter>Header Files\rc\_SeedVisitorClient</Filter>
+      <Filter>Header Files\rc\_RcSeedVisitor\_RcSeedVisitorClient</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\fon9\auth\PolicySocketFrom.hpp">
       <Filter>Header Files\auth</Filter>
@@ -1138,6 +1132,24 @@
     </ClInclude>
     <ClInclude Include="..\..\..\fon9\fmkt\FmktTools.hpp">
       <Filter>Header Files\fmkt\_Base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\rc\RcSvcReq.hpp">
+      <Filter>Header Files\rc\_RcSeedVisitor\_RcSeedVisitorClient</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\rc\RcSeedVisitor.h">
+      <Filter>Header Files\rc\_RcSeedVisitor</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\rc\RcSeedVisitor.hpp">
+      <Filter>Header Files\rc\_RcSeedVisitor</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\rc\RcSeedVisitorServer.hpp">
+      <Filter>Header Files\rc\_RcSeedVisitor</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\rc\RcSvcAck.hpp">
+      <Filter>Header Files\rc\_RcSeedVisitor\_RcSeedVisitorClient</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\rc\RcSvsTicket.hpp">
+      <Filter>Header Files\rc\_RcSeedVisitor</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1708,32 +1720,26 @@
     <ClCompile Include="..\..\..\fon9\rc\RcClientSession.cpp">
       <Filter>Source Files\rc</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\fon9\rc\RcSeedVisitor.cpp">
-      <Filter>Source Files\rc</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\fon9\rc\RcSeedVisitorServer.cpp">
-      <Filter>Source Files\rc</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\fon9\CTools.c">
       <Filter>Source Files\_base\_Tools / Utility</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\rc\RcSvStreamDecoder.cpp">
-      <Filter>Source Files\rc\_SeedVisitorClient</Filter>
+      <Filter>Source Files\rc\_RcSeedVisitor\_RcSeedVisitorClient</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\rc\RcMdRtsDecoder.cpp">
-      <Filter>Source Files\rc\_SeedVisitorClient</Filter>
+      <Filter>Source Files\rc\_RcSeedVisitor\_RcSeedVisitorClient</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\rc\RcSeedVisitorClient.cpp">
-      <Filter>Source Files\rc\_SeedVisitorClient</Filter>
+      <Filter>Source Files\rc\_RcSeedVisitor\_RcSeedVisitorClient</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\rc\RcSeedVisitorClientCAPI.cpp">
-      <Filter>Source Files\rc\_SeedVisitorClient</Filter>
+      <Filter>Source Files\rc\_RcSeedVisitor\_RcSeedVisitorClient</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\fon9\rc\RcSeedVisitorClientReq.cpp">
-      <Filter>Source Files\rc\_SeedVisitorClient</Filter>
+    <ClCompile Include="..\..\..\fon9\rc\RcSvcReq.cpp">
+      <Filter>Source Files\rc\_RcSeedVisitor\_RcSeedVisitorClient</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\rc\RcSvc.cpp">
-      <Filter>Source Files\rc\_SeedVisitorClient</Filter>
+      <Filter>Source Files\rc\_RcSeedVisitor\_RcSeedVisitorClient</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\framework\IoFactoryTcpServerAB.cpp">
       <Filter>Source Files\framework</Filter>
@@ -1845,6 +1851,24 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\fmkt\FmktTools.cpp">
       <Filter>Source Files\fmkt\_Base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\rc\RcSeedVisitor.cpp">
+      <Filter>Source Files\rc\_RcSeedVisitor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\rc\RcSeedVisitorServer.cpp">
+      <Filter>Source Files\rc\_RcSeedVisitor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\rc\RcSvcReqSubr.cpp">
+      <Filter>Source Files\rc\_RcSeedVisitor\_RcSeedVisitorClient</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\rc\RcSvcReqSeed.cpp">
+      <Filter>Source Files\rc\_RcSeedVisitor\_RcSeedVisitorClient</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\rc\RcSvcAck.cpp">
+      <Filter>Source Files\rc\_RcSeedVisitor\_RcSeedVisitorClient</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\rc\RcSvsTicket.cpp">
+      <Filter>Source Files\rc\_RcSeedVisitor</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
