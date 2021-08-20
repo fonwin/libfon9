@@ -32,11 +32,17 @@ class Layout;
 /// 同一個 Layout 物件可以給多個 Tree 參考使用.
 using LayoutSP = intrusive_ptr<Layout>;
 
+/// >=0 處理結果.
+/// <0  錯誤代碼.
 enum class OpResult {
    no_error = 0,
 
-   removed_pod,
-   removed_seed,
+   removed_pod = 1,
+   removed_seed = 2,
+
+   // -----------------------
+   // 底下開始為負數, 表示錯誤.
+   // -----------------------
 
    mem_alloc_error = -1,
    access_denied = -2,

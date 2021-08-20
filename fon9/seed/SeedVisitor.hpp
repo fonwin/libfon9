@@ -162,25 +162,38 @@ public:
 
 /// \ingroup seed
 /// 期望寫入 seed 的欄位.
+/// 這裡不會主動解析 FieldValues_ 內容.
+/// 應由 Visitor.OnTicketRunnerWrite() 或衍生者自行處理.
+/// 這裡的 TicketRunnerWrite.ParseSetValues() 可以輔助.
 class fon9_API TicketRunnerWrite : public TicketRunner {
    fon9_NON_COPY_NON_MOVE(TicketRunnerWrite);
    using base = TicketRunner;
-   void OnWriteOp(const SeedOpResult& res, const RawWr* wr);
+protected:
+   virtual void OnWriteOp(const SeedOpResult& res, const RawWr* wr);
 public:
    const std::string FieldValues_;
    TicketRunnerWrite(SeedVisitor& visitor, StrView seed, StrView fldValues)
       : base(visitor, seed, AccessRight::Write)
       , FieldValues_{fldValues.ToString()} {
    }
+   TicketRunnerWrite(SeedVisitor& visitor, StrView seed, std::string&& fldValues)
+      : base(visitor, seed, AccessRight::Write)
+      , FieldValues_{std::move(fldValues)} {
+   }
    void OnFoundTree(TreeOp&) override;
    void OnLastStep(TreeOp& op, StrView keyText, Tab& tab) override;
    void OnLastSeedOp(const PodOpResult& resPod, PodOp* pod, Tab& tab) override;
 
-   /// - 使用 ',' 分隔 fieldName1=value1,fieldName2=value2
+   /// - 使用 chSpl(預設為',') 分隔 fieldName1=value1,fieldName2=value2
    /// - 必要時 value 可以用引號框起來.
    /// - 若有錯誤, 則傳回錯誤訊息, 例如: "fieldName=xxx|err=field not found\n";
    ///   若有多個錯誤, 則會產生多行訊息, 最後行也有 '\n' 結尾.
-   RevBufferList ParseSetValues(const SeedOpResult& res, const RawWr& wr);
+   RevBufferList ParseSetValues(const SeedOpResult& res, const RawWr& wr) {
+      RevBufferList rbuf{128};
+      this->ParseSetValues(rbuf, res, wr, ',');
+      return rbuf;
+   }
+   void ParseSetValues(RevBufferList& rbuf, const SeedOpResult& res, const RawWr& wr, char chSpl);
 };
 
 /// \ingroup seed
@@ -189,6 +202,7 @@ class fon9_API TicketRunnerRemove : public TicketRunner {
    fon9_NON_COPY_NON_MOVE(TicketRunnerRemove);
    using base = TicketRunner;
    FnPodRemoved RemovedHandler_;
+protected:
    virtual void OnRemoved(const PodRemoveResult& res);
    void OnBeforeRemove(TreeOp& opTree, StrView keyText, Tab* tab) override;
    void OnAfterRemove(const PodRemoveResult& res) override;
@@ -209,7 +223,14 @@ class fon9_API TicketRunnerGridView : public TicketRunnerTree {
    StrView     StartKey_;
    CharVector  TabName_;
    CharVector  LastKey_; // for Continue();
-   void OnGridViewOp(GridViewResult& res);
+protected:
+   virtual void OnGridViewOp(GridViewResult& res);
+   /// - assert(req.Tab_ != nullptr);
+   /// - this->Visitor_->OnTicketRunnerBeforeGridView(*this, opTree, req);
+   /// - opTree.GridView(); => 結果轉 OnGridViewOp();
+   virtual void OnFoundTab(TreeOp& opTree, GridViewRequest& req);
+   /// 如果有找到 tab, 則會呼叫 this->OnFoundTab() 做後續處理;
+   void OnFoundTree(TreeOp& opTree) override;
 public:
    using ReqMaxRowCountT = int16_t;
    /// - 若 < 0 則表示:
@@ -219,7 +240,7 @@ public:
    ReqMaxRowCountT   ReqMaxRowCount_;
 
    TicketRunnerGridView(SeedVisitor& visitor, StrView seed, ReqMaxRowCountT reqMaxRowCount, StrView startKey, StrView tabName);
-   void OnFoundTree(TreeOp& opTree) override;
+
    /// 接續上次最後的 key 繼續查詢.
    void Continue();
 };
@@ -231,12 +252,19 @@ fon9_WARN_POP;
 class fon9_API TicketRunnerCommand : public TicketRunner {
    fon9_NON_COPY_NON_MOVE(TicketRunnerCommand);
    using base = TicketRunner;
-   const std::string SeedCommandLine_;
-   void SetNewCurrPath();
-   void OnSeedCommandResult(const SeedOpResult& res, StrView msg);
+protected:
+   virtual void SetNewCurrPath();
+   virtual void OnSeedCommandResult(const SeedOpResult& res, StrView msg);
 public:
+   const std::string SeedCommandLine_;
    /// 如果 cmdln.empty() 則表示切換現在路徑: this->Visitor_->SetCurrPath(ToStrView(this->Path_));
-   TicketRunnerCommand(SeedVisitor& visitor, StrView seed, StrView cmdln);
+   TicketRunnerCommand(SeedVisitor& visitor, StrView seed, StrView cmdln)
+      : TicketRunnerCommand(visitor, seed, cmdln.ToString()) {
+   }
+   TicketRunnerCommand(SeedVisitor& visitor, StrView seed, std::string&& cmdln);
+
+   /// 除非: this->SeedCommandLine_.empty(): 此時呼叫 this->SetNewCurrPath();
+   /// 否則: 失敗 not_supported_cmd, 因為 tree 不支援 command, 只有 seed 才支援.
    void OnFoundTree(TreeOp&) override;
    void OnLastSeedOp(const PodOpResult& resPod, PodOp* pod, Tab& tab) override;
 };

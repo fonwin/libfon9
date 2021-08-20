@@ -122,11 +122,14 @@ void TicketRunnerWrite::OnFoundTree(TreeOp&) {
 }
 void TicketRunnerWrite::OnLastStep(TreeOp& op, StrView keyText, Tab& tab) {
    this->RemainPath_.SetBegin(keyText.begin());
-   op.Add(keyText, std::bind(&TicketRunnerWrite::OnLastSeedOp,
-                             intrusive_ptr<TicketRunnerWrite>(this),
-                             std::placeholders::_1,
-                             std::placeholders::_2,
-                             std::ref(tab)));
+   if (IsEnumContains(this->Rights_, AccessRight::Insert))
+      op.Add(keyText, std::bind(&TicketRunnerWrite::OnLastSeedOp,
+                                intrusive_ptr<TicketRunnerWrite>(this),
+                                std::placeholders::_1,
+                                std::placeholders::_2,
+                                std::ref(tab)));
+   else
+      base::OnLastStep(op, keyText, tab);
 }
 void TicketRunnerWrite::OnLastSeedOp(const PodOpResult& resPod, PodOp* pod, Tab& tab) {
    if (pod)
@@ -143,12 +146,11 @@ void TicketRunnerWrite::OnWriteOp(const SeedOpResult& res, const RawWr* wr) {
    else
       this->OnError(res.OpResult_);
 }
-RevBufferList TicketRunnerWrite::ParseSetValues(const SeedOpResult& res, const RawWr& wr) {
+void TicketRunnerWrite::ParseSetValues(RevBufferList& rbuf, const SeedOpResult& res, const RawWr& wr, const char chSpl) {
    StrView  fldvals{&this->FieldValues_};
    TicketLogRequest("SeedOp.Write", *this, res.Tab_, fldvals);
-   RevBufferList rbuf{128};
    while (!fldvals.empty()) {
-      StrView val = SbrFetchNoTrim(fldvals, ',');
+      StrView val = SbrFetchNoTrim(fldvals, chSpl);
       StrView fldName = StrFetchTrim(val, '=');
       auto    fld = res.Tab_->Fields_.Get(fldName);
       if (fld == nullptr)
@@ -180,11 +182,10 @@ RevBufferList TicketRunnerWrite::ParseSetValues(const SeedOpResult& res, const R
             RevPrint(rbuf, "fieldName=", fldName, "|err=StrToCell():", r, ':', seed::GetOpResultMessage(r), '\n');
       }
    }
-   return rbuf;
 }
 //--------------------------------------------------------------------------//
 TicketRunnerRemove::TicketRunnerRemove(SeedVisitor& visitor, StrView seed)
-   : base(visitor, seed, AccessRight::Write) {
+   : base(visitor, seed, AccessRight::Remove) {
    this->RemovedHandler_ = std::bind(&TicketRunnerRemove::OnRemoved, this, std::placeholders::_1);
 }
 void TicketRunnerRemove::OnFoundTree(TreeOp&) {
@@ -203,10 +204,10 @@ void TicketRunnerRemove::OnRemoved(const PodRemoveResult& res) {
 }
 void TicketRunnerRemove::OnBeforeRemove(TreeOp& opTree, StrView keyText, Tab* tab) {
    (void)opTree;  (void)keyText; (void)tab;
-   TicketLogRequest("SeedOp.Remove", *this, nullptr, nullptr);
+   TicketLogRequest("SeedOp.Remove.Bf", *this, nullptr, nullptr);
 }
 void TicketRunnerRemove::OnAfterRemove(const PodRemoveResult& res) {
-   TicketLogResult("SeedOp.Remove", *this, res.OpResult_, nullptr);
+   TicketLogResult("SeedOp.Remove.Af", *this, res.OpResult_, nullptr);
 }
 //--------------------------------------------------------------------------//
 TicketRunnerGridView::TicketRunnerGridView(SeedVisitor& visitor, StrView seed, ReqMaxRowCountT reqMaxRowCount, StrView startKey, StrView tabName)
@@ -243,7 +244,11 @@ void TicketRunnerGridView::OnFoundTree(TreeOp& opTree) {
    req.Tab_ = opTree.Tree_.LayoutSP_->GetTabByNameOrFirst(ToStrView(this->TabName_));
    if (req.Tab_ == nullptr)
       this->OnError(OpResult::not_found_tab);
-   else if (this->Visitor_->OnTicketRunnerBeforeGridView(*this, opTree, req)) {
+   else
+      this->OnFoundTab(opTree, req);
+}
+void TicketRunnerGridView::OnFoundTab(TreeOp& opTree, GridViewRequest& req) {
+   if (this->Visitor_->OnTicketRunnerBeforeGridView(*this, opTree, req)) {
       opTree.GridView(req, std::bind(&TicketRunnerGridView::OnGridViewOp,
                                      intrusive_ptr<TicketRunnerGridView>(this),
                                      std::placeholders::_1));
@@ -277,9 +282,9 @@ static AccessRight CheckCommandRight(StrView seed) {
    return AccessRight::Exec;
 }
 // 如果 cmdln.empty() 則表示切換現在路徑: this->Visitor_->SetCurrPath(ToStrView(this->Path_));
-TicketRunnerCommand::TicketRunnerCommand(SeedVisitor& visitor, StrView seed, StrView cmdln)
+TicketRunnerCommand::TicketRunnerCommand(SeedVisitor& visitor, StrView seed, std::string&& cmdln)
    : base(visitor, seed, cmdln.empty() ? AccessRight::None : CheckCommandRight(seed))
-   , SeedCommandLine_{cmdln.ToString()} {
+   , SeedCommandLine_{std::move(cmdln)} {
 }
 void TicketRunnerCommand::SetNewCurrPath() {
    this->Visitor_->OnTicketRunnerSetCurrPath(*this);

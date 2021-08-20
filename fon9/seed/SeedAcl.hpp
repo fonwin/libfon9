@@ -23,14 +23,22 @@ fon9_API LayoutSP MakeAclTreeLayoutWritable();
 enum class AccessRight : uint8_t {
    None = 0x00,
    Full = 0xff,
+
    /// 允許讀取欄位內容 or GridView.
    Read = 0x01,
    /// 允許修改欄位內容.
    Write = 0x02,
    /// 允許執行 OnSeedCommand().
    Exec = 0x04,
+
+   /// 允許新增.
+   Insert = 0x10,
+   /// 允許移除.
+   Remove = 0x20,
+
    /// 允許訂閱整個 tree? (訂閱數量僅增加 1).
    SubrTree = 0x40 | Read,
+
    /// 允許在 NeedsApply 的資料表執行 [套用].
    Apply = 0x80,
 };

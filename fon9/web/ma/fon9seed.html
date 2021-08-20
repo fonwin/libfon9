@@ -99,16 +99,12 @@
             <input type="text" id="edPath" autocomplete="off" onfocus="this.value=currPath; this.select();" onkeydown="return edPathKeyDown(event)" />
          </div>
          <div id="topRight">
-            <button id="btnReload" type="button" class="seed" onclick="emitLoadGridView();">
-               &#8635;</button>
-            <button id="btnAddNewRow" type="button" class="seed" onclick="addNewRow();" title="Add a row">
-               &#65291;</button>
-            <button id="btnDeleteRow" type="button" class="seed" onclick="deleteRow();">
-               &#65293;</button>
-            <button id="btnLoadEditForApply" type="button" class="seed" onclick="loadEditForApply();" title="Modify for applying">
-               &#128221;</button>
-            <button id="btnAddWatchRow" type="button" class="seed" title="查詢" onclick="addWatchRow();">⤽</button>
-            <button id="btnDelWatchRow" type="button" class="seed" title="移除查詢" onclick="delWatchRow();">⤼</button>
+            <button id="btnReload" type="button" class="seed" onclick="emitLoadGridView();">&#x1F504;</button>
+            <button id="btnAddNewRow" type="button" class="seed" onclick="addNewRow();" title="在主機新增">&#x2795;</button>
+            <button id="btnDeleteRow" type="button" class="seed" onclick="deleteRow();">&#x26D4;</button>
+            <button id="btnLoadEditForApply" type="button" class="seed" onclick="loadEditForApply();" title="Modify for applying">&#128221;</button>
+            <button id="btnAddWatchRow" type="button" class="seed" title="查詢資料" onclick="addWatchRow();">&#x23EC;</button>
+            <button id="btnDelWatchRow" type="button" class="seed" onclick="delWatchRow();">&#x23CF;</button>
          </div>
       </div>
       <textarea id="clipboard" style="display:none"></textarea>
@@ -162,6 +158,7 @@
          submitId = undefined;
          tabsArea.innerHTML = '';
          document.getElementById('btnDeleteRow').removeAttribute('title');
+         document.getElementById('btnDelWatchRow').removeAttribute('title');
          document.getElementById('btnReload').removeAttribute('title');
          hideApplyControls();
          gview.clearAll();
@@ -221,12 +218,14 @@
          // 使用首個 tab, 並載入 gridview.
          setCurrTabIdx(tabSel);
          // 根據 flags 設定 UI 元件.
-         showElement(document.getElementById('btnAddNewRow'), (layout.flags & 0x01) && hasWriteAccess()); // TreeFlag::Addable = 0x01
-         showElement(document.getElementById('btnDeleteRow'), (layout.flags & 0x02) && hasWriteAccess()); // TreeFlag::Removable = 0x02
-         // unordered: no GridView // TreeFlag::Unordered = 0x10
+         showElement(document.getElementById('btnAddNewRow'), (layout.flags & 0x01) && hasWriteAccess() && (accessRights & 0x10)); // TreeFlag::Addable   = 0x01; AccessRight:0x10(Insertable)
+         showElement(document.getElementById('btnDeleteRow'), (layout.flags & 0x02) && hasWriteAccess() && (accessRights & 0x20)); // TreeFlag::Removable = 0x02; AccessRight:0x20(Removable)
+         // unordered: no GridView // TreeFlag::Unordered = 0x10 表示不支援 gv;
          let isUnordered = (layout.flags & 0x10);
          showElement(document.getElementById('btnAddWatchRow'), isUnordered);
          showElement(document.getElementById('btnDelWatchRow'), isUnordered);
+         if (isUnordered) // 載入上次查詢的 key list;
+            gview.onReload(localStorage.getItem(currPath));
          gview.setFirstCellFocus();
       }
       function renderGridView(args, path, res, errmsg) {
@@ -465,26 +464,34 @@
          let key = promptAddRow("在 " + getTitleOrName(layout.tabs[currTabIdx])
                           + " 新增一筆資料\n" /*+ fieldValues 需要顯示加入的欄位嗎? */ + "\n請輸入要新增的「"
                           + getTitleOrName(layout.key) + "」");
-         if (key)
+         if (key) {
             emitFieldChanged(key, fieldValues);
+            saveWatchedKeyList();
+         }
       }
       // 移除 row, 若 !cell (btnDeleteRow.onclick 事件) 則使用 gview.selectedCell
       let deleteRow = function (cell) {
-         if (onDeleteRow && !isElementHidden(document.getElementById('btnDeleteRow')))
+         if (onDeleteRow && !isElementHidden(document.getElementById('btnDeleteRow'))) {
             onDeleteRow(currPath, gview.getKeyText(cell ? cell : gview.selectedCell));
+            saveWatchedKeyList();
+         }
       }
       let addWatchRow = function () {
          let key = promptAddRow("在 " + getTitleOrName(layout.tabs[currTabIdx])
                           + " 查詢資料\n請輸入要查詢的「"
                           + getTitleOrName(layout.key) + "」");
-         if (key)
+         if (key) {
             emitQueryRow(key);
+            saveWatchedKeyList();
+         }
       }
       let delWatchRow = function (cell) {
          if (!cell)
             cell = gview.selectedCell;
-         if (cell)
+         if (cell) {
             gview.removeRow(cell.parentNode);
+            saveWatchedKeyList();
+         }
       }
    </script>
 
@@ -538,7 +545,7 @@
       // 切換到選定的 tab, 配合選定的 tab 調整畫面, 並觸發載入事件: emitLoadGridView().
       let setCurrTabIdx = function (idx) {
          if (typeof idx !== 'number') // 如果不是 number, 則是 idx = tab UI元素的事件物件.
-            idx = idx.target.index;    // idx.target = tab UI元素, index 在 addTabElements() 設定.
+            idx = idx.target.index;   // idx.target = tab UI元素, index 在 addTabElements() 設定.
          if (currTabIdx == idx)
             return;
          currTabIdx = idx;
@@ -547,6 +554,7 @@
          if (tabEle)
             tabEle.checked = true;
          document.getElementById('btnDeleteRow').removeAttribute('title');
+         document.getElementById('btnDelWatchRow').removeAttribute('title');
          document.getElementById('btnReload').title = 'reload:\n'
              + mergePathKeyTab(currPath, undefined, idx == 0 ? '' : tab.name);
          showElement(document.getElementById('btnLoadEditForApply'), (tab.flags & 0x80) // TabFlag::NeedsApply
@@ -657,7 +665,7 @@
             return gview.searchRow(keytab.seed);
          return undefined;
       }
-      // 將 row 的內容複製到 clipboard, lines[0]=curPath, lines[1]="fld=`value`,...";
+      // 將 row 的內容複製到 clipboard, lines[0]=currPath, lines[1]="fld=`value`,...";
       let rowToClipboard = function (cell) {
          let info = getSeedName(cell) + '\n';
          let cells = cell.parentNode.cells;
@@ -677,6 +685,10 @@
             return lines[1];
          return undefined;
       }
+      let saveWatchedKeyList = function() {
+         if (layout.flags & 0x10)
+            localStorage.setItem(currPath, gview.getKeyList());
+      }
    </script>
  
    <!-- create GridView UI element -->
@@ -693,7 +705,9 @@
 
       // 在 selected cell 變動時, 變更相關 UI 元素的 title(hint) 訊息.
       gview.onSelectedCellChanged = function(cell) {
-         document.getElementById('btnDeleteRow').title = 'delete: ' + addQuotes(gview.getKeyText(cell));
+         var curkey = addQuotes(gview.getKeyText(cell));
+         document.getElementById('btnDeleteRow').title = '刪除主機上的: ' + curkey;
+         document.getElementById('btnDelWatchRow').title = '退出查詢: ' + curkey;
       }
 
       // 在 gview.onEditConfirm() 觸發 emitFieldChanged() 異動訊息,
