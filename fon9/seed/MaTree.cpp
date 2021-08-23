@@ -27,8 +27,9 @@ Fields NamedSeed::MakeDefaultFields() {
 
 void NamedSeed::OnSeedCommand(SeedOpResult& res, StrView cmdln,
                               FnCommandResultHandler resHandler,
-                              MaTreeBase::Locker&& ulk) {
-   (void)cmdln; (void)ulk;
+                              MaTreeBase::Locker&& ulk,
+                              SeedVisitor* visitor) {
+   (void)cmdln; (void)ulk; (void)visitor;
    res.OpResult_ = OpResult::not_supported_cmd;
    resHandler(res, nullptr);
 }
@@ -125,6 +126,11 @@ MaTree::PodOp::~PodOp() {
 void MaTree::PodOp::BeginWrite(Tab& tab, FnWriteOp fnCallback) {
    base::BeginWrite(tab, std::move(fnCallback));
    this->IsWrote_ = true;
+}
+void MaTree::PodOp::OnVisitorCommand(Tab* tab, StrView cmdln, FnCommandResultHandler resHandler, SeedVisitor& visitor) {
+   this->Tab_ = tab;
+   this->Unlock();
+   this->Seed_->OnSeedCommand(*this, cmdln, std::move(resHandler), std::move(this->Locker_), &visitor);
 }
 // -----------------------------------
 static void MakeNamedSeedView(NamedSeedContainerImpl::iterator ivalue, Tab* tab, RevBuffer& rbuf) {

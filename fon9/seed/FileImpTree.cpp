@@ -31,8 +31,9 @@ void FileImpMgr::StopAndWait_SchTask() {
 void FileImpMgr::OnSeedCommand(SeedOpResult&          res,
                                StrView                cmdln,
                                FnCommandResultHandler resHandler,
-                               ConfigLocker&&         ulk) {
-   (void)ulk; assert(!ulk.owns_lock());
+                               ConfigLocker&&         ulk,
+                               SeedVisitor*           visitor) {
+   (void)visitor; (void)ulk; assert(!ulk.owns_lock());
    res.OpResult_ = OpResult::no_error;
    fon9::StrTrim(&cmdln);
    if (cmdln == "reload") {
@@ -142,7 +143,9 @@ LayoutSP FileImpSeed::MakeLayout(TabFlag tabFlag) {
 void FileImpSeed::OnSeedCommand(SeedOpResult&          res,
                                 StrView                cmdln,
                                 FnCommandResultHandler resHandler,
-                                ConfigLocker&&         ulk) {
+                                ConfigLocker&&         ulk,
+                                SeedVisitor*           visitor) {
+   (void)visitor;
    StrView cmd = StrFetchTrim(cmdln, &isspace);
    StrTrim(&cmdln);
    res.OpResult_ = OpResult::no_error;

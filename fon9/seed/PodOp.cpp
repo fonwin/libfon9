@@ -14,6 +14,10 @@ TreeSP PodOp::MakeSapling(Tab& tab) {
 TreeSP PodOp::GetSapling(Tab& /*tab*/) {
    return TreeSP{};
 }
+void PodOp::OnVisitorCommand(Tab* tab, StrView cmdln, FnCommandResultHandler resHandler, SeedVisitor& visitor) {
+   (void)visitor;
+   return this->OnSeedCommand(tab, cmdln, std::move(resHandler));
+}
 
 //--------------------------------------------------------------------------//
 

@@ -64,7 +64,8 @@ class fon9_API FileImpSeed : public MaConfigSeed {
    void OnSeedCommand(SeedOpResult&          res,
                       StrView                cmdln,
                       FnCommandResultHandler resHandler,
-                      ConfigLocker&&         ulk) override;
+                      ConfigLocker&&         ulk,
+                      SeedVisitor*           visitor) override;
    void OnConfigValueChanged(MaConfigTree::Locker&& lk, StrView val) override;
 
    /// 如果返回 nullptr, 表示現在無法匯入.
@@ -177,7 +178,8 @@ protected:
    void OnSeedCommand(SeedOpResult&          res,
                       StrView                cmdln,
                       FnCommandResultHandler resHandler,
-                      ConfigLocker&&         ulk) override;
+                      ConfigLocker&&         ulk,
+                      SeedVisitor*           visitor) override;
    void OnSchCfgChanged(StrView cfgstr) override;
    void OnSchTask_StateChanged(bool isInSch) override;
 

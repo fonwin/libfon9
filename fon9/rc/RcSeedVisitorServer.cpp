@@ -74,11 +74,14 @@ void RcSeedVisitorServerAgent::OnSessionLinkBroken(RcSession& ses) {
 struct RcSeedVisitorServerNote::SeedVisitor : public seed::SeedVisitor {
    fon9_NON_COPY_NON_MOVE(SeedVisitor);
    using base = seed::SeedVisitor;
+   /// 必須保留一份 AuthR 給 seed::SeedVisitor 使用, 避免 Session 先死.
+   const auth::AuthResult AuthR_;
    // 在此保留 Device, 避免在尚未取消訂閱前, Note 及 Visitor 被刪除.
    // 在 RcSeedVisitorServerNote::OnSessionLinkBroken() 時清除.
    io::DeviceSP Device_;
    SeedVisitor(io::DeviceSP dev, const auth::AuthResult& authr, seed::AclConfig&& aclcfg)
-      : base(authr.AuthMgr_->MaRoot_, authr.MakeUFrom(ToStrView(dev->WaitGetDeviceId())))
+      : base(authr.AuthMgr_->MaRoot_, authr.MakeUFrom(ToStrView(dev->WaitGetDeviceId())), AuthR_)
+      , AuthR_{authr}
       , Device_{std::move(dev)} {
       this->Fairy_->ResetAclConfig(std::move(aclcfg));
    }

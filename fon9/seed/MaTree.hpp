@@ -56,7 +56,7 @@ public:
 
    /// 呼叫 OnSeedCommand() 時, ulk 在解鎖狀態.
    virtual void OnSeedCommand(SeedOpResult& res, StrView cmdln, FnCommandResultHandler resHandler,
-                              MaTreeBase::Locker&& ulk);
+                              MaTreeBase::Locker&& ulk, SeedVisitor* visitor);
 
    /// 應在 Parent Tree 收到 OnParentSeedClear() 時呼叫.
    /// 預設: sapling->OnParentSeedClear();
@@ -107,6 +107,7 @@ protected:
       PodOp(ContainerImpl::value_type& v, Tree& sender, OpResult res, const StrView& key, Locker& locker);
       ~PodOp();
       void BeginWrite(Tab& tab, FnWriteOp fnCallback) override;
+      void OnVisitorCommand(Tab* tab, StrView cmdln, FnCommandResultHandler resHandler, SeedVisitor& visitor) override;
 
       NamedSeed& GetSeedRW(Tab&) {
          return *this->Seed_;
@@ -116,7 +117,7 @@ protected:
       }
       void HandleSeedCommand(Locker& ulk, SeedOpResult& res, StrView cmdln, FnCommandResultHandler&& resHandler) {
          this->Unlock();
-         this->Seed_->OnSeedCommand(res, cmdln, std::move(resHandler), std::move(ulk));
+         this->Seed_->OnSeedCommand(res, cmdln, std::move(resHandler), std::move(ulk), nullptr);
       }
    };
 

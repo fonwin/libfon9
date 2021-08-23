@@ -5,6 +5,8 @@
 #include "fon9/seed/SeedFairy.hpp"
 #include "fon9/buffer/DcQueue.hpp"
 
+namespace fon9 { namespace auth { struct fon9_API AuthResult; } }
+
 namespace fon9 { namespace seed {
 
 class fon9_API TicketRunnerError;
@@ -35,6 +37,7 @@ class fon9_API SeedVisitor : public intrusive_ref_counter<SeedVisitor> {
 protected:
    friend class TicketRunner;
    const SeedFairySP Fairy_;
+
    VisitorSubrSP NewSubscribe();
    VisitorSubrSP GetSubr() {
       return *this->Subr_.Lock();
@@ -47,7 +50,10 @@ protected:
    }
 
 public:
-   SeedVisitor(MaTreeSP root, std::string ufrom);
+   // 在建構時必定會提供一個長期有效的 AuthR 認證.
+   const auth::AuthResult& AuthR_;
+
+   SeedVisitor(MaTreeSP root, std::string ufrom, const auth::AuthResult& authr);
    virtual ~SeedVisitor();
 
    /// User + From(DeviceId);
@@ -55,6 +61,9 @@ public:
    const std::string& GetUFrom() const {
       return this->UFrom_;
    }
+   /// 取得: R=user 及 R=from(僅取出ip);
+   /// 如果只要取出其中一個, 請使用 StrFindValue();
+   void GetUserAndFrom(StrView& user, StrView& from) const;
 
    virtual void SetCurrPath(StrView currPath);
 

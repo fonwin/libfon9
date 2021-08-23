@@ -10,7 +10,7 @@
 namespace fon9 {
 
 SeedSession::SeedSession(seed::MaTreeSP root, auth::AuthMgrSP authMgr, std::string ufrom)
-   : base(std::move(root), std::move(ufrom))
+   : base(std::move(root), std::move(ufrom), Authr_)
    , Authr_{std::move(authMgr)} {
 }
 SeedSession::~SeedSession() {

@@ -39,11 +39,22 @@ static void TicketLogResult(StrView opName, TicketRunner& ticket, OpResult opRes
 }
 
 //--------------------------------------------------------------------------//
-SeedVisitor::SeedVisitor(MaTreeSP root, std::string ufrom)
+SeedVisitor::SeedVisitor(MaTreeSP root, std::string ufrom, const auth::AuthResult& authr)
    : UFrom_{std::move(ufrom)}
-   , Fairy_{new SeedFairy{std::move(root)}} {
+   , Fairy_{new SeedFairy{std::move(root)}}
+   , AuthR_(authr) {
 }
 SeedVisitor::~SeedVisitor() {
+}
+void SeedVisitor::GetUserAndFrom(StrView& user, StrView& from) const {
+   StrView vfrom = ToStrView(this->GetUFrom());
+   StrView tag, value;
+   while (StrFetchTagValue(vfrom, tag, value)) {
+      if (tag == "U")
+         user = value;
+      else if (tag == "R")
+         from = StrFetchNoTrim(value, ':');
+   }
 }
 void SeedVisitor::SetCurrPath(StrView currPath) {
    this->Fairy_->SetCurrPath(currPath);
@@ -303,11 +314,12 @@ void TicketRunnerCommand::OnLastSeedOp(const PodOpResult& resPod, PodOp* pod, Ta
    else {
       if (this->SeedCommandLine_ != "?")
          TicketLogRequest("SeedOp.Command", *this, &tab, ToStrView(this->SeedCommandLine_));
-      pod->OnSeedCommand(&tab, &this->SeedCommandLine_,
-                         std::bind(&TicketRunnerCommand::OnSeedCommandResult,
-                                   intrusive_ptr<TicketRunnerCommand>(this),
-                                   std::placeholders::_1,
-                                   std::placeholders::_2));
+      pod->OnVisitorCommand(&tab, &this->SeedCommandLine_,
+                            std::bind(&TicketRunnerCommand::OnSeedCommandResult,
+                                      intrusive_ptr<TicketRunnerCommand>(this),
+                                      std::placeholders::_1,
+                                      std::placeholders::_2),
+                            *this->Visitor_);
    }
 }
 void TicketRunnerCommand::OnSeedCommandResult(const SeedOpResult& res, StrView msg) {

@@ -17,8 +17,8 @@ class fon9_API WsSeedVisitor : public WebSocket {
    static void EmitOnTimer(TimerEntry* timer, TimeStamp now);
    using Timer = DataMemberEmitOnTimer<&WsSeedVisitor::EmitOnTimer>;
    Timer                   HbTimer_;
-   const SeedVisitorSP     Visitor_;
    const auth::AuthResult  Authr_;
+   const SeedVisitorSP     Visitor_;
 public:
    WsSeedVisitor(io::DeviceSP dev, seed::MaTreeSP root, const auth::AuthResult& authResult, seed::AclConfig&& aclcfg);
    ~WsSeedVisitor();

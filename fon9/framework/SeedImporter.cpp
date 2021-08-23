@@ -51,7 +51,7 @@ struct SeedImporterVisitor : public seed::SeedVisitor {
    using base = seed::SeedVisitor;
    const io::DeviceSP   Dev_;
    SeedImporterVisitor(const SeedImporterArgs& args, io::Device& dev)
-      : base(args.Authr_.AuthMgr_->MaRoot_, args.Authr_.MakeUFrom(ToStrView(dev.WaitGetDeviceId())))
+      : base(args.Authr_.AuthMgr_->MaRoot_, args.Authr_.MakeUFrom(ToStrView(dev.WaitGetDeviceId())), args.Authr_)
       , Dev_(args.OutputTo_ == OutputTo::Dev ? &dev : nullptr) {
       this->Fairy_->ResetAclConfig(args.Acl_);
    }
