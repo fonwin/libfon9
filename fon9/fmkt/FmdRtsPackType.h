@@ -41,11 +41,11 @@ fon9_ENUM(f9sv_MdRtsKind, uint32_t) {
 
    /// 當某訊息需要提供給所有訂閱者, 不論訂閱時 Kind filter.
    /// e.g. 暫停交易(BreakSt).
-   f9sv_MdRtsKind_All_NoInfoTime = 0xffff,
+   f9sv_MdRtsKind_All_NoInfoTime = 0xffffffff,
    f9sv_MdRtsKind_All_AndInfoTime = f9sv_MdRtsKind_All_NoInfoTime - f9sv_MdRtsKind_NoInfoTime,
 
    /// 當訂閱時沒有指定 Kind filter, 則表示訂閱全部.
-   f9sv_MdRtsKind_Full = 0xffff,
+   f9sv_MdRtsKind_Full = 0xffffffff,
 };
 
 /// \ingroup fmkt

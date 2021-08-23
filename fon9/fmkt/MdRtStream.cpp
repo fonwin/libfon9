@@ -74,7 +74,7 @@ seed::OpResult MdRtStream::SubscribeStream(SubConn*           pSubConn,
    //     - 檢查是否已取消訂閱: psub->IsUnsubscribed();
    MdRtRecoverSP recover = MdRtRecover::Make(this->InnMgr_, psub, this->RtStorage_.GetStream());
    if (!recover) {
-      // TODO: Stream Recover 失敗訊息? (沒有開啟 reader, 無法回補.)
+      // TODO: Stream Recover 失敗訊息? (沒有開啟 RtStorage, 無法回補.)
       seed::SeedNotifyStreamRecoverArgs   e(*op.Sender_, nullptr/*tab*/,
                                             op.KeyText_, nullptr/*rd*/,
                                             seed::SeedNotifyKind::StreamRecoverEnd);
