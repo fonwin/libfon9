@@ -288,8 +288,15 @@ void RcSeedVisitorServerNote::OnRecvFunctionCall(RcSession& ses, RcFunctionParam
       case SvFuncCode::GridView: {
             RcSvsTicketRunnerGridView::ReqMaxRowCountT reqMaxRowCount = 0;
             BitvTo(rxbuf, reqMaxRowCount);
+            StrView skey = ToStrView(reqKey.SeedKey_);
+            if (skey.size() == 1) {
+               switch (*skey.begin()) {
+               case '\t':  skey = seed::TextBegin();  break;
+               case '\b':  skey = seed::TextEnd();    break;
+               }
+            }
             ticket.Assign(new RcSvsTicketRunnerGridView(*this->Visitor_, ToStrView(reqKey.TreePath_), reqMaxRowCount,
-                                                        ToStrView(reqKey.SeedKey_), ToStrView(reqKey.TabName_)));
+                                                        skey, ToStrView(reqKey.TabName_)));
          }
          break;
       }
