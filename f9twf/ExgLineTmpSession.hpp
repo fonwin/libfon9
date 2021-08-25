@@ -33,7 +33,6 @@ public:
 
 //--------------------------------------------------------------------------//
 
-fon9_WARN_DISABLE_PADDING;
 /// 台灣期交所 的 「TCPIP/TMP 連線協定」處理程序.
 /// - 結算會員委託/成交回報(ApCode=ReportCm:8), TMPDC Session(ApCode=TmpDc:7) 不能下單.
 class f9twf_API ExgLineTmpSession : public fon9::io::Session {
@@ -53,13 +52,14 @@ class f9twf_API ExgLineTmpSession : public fon9::io::Session {
    // 來自期交所的 L30;
    ExgSystemType        SystemType_;
 
-   enum class TmpSt {
+   enum class TmpSt : uint8_t {
       DevClose,
       TmpRelink,
       ApBroken,
       ApReady,
    };
    TmpSt TmpSt_{};
+   char  Padding___[2];
 
    void CheckApBroken(TmpSt st);
    void AsyncClose(std::string cause);
@@ -82,14 +82,16 @@ protected:
    virtual void OnExgTmp_ApPacket(const TmpHeader& pktmp) = 0;
 
 public:
-   ExgTradingLineMgr&   LineMgr_;
-   const ExgLineTmpArgs LineArgs_;
+   const f9twf::TmpSessionId_t   OutPvcId_;
+   ExgTradingLineMgr&            LineMgr_;
+   const ExgLineTmpArgs          LineArgs_;
 
    /// log 必須已開啟成功, 否則會直接 crash!
    ExgLineTmpSession(ExgTradingLineMgr&    lineMgr,
                      const ExgLineTmpArgs& lineArgs,
                      ExgLineTmpLog&&       log)
       : Log_(std::move(log))
+      , OutPvcId_{f9twf::TmpGetValueU(lineArgs.SessionId_)}
       , LineMgr_(lineMgr)
       , LineArgs_(lineArgs) {
       assert(this->Log_.IsReady());
@@ -123,7 +125,6 @@ public:
       this->SendTmpNoSeqNum(now, std::move(buf));
    }
 };
-fon9_WARN_POP;
 
 } // namespaces
 #endif//__f9twf_ExgLineTmpSession_hpp__

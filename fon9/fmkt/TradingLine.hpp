@@ -8,8 +8,6 @@
 
 namespace fon9 { namespace fmkt {
 
-class fon9_API TradingLineManager;
-
 /// \ingroup fmkt
 /// 交易連線基底.
 class fon9_API TradingLine {
@@ -38,6 +36,10 @@ public:
    /// 透過 TradingLineManager 來的下單要求, 必定已經鎖住「可用線路表」,
    /// 因此不可再呼叫 TradingLineManager 的相關函式, 會造成死結!
    virtual SendResult SendRequest(TradingRequest& req) = 0;
+
+   /// 判斷 this 是否為 req 的原始傳送者.
+   /// 預設傳回 false;
+   virtual bool IsOrigSender(const TradingRequest& req) const;
 };
 inline TimeInterval ToFlowControlInterval(TradingLine::SendResult r) {
    assert(r >= TradingLine::SendResult::FlowControl);
@@ -58,10 +60,9 @@ enum class SendRequestResult : int {
 
    Sent = 0,
    Queuing = 1,
+   /// 下單要求完成, 既沒送出, 也沒排隊, 例: 內部刪單.
+   RequestEnd = 2,
 };
-inline bool IsSentOrQueuing(SendRequestResult r) {
-   return(r >= SendRequestResult::Sent);
-}
 
 fon9_WARN_DISABLE_PADDING;
 /// \ingroup fmkt
@@ -74,11 +75,11 @@ class fon9_API TradingLineManager {
    fon9_NON_COPY_NON_MOVE(TradingLineManager);
 
 protected:
+   using Reqs = std::deque<TradingRequestSP>;
    /// 可送出下單要求的連線. 流量管制時不移除.
    struct TradingSvrImpl {
       using Lines = std::vector<TradingLine*>;
-      using Reqs = std::deque<TradingRequestSP>;
-      unsigned LineIndex_{0};
+      unsigned LastIndex_{0};
       Lines    Lines_;
       Reqs     ReqQueue_;
    };
@@ -87,6 +88,7 @@ protected:
 
 public:
    using Locker = TradingSvr::Locker;
+   using QueueReqs = Reqs;
 
    TradingLineManager() = default;
    virtual ~TradingLineManager();
@@ -104,14 +106,21 @@ public:
       return this->SendRequest(req, Locker{this->TradingSvr_});
    }
    SendRequestResult SendRequest(TradingRequest& req, const Locker& tsvr) {
+      SendRequestResult res;
       if (fon9_LIKELY(tsvr->ReqQueue_.empty())) {
-         SendRequestResult resSend = this->SendRequestImpl(req, tsvr);
-         if (fon9_LIKELY(resSend != SendRequestResult::Queuing))
-            return resSend;
+         res = this->SendRequestImpl(req, tsvr);
       }
-      tsvr->ReqQueue_.push_back(&req);
-      return SendRequestResult::Queuing;
+      else {
+         res = this->CheckOpQueuingRequest(tsvr->ReqQueue_, req);
+      }
+      if (res == SendRequestResult::Queuing)
+         tsvr->ReqQueue_.push_back(&req);
+      return res;
    }
+
+   /// 透過 req.IsPreferTradingLine(); 來選擇下一個建議的交易線路.
+   /// 但不一定會用該線路, 例: 如果該線路忙碌(流量管制), 則會使用其他線路.
+   void SelectPreferNextLine(const TradingRequest& req);
 
 protected:
    /// 衍生者在解構時, 應先呼叫此處,
@@ -128,8 +137,15 @@ protected:
 
    /// 當有新的可交易線路時的通知, 預設: 送出 queue 的 req.
    /// - src == nullptr 表示從計時器來的: 流量管制解除.
-   /// - 如果是從 OnTradingLineReady() 來的, 則 tsvr->Lines_[tsvr->LineIndex_] == src.
+   /// - 如果是從 OnTradingLineReady() 來的, 則 tsvr->Lines_[tsvr->LastIndex_] == src.
    virtual void OnNewTradingLineReady(TradingLine* src, Locker&& tsvr);
+
+   /// 檢查 req 要操作的標的是否在 reqQueue 裡面?
+   /// 如果是, 也許可以內部[刪改查], 不用送出.
+   /// 當 reqQueue.empty() 時, 不會來到此處.
+   /// 預設直接返回 SendRequestResult::Queuing:
+   /// 表示 req 為一般要求, 呼叫端必定會將 req 放入 reqQueue.
+   SendRequestResult CheckOpQueuingRequest(Reqs& reqQueue, TradingRequest& req);
 
    /// 嘗試送出 Queue 裡面的下單要求.
    void SendReqQueue(const Locker& tsvr);

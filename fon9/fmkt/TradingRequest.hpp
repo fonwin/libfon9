@@ -10,6 +10,9 @@ class RevBuffer;
 
 namespace fmkt {
 
+class fon9_API TradingLineManager;
+class fon9_API TradingLine;
+   
 /// \ingroup fmkt
 /// 回報序號, 每台主機自行依序編號.
 /// 也就是 HostA.RxSNO=1, 與 HostB.RxSNO=1, 可能是不同的 TradingRxItem.
@@ -89,6 +92,32 @@ protected:
 public:
    using base::base;
    TradingRequest() = default;
+
+   enum OpQueuingRequestResult {
+      /// 應將 this 放入 queue:
+      /// - queuingRequest 就是要處理的標的, 但無法處理.
+      /// - this 不支援處理任何 queuing request.
+      Op_NotSupported,
+      /// queuingRequest 不是要處理的標的.
+      Op_NotTarget,
+      /// this 已處理完畢, 不用額外處理.
+      /// 但 queuingRequest 仍要繼續放在 queue 裡面等候傳送.
+      Op_ThisDone,
+      /// queuingRequest 已處理完畢, 應從 queue 裡面移除,
+      /// 但 this 仍要繼續, 應放在 queue 裡面等候傳送.
+      Op_TargetDone,
+      /// this 及 queuingRequest 都處理完畢了,
+      /// 請將 queuingRequest 從 queue 移除, this 不用額外處理.
+      Op_AllDone,
+   };
+   virtual OpQueuingRequestResult OpQueuingRequest(TradingLineManager& from, TradingRequest& queuingRequest);
+   /// 如果操作標的還在 queue 裡面, 是否支援直接操作?
+   /// \retval true  表示支援;
+   /// \retval false 表示不支援;
+   virtual bool PreOpQueuingRequest(TradingLineManager& from) const;
+   /// 當 TradingLineManager::SelectPreferNextLine() 時, 使用這裡判斷.
+   /// 預設傳回 tline.IsOrigSender(*this);
+   virtual bool IsPreferTradingLine(TradingLine& tline) const;
 };
 using TradingRequestSP = intrusive_ptr<TradingRequest>;
 

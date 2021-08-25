@@ -8,6 +8,10 @@ namespace fon9 { namespace fmkt {
 
 TradingLine::~TradingLine() {
 }
+bool TradingLine::IsOrigSender(const TradingRequest& req) const {
+   (void)req;
+   return false;
+}
 //--------------------------------------------------------------------------//
 TradingLineManager::~TradingLineManager() {
    this->OnBeforeDestroy();
@@ -22,14 +26,14 @@ void TradingLineManager::OnTradingLineBroken(TradingLine& src) {
    auto ifind = std::find(tsvr->Lines_.begin(), tsvr->Lines_.end(), &src);
    if (ifind == tsvr->Lines_.end())
       return;
-   if (tsvr->LineIndex_ > static_cast<unsigned>(ifind - ibeg))
-      --tsvr->LineIndex_;
+   if (tsvr->LastIndex_ > static_cast<unsigned>(ifind - ibeg))
+      --tsvr->LastIndex_;
    tsvr->Lines_.erase(ifind);
    if (tsvr->Lines_.empty())
       this->ClearReqQueue(std::move(tsvr), "No ready line.");
 }
 void TradingLineManager::ClearReqQueue(Locker&& tsvr, StrView cause) {
-   TradingSvrImpl::Reqs reqs = std::move(tsvr->ReqQueue_);
+   Reqs reqs = std::move(tsvr->ReqQueue_);
    tsvr.unlock();
    for (const TradingRequestSP& r : reqs)
       this->NoReadyLineReject(*r, cause);
@@ -39,11 +43,11 @@ void TradingLineManager::OnTradingLineReady(TradingLine& src) {
    TradingSvr::Locker tsvr{this->TradingSvr_};
    auto ifind = std::find(tsvr->Lines_.begin(), tsvr->Lines_.end(), &src);
    if (ifind == tsvr->Lines_.end()) {
-      tsvr->LineIndex_ = static_cast<unsigned>(tsvr->Lines_.size());
+      tsvr->LastIndex_ = static_cast<unsigned>(tsvr->Lines_.size());
       tsvr->Lines_.push_back(&src);
    }
    else {
-      tsvr->LineIndex_ = static_cast<unsigned>(ifind - tsvr->Lines_.begin());
+      tsvr->LastIndex_ = static_cast<unsigned>(ifind - tsvr->Lines_.begin());
    }
    this->OnNewTradingLineReady(&src, std::move(tsvr));
 }
@@ -64,6 +68,7 @@ void TradingLineManager::SendReqQueue(const Locker& tsvr) {
       case SendRequestResult::RejectRequest:
       case SendRequestResult::Sent:
       case SendRequestResult::NoReadyLine:
+      case SendRequestResult::RequestEnd:
          tsvr->ReqQueue_.pop_front();
          continue;
       }
@@ -74,6 +79,36 @@ void TradingLineManager::OnNewTradingLineReady(TradingLine* src, Locker&& tsvr) 
    this->SendReqQueue(tsvr);
 }
 //--------------------------------------------------------------------------//
+SendRequestResult TradingLineManager::CheckOpQueuingRequest(Reqs& reqQueue, TradingRequest& req) {
+   // 因為 req 已經準備要進排隊了, 所以這裡沒有速度的要求, 就整個 queue 都掃一遍吧!
+   if (!req.PreOpQueuingRequest(*this))
+      return SendRequestResult::Queuing;
+   const auto iend = reqQueue.end();
+   auto i = reqQueue.begin();
+   while (i != iend) {
+      switch (req.OpQueuingRequest(*this, **i)) {
+      default:
+      case TradingRequest::Op_NotSupported:                       return SendRequestResult::Queuing;
+      case TradingRequest::Op_ThisDone:                           return SendRequestResult::RequestEnd;
+      case TradingRequest::Op_AllDone:       reqQueue.erase(i);   return SendRequestResult::RequestEnd;
+      case TradingRequest::Op_TargetDone:    reqQueue.erase(i);   return SendRequestResult::Queuing;
+      case TradingRequest::Op_NotTarget:                          break; // check next queue item;
+      }
+      ++i;
+   }
+   return SendRequestResult::Queuing;
+}
+void TradingLineManager::SelectPreferNextLine(const TradingRequest& req) {
+   Locker tsvr{this->TradingSvr_};
+   if (const size_t lineCount = tsvr->Lines_.size()) {
+      for (size_t L = 0; L < lineCount; ++L) {
+         unsigned nextIndex = static_cast<unsigned>((tsvr->LastIndex_ + 1) % lineCount);
+         if (req.IsPreferTradingLine(*tsvr->Lines_[nextIndex]))
+            break;
+         tsvr->LastIndex_ = nextIndex;
+      }
+   }
+}
 SendRequestResult TradingLineManager::SendRequestImpl(TradingRequest& req, const Locker& tsvr) {
    if (size_t lineCount = tsvr->Lines_.size()) {
       using LineSendResult = TradingLine::SendResult;
@@ -85,13 +120,13 @@ SendRequestResult TradingLineManager::SendRequestImpl(TradingRequest& req, const
          // - 但是此法是最快的嗎? => 不一定.
          // - 現代 CPU 有大量的 cache, 盡量固定使用某一條線路, 可讓 CPU cache 發揮最大功效.
          // - 但是某條線路塞到滿之後再換下一條, 也有TCP流量問題要考慮.
-         /// - 多線路時怎樣使用才是最好? 還要進一步研究.
-         ++tsvr->LineIndex_;
+         // - 多線路時怎樣使用才是最好? 還要進一步研究.
+         ++tsvr->LastIndex_;
 
       __RETRY_SAME_INDEX:
-         if (tsvr->LineIndex_ >= lineCount)
-            tsvr->LineIndex_ = 0;
-         LineSendResult resSend = tsvr->Lines_[tsvr->LineIndex_]->SendRequest(req);
+         if (tsvr->LastIndex_ >= lineCount)
+            tsvr->LastIndex_ = 0;
+         LineSendResult resSend = tsvr->Lines_[tsvr->LastIndex_]->SendRequest(req);
          if (fon9_LIKELY(resSend == LineSendResult::Sent))
             return SendRequestResult::Sent;
 
@@ -108,7 +143,7 @@ SendRequestResult TradingLineManager::SendRequestImpl(TradingRequest& req, const
             hasBusyLine = true;
          else {
             assert(resSend == LineSendResult::Broken);
-            tsvr->Lines_.erase(tsvr->Lines_.begin() + tsvr->LineIndex_);
+            tsvr->Lines_.erase(tsvr->Lines_.begin() + tsvr->LastIndex_);
             if (L < --lineCount)
                goto __RETRY_SAME_INDEX;
             if (lineCount == 0)
