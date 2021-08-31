@@ -40,14 +40,14 @@ RcServerNote_SaslAuth::~RcServerNote_SaslAuth() {
 }
 void RcServerNote_SaslAuth::OnAuthVerifyCB(auth::AuthR rcode, auth::AuthSessionSP authSession) {
    RevBufferList  rbuf{static_cast<BufferNodeSize>(64 + rcode.Info_.size())};
-   if (rcode.RCode_ == fon9_Auth_Success)
+   if (rcode.RCode_ == fon9_Auth_Success || rcode.RCode_ == fon9_Auth_PassChanged)
       ToBitv(rbuf, authSession->GetAuthResult().ExtInfo_);
    ToBitv(rbuf, rcode.Info_);
    ToBitv(rbuf, rcode.RCode_);
    this->RcSession_.SendSasl(std::move(rbuf));
    if (rcode.RCode_ == fon9_Auth_NeedsMore)
       return;
-   if (rcode.RCode_ == fon9_Auth_Success) {
+   if (rcode.RCode_ == fon9_Auth_Success || rcode.RCode_ == fon9_Auth_PassChanged) {
       rcode.Info_ = authSession->GetAuthResult().ExtInfo_;
       authSession->GetAuthResult().UpdateRoleConfig();
    }

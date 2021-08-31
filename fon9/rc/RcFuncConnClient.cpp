@@ -54,9 +54,11 @@ public:
       std::string strSuccess;
       BitvTo(param.RecvBuffer_, rcode.RCode_);
       BitvTo(param.RecvBuffer_, rcode.Info_);
-      if (rcode.RCode_ == fon9_Auth_Success)
-         BitvTo(param.RecvBuffer_, strSuccess);
-      if (rcode.RCode_ == fon9_Auth_NeedsMore || rcode.RCode_ == fon9_Auth_Success) {
+      if (rcode.RCode_ == fon9_Auth_NeedsMore
+          || rcode.RCode_ == fon9_Auth_Success
+          || rcode.RCode_ == fon9_Auth_PassChanged) {
+         if (rcode.RCode_ != fon9_Auth_NeedsMore) // Success or PassChanged: 載入 Server 回覆的成功訊息.
+            BitvTo(param.RecvBuffer_, strSuccess);
          rcode = this->SaslClient_->OnChallenge(ToStrView(rcode.Info_));
          if (rcode.RCode_ == fon9_Auth_NeedsMore) {
             RevBufferList rbuf{64};
@@ -65,7 +67,7 @@ public:
             return;
          }
       }
-      if (rcode.RCode_ == fon9_Auth_Success && !strSuccess.empty())
+      if (!strSuccess.empty() && (rcode.RCode_ == fon9_Auth_Success || rcode.RCode_ == fon9_Auth_PassChanged))
          rcode.Info_ = std::move(strSuccess);
       ses.OnSaslDone(rcode, ToStrView(ses.GetUserId()));
    }

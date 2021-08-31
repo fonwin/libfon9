@@ -176,6 +176,13 @@ AuthR UserTree::AuthUpdate(fon9_Auth_R rcode, const AuthRequest& req, AuthResult
             ERR_RETURN(fon9_Auth_ENotBefore, "not-after");
          if (IsEnumContains(user->UserFlags_, UserFlags::Locked))
             ERR_RETURN(fon9_Auth_EUserLocked, "user-locked");
+
+         RevBufferList rbuf{128};
+         RevPrint(rbuf,
+                  "Last logon: ", user->EvLastAuth_.Time_, kFmtYsMsD_HH_MM_SS_L,
+                  " from ", user->EvLastAuth_.From_,
+                  "|ChgPass: ", user->EvChgPass_.Time_, kFmtYsMsD_HH_MM_SS_L,
+                  " from ", user->EvChgPass_.From_);
          if (rcode == fon9_Auth_PassChanged) {
             user->UserFlags_ -= UserFlags::NeedChgPass;
             user->EvChgPass_.Time_ = now;
@@ -185,14 +192,10 @@ AuthR UserTree::AuthUpdate(fon9_Auth_R rcode, const AuthRequest& req, AuthResult
          else {
             if (IsEnumContains(user->UserFlags_, UserFlags::NeedChgPass))
                ERR_RETURN(fon9_Auth_ENeedChgPass, "need-change-pass");
-            RevBufferList rbuf{128};
-            RevPrint(rbuf, "Last logon: ",
-                     user->EvLastAuth_.Time_, kFmtYsMsD_HH_MM_SS_L,
-                     " from ", user->EvLastAuth_.From_);
-            authz.ExtInfo_ = BufferTo<std::string>(rbuf.MoveOut());
             user->EvLastAuth_.Time_ = now;
             user->EvLastAuth_.From_ = req.UserFrom_;
          }
+         authz.ExtInfo_ = BufferTo<std::string>(rbuf.MoveOut());
          user->ErrCount_ = 0;
          aux.LogArgs_.Level_ = LogLevel::Info;
          break;

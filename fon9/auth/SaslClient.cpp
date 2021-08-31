@@ -38,8 +38,14 @@ fon9_API SaslClientR CreateSaslClient(StrView saslMechList, char chSplitter,
 static constexpr size_t  kClientNonceLength = 24;
 static constexpr size_t  kMaxSaltSize       = 128;
 
-SaslScramClient::SaslScramClient(StrView authz, StrView authc, StrView pass)
-   : Pass_{pass.ToString()} {
+SaslScramClient::SaslScramClient(StrView authz, StrView authc, StrView pass) {
+   if (const char* pspl = pass.Find('\r')) {
+      this->Pass_.assign(pass.begin(), pspl);
+      this->NewPass_.assign(pspl + 1, pass.end());
+   }
+   else {
+      this->Pass_ = pass.ToString();
+   }
    if (authz.empty()) {
       this->ClientFirstMessage_ = "n,,n=";
       this->Gs2HeaderSize_ = 3; //"n,,"

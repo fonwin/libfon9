@@ -164,7 +164,7 @@ void RcSession::SetApReady(StrView info) {
 }
 void RcSession::OnSaslDone(auth::AuthR rcode, StrView userid) {
    this->UserId_.assign(userid);
-   if (rcode.RCode_ == fon9_Auth_Success)
+   if (rcode.RCode_ == fon9_Auth_Success || rcode.RCode_ == fon9_Auth_PassChanged)
       this->SetApReady(ToStrView(rcode.Info_));
    else {
       fon9_LOG_WARN("RcSession.OnSaslDone|dev=", ToPtr(this->Dev_),
