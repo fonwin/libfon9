@@ -126,7 +126,13 @@ void FieldStrEnum::EnumList::RebuildEnumList(StrView cfgs) {
 
 void FieldStrEnum::CellRevPrint(const RawRd& rd, StrView fmt, RevBuffer& out) const {
    (void)fmt;
-   RevPrint(out, this->EnumList_.GetEnumValue(this->GetValue(rd)));
+   StrView enumId = this->GetValue(rd);
+   const char* pend = FindInvalidNameChar(enumId);
+   if (fon9_UNLIKELY(pend && pend != enumId.end())) {
+      RevPutMem(out, pend, enumId.end());
+      enumId.SetEnd(pend);
+   }
+   RevPrint(out, this->EnumList_.GetEnumValue(enumId));
 }
 
 } } // namespaces
