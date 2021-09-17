@@ -173,7 +173,11 @@ public:
       if (fon9_UNLIKELY(rx.IsNeedsLog_))
          RevPrint(rx.LogBuf_, "MktSeq=", rxSeq);
 
-      if (fon9_LIKELY(rx.NotifyKind_ == seed::SeedNotifyKind::StreamData)) {
+      // - 只有即時資料(rx.NotifyKind_ == seed::SeedNotifyKind::StreamData) 才需要考慮 mktseq 是否過期.
+      // - 但是 IsSubrTree 則不考慮 mktseq: 因為 mktseq 是針對單一商品序號, 沒有針對整棵樹的 mktseq;
+      //   即使是台股, 也是針對不同格式編制 mktseq(fmt6, fmt17 都有自己的編號);
+      //   因此 IsSubrTree 無法正確判斷 mktseq;
+      if (fon9_LIKELY(rx.NotifyKind_ == seed::SeedNotifyKind::StreamData && !rx.IsSubrTree_)) {
          if (!this->IsMktSeqNewer(fld, wr, rxSeq)) {
             if (fon9_UNLIKELY(rx.IsNeedsLog_))
                RevPrint(rx.LogBuf_, "|Old.");
@@ -181,7 +185,6 @@ public:
          }
       }
       else {
-         // rx.NotifyKind_ == Recover; 不用考慮 mktseq 是否為過期資料.
          fld.PutNumber(wr, signed_cast(rxSeq), 0);
       }
       if (fon9_UNLIKELY(rx.IsNeedsLog_))
