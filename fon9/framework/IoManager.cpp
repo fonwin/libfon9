@@ -70,7 +70,7 @@ void IoManager::ParseIoServiceArgs(io::IoServiceArgs& iosvArgs) const {
 }
 
 void IoManager::RaiseMakeIoServiceFatal(Result2 err) const {
-   std::string errmsg = RevPrintTo<std::string>("IoManager.", this->Name_, ".MakeIoService|err=", err);
+   std::string errmsg = RevPrintTo<std::string>("IoManager.", this->Name_, ".MakeIoService|", err);
    fon9_LOG_FATAL(errmsg);
    Raise<std::runtime_error>(std::move(errmsg));
 }

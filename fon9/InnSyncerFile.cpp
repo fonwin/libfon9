@@ -37,7 +37,7 @@ class InnSyncerFile::Impl {
       Result res = fd.Open(fname.ToString(), fmode);
       if (res)
          return true;
-      fon9_LOG_ERROR("InnSyncerFile.ctor|fname=", fname, "|err=", res);
+      fon9_LOG_ERROR("InnSyncerFile.ctor|fname=", fname, '|', res);
       return false;
    }
 
@@ -85,7 +85,7 @@ public:
       auto        res = this->SynOut_.Append(outbuf);
       if (!res || res.GetResult() != pksz + kExHeaderSize) {
          fon9_LOG_ERROR("InnSyncerFile.Write|fname=", this->SynOut_.GetOpenName(),
-                        "|err=", res, "|expect=", pksz + kExHeaderSize);
+                        '|', res, "|expect=", pksz + kExHeaderSize);
       }
    }
 };
@@ -132,7 +132,7 @@ void InnSyncerFile::Impl::SynInTimer::EmitOnTimer(TimeStamp now) {
          fon9_LOG_ERROR("InnSyncerFile.Read|fname=", impl.SynIn_.GetOpenName(),
                         "|pos=", curpos + sizeof(exHeader),
                         "|read=", pksz,
-                        "|err=", res);
+                        '|', res);
          break;
       }
       if (res.GetResult() != pksz)

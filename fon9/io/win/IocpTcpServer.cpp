@@ -227,7 +227,7 @@ void IocpTcpListener::OnIocp_Done(OVERLAPPED* lpOverlapped, DWORD bytesTransfere
 void IocpTcpListener::ResetupAccepter() {
    SocketResult soRes;
    if (!this->SetupAccepter(soRes)) {
-      fon9_LOG_ERROR("IocpTcpListener.ResetupAccepter|err=", soRes);
+      fon9_LOG_ERROR("IocpTcpListener.ResetupAccepter|", soRes);
       this->Server_->CommonTimerRunAfter(TimeInterval_Millisecond(this->Server_->OpImpl_GetOptions().LinkErrorRetryInterval_));
    }
 }
