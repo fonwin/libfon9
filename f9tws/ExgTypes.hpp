@@ -37,6 +37,12 @@ enum class TwsOType : char {
    /// 現股當沖.
    DayTradeGn = 'd',
 };
+static inline bool IsTwsOTypeDb(TwsOType ot) {
+   return ot == TwsOType::DbSelf || ot == TwsOType::DbAgent;
+}
+static inline bool IsTwsOTypeCr(TwsOType ot) {
+   return ot == TwsOType::CrSelf || ot == TwsOType::CrAgent;
+}
 
 enum class TwsApCode : char {
    /// '0' TWSE:普通股交易子系統 / OTC:等價交易子系統.
