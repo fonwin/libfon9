@@ -250,8 +250,11 @@ void MdRtRecover::OnTimer(TimeStamp now) {
       auto  treelk{this->Mgr_.MdSymbs_.SymbMap_.ConstLock()};
       if (this->RtSubr_->IsUnsubscribed())
          return;
-      if (nextReadPos >= this->EndPos_)
+      if (nextReadPos >= this->EndPos_) {
          nargs.NotifyKind_ = seed::SeedNotifyKind::StreamRecoverEnd;
+         // 必須設定 StreamDataKind_, 避免 RtFilter_ 濾掉, 而沒有通知 StreamRecoverEnd;
+         nargs.StreamDataKind_ = f9sv_MdRtsKind_Full;
+      }
       else if (nargs.CacheGV_.empty()) {
          treelk.unlock();
          this->RunAfter(TimeInterval_Millisecond(1));
