@@ -205,7 +205,7 @@ struct ExgMapMgr::ImpSeedP08 : public ExgMapMgr_ImpSeed {
    void ClearReload(ConfigLocker&& lk) override {
       this->SetDescription(std::string{});
       base::ClearReload(std::move(lk));
-      this->SetForceLoadOnce(std::move(lk), true); // 即使是 SchOut 也要載入一次.
+      // this->SetForceLoadOnce(std::move(lk), true); // 即使是 SchOut 也要載入一次?
    }
 };
 //--------------------------------------------------------------------------//
