@@ -260,8 +260,11 @@ fon9_ENUM(f9fmkt_TradingRequestSt, uint8_t) {
    /// 如果確定「交易所主動」刪單會分成多次傳送,
    /// 則首次收到的交易所刪單回報, 使用此狀態.
    /// - 例: 期交所狀態 47 => 48;
-   ///       則首次的 47(因價格穩定措施刪單) 「交易所主動刪單」回報使用此狀態;
+   ///       47(因價格穩定措施刪單)「交易所主動刪單」回報使用 f9fmkt_TradingRequestSt_ExchangeCanceling;
    ///       48(退單時之上限或下限價格) 使用 f9fmkt_TradingRequestSt_ExchangeCanceled.
+   /// - 證交所: f9fmkt_TradingRequestSt_ExchangeCanceling 表示:
+   ///   證券進入價格穩定措施或尾盤集合競價時段，交易所主動取消留存委託簿之「市價」委託單資料並回報.
+   ///   但因證券沒有分次回報, 所以 OrderSt 仍使用 f9fmkt_OrderSt_ExchangeCanceled;
    f9fmkt_TradingRequestSt_ExchangeCanceling = 0xf7,
    /// 交易所刪單 IOC, FOK... 若有多次回覆, 則最後一次刪單回覆, 使用此狀態.
    f9fmkt_TradingRequestSt_ExchangeCanceled  = 0xfa,
