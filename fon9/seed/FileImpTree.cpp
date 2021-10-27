@@ -171,6 +171,7 @@ void FileImpSeed::OnConfigValueChanged(ConfigLocker&& lk, StrView val) {
    switch (static_cast<FileImpMonitorFlag>(chMonFlag)) {
    case FileImpMonitorFlag::AddTail:
    case FileImpMonitorFlag::Reload:
+   case FileImpMonitorFlag::Exclude:
       val.Reset(&chMonFlag, &chMonFlag + 1);
       break;
    case FileImpMonitorFlag::None:
@@ -198,6 +199,9 @@ TimeInterval FileImpSeed::MonitorCheck(ConfigLocker&& lk, TimeStamp now) {
    FileImpMonitorFlag monFlag = this->GetMonitorFlag(lk);
    bool               isNoMon = false;
    switch (monFlag) {
+   case FileImpMonitorFlag::Exclude:
+      return TimeInterval{};
+
    default:
    case FileImpMonitorFlag::None:
       isNoMon = true;

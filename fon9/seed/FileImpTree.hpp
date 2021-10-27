@@ -34,6 +34,8 @@ enum class FileImpMonitorFlag : char {
    Reload = 'R',
    /// 當匯入檔大小有異動時, 載入尾端新增的部分.
    AddTail = 'A',
+   /// 不載入.
+   Exclude = 'X',
 };
 
 fon9_WARN_DISABLE_PADDING;
