@@ -270,6 +270,8 @@ StrView FixRecorder::ReloadSent::Start(FixRecorder& fixRecorder, FixSeqNum seqFr
 StrView FixRecorder::ReloadSent::FindNext(FixRecorder& fixRecorder) {
    if (this->CurMsg_.IsNull())
       return this->CurMsg_;
+   if (this->FoundDataEnd_ == nullptr)
+      return(this->CurMsg_ = nullptr);
    const char* pbeg = this->CurMsg_.end();
    size_t      remainSize = static_cast<size_t>(this->FoundDataEnd_ - pbeg);
    assert(remainSize <= kReloadSentBufferSize);
