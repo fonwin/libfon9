@@ -80,6 +80,7 @@ class fon9_API RcClientSession : public RcSession, public f9rc_ClientSession {
    EvHandlers  EvHandlers_;
    std::string Password_;
 
+protected:
    void OnDevice_StateChanged(io::Device& dev, const io::StateChangedArgs& e) override;
    void SetApReady(StrView info) override;
 
