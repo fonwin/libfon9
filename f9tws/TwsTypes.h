@@ -1,9 +1,12 @@
-﻿// \file f9tws/TwsTypes.hpp
+﻿// \file f9tws/TwsTypes.h
 // \author fonwinz@gmail.com
-#ifndef __f9tws_TwsTypes_hpp__
-#define __f9tws_TwsTypes_hpp__
+#ifndef __f9tws_TwsTypes_h__
+#define __f9tws_TwsTypes_h__
 #include "f9tws/Config.h"
 #include <stdint.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 fon9_ENUM(f9tws_SymbKind, uint8_t) {
    f9tws_SymbKind_Unknown = 0,
@@ -107,4 +110,7 @@ fon9_ENUM(f9tws_SymbKind, uint8_t) {
    f9tws_SymbKind_BF = 0xbf,
 };
 
-#endif//__f9tws_TwsTypes_hpp__
+#ifdef __cplusplus
+}//extern "C"
+#endif
+#endif//__f9tws_TwsTypes_h__
