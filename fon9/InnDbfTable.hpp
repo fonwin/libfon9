@@ -95,7 +95,9 @@ template <class Map, class Iterator, class HandlerBase>
 inline InnSyncCheckResult InnSyncCheck(Map& map, Iterator& ifind, const InnSyncKey& syncKey, HandlerBase& handler) {
    if ((ifind = map.find(handler.Key_)) == map.end())
       return InnSyncCheckResult::NotExists;
-   if (syncKey <= handler.GetRoomKey(*ifind).GetSyncKey())
+   const InnDbfRoomKey& roomKey = handler.GetRoomKey(*ifind);
+   // roomKey: 有可能在載入時資料有異常, 造成沒有分配 RoomKey, 因此需要額外判斷 roomKey 是否有效.
+   if (roomKey && syncKey <= roomKey.GetSyncKey())
       return InnSyncCheckResult::SyncIsOlder;
    return InnSyncCheckResult::SyncIsNewer;
 }

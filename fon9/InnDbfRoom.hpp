@@ -108,7 +108,7 @@ public:
    }
 
    InnDbfRoomType GetRoomType() const {
-      return static_cast<InnDbfRoomType >(this->RoomSP_->RoomKey_.GetPendingRoomType());
+      return static_cast<InnDbfRoomType>(this->RoomSP_->RoomKey_.GetPendingRoomType());
    }
    const InnSyncKey& GetSyncKey() const {
       return this->RoomSP_->SyncKey_;
