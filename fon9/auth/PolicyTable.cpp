@@ -10,6 +10,15 @@ PolicyItem::~PolicyItem() {
 }
 void PolicyItem::SetRemoved(PolicyTable&) {
 }
+void PolicyItem::OnAfterChanged() {
+   ++this->ChangedCount_;
+   this->AfterChangedEvent_.Publish(*this);
+}
+void PolicyItem::BeforeParentErase(PolicyTable& owner) {
+   this->IsRemoved_ = true;
+   this->SetRemoved(owner);
+   this->OnAfterChanged();
+}
 void PolicyItem::OnParentTreeClear(PolicyTable& owner) {
    this->BeforeParentErase(owner);
 }
@@ -38,6 +47,7 @@ void PolicyMapsImpl::WriteUpdated(PolicyItem& rec) {
    rec.SavePolicy(rbuf);
    ToBitv(rbuf, rec.PolicyId_);
    PolicyTable::StaticCast(this->ItemMap_).WriteRoom(rec.RoomKey_, nullptr, fon9::InnDbfRoomType::RowData, rbuf.MoveOut());
+   rec.OnAfterChanged();
 }
 
 bool PolicyTable::Delete(StrView policyId) {
@@ -88,6 +98,7 @@ void PolicyTable::SyncHandler::UpdateSync(PolicyItemMap& itemMap, PolicyItemMap:
    rec.SavePolicy(this->PendingWriteBuf_);
    ToBitv(this->PendingWriteBuf_, rec.PolicyId_);
    this->PendingWriteRoomKey_ = &rec.RoomKey_;
+   rec.OnAfterChanged();
 }
 void PolicyTable::SyncHandler::UpdateSync(PolicyDeletedMap& deletedMap, PolicyDeletedMap::iterator* iDeleted) {
    assert(this->EvArgs_.RoomType_ == InnDbfRoomType::RowDeleted);

@@ -20,13 +20,13 @@ class PolicyAclTree : public MasterPolicyTree {
       using base = MasterPolicyItem;
       MasterItem(const StrView& policyId, MasterPolicyTreeSP owner)
          : base(policyId, std::move(owner)) {
-         this->DetailPolicyTree_.reset(new DetailTree{*this});
+         this->DetailSapling_.reset(new DetailTree{*this});
       }
       void LoadPolicy(DcQueue& buf) override {
          // 因為 Acl 儲存打包 [MasterItem + Container(Detail)],
          // 所以若有增減欄位, 則不適用 InArchiveClearBack<> 的方式處理;
          unsigned            ver = 0;
-         DetailTable::Locker pmap{static_cast<DetailTree*>(this->DetailPolicyTree_.get())->DetailTable_};
+         DetailTable::Locker pmap{static_cast<DetailTree*>(this->DetailSapling())->DetailTable_};
          BitvInArchive{buf}(ver, this->Home_);
          if (fon9_LIKELY(ver > 0)) {
             BitvTo(buf, this->MaxSubrCount_);
@@ -54,7 +54,7 @@ class PolicyAclTree : public MasterPolicyTree {
       }
       void SavePolicy(RevBuffer& rbuf) override {
          const unsigned           ver = 2;
-         DetailTable::ConstLocker pmap{static_cast<DetailTree*>(this->DetailPolicyTree_.get())->DetailTable_};
+         DetailTable::ConstLocker pmap{static_cast<DetailTree*>(this->DetailSapling())->DetailTable_};
          const auto               ibeg = pmap->begin();
          for (auto i = pmap->end(); i != ibeg;) {
             --i;

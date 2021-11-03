@@ -9,10 +9,10 @@ MasterPolicyItem::MasterPolicyItem(const StrView& policyId, MasterPolicyTreeSP o
    , OwnerMasterTree_{std::move(owner)} {
 }
 seed::TreeSP MasterPolicyItem::GetSapling() {
-   return this->DetailPolicyTree_;
+   return this->DetailSapling_;
 }
 void MasterPolicyItem::SetRemoved(PolicyTable&) {
-   this->DetailPolicyTree_.reset();
+   this->DetailSapling_.reset();
 }
 
 } } // namespaces

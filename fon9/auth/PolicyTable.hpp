@@ -38,14 +38,17 @@ using PolicyMaps = MustLock<PolicyMapsImpl>;
 
 //--------------------------------------------------------------------------//
 
-fon9_WARN_DISABLE_PADDING;
+using PolicyItemChangedEvent = std::function<void(const PolicyItem&)>;
+
 /// \ingroup auth
 /// 一筆使用者政策設定的基底.
 /// 例: Trader交易台股的權限.
 class fon9_API PolicyItem : public intrusive_ref_counter<PolicyItem> {
    fon9_NON_COPY_NON_MOVE(PolicyItem);
    friend class PolicyTable;
+   uint16_t       ChangedCount_{};
    bool           IsRemoved_{false};
+   char           Padding___[1];
    InnDbfRoomKey  RoomKey_;
 
    virtual void LoadPolicy(DcQueue&) = 0;
@@ -57,12 +60,14 @@ class fon9_API PolicyItem : public intrusive_ref_counter<PolicyItem> {
    /// 通常在 SetRemoved() 時切斷與 DetailTable 的聯繫.
    /// 預設: do nothing.
    virtual void SetRemoved(PolicyTable& owner);
-   void BeforeParentErase(PolicyTable& owner) {
-      this->IsRemoved_ = true;
-      this->SetRemoved(owner);
-   }
+   void BeforeParentErase(PolicyTable& owner);
+   void OnAfterChanged();
+
 public:
    const PolicyId PolicyId_;
+
+   mutable Subject<PolicyItemChangedEvent>   AfterChangedEvent_;
+
    PolicyItem(const StrView& policyId)
       : PolicyId_{policyId} {
    }
@@ -71,6 +76,10 @@ public:
    /// 若傳回 true, 則表示 this 已從 table 移除.
    bool IsRemoved() const {
       return this->IsRemoved_;
+   }
+   /// 資料異動次數.
+   uint16_t ChangedCount() const {
+      return this->ChangedCount_;
    }
 
    virtual seed::TreeSP GetSapling();
@@ -81,7 +90,15 @@ public:
    /// 預設: OpResult::not_supported_cmd;
    virtual void OnSeedCommand(PolicyMaps::Locker& locker, seed::SeedOpResult& res, StrView cmdln, seed::FnCommandResultHandler resHandler);
 };
-fon9_WARN_POP;
+
+struct PolicyItemMonitor {
+   intrusive_ptr<const PolicyItem>  PolicyItem_;
+   uint16_t PolicyChangedCount_;
+   char     Padding____[6];
+   bool IsPolicyChanged() const {
+      return this->PolicyItem_ && this->PolicyItem_->ChangedCount() != this->PolicyChangedCount_;
+   }
+};
 
 //--------------------------------------------------------------------------//
 

@@ -21,16 +21,16 @@ class RoleTree : public MasterPolicyTree {
       CharVector  Description_;
       RoleItem(const StrView& roleId, MasterPolicyTreeSP owner)
          : base(roleId, std::move(owner)) {
-         this->DetailPolicyTree_.reset(new RoleConfigTree{*this});
+         this->DetailSapling_.reset(new RoleConfigTree{*this});
       }
       void LoadPolicy(DcQueue& buf) override {
          unsigned ver = 0;
-         DetailTable::Locker pmap{static_cast<RoleConfigTree*>(this->DetailPolicyTree_.get())->DetailTable_};
+         DetailTable::Locker pmap{static_cast<RoleConfigTree*>(this->DetailSapling())->DetailTable_};
          BitvInArchive{buf}(ver, this->Description_, *pmap);
       }
       void SavePolicy(RevBuffer& rbuf) override {
          const unsigned ver = 0;
-         DetailTable::ConstLocker pmap{static_cast<RoleConfigTree*>(this->DetailPolicyTree_.get())->DetailTable_};
+         DetailTable::ConstLocker pmap{static_cast<RoleConfigTree*>(this->DetailSapling())->DetailTable_};
          BitvOutArchive{rbuf}(ver, this->Description_, *pmap);
       }
    };

@@ -5,6 +5,7 @@
 #include "fon9/seed/FieldChars.hpp"
 #include "fon9/Unaligned.hpp"
 #include "fon9/StrTo.hpp"
+#include "fon9/RevPrint.hpp"
 
 namespace fon9 { namespace seed {
 

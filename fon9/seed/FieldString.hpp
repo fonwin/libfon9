@@ -4,9 +4,7 @@
 #define __fon9_seed_FieldString_hpp__
 #include "fon9/seed/Field.hpp"
 #include "fon9/seed/RawWr.hpp"
-#include "fon9/StrTo.hpp"
-#include "fon9/RevPrint.hpp"
-#include "fon9/CharVector.hpp"
+#include "fon9/BitvArchive.hpp"
 
 namespace fon9 { namespace seed {
 

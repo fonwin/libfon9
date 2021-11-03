@@ -32,26 +32,31 @@ using DetailPolicyTreeSP = intrusive_ptr<DetailPolicyTree>;
 class fon9_API MasterPolicyItem : public PolicyItem {
    fon9_NON_COPY_NON_MOVE(MasterPolicyItem);
    using base = PolicyItem;
+protected:
+   /// 在衍生者建構時設定, 在 SetRemoved() 時 reset();
+   DetailPolicyTreeSP         DetailSapling_;
+
 public:
-   const MasterPolicyTreeSP  OwnerMasterTree_;
+   const MasterPolicyTreeSP   OwnerMasterTree_;
 
    MasterPolicyItem(const StrView& policyId, MasterPolicyTreeSP owner);
 
-   /// 在衍生者建構時設定, 在 SetRemoved() 時 reset();
-   DetailPolicyTreeSP   DetailPolicyTree_;
-   seed::TreeSP GetSapling() override;
    void SetRemoved(PolicyTable&) override;
+   seed::TreeSP GetSapling() override;
+   DetailPolicyTree* DetailSapling() const {
+      return this->DetailSapling_.get();
+   }
 
    // 由衍生者處理, 例如:
    // CharVector  Description_; // 其他 master policy 欄位.
    // void LoadPolicy(DcQueue& buf) override {
    //    unsigned ver = 0;
-   //    DetailTable::Locker details{this->DetailPolicyTree_->DetailTable_};
+   //    DetailTable::Locker details{this->DetailSapling()->DetailTable_};
    //    BitvInArchive{buf}(ver, this->Description_, *details);
    // }
    // void SavePolicy(RevBuffer& rbuf) override {
    //    const unsigned ver = 0;
-   //    DetailTable::ConstLocker details{this->DetailPolicyTree_->DetailTable_};
+   //    DetailTable::ConstLocker details{this->DetailSapling()->DetailTable_};
    //    BitvOutArchive{rbuf}(ver, this->Description_, *details);
    // }
 };
@@ -88,7 +93,7 @@ public:
       if (ifind == maps->ItemMap_.end())
          return false;
       res.InLocking(**ifind);
-      DetailPolicyTreeSP detailTree = static_cast<MasterPolicyItem*>(ifind->get())->DetailPolicyTree_;
+      DetailPolicyTreeSP detailTree = static_cast<MasterPolicyItem*>(ifind->get())->DetailSapling();
       maps.unlock();
       res.OnUnlocked(*detailTree);
       return true;
