@@ -25,7 +25,7 @@ fon9_API void AppendToBuffer(BufferList& dst, const void* src, size_t size, size
 RevBufferList::RevBufferList(BufferNodeSize newAllocReserved, DcQueue&& extmsg)
    : RevBuffer()
    , Builder_{newAllocReserved, dynamic_cast<DcQueueList*>(&extmsg)
-                                ? static_cast<DcQueueList*>(&extmsg)->MoveOut()
+                                ? static_cast<DcQueueList*>(&extmsg)->MoveOutToList()
                                 : BufferList{}} {
    if (!extmsg.empty()) {
       size_t sz = extmsg.CalcSize();
@@ -38,7 +38,7 @@ RevBufferList::RevBufferList(BufferNodeSize newAllocReserved, DcQueue&& extmsg)
 FwdBufferList::FwdBufferList(BufferNodeSize newAllocReserved, DcQueue&& extmsg)
    : FwdBuffer()
    , Builder_{newAllocReserved, dynamic_cast<DcQueueList*>(&extmsg)
-                                ? static_cast<DcQueueList*>(&extmsg)->MoveOut()
+                                ? static_cast<DcQueueList*>(&extmsg)->MoveOutToList()
                                 : BufferList{}} {
    if (!extmsg.empty()) {
       size_t sz = extmsg.CalcSize();

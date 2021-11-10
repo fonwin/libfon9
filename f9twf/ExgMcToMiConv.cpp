@@ -234,8 +234,8 @@ public:
       if (e.BeforeState_ == fon9::io::State::LinkReady)
          this->Conv_->Unsubscribe(*this);
    }
-   fon9::io::RecvBufferSize OnDevice_Recv(fon9::io::Device&, fon9::DcQueueList& rxbuf) override {
-      rxbuf.PopConsumed(rxbuf.CalcSize());
+   fon9::io::RecvBufferSize OnDevice_Recv(fon9::io::Device&, fon9::DcQueue& rxbuf) override {
+      rxbuf.PopConsumedAll();
       return fon9::io::RecvBufferSize::NoRecvEvent;
    }
    void OnExgMiMessage(ExgMcToMiConv&, const ExgMiHead& pk, unsigned pksz) override {

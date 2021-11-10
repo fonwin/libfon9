@@ -210,7 +210,7 @@ int main(int argc, const char** argv) {
    RcTester       rcTester;
    ClientTester   cliTester{rcflag};
 
-   char                 cmdln[1024];
+   char                 cmdln[1024*8];
    fon9::RevBufferList  rbuf{64};
    while (fgets(cmdln, sizeof(cmdln), stdin) != NULL) {
       fon9::StrView ln{fon9::StrView_cstr(cmdln)};
@@ -235,7 +235,17 @@ int main(int argc, const char** argv) {
             continue;
          }
       }
-      fon9::ToBitv(rbuf, ln);
+      size_t count = 1;
+      if (ln.Get1st() == '*') {
+         ln.SetBegin(ln.begin() + 1);
+         if ((count = fon9::StrTo(&ln, 0u)) <= 0)
+            count = 1;
+      }
+      const size_t totsz = ln.size() * count;
+      do {
+         fon9::RevPrint(rbuf, ln);
+      } while (--count > 0);
+      fon9::ByteArraySizeToBitvT(rbuf, totsz);
       cliTester.RcCli_->Send(RcFuncCode_Test, std::move(rbuf));
    }
 }

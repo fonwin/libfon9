@@ -11,7 +11,7 @@ void RecvBuffer::Clear() {
       FreeNode(this->NodeReserve_);
       this->NodeReserve_ = nullptr;
    }
-   this->Queue_.MoveOut();
+   this->Queue_.PopConsumedAll();
 }
 
 FwdBufferNode* RecvBuffer::AllocReserve(size_t expectSize) {

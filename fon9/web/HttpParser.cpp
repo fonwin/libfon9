@@ -8,35 +8,38 @@ namespace fon9 { namespace web {
 constexpr size_t kMinHeaderSize = sizeof("GET / HTTP/" fon9_kCSTR_HTTPCRLN2);
 constexpr size_t kMaxHeaderSize = 1024 * 8;
 
-static bool TrimHeadAndAppend(std::string& dst, BufferNode* front) {
-   while (front) {
-      const char* pend = reinterpret_cast<const char*>(front->GetDataEnd());
-      const char* pbeg = StrFindTrimHead(reinterpret_cast<const char*>(front->GetDataBegin()), pend);
+static bool TrimHeadAndAppend(std::string& dst, DcQueue& buf) {
+   while (!buf.empty()) {
+      size_t      blksz = buf.GetCurrBlockSize();
+      const char* pbeg  = reinterpret_cast<const char*>(buf.Peek1());
+      const char* pend  = pbeg + blksz;
+      pbeg = StrFindTrimHead(pbeg, pend);
       if (pbeg != pend) {
-         dst.append(pbeg, pend);
-         while ((front = front->GetNext()) != nullptr)
-            dst.append(reinterpret_cast<const char*>(front->GetDataBegin()), front->GetDataSize());
+         blksz = static_cast<size_t>(pbeg - reinterpret_cast<const char*>(buf.Peek1()));
+         if (blksz > 0)
+            buf.PopConsumed(blksz);
+         buf.AppendTo(dst);
          return true;
       }
-      front = front->GetNext();
+      buf.PopConsumed(blksz);
    }
    return false;
 }
 
 //--------------------------------------------------------------------------//
 
-HttpResult HttpParser::Feed(HttpMessage& msg, BufferList buf) {
+HttpResult HttpParser::Feed(HttpMessage& msg, DcQueue& buf) {
    if (msg.IsHeaderReady()) {
-      BufferAppendTo(buf, msg.OrigStr_);
+      buf.AppendTo(msg.OrigStr_);
       if (msg.IsChunked())
          return HttpParser::ParseChunk(msg);
       return HttpParser::AfterFeedBody(msg);
    }
    if (size_t bfsz = msg.OrigStr_.size()) {
-      BufferAppendTo(buf, msg.OrigStr_);
+      buf.AppendTo(msg.OrigStr_);
       return HttpParser::AfterFeedHeader(msg, bfsz);
    }
-   if (TrimHeadAndAppend(msg.OrigStr_, buf.front()))
+   if (TrimHeadAndAppend(msg.OrigStr_, buf))
       return HttpParser::AfterFeedHeader(msg, 0);
    return HttpResult::Incomplete;
 }

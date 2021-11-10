@@ -36,7 +36,7 @@ bool ExgMcReceiver::OnDevice_BeforeOpen(fon9::io::Device& dev, std::string& cfgs
    }
    return false;
 }
-io::RecvBufferSize ExgMcReceiver::OnDevice_Recv(io::Device& dev, DcQueueList& rxbuf) {
+io::RecvBufferSize ExgMcReceiver::OnDevice_Recv(io::Device& dev, DcQueue& rxbuf) {
    (void)dev;
    this->FeedBuffer(rxbuf);
    return io::RecvBufferSize::Default;

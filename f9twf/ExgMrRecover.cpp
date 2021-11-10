@@ -38,7 +38,7 @@ void ExgMrRecoverSession::OnDevice_StateChanged(io::Device& dev, const io::State
       }
    }
 }
-io::RecvBufferSize ExgMrRecoverSession::OnDevice_Recv(io::Device& dev, DcQueueList& rxbuf) {
+io::RecvBufferSize ExgMrRecoverSession::OnDevice_Recv(io::Device& dev, DcQueue& rxbuf) {
 __FEED_BUFFER:;
    if (this->Recovering_ > 0) {
       if (this->FeedBuffer(rxbuf)) {

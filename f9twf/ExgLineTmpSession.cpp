@@ -98,7 +98,7 @@ fon9::io::RecvBufferSize ExgLineTmpSession::OnDevice_LinkReady(fon9::io::Device&
 
 //--------------------------------------------------------------------------//
 
-fon9::io::RecvBufferSize ExgLineTmpSession::OnDevice_Recv(fon9::io::Device& dev, fon9::DcQueueList& rxbuf) {
+fon9::io::RecvBufferSize ExgLineTmpSession::OnDevice_Recv(fon9::io::Device& dev, fon9::DcQueue& rxbuf) {
    (void)dev;
    char  pkbuf[64 * 1024 + 64];
    static_assert(sizeof(TmpMsgLength) == 2, "sizeof TmpPacket over 64KB?");

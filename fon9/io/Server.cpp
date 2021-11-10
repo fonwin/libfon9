@@ -1,6 +1,7 @@
 ﻿/// \file fon9/io/Server.cpp
 /// \author fonwinz@gmail.com
 #include "fon9/io/Server.hpp"
+#include "fon9/buffer/DcQueueList.hpp"
 
 namespace fon9 { namespace io {
 

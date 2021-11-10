@@ -4,6 +4,22 @@
 
 namespace fon9 {
 
+const void* DcQueueList::PeedNextBlock(const void* handler, DataBlock& blk) const {
+   const BufferNode* node = (handler ? reinterpret_cast<const BufferNode*>(handler) : this->cfront());
+   if (node && (node = node->GetNext()) != nullptr) {
+      blk.first = node->GetDataBegin();
+      blk.second = node->GetDataSize();
+   }
+   return node;
+}
+BufferList DcQueueList::MoveOutToList() {
+   if (this->cfront()) {
+      this->ClearCurrBlock();
+      return std::move(this->BlockList_);
+   }
+   assert(this->MemCurrent_ == nullptr);
+   return BufferList{};
+}
 void DcQueueList::FrontToCurrBlock() {
    BufferNode* front = this->BlockList_.front();
    if (this->MemCurrent_ != nullptr) {
@@ -44,6 +60,12 @@ bool DcQueueList::DcQueueHasMore(size_t sz) const {
    return false;
 }
 
+void DcQueueList::PopConsumedAll() {
+   while (BufferNode* node = this->BlockList_.pop_front()) {
+      this->NodeConsumed(node);
+   }
+   this->ClearCurrBlock();
+}
 void DcQueueList::DcQueueRemoveMore(size_t sz) {
    // 先釋放 curr block.
    if (BufferNode* front = this->BlockList_.pop_front())

@@ -40,7 +40,7 @@ class ExgMrRecoverSession : public fon9::io::Session, private ExgMcPkReceiver {
    void OnDevice_Initialized(fon9::io::Device& dev) override;
    fon9::io::RecvBufferSize OnDevice_LinkReady(fon9::io::Device& dev) override;
    void OnDevice_StateChanged(fon9::io::Device& dev, const fon9::io::StateChangedArgs& e) override;
-   fon9::io::RecvBufferSize OnDevice_Recv(fon9::io::Device& dev, fon9::DcQueueList& rxbuf) override;
+   fon9::io::RecvBufferSize OnDevice_Recv(fon9::io::Device& dev, fon9::DcQueue& rxbuf) override;
 
 public:
    const ExgMcRecoverRole  Role_;

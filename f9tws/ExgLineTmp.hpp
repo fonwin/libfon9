@@ -122,7 +122,7 @@ protected:
    void OnDevice_StateChanged(fon9::io::Device& dev, const fon9::io::StateChangedArgs& e) override;
    void OnDevice_StateUpdated(fon9::io::Device& dev, const fon9::io::StateUpdatedArgs& e) override;
    fon9::io::RecvBufferSize OnDevice_LinkReady(fon9::io::Device& dev) override;
-   fon9::io::RecvBufferSize OnDevice_Recv(fon9::io::Device& dev, fon9::DcQueueList& rxbuf) override;
+   fon9::io::RecvBufferSize OnDevice_Recv(fon9::io::Device& dev, fon9::DcQueue& rxbuf) override;
    void OnDevice_CommonTimer(fon9::io::Device& dev, fon9::TimeStamp now) override;
 
    virtual void OnExgTmp_ApReady() = 0;

@@ -3,7 +3,7 @@
 #ifndef __fon9_io_Session_hpp__
 #define __fon9_io_Session_hpp__
 #include "fon9/io/IoBase.hpp"
-#include "fon9/buffer/DcQueueList.hpp"
+#include "fon9/buffer/DcQueue.hpp"
 #include "fon9/TimeStamp.hpp"
 
 namespace fon9 { namespace io {
@@ -21,8 +21,8 @@ class RecvDirectArgs {
 public:
    DeviceOpLocker&   OpLocker_;
    Device&           Device_;
-   DcQueueList&      RecvBuffer_;
-   RecvDirectArgs(DeviceOpLocker& opLocker, Device& dev, DcQueueList& rxbuf)
+   DcQueue&          RecvBuffer_;
+   RecvDirectArgs(DeviceOpLocker& opLocker, Device& dev, DcQueue& rxbuf)
       : OpLocker_(opLocker)
       , Device_(dev)
       , RecvBuffer_(rxbuf) {
@@ -123,7 +123,7 @@ public:
    /// \retval ==RecvBufferSize::Default     由 Device 自行決定如何處理緩衝區大小.
    /// \retval ==RecvBufferSize::NoRecvEvent 不用再收任何資料.
    /// \retval ==RecvBufferSize::CloseRecv   關閉接收端.
-   virtual RecvBufferSize OnDevice_Recv(Device& dev, DcQueueList& rxbuf);
+   virtual RecvBufferSize OnDevice_Recv(Device& dev, DcQueue& rxbuf);
 
    /// 在 LinkReady 之後, 或 f9io_State_Initialized(在 OnDevice_BeforeOpen() 通知時),
    /// 若有啟動 dev CommonTimer: dev.CommonTimerRunAfter(ti),

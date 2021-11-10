@@ -127,7 +127,7 @@ std::string IoFixSession::SessionCommand(io::Device& dev, const StrView cmdln) {
    }
    return baseIo::SessionCommand(dev, cmdln);
 }
-io::RecvBufferSize IoFixSession::OnDevice_Recv(io::Device&, DcQueueList& rxbuf) {
+io::RecvBufferSize IoFixSession::OnDevice_Recv(io::Device&, DcQueue& rxbuf) {
    return this->FeedBuffer(rxbuf) < FixParser::NeedsMore
       ? io::RecvBufferSize::NoRecvEvent
       : static_cast<io::RecvBufferSize>(FixRecorder::kMaxFixMsgBufferSize);

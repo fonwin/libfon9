@@ -58,15 +58,15 @@ protected:
    uint64_t    RemainPayloadLen_{0};
    std::string Payload_;
 
-   bool PeekFrameHeaderLen(DcQueueList& rxbuf);
-   bool FetchFrameHeader(DcQueueList& rxbuf);
-   io::RecvBufferSize FetchPayload(DcQueueList& rxbuf);
+   bool PeekFrameHeaderLen(DcQueue& rxbuf);
+   bool FetchFrameHeader(DcQueue& rxbuf);
+   io::RecvBufferSize FetchPayload(DcQueue& rxbuf);
 
    virtual io::RecvBufferSize OnWebSocketMessage() = 0;
 public:
    WebSocket(io::DeviceSP dev) : Device_{std::move(dev)} {
    }
-   io::RecvBufferSize OnDevice_Recv(io::Device& dev, DcQueueList& rxbuf) override;
+   io::RecvBufferSize OnDevice_Recv(io::Device& dev, DcQueue& rxbuf) override;
 
    void Send(WebSocketOpCode opCode, RevBufferList&& rbuf, bool isFIN = true);
    void Send(WebSocketOpCode opCode, const void* buf, size_t bufsz, bool isFIN = true);

@@ -93,7 +93,7 @@ static inline byte getPayloadLenId(const byte* pHeader) {
    return static_cast<byte>(pHeader[1] & 0x7f);
 }
 
-bool WebSocket::PeekFrameHeaderLen(DcQueueList& rxbuf) {
+bool WebSocket::PeekFrameHeaderLen(DcQueue& rxbuf) {
    // https://developer.mozilla.org/zh-CN/docs/Web/API/WebSockets_API/Writing_WebSocket_servers
    // https://tools.ietf.org/html/rfc6455#section-5.1
    //  Frame format:
@@ -135,7 +135,7 @@ bool WebSocket::PeekFrameHeaderLen(DcQueueList& rxbuf) {
    this->Stage_ = (this->FrameHeaderLen_ == 2 ? Stage::FrameHeaderReady : Stage::FrameHeaderLenReady);
    return true;
 }
-bool WebSocket::FetchFrameHeader(DcQueueList& rxbuf) {
+bool WebSocket::FetchFrameHeader(DcQueue& rxbuf) {
    assert(this->Stage_ == Stage::FrameHeaderLenReady);
    assert(2 <= this->FrameHeaderLen_ && this->FrameHeaderLen_ <= sizeof(this->FrameHeader_));
    if (rxbuf.Fetch(this->FrameHeader_, this->FrameHeaderLen_) == 0)
@@ -152,7 +152,7 @@ bool WebSocket::FetchFrameHeader(DcQueueList& rxbuf) {
    }
    return true;
 }
-io::RecvBufferSize WebSocket::FetchPayload(DcQueueList& rxbuf) {
+io::RecvBufferSize WebSocket::FetchPayload(DcQueue& rxbuf) {
    assert(this->Stage_ == Stage::FrameHeaderReady);
    if (this->RemainPayloadLen_ > 0) {
       if (rxbuf.CalcSize() < this->RemainPayloadLen_)
@@ -192,7 +192,7 @@ io::RecvBufferSize WebSocket::FetchPayload(DcQueueList& rxbuf) {
    this->Payload_.clear();
    return retval;
 }
-io::RecvBufferSize WebSocket::OnDevice_Recv(io::Device& dev, DcQueueList& rxbuf) {
+io::RecvBufferSize WebSocket::OnDevice_Recv(io::Device& dev, DcQueue& rxbuf) {
    (void)dev; assert(this->Device_ == &dev);
    for (;;) {
       switch (this->Stage_) {

@@ -19,9 +19,9 @@ class ExgMcChannelTunnelSession : public Session, private ExgMcMessageConsumer {
       this->McChannel_.SubscribeConsumer(&this->SubConn_, *this);
       return RecvBufferSize::Default;
    }
-   RecvBufferSize OnDevice_Recv(Device& dev, DcQueueList& rxbuf) override {
+   RecvBufferSize OnDevice_Recv(Device& dev, DcQueue& rxbuf) override {
       (void)dev;
-      rxbuf.MoveOut();
+      rxbuf.PopConsumedAll();
       return RecvBufferSize::Default;
    }
    void OnDevice_StateChanged(Device& dev, const StateChangedArgs& e) override {

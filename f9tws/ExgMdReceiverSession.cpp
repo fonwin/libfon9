@@ -49,7 +49,7 @@ bool ExgMdReceiverSession::OnDevice_BeforeOpen(io::Device& dev, std::string& cfg
    }
    return true;
 }
-io::RecvBufferSize ExgMdReceiverSession::OnDevice_Recv(io::Device& dev, DcQueueList& rxbuf) {
+io::RecvBufferSize ExgMdReceiverSession::OnDevice_Recv(io::Device& dev, DcQueue& rxbuf) {
    (void)dev;
    this->FeedBuffer(rxbuf);
    return io::RecvBufferSize::Default;

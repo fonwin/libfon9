@@ -53,8 +53,9 @@ void IocpDgramImpl::OnIocpSocket_Received(DcQueueList& rxbuf) {
       RecvAux aux;
       DeviceRecvBufferReady(*this->Owner_, rxbuf, aux);
    }
-   else
-      rxbuf.MoveOut();
+   else {
+      rxbuf.PopConsumedAll();
+   }
 }
 void IocpDgramImpl::OnIocpSocket_Writable(DWORD bytesTransfered) {
    if (fon9_LIKELY(this->State_ == State::Connected)) {

@@ -2,10 +2,8 @@
 /// \author fonwinz@gmail.com
 #ifndef __fon9_buffer_DcQueue_hpp__
 #define __fon9_buffer_DcQueue_hpp__
-#include "fon9/buffer/RevBuffer.hpp"
-#include "fon9/ErrC.hpp"
+#include "fon9/buffer/BufferList.hpp"
 #include "fon9/StrView.hpp"
-#include <string.h> // memcpy();
 
 namespace fon9 {
 
@@ -97,6 +95,12 @@ public:
    size_t GetCurrBlockSize() const {
       return static_cast<size_t>(this->MemEnd_ - this->MemCurrent_);
    }
+   /// 偷窺下一個 blk 的內容.
+   /// 若 handler == NULL, 表示取得 current 的下一個 blk;
+   /// 返回值用於下次呼叫 PeedNextBlock(retval, blk); 使用;
+   /// 若返回 nullptr 則表示已無下一個 blk;
+   /// 預設返回 nullptr;
+   virtual const void* PeedNextBlock(const void* handler, DataBlock& blk) const;
 
    bool IsSizeEnough(size_t sz) const {
       const size_t blkszCurr = this->GetCurrBlockSize();
@@ -105,6 +109,7 @@ public:
       return this->DcQueueHasMore(sz - blkszCurr);
    }
 
+   /// 移除已用掉的資料量.
    void PopConsumed(size_t sz) {
       const size_t blkszCurr = this->GetCurrBlockSize();
       if (fon9_LIKELY(sz < blkszCurr))
@@ -112,6 +117,9 @@ public:
       else
          this->DcQueueRemoveMore(sz - blkszCurr);
    }
+   /// 全部資料已用完, 應全部移除;
+   /// 預設使用: this->PopConsumed(this->CalcSize());
+   virtual void PopConsumedAll();
 
    /// 資料輸出失敗, 清除全部的內容.
    virtual void ConsumeErr(const ErrC& errc) = 0;
@@ -146,6 +154,24 @@ public:
       }
       return 0;
    }
+
+   /// 將剩餘資料填入 dst 的尾端, 並從 this 移除(Consumed);
+   /// 方法: 先用 dst.resize() 調整大小後, 使用 this->Read() 讀取內容.
+   template <class StrT>
+   size_t AppendTo(StrT& dst) {
+      if(auto blksz = this->CalcSize()) {
+         const size_t dstsz = dst.size();
+         dst.resize(dstsz + blksz); // dstsz + (blksz / sizeof(typename StrT::value_type));
+         auto* dstbeg = &*dst.begin();
+         void* dstptr = dstbeg;
+         static_assert(sizeof(*dstbeg) == 1, ""); // sizeof(typename StrT::value_type) == 1;
+         return this->Read(static_cast<char*>(dstptr) + (dstsz * sizeof(*dstbeg)), blksz);
+      }
+      return 0;
+   }
+
+   /// 預設使用 this->Read(); 將內容讀入到一個 BufferNode 裡面;
+   virtual BufferList MoveOutToList();
 };
 
 class DcQueueFixedMem : public DcQueue {

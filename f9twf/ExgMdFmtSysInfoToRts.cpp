@@ -414,7 +414,8 @@ static void I140_10x_LmtRange(ExgMcMessage& e, int lvWill) {
 //--------------------------------------------------------------------------//
 f9twf_API void I140SysInfoParserToRts(ExgMcMessage& e) {
    const ExgMcI140& i140 = *static_cast<const ExgMcI140*>(&e.Pk_);
-   if (0);// TODO: 如果有訂閱 tree(例:B主機 訂閱 A主機 的 /TwfMd/Symbs), 且 i140.ListType != Symbol, 要怎麼通知呢?
+   // 目前還沒有多主機相互訂閱的同步機制, 所以先不考慮底下問題了!
+   // TODO: 如果有訂閱 tree(例:B主機 訂閱 A主機 的 /TwfMd/Symbs), 且 i140.ListType != Symbol, 要怎麼通知呢?
    // ?-1-? Add tree:「FlowGroup」, 可訂閱tree, 期貨、選擇權各一個 tree?
    // ?-2-? 使用 MdSymbsBase::BlockPublish 然後直接轉送 I140?
    //       => 如果 B主機 正在補商品快照, 這時 B主機 收到的 I140 要如何處理: 尚未補到快照的商品?

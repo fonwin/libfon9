@@ -26,7 +26,7 @@ RecvBufferSize Session::OnDevice_LinkReady(Device& dev) {
    (void)dev;
    return RecvBufferSize::Default;
 }
-RecvBufferSize Session::OnDevice_Recv(Device& dev, DcQueueList& rxbuf) {
+RecvBufferSize Session::OnDevice_Recv(Device& dev, DcQueue& rxbuf) {
    (void)dev; (void)rxbuf;
    return RecvBufferSize::Default;
 }

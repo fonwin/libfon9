@@ -168,7 +168,7 @@ SendDirectResult FdrSocket::FdrRecvAux::SendDirect(RecvDirectArgs& e, BufferList
          toSend.PopConsumed(static_cast<size_t>(wrsz));
          if (fon9_LIKELY(toSend.empty()))
             return SendDirectResult::Sent;
-         txbuf.push_back(toSend.MoveOut());
+         txbuf.push_back(toSend.MoveOutToList());
       }
       else if (int eno = ErrorCannotRetry(errno)) {
          toSend.ConsumeErr(GetSysErrC(eno));

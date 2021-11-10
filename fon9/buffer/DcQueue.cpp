@@ -1,9 +1,27 @@
 ﻿// \file fon9/buffer/DcQueue.cpp
 // \author fonwinz@gmail.com
 #include "fon9/buffer/DcQueue.hpp"
+#include "fon9/buffer/FwdBufferList.hpp"
 
 namespace fon9 {
 
+BufferList DcQueue::MoveOutToList() {
+   if (const auto sz = this->CalcSize()) {
+      FwdBufferNode* node = FwdBufferNode::Alloc(sz);
+      byte*          pout = node->GetDataEnd();
+      this->Read(pout, sz);
+      node->SetDataEnd(pout + sz);
+      return BufferList{node};
+   }
+   return BufferList{};
+}
+void DcQueue::PopConsumedAll() {
+   this->PopConsumed(this->CalcSize());
+}
+const void* DcQueue::PeedNextBlock(const void* handler, DataBlock& blk) const {
+   (void)handler; (void)blk;
+   return nullptr;
+}
 size_t DcQueue::DcQueueReadMore(byte* buf, size_t sz) {
    this->DcQueueRemoveMore(0);
    size_t rdsz = 0;

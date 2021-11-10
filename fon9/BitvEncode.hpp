@@ -8,7 +8,10 @@
 #include "fon9/Endian.hpp"
 #include "fon9/Exception.hpp"
 #include "fon9/ByteVector.hpp"
+
+fon9_BEFORE_INCLUDE_STD;
 #include <array>
+fon9_AFTER_INCLUDE_STD;
 
 namespace fon9 {
 

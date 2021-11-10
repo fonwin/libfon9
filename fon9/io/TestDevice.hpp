@@ -3,6 +3,7 @@
 #ifndef __fon9_io_TestDevice_hpp__
 #define __fon9_io_TestDevice_hpp__
 #include "fon9/io/Device.hpp"
+#include "fon9/buffer/DcQueueList.hpp"
 #include "fon9/Log.hpp"
 
 namespace fon9 { namespace io {

@@ -77,7 +77,7 @@ protected:
    void OnDevice_Destructing(io::Device& dev) override;
    void OnDevice_StateChanged(io::Device& dev, const io::StateChangedArgs& e) override;
    io::RecvBufferSize OnDevice_LinkReady(io::Device& dev) override;
-   io::RecvBufferSize OnDevice_Recv(io::Device& dev, DcQueueList& rxbuf) override;
+   io::RecvBufferSize OnDevice_Recv(io::Device& dev, DcQueue& rxbuf) override;
    std::string SessionCommand(io::Device& dev, StrView cmdln) override;
    void OnDevice_CommonTimer(io::Device& dev, TimeStamp now) override;
 

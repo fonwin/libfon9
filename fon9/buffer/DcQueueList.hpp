@@ -61,9 +61,11 @@ public:
       if (!this->BlockList_.empty())
          this->ConsumeErr(std::errc::operation_canceled);
    }
+   const void* PeedNextBlock(const void* handler, DataBlock& blk) const override;
 
    /// 消費資料時發生錯誤, 清除緩衝區內的全部資料(如果有 BufferNodeCallback, 則會自動觸發通知).
-   virtual void ConsumeErr(const ErrC& errc) override;
+   void ConsumeErr(const ErrC& errc) override;
+   void PopConsumedAll() override;
 
    /// 將 node 加到尾端, 並交由 this 管理.
    /// node 不可為 nullptr.
@@ -86,21 +88,15 @@ public:
       }
       return nullptr;
    }
-   /// 移出 BufferList.
-   BufferList MoveOut() {
-      if (this->cfront()) {
-         this->ClearCurrBlock();
-         return std::move(this->BlockList_);
-      }
-      assert(this->MemCurrent_ == nullptr);
-      return BufferList{};
-   }
 
-   virtual size_t CalcSize() const override {
+   size_t CalcSize() const override {
       if (const BufferNode* node = this->BlockList_.front())
          return this->GetCurrBlockSize() + CalcDataSize(node->GetNext());
       return 0;
    }
+
+   /// 移出 BufferList.
+   BufferList MoveOutToList() override;
 
    size_t GetNodeCount() const {
       return this->BlockList_.size();
@@ -187,7 +183,7 @@ inline void BufferListConsumeErr(BufferList&& src, const ErrC& errc) {
 template <class RevBufferList>
 RevBufferList MakeRevBufferList(BufferNodeSize newAllocReserved, DcQueue&& extmsg) {
    if (auto buf = dynamic_cast<DcQueueList*>(&extmsg))
-      return RevBufferList{newAllocReserved, buf->MoveOut()};
+      return RevBufferList{newAllocReserved, buf->MoveOutToList()};
    RevBufferList rbuf{newAllocReserved};
    if (!extmsg.empty()) {
       size_t sz = extmsg.CalcSize();

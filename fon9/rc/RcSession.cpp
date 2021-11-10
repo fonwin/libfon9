@@ -37,7 +37,7 @@ static ChecksumT BufferList_CalcRcChecksum(const BufferNode* node) {
    }
    return cksum;
 }
-static ChecksumT FuncParam_CalcRcChecksum(DcQueueList& buf, f9rc_FunctionCode funcCode, size_t paramSize) {
+static ChecksumT FuncParam_CalcRcChecksum(DcQueue& buf, f9rc_FunctionCode funcCode, size_t paramSize) {
    ChecksumT   cksum = static_cast<ChecksumT>(funcCode);
    if (fon9_UNLIKELY(paramSize <= 0))
       return cksum;
@@ -48,16 +48,18 @@ static ChecksumT FuncParam_CalcRcChecksum(DcQueueList& buf, f9rc_FunctionCode fu
       if ((paramSize -= blksz) <= 0)
          return cksum;
    }
-   if (const BufferNode* node = buf.cfront()) {
-      while ((node = node->GetNext()) != nullptr) {
-         if (size_t nodesz = node->GetDataSize()) {
-            if (nodesz > paramSize)
-               nodesz = paramSize;
-            cksum = FeedCalcCheckSum(cksum, node->GetDataBegin(), nodesz);
-            if ((paramSize -= nodesz) <= 0)
-               return cksum;
-         }
+
+   DcQueue::DataBlock blk;
+   const void* peekHandler = buf.PeedNextBlock(NULL, blk);
+   while (peekHandler) {
+      if (blk.first && blk.second > 0) {
+         if (blk.second > paramSize)
+            blk.second = paramSize;
+         cksum = FeedCalcCheckSum(cksum, blk.first, blk.second);
+         if ((paramSize -= blk.second) <= 0)
+            return cksum;
       }
+      peekHandler = buf.PeedNextBlock(peekHandler, blk);
    }
    return cksum;
 }
@@ -173,7 +175,7 @@ void RcSession::OnSaslDone(auth::AuthR rcode, StrView userid) {
    }
 }
 
-io::RecvBufferSize RcSession::OnDevice_Recv(io::Device& dev, DcQueueList& rxbuf) {
+io::RecvBufferSize RcSession::OnDevice_Recv(io::Device& dev, DcQueue& rxbuf) {
    if (fon9_UNLIKELY(this->RemoteParam_.RcVer_ < 0)) { // 連線後, 尚未溝通「協定版本」.
       auto rbsz = this->OnDevice_Recv_CheckProtocolVersion(dev, rxbuf);
       if (rbsz != io::RecvBufferSize::Default)
@@ -191,7 +193,7 @@ io::RecvBufferSize RcSession::OnDevice_Recv(io::Device& dev, DcQueueList& rxbuf)
    }
    return io::RecvBufferSize::NoRecvEvent;
 }
-io::RecvBufferSize RcSession::OnDevice_Recv_Parser(DcQueueList& rxbuf) {
+io::RecvBufferSize RcSession::OnDevice_Recv_Parser(DcQueue& rxbuf) {
    if (!this->IsRxFunctionCodeReady_) { // 尚未收到 FunctionCode.
    __CONTINUE_PARSE_BUFFER:
       const byte* phead;
@@ -341,14 +343,14 @@ void RcSession::OnDevice_CommonTimer(io::Device& dev, TimeStamp now) {
       this->ForceLogout("Logon timeout.");
       break;
    case RcSessionSt::ApReady:
-      TimeInterval ti = (kRcSession_HbInterval * 2) - (now - this->LastRecvTime_);
-      if (ti < TimeInterval_Second(1))
+      const TimeInterval tiRecv = (kRcSession_HbInterval * 2) - (now - this->LastRecvTime_);
+      if (tiRecv < TimeInterval_Second(1))
          this->ForceLogout("Heartbeat timeout.");
       else if (IsEnumContains(this->Role_, RcSessionRole::ProtocolAcceptor))
-         dev.CommonTimerRunAfter(ti);
+         dev.CommonTimerRunAfter(tiRecv);
       else { // RcSessionRole::ProtocolInitiator
-         TimeInterval hbAfter = (this->LastSentTime_ + kRcSession_HbInterval) - now;
-         if (hbAfter > TimeInterval_Second(1))
+         const TimeInterval hbAfter = (this->LastSentTime_ + kRcSession_HbInterval) - now;
+         if (hbAfter > TimeInterval_Second(1) && tiRecv > kRcSession_HbInterval)
             dev.CommonTimerRunAfter(hbAfter);
          else {
             RevBufferList  rbuf{64};

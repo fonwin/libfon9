@@ -23,7 +23,7 @@ fon9_WARN_DISABLE_PADDING;
 ///   };
 /// \endcode
 template <class Aux>
-void DeviceRecvBufferReady(Device& dev, DcQueueList& rxbuf, Aux& aux) {
+void DeviceRecvBufferReady(Device& dev, DcQueue& rxbuf, Aux& aux) {
    RecvBufferSize contRecvSize;
    RecvBuffer&    rbuf = RecvBuffer::StaticCast(rxbuf);
    DeviceOpLocker rlocker;
@@ -31,7 +31,7 @@ void DeviceRecvBufferReady(Device& dev, DcQueueList& rxbuf, Aux& aux) {
       struct RecvDirectAux : public RecvDirectArgs {
          fon9_NON_COPY_NON_MOVE(RecvDirectAux);
          Aux& OrigAux_;
-         RecvDirectAux(DeviceOpLocker& opLocker, Device& dev, DcQueueList& rxbuf, Aux& origAux)
+         RecvDirectAux(DeviceOpLocker& opLocker, Device& dev, DcQueue& rxbuf, Aux& origAux)
             : RecvDirectArgs(opLocker, dev, rxbuf)
             , OrigAux_(origAux) {
          }
@@ -68,7 +68,7 @@ __UNLOCK_AND_CONTINUE_RECV:
          else {
 __UNLOCK_FOR_NO_LINK:
             rlocker.Destroy();
-            rxbuf.MoveOut();
+            rxbuf.PopConsumedAll();
          }
          return;
       }

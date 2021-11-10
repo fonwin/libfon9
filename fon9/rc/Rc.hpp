@@ -7,8 +7,11 @@
 #include "fon9/BitvArchive.hpp"
 #include "fon9/intrusive_ref_counter.hpp"
 #include "fon9/TimeStamp.hpp"
+
+fon9_BEFORE_INCLUDE_STD;
 #include <array>
 #include <memory>
+fon9_AFTER_INCLUDE_STD;
 
 fon9_ENABLE_ENUM_BITWISE_OP(f9rc_RcFlag);
 

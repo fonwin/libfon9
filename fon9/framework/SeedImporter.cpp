@@ -132,7 +132,7 @@ public:
       dev.CommonTimerRunAfter(TimeInterval_Second(1));
       return io::RecvBufferSize::Default;
    }
-   io::RecvBufferSize OnDevice_Recv(io::Device&, DcQueueList& rxbuf) override {
+   io::RecvBufferSize OnDevice_Recv(io::Device&, DcQueue& rxbuf) override {
       while (const char* pln = this->LinePeeker_.PeekUntil(rxbuf, '\n')) {
          ++this->LineCount_;
          StrView cmdln{pln, this->LinePeeker_.LineSize_};

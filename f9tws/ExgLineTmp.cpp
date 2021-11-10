@@ -165,7 +165,7 @@ struct ExgSlmHead {
 };
 static_assert(sizeof(ExgSlmHead) == kSLM_HDR_SIZE, "struct ExgSlmHead; must pack?");
 
-fon9::io::RecvBufferSize ExgTmpIoSession::OnDevice_Recv(fon9::io::Device& dev, fon9::DcQueueList& rxbuf) {
+fon9::io::RecvBufferSize ExgTmpIoSession::OnDevice_Recv(fon9::io::Device& dev, fon9::DcQueue& rxbuf) {
    (void)dev;
    char  bufpk[64 * 1024 + kSLM_SIZE];
    while (auto* pSlm = reinterpret_cast<const ExgSlmHead*>(rxbuf.Peek(bufpk, kSLM_HDR_SIZE))) {

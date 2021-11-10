@@ -2,6 +2,7 @@
 // \author fonwinz@gmail.com
 #include "fon9/web/WsSeedVisitor.hpp"
 #include "fon9/auth/PolicyAcl.hpp"
+#include "fon9/buffer/DcQueueList.hpp"
 #include "fon9/RevPrint.hpp"
 
 namespace fon9 { namespace web {

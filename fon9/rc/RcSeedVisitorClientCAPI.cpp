@@ -2,6 +2,7 @@
 // \author fonwinz@gmail.com
 #include "fon9/rc/RcSvcReq.hpp"
 #include "fon9/rc/RcSeedVisitorClient.hpp"
+#include "fon9/buffer/DcQueueList.hpp"
 using namespace fon9::rc;
 //--------------------------------------------------------------------------//
 extern "C" {

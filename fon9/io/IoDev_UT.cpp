@@ -106,18 +106,18 @@ public:
    }
 
    static fon9::io::RecvBufferSize OnDevice_RecvDirect(fon9::io::RecvDirectArgs& e) {
-      e.SendDirect(e.RecvBuffer_.MoveOut());
+      e.SendDirect(e.RecvBuffer_.MoveOutToList());
       return fon9::io::RecvBufferSize::Default;
    }
-   virtual fon9::io::RecvBufferSize OnDevice_Recv(fon9::io::Device& dev, fon9::DcQueueList& rxbuf) override {
+   virtual fon9::io::RecvBufferSize OnDevice_Recv(fon9::io::Device& dev, fon9::DcQueue& rxbuf) override {
       this->LastRecvTime_ = fon9::UtcNow();
-      size_t rxsz = fon9::CalcDataSize(rxbuf.cfront());
-      this->RecvBytes_ += rxsz;
+      this->RecvBytes_ += rxbuf.CalcSize();
       ++this->RecvCount_;
       if (this->IsEchoMode_)
-         dev.Send(rxbuf.MoveOut());
-      else
-         rxbuf.MoveOut();
+         dev.Send(rxbuf.MoveOutToList());
+      else {
+         rxbuf.PopConsumedAll();
+      }
       return fon9::io::RecvBufferSize::Default;
    }
 

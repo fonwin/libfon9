@@ -33,7 +33,7 @@ public:
    bool OnDevice_BeforeOpen(fon9::io::Device& dev, std::string& cfgstr) override;
    void OnDevice_Initialized(fon9::io::Device& dev) override;
    std::string SessionCommand(fon9::io::Device& dev, fon9::StrView cmdln) override;
-   fon9::io::RecvBufferSize OnDevice_Recv(fon9::io::Device& dev, fon9::DcQueueList& rxbuf) override;
+   fon9::io::RecvBufferSize OnDevice_Recv(fon9::io::Device& dev, fon9::DcQueue& rxbuf) override;
 };
 
 } // namespaces

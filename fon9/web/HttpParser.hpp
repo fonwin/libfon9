@@ -3,7 +3,7 @@
 #ifndef __fon9_web_HttpParser_hpp__
 #define __fon9_web_HttpParser_hpp__
 #include "fon9/web/HttpMessage.hpp"
-#include "fon9/buffer/BufferList.hpp"
+#include "fon9/buffer/DcQueue.hpp"
 
 namespace fon9 { namespace web {
 
@@ -25,7 +25,7 @@ enum class HttpResult {
 };
 
 struct fon9_API HttpParser {
-   static HttpResult Feed(HttpMessage& msg, BufferList buf);
+   static HttpResult Feed(HttpMessage& msg, DcQueue& buf);
    static HttpResult ContinueEat(HttpMessage& msg);
 
 private:

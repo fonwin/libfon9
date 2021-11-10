@@ -19,7 +19,7 @@ public:
    /// 若有需要主動送出第一筆訊息, 應在此處送出.
    /// 預設 do nothing.
    virtual void OnUpgraded(HttpSession&);
-   virtual io::RecvBufferSize OnDevice_Recv(io::Device& dev, DcQueueList& rxbuf) = 0;
+   virtual io::RecvBufferSize OnDevice_Recv(io::Device& dev, DcQueue& rxbuf) = 0;
 };
 using HttpRecvHandlerSP = std::unique_ptr<HttpRecvHandler>;
 
@@ -38,7 +38,7 @@ class fon9_API HttpMessageReceiver : public HttpRecvHandler {
 public:
    HttpMessageReceiver(HttpHandlerSP rootHandler) : RootHandler_{std::move(rootHandler)} {
    }
-   io::RecvBufferSize OnDevice_Recv(io::Device& dev, DcQueueList& rxbuf) override;
+   io::RecvBufferSize OnDevice_Recv(io::Device& dev, DcQueue& rxbuf) override;
 };
 using HttpMessageReceiverSP = std::unique_ptr<HttpMessageReceiver>;
 
@@ -54,7 +54,7 @@ class fon9_API HttpSession : public io::Session {
 
 protected:
    HttpRecvHandlerSP RecvHandler_;
-   io::RecvBufferSize OnDevice_Recv(io::Device& dev, DcQueueList& rxbuf) override;
+   io::RecvBufferSize OnDevice_Recv(io::Device& dev, DcQueue& rxbuf) override;
    void OnDevice_StateChanged(io::Device& dev, const io::StateChangedArgs& e) override;
 
 public:
