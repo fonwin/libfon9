@@ -15,11 +15,13 @@ struct f9tws_API ExgLineArgs {
    BrkId                BrkId_;
    fon9::CharAryF<2>    SocketId_;
    uint16_t             PassCode_;
+   /// Hb 的間隔(單位:秒), 預設為 0, 由各 session 根據交易所規範, 自行決定預設值.
+   uint16_t             HbInterval_;
 
    void Clear();
 
    /// 不改變 args.Market_ 您必須自行處理.
-   /// - tag = "BrkId=|SocketId=|Pass=";
+   /// - tag = "BrkId=|SocketId=|Pass=|HbInt=";
    /// - tag = "SocketId" 與 "PvcId" 相同, 都會填入 SocketId_;
    fon9::ConfigParser::Result OnTagValue(fon9::StrView tag, fon9::StrView& value);
 

@@ -8,6 +8,7 @@ void ExgLineArgs::Clear() {
    this->BrkId_.Clear(' ');
    this->SocketId_.Clear(' ');
    this->PassCode_ = static_cast<uint16_t>(-1);
+   this->HbInterval_ = 0;
 }
 
 template <class CharAryT>
@@ -21,13 +22,16 @@ static fon9::ConfigParser::Result CopyToCharAry(CharAryT& dst, fon9::StrView& va
 fon9::ConfigParser::Result ExgLineArgs::OnTagValue(fon9::StrView tag, fon9::StrView& value) {
    if (tag == "BrkId")
       return CopyToCharAry(this->BrkId_, value);
-   if (tag == "SocketId" || tag == "PvcId")
+   else if (tag == "SocketId" || tag == "PvcId")
       return CopyToCharAry(this->SocketId_, value);
-   if (tag == "Pass") {
+   else if (tag == "Pass")
       this->PassCode_ = fon9::StrTo(&value, this->PassCode_);
-      return value.empty() ? fon9::ConfigParser::Result::Success : fon9::ConfigParser::Result::EInvalidValue;
+   else if (tag == "HbInt")
+      this->HbInterval_ = fon9::StrTo(&value, this->HbInterval_);
+   else {
+      return fon9::ConfigParser::Result::EUnknownTag;
    }
-   return fon9::ConfigParser::Result::EUnknownTag;
+   return value.empty() ? fon9::ConfigParser::Result::Success : fon9::ConfigParser::Result::EInvalidValue;
 }
 
 std::string ExgLineArgs::Verify() const {

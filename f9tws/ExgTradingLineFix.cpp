@@ -82,7 +82,9 @@ void ExgTradingLineFix::OnFixSessionConnected() {
    fon9::RevPrint(fixb.GetBuffer(), f9fix_kFLD_EncryptMethod_None
                   f9fix_SPLTAGEQ(RawDataLength) fon9_CTXTOCSTR(kRawDataLength)
                   f9fix_SPLTAGEQ(RawData));
-   this->SendLogon(this->FixSender_, kHeartBtInt, std::move(fixb));
+   this->SendLogon(this->FixSender_,
+                   this->LineArgs_.HbInterval_ ? this->LineArgs_.HbInterval_ : kHeartBtInt,
+                   std::move(fixb));
 }
 f9fix::FixSenderSP ExgTradingLineFix::OnFixSessionDisconnected(const fon9::StrView& info) {
    this->FixSender_->OnFixSessionDisconnected();
