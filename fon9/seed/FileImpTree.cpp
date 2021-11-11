@@ -285,14 +285,21 @@ void FileImpSeed::LoadFrom(ConfigLocker&& ulk, StrView fname, TimeStamp forChkSc
       }
    }
    this->ClearAddTailRemain();
-   if (forChkSch.IsNullOrZero() || this->IsInSch(forChkSch)) {
+   StrView desc;
+   if (!forChkSch.IsNullOrZero() && this->GetMonitorFlag(ulk) == FileImpMonitorFlag::Exclude) {
+      // !forChkSch.IsNullOrZero():表示需要檢查排程, 但 FileImpMonitorFlag::Exclude 表示不檢查排程;
+      // => 此時不載入.
+      desc = "|Exclude";
+   }
+   else if (forChkSch.IsNullOrZero() || this->IsInSch(forChkSch)) {
       this->Reload(std::move(ulk), std::move(strfn), true);
       assert(ulk.owns_lock());
    }
    else {
-      fon9::GetLocalTimeZoneOffset();
-      this->SetDescription(RevPrintTo<std::string>(forChkSch + GetLocalTimeZoneOffset(), kFmtYMD_HH_MM_SS_us6, "|OutSch"));
+      desc = "|OutSch";
    }
+   if (!desc.IsNullOrEmpty())
+      this->SetDescription(RevPrintTo<std::string>(forChkSch + GetLocalTimeZoneOffset(), kFmtYMD_HH_MM_SS_us6, desc));
    if (isNeedsWriteConfig)
       this->OwnerTree_.WriteConfig(ulk, this);
 }
