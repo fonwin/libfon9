@@ -113,6 +113,43 @@ struct TrieKeyAlNum : public TrieKeyAlNumNoBound {
    }
 };
 
+/// \ingroup Misc
+/// 僅允許 ASCII: 0..9 當作 key.
+/// 不考慮超過範圍的字元(例如: '&', '@'...), 您如果能保證「不可能」有超過範圍的字元, 則可直接使用.
+/// 可是一旦出現超過範圍的字元, 則不保證結果, 極有可能會造成 crash!
+struct TrieKeyNumNoBound {
+   using LvKeyT = char;
+   using LvIndexT = byte;
+   using key_type = StrView;
+   static constexpr LvIndexT MaxIndex() {
+      return static_cast<LvIndexT>(9);
+   }
+   static LvIndexT ToIndex(LvKeyT val) {
+      return static_cast<LvIndexT>(val - '0');
+   }
+   static LvKeyT ToKey(LvIndexT idx) {
+      return static_cast<LvKeyT>(idx + '0');
+   }
+};
+
+/// \ingroup Misc
+/// 僅允許 ASCII: 0..9 當作 key.
+/// 如果有超過範圍的字元(例如: '&', '@'...),
+/// 則視為相同, 放在該層的最後. 例如: "12@4" == "12&4".
+/// 無效字元 ToKey() 一律傳回 '?'
+struct TrieKeyNum : public TrieKeyNumNoBound {
+   static constexpr LvIndexT MaxIndex() {
+      return static_cast<LvIndexT>(10);
+   }
+   static LvIndexT ToIndex(LvKeyT val) {
+      LvIndexT i = static_cast<LvIndexT>(val - '0');
+      return(i > MaxIndex() ? MaxIndex() : i);
+   }
+   static LvKeyT ToKey(LvIndexT idx) {
+      return idx >= 10 ? '?' : static_cast<LvKeyT>(idx + '0');
+   }
+};
+
 template <class ValueT>
 class TrieDummyPtrValue {
    ValueT*  Ptr_{nullptr};

@@ -17,6 +17,7 @@ set(CXX_FLAGS
  -Wwrite-strings
  -fexec-charset=UTF-8
  -std=c++11
+ ${FON9_CXX_FLAGS}
  )
 string(REPLACE ";" " " CMAKE_CXX_FLAGS "${CXX_FLAGS}")
 
@@ -29,6 +30,7 @@ set(C_FLAGS
  -Wshadow
  -Wwrite-strings
  -fexec-charset=UTF-8
+ ${FON9_C_FLAGS}
  )
 string(REPLACE ";" " " CMAKE_C_FLAGS "${C_FLAGS}")
 
