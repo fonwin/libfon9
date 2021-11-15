@@ -216,10 +216,15 @@ void IoManager::OnDevice_Initialized(io::Device&) {
 }
 void IoManager::OnDevice_Destructing(io::Device& dev) {
    if (DeviceRun* item = reinterpret_cast<DeviceRun*>(dev.GetManagerBookmark())) {
-      // 只有 AcceptedClient 在 OnDevice_Destructing() 時還會保留 ManagerBookmark.
-      // 所以此時的 item 可以安全的刪除.
-      delete item;
-      // TODO: 如果 dev 是 AcceptedClient, 則更新 server st (accepted client 的剩餘數量)?
+      // 避免沒有 UpdateDeviceStateLocked(Disposing) 事件,
+      // 所以這裡額外判斷 if (item->AcceptedClientSeq_ != 0)
+      // 確定 item 為 accepted client, 才有必要刪除 item;
+      if (item->AcceptedClientSeq_ != 0) {
+         // 只有 AcceptedClient 在 OnDevice_Destructing() 時還會保留 ManagerBookmark.
+         // 所以此時的 item 可以安全的刪除.
+         delete item;
+         // TODO: 如果 dev 是 AcceptedClient, 則更新 server st (accepted client 的剩餘數量)?
+      }
    }
    fon9_LOG_TRACE("IoManager.", this->Name_, ".OnDevice_Destructing|dev=", ToPtr(&dev));
 }

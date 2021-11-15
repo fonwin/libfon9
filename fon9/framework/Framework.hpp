@@ -25,8 +25,8 @@ struct fon9_API Framework {
    /// - ConfigPath_ = `-c cfgpath` or `--cfg cfgpath` or `getenv("fon9cfg");` or default="fon9cfg"
    /// - 然後載入設定: fon9local.cfg, fon9common.cfg; 設定內容包含:
    ///   - LogFileFmt  如果沒設定, log 就輸出在 console.
-   ///     - $LogFileFmt=./logs/{0:f+'L'}/fon9sys-{1:04}.log  # 超過 {0:f+'L'}=YYYYMMDD(localtime), {1:04}=檔案序號.
-   ///     - $LogFileSizeMB=n                                 # 超過 n MB 就換檔.
+   ///     - $LogFileFmt=./logs/{0:f+'L'}/fon9sys-{1:04}.log  # 換日時換檔 {0:f+'L'}=YYYYMMDD(localtime), {1:04}=檔案序號.
+   ///     - $LogFileSizeMB=n                                 # 超過 n MB 依序換檔: {1:04}
    ///   - $HostId     沒有預設值, 如果沒設定, 就不會設定 LocalHostId_
    ///   - $SyncerPath 指定 InnSyncerFile 的路徑, 預設 = "fon9syn"
    ///   - $MaAuthName 預設 "MaAuth": 並建立(開啟) this->ConfigPath_ + $MaAuthName + ".f9dbf" 儲存 this->MaAuth_ 之下的資料表.
