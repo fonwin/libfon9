@@ -26,6 +26,10 @@ void SocketClientDevice::OnCommonTimer(TimeStamp now) {
          pthis->OpImpl_ConnectToNext("Connect timeout.");
    }});
 }
+bool SocketClientDevice::SetSocketOptions(Socket& soCli, SocketResult& soRes) {
+   return soCli.SetSocketOptions(this->Config_.Options_, soRes)
+      && (this->Config_.AddrBind_.IsEmpty() || soCli.Bind(this->Config_.AddrBind_, soRes));
+}
 void SocketClientDevice::OpImpl_ConnectToNext(StrView lastError) {
    // 為了讓 LinkError or LinkBroken 能夠從 log 訊息辨認連線位置, 所以在此不清除 DeviceId.
    // OpThr_SetDeviceId(*this, std::string{});
@@ -48,8 +52,7 @@ void SocketClientDevice::OpImpl_ConnectToNext(StrView lastError) {
    Socket       soCli;
    SocketResult soRes;
    if (this->CreateSocket(soCli, *addrRemote, soRes)
-   && soCli.SetSocketOptions(this->Config_.Options_, soRes)
-   && (this->Config_.AddrBind_.IsEmpty() || soCli.Bind(this->Config_.AddrBind_, soRes))) {
+    && this->SetSocketOptions(soCli, soRes) ) {
       if (!lastError.empty()) {
          if (this->NextAddrIndex_ == 1)
             strmsg.append("|prev.err=");

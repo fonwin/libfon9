@@ -29,7 +29,7 @@ protected:
    DnQueryReqId         DnReqId_{};
    SocketAddress        RemoteAddress_;
 
-   virtual void OnCommonTimer(TimeStamp now) override;
+   void OnCommonTimer(TimeStamp now) override;
    void StartConnectTimer() {
       this->CommonTimerRunAfter(TimeInterval_Second(this->Config_.TimeoutSecs_));
    }
@@ -47,6 +47,9 @@ protected:
    /// - 建立 TcpClient: `return so.CreateDeviceSocket(addr.GetAF(), SocketType::Stream, soRes);`
    /// - 建立 UDP:       `return so.CreateDeviceSocket(addr.GetAF(), SocketType::Dgram, soRes);`
    virtual bool CreateSocket(Socket& so, const SocketAddress& addr, SocketResult& soRes) = 0;
+   /// 預設: return soCli.SetSocketOptions(this->Config_.Options_, soRes)
+   ///          && (this->Config_.AddrBind_.IsEmpty() || soCli.Bind(this->Config_.AddrBind_, soRes));
+   virtual bool SetSocketOptions(Socket& soCli, SocketResult& soRes);
    /// 實際執行 connect 的地方 ::connect() or ConnectEx() or ...
    virtual bool OpImpl_SocketConnect(Socket&& soCli, SocketResult& soRes) = 0;
    /// 清除「用來處理連線」的資源.
@@ -57,10 +60,10 @@ protected:
    /// 解析 cfgstr 填入 this->Config_;
    /// 若在解析過程有遇到不認識的 tag, 則會透過 this->OpImpl_SetProperty() 處理.
    /// 所以衍生者可以覆寫 `ConfigParser::Result OpImpl_SetProperty(StrView tag, StrView& value);` 來處理自訂選項.
-   virtual void OpImpl_Open(std::string cfgstr) override;
-   virtual void OpImpl_Reopen() override;
-   virtual void OpImpl_Close(std::string cause) override;
-   virtual void OpImpl_StateChanged(const StateChangedArgs& e) override;
+   void OpImpl_Open(std::string cfgstr) override;
+   void OpImpl_Reopen() override;
+   void OpImpl_Close(std::string cause) override;
+   void OpImpl_StateChanged(const StateChangedArgs& e) override;
 
 public:
    SocketClientDevice(SessionSP ses, ManagerSP mgr, Style style = Style::Client)
@@ -91,7 +94,7 @@ class RecvBuffer;
 ///      // 啟用「資料到達」事件.
 ///      void StartRecv(RecvBufferSize expectSize);
 ///
-///      GetSendBuffer& GetSendBuffer();
+///      SendBuffer& GetSendBuffer();
 ///   };
 ///   \endcode
 /// \tparam DeviceBase 可參考 TcpClientBase.hpp 的 class TcpClientBase;
@@ -115,21 +118,21 @@ protected:
       if (ClientImplSP impl = std::move(this->ImplSP_))
          impl->OpImpl_Close();
    }
-   virtual void OpImpl_SocketLinkBroken() override {
+   void OpImpl_SocketLinkBroken() override {
       this->OpImpl_ResetImplSP();
    }
-   virtual void OpImpl_SocketClearLinking() override {
+   void OpImpl_SocketClearLinking() override {
       base::OpImpl_SocketClearLinking();
       this->OpImpl_ResetImplSP();
    }
-   bool OpImpl_SocketConnect(Socket&& soCli, SocketResult& soRes) {
+   bool OpImpl_SocketConnect(Socket&& soCli, SocketResult& soRes) override {
       this->OpImpl_ResetImplSP();
       this->ImplSP_.reset(new ClientImpl{this, std::move(soCli), soRes});
       if (soRes.IsError())
          return false;
       return this->ImplSP_->OpImpl_ConnectTo(this->RemoteAddress_, soRes);
    }
-   void OpImpl_StartRecv(RecvBufferSize preallocSize) {
+   void OpImpl_StartRecv(RecvBufferSize preallocSize) override {
       if (ClientImpl* impl = this->ImplSP_.get())
          impl->StartRecv(preallocSize);
    }
@@ -153,7 +156,7 @@ public:
       return nullptr;
    }
 
-   virtual bool IsSendBufferEmpty() const override {
+   bool IsSendBufferEmpty() const override {
       bool res;
       this->OpQueue_.InplaceOrWait(AQueueTaskKind::Send, DeviceAsyncOp{[&res](Device& dev) {
          if (ClientImpl* impl = static_cast<SocketClientDeviceT*>(&dev)->ImplSP_.get())

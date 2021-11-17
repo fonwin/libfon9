@@ -17,6 +17,10 @@ template <class BaseT,
    class MutexLockerT = std::unique_lock<MutexT>>
 class MustLock {
    fon9_NON_COPY_NON_MOVE(MustLock);
+protected:
+   // 如果使用特殊自訂的 Mutex_, 則也許在建構之後要額外設定,
+   // 例如: Mutex_ 需參考 Base_ 的內容才能進行 lock()/unlock();
+   // 所以使用 protected; 讓衍生者有機會調整 Mutex_;
    MutexT mutable Mutex_;
    BaseT          Base_;
 

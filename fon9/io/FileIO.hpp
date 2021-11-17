@@ -60,6 +60,11 @@ protected:
    void OpImpl_AppendDeviceInfo(std::string& info) override;
    void OpImpl_StartRecv(RecvBufferSize preallocSize) override;
 
+   // - InPos=pos   設定讀取位置
+   // - InSpeed=InSize*InInterval
+   // - WhenEOF=Broken or Close or Dispose
+   ConfigParser::Result OpImpl_SetProperty(StrView tag, StrView& value) override;
+
 private:
    enum class WhenEOF {
       Dontcare = 0,
@@ -121,11 +126,6 @@ private:
    void OpImpl_StopRunning();
    void OpenImpl();
    bool OpenFile(StrView errMsgHead, const FileCfg& cfg, File& fd, TimeStamp tm);
-
-   // - InPos=pos   設定讀取位置
-   // - InSpeed=InSize*InInterval
-   // - WhenEOF=Broken or Close or Dispose
-   ConfigParser::Result OpImpl_SetProperty(StrView tag, StrView& value);
 };
 fon9_WARN_POP;
 
