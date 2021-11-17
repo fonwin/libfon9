@@ -8,6 +8,12 @@ namespace fon9 { namespace auth {
 
 PolicyItem::~PolicyItem() {
 }
+void PolicyItem::LoadPolicyFromSyn(DcQueue& dcq) {
+   this->LoadPolicy(dcq);
+}
+void PolicyItem::LoadPolicyFromDbf(DcQueue& dcq) {
+   this->LoadPolicy(dcq);
+}
 void PolicyItem::SetRemoved(PolicyTable&) {
 }
 void PolicyItem::OnAfterChanged() {
@@ -71,7 +77,7 @@ bool PolicyTable::Delete(StrView policyId) {
 void PolicyTable::LoadHandler::UpdateLoad(PolicyItemMap& itemMap, PolicyItemMap::iterator* iItem) {
    PolicyItem&  rec = this->FetchPolicy(PolicyTable::StaticCast(itemMap), itemMap, iItem);
    rec.RoomKey_ = std::move(this->EvArgs_.RoomKey_);
-   rec.LoadPolicy(*this->EvArgs_.Buffer_);
+   rec.LoadPolicyFromDbf(*this->EvArgs_.Buffer_);
 }
 void PolicyTable::LoadHandler::UpdateLoad(PolicyDeletedMap& deletedMap, PolicyDeletedMap::iterator* iDeleted) {
    if (iDeleted)
@@ -94,7 +100,7 @@ void PolicyTable::SyncHandler::UpdateSync(PolicyItemMap& itemMap, PolicyItemMap:
    PolicyItem&  rec = this->FetchPolicy(PolicyTable::StaticCast(itemMap), itemMap, iItem);
    if (iItem == nullptr)
       rec.RoomKey_ = std::move(this->PendingFreeRoomKey_);
-   rec.LoadPolicy(*this->EvArgs_.Buffer_);
+   rec.LoadPolicyFromSyn(*this->EvArgs_.Buffer_);
    rec.SavePolicy(this->PendingWriteBuf_);
    ToBitv(this->PendingWriteBuf_, rec.PolicyId_);
    this->PendingWriteRoomKey_ = &rec.RoomKey_;

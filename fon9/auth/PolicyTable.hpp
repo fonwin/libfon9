@@ -51,6 +51,10 @@ class fon9_API PolicyItem : public intrusive_ref_counter<PolicyItem> {
    char           Padding___[1];
    InnDbfRoomKey  RoomKey_;
 
+   /// 預設直接轉呼叫 this->LoadPolicy();
+   virtual void LoadPolicyFromSyn(DcQueue&);
+   virtual void LoadPolicyFromDbf(DcQueue&);
+
    virtual void LoadPolicy(DcQueue&) = 0;
    virtual void SavePolicy(RevBuffer&) = 0;
 
@@ -97,6 +101,10 @@ struct PolicyItemMonitor {
    char     Padding____[6];
    bool IsPolicyChanged() const {
       return this->PolicyItem_ && this->PolicyItem_->ChangedCount() != this->PolicyChangedCount_;
+   }
+   void ResetPolicyItem(const fon9::auth::PolicyItem& item) {
+      this->PolicyChangedCount_ = item.ChangedCount();
+      this->PolicyItem_.reset(&item);
    }
 };
 
