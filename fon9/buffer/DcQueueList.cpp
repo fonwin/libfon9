@@ -4,7 +4,7 @@
 
 namespace fon9 {
 
-const void* DcQueueList::PeedNextBlock(const void* handler, DataBlock& blk) const {
+const void* DcQueueList::PeekNextBlock(const void* handler, DataBlock& blk) const {
    const BufferNode* node = (handler ? reinterpret_cast<const BufferNode*>(handler) : this->cfront());
    if (node && (node = node->GetNext()) != nullptr) {
       blk.first = node->GetDataBegin();

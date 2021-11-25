@@ -50,7 +50,7 @@ static ChecksumT FuncParam_CalcRcChecksum(DcQueue& buf, f9rc_FunctionCode funcCo
    }
 
    DcQueue::DataBlock blk;
-   const void* peekHandler = buf.PeedNextBlock(NULL, blk);
+   const void* peekHandler = buf.PeekNextBlock(NULL, blk);
    while (peekHandler) {
       if (blk.first && blk.second > 0) {
          if (blk.second > paramSize)
@@ -59,7 +59,7 @@ static ChecksumT FuncParam_CalcRcChecksum(DcQueue& buf, f9rc_FunctionCode funcCo
          if ((paramSize -= blk.second) <= 0)
             return cksum;
       }
-      peekHandler = buf.PeedNextBlock(peekHandler, blk);
+      peekHandler = buf.PeekNextBlock(peekHandler, blk);
    }
    return cksum;
 }

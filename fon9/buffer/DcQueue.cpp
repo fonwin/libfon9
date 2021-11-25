@@ -18,7 +18,7 @@ BufferList DcQueue::MoveOutToList() {
 void DcQueue::PopConsumedAll() {
    this->PopConsumed(this->CalcSize());
 }
-const void* DcQueue::PeedNextBlock(const void* handler, DataBlock& blk) const {
+const void* DcQueue::PeekNextBlock(const void* handler, DataBlock& blk) const {
    (void)handler; (void)blk;
    return nullptr;
 }

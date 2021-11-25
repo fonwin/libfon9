@@ -61,7 +61,7 @@ public:
       if (!this->BlockList_.empty())
          this->ConsumeErr(std::errc::operation_canceled);
    }
-   const void* PeedNextBlock(const void* handler, DataBlock& blk) const override;
+   const void* PeekNextBlock(const void* handler, DataBlock& blk) const override;
 
    /// 消費資料時發生錯誤, 清除緩衝區內的全部資料(如果有 BufferNodeCallback, 則會自動觸發通知).
    void ConsumeErr(const ErrC& errc) override;

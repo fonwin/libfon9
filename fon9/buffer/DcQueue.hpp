@@ -97,10 +97,10 @@ public:
    }
    /// 偷窺下一個 blk 的內容.
    /// 若 handler == NULL, 表示取得 current 的下一個 blk;
-   /// 返回值用於下次呼叫 PeedNextBlock(retval, blk); 使用;
+   /// 返回值用於下次呼叫 PeekNextBlock(retval, blk); 使用;
    /// 若返回 nullptr 則表示已無下一個 blk;
    /// 預設返回 nullptr;
-   virtual const void* PeedNextBlock(const void* handler, DataBlock& blk) const;
+   virtual const void* PeekNextBlock(const void* handler, DataBlock& blk) const;
 
    bool IsSizeEnough(size_t sz) const {
       const size_t blkszCurr = this->GetCurrBlockSize();
