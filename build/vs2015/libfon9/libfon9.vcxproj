@@ -338,6 +338,7 @@
     <ClInclude Include="..\..\..\fon9\SimpleFactory.hpp" />
     <ClInclude Include="..\..\..\fon9\SleepPolicy.hpp" />
     <ClInclude Include="..\..\..\fon9\SortedVector.hpp" />
+    <ClInclude Include="..\..\..\fon9\StrPicAux.hpp" />
     <ClInclude Include="..\..\..\fon9\SpinMutex.hpp" />
     <ClInclude Include="..\..\..\fon9\StaticPtr.hpp" />
     <ClInclude Include="..\..\..\fon9\StrTo.hpp" />
