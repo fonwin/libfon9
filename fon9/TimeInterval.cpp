@@ -120,6 +120,26 @@ fon9_API char* ToStrRev(char* const pstart, TimeInterval ti, FmtDef fmt) {
    return IntToStrRev_LastJustify(pout, pstart, ti.GetOrigValue() < 0, fmt);
 }
 
+fon9_API char* ToStrRev_HHMMSSmmm(char* pout, TimeInterval value, char chNull) {
+   if (fon9_UNLIKELY(value.IsNull())) {
+      if (chNull)
+         memset(pout -= 9, chNull, 9);
+      return pout;
+   }
+   const auto  dayms = static_cast<unsigned>(value.ShiftUnit<3>());
+   *--pout = static_cast<char>((dayms % 10) + '0');
+   pout = Put2Digs(pout, static_cast<uint8_t>((dayms / 10) % 100));
+
+   const unsigned dayss = dayms / 1000;
+   pout = Put2Digs(pout, static_cast<uint8_t>(dayss % 60));
+   pout = Put2Digs(pout, static_cast<uint8_t>((dayss / 60) % 60));
+   return Put2Digs(pout, static_cast<uint8_t>(dayss / 60 / 60));
+}
+fon9_API TimeInterval StrTo_HHMMSSmmm(const char strHHMMSSmmm[9]) {
+   return TimeInterval_HHMMSS(StrTo(StrView{strHHMMSSmmm,6}, 0u))
+        + TimeInterval_Millisecond(StrTo(StrView{strHHMMSSmmm+6,3}, 0u));
+}
+
 //--------------------------------------------------------------------------//
 
 fon9_WARN_DISABLE_PADDING;

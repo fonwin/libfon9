@@ -94,8 +94,17 @@ fon9_API char* ToStrRev(char* pout, TimeInterval value, FmtDef fmt);
 fon9_API char* ToStrRev_TimeIntervalDec(char* pout, uintmax_t& value, FmtDef fmt);
 
 /// \ingroup AlNum
+/// 輸出 TimeInterval 字串, 格式為: HHMMSSmmm;
+/// 若 value.IsNull() 則填入 9 個 chFiller; 若 chFiller=='\0' 則不填, 直接返回 pout;
+fon9_API char* ToStrRev_HHMMSSmmm(char* pout, TimeInterval value, char chNull);
+
+/// \ingroup AlNum
 /// 字串轉成 TimeInterval, 支援的格式參考 \ref char* ToStrRev(char* pout, TimeInterval ti);
 fon9_API TimeInterval StrTo(StrView str, TimeInterval value = TimeInterval::Null(), const char** endptr = nullptr);
+
+/// \ingroup AlNum
+/// 將 strHHMMSSmmm 字串, 轉成 TimeInterval;
+fon9_API TimeInterval StrTo_HHMMSSmmm(const char strHHMMSSmmm[9]);
 
 //--------------------------------------------------------------------------//
 
