@@ -78,6 +78,36 @@ protected:
    /// \retval true  繼續 FeedBuffer();
    virtual bool OnPkReceived(const void* pk, unsigned pksz) = 0;
 };
+//--------------------------------------------------------------------------//
+class fon9_API FixedSizePkReceiver {
+   fon9_NON_COPY_NON_MOVE(FixedSizePkReceiver);
+   char* const    PkBuffer_;
+   size_t         PkBufOfs_{};
+   size_t         PkCount_{};
+public:
+   const size_t   PkSize_;
+   FixedSizePkReceiver(size_t pkSize) : PkBuffer_{new char[pkSize]}, PkSize_{pkSize} {
+   }
+   ~FixedSizePkReceiver() {
+      delete[] this->PkBuffer_;
+   }
+   void Clear() {
+      this->PkBufOfs_ = 0;
+      this->PkCount_  = 0;
+   }
+   size_t GetPkCount() const {
+      return this->PkCount_;
+   }
+   void PopConsumed(DcQueue& rxbuf, const void* pbuf) {
+      if (pbuf && pbuf != this->PkBuffer_) {
+         assert(pbuf == rxbuf.Peek1());
+         rxbuf.PopConsumed(this->PkSize_);
+      }
+   }
+   /// \retval nullptr  rxbuf資料量不足一個封包大小.
+   /// \retval !nullptr 封包位置,用完後須使用 PopConsumed() 移除;
+   const char* FeedBuffer(DcQueue& rxbuf);
+};
 
 } // namespaces
 #endif//__fon9_PkReceiver_hpp__

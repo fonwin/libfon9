@@ -48,5 +48,29 @@ bool PkReceiver::FeedBuffer(DcQueue& rxbuf) {
    }
    return true;
 }
+//--------------------------------------------------------------------------//
+const char* FixedSizePkReceiver::FeedBuffer(DcQueue& rxbuf) {
+   if (this->PkBufOfs_) {
+      assert(this->PkSize_ > this->PkBufOfs_);
+      size_t sz = this->PkSize_ - this->PkBufOfs_;
+      this->PkBufOfs_ += rxbuf.Read(this->PkBuffer_ + this->PkBufOfs_, sz);
+      if (this->PkBufOfs_ < this->PkSize_) {
+         assert(rxbuf.empty());
+         return nullptr;
+      }
+      assert(this->PkBufOfs_ == this->PkSize_);
+      this->PkBufOfs_ = 0;
+      ++this->PkCount_;
+      return this->PkBuffer_;
+   }
+   const char* pbuf = static_cast<const char*>(rxbuf.Peek(this->PkBuffer_, this->PkSize_));
+   if (pbuf == nullptr) {
+      this->PkBufOfs_ = rxbuf.Read(this->PkBuffer_, this->PkSize_);
+      assert(rxbuf.empty() && this->PkBufOfs_ < this->PkSize_);
+      return nullptr;
+   }
+   ++this->PkCount_;
+   return pbuf;
+}
 
 } // namespaces
