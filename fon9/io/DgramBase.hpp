@@ -15,6 +15,7 @@ class fon9_API DgramBase : public SocketClientDevice {
    DgramBase() = delete;
    using base = SocketClientDevice;
 
+protected:
    SocketAddress  Group_;
    SocketAddress  Interface_;
    int            Loopback_;
@@ -31,6 +32,11 @@ public:
    DgramBase(SessionSP ses, ManagerSP mgr)
       : base(std::move(ses), std::move(mgr), Style::Client) {
    }
+
+   const SocketAddress& Group()     const { return this->Group_;     }
+   const SocketAddress& Interface() const { return this->Interface_; }
+   int                  Loopback()  const { return this->Loopback_;  }
+   uint8_t              TTL()       const { return this->TTL_;       }
 };
 fon9_WARN_POP;
 
