@@ -41,21 +41,26 @@ class ExgMrRecoverSession : public fon9::io::Session, private ExgMcPkReceiver {
    fon9::io::RecvBufferSize OnDevice_LinkReady(fon9::io::Device& dev) override;
    void OnDevice_StateChanged(fon9::io::Device& dev, const fon9::io::StateChangedArgs& e) override;
    fon9::io::RecvBufferSize OnDevice_Recv(fon9::io::Device& dev, fon9::DcQueue& rxbuf) override;
+   void OnDevice_CommonTimer(fon9::io::Device& dev, fon9::TimeStamp now) override;
+   void SetDelRecover(fon9::io::Device& dev, fon9::StrView apStMsg);
 
 public:
-   const ExgMcRecoverRole  Role_;
-   const ExgMrSessionId_t  SessionId_;
-   const uint16_t          Pass_; // 0001..9999
-   const ExgMcChannelMgrSP ChannelMgr_;
+   const ExgMcRecoverRole     Role_;
+   const ExgMrSessionId_t     SessionId_;
+   const uint16_t             Pass_; // 0001..9999
+   const ExgMcChannelMgrSP    ChannelMgr_;
+   const fon9::TimeInterval   OverTimesDelay_;
 
-   ExgMrRecoverSession(ExgMcChannelMgrSP channelMgr,
-                       ExgMcRecoverRole  role,
-                       ExgMrSessionId_t  sessionId,
-                       uint16_t          pass)
+   ExgMrRecoverSession(ExgMcChannelMgrSP  channelMgr,
+                       ExgMcRecoverRole   role,
+                       ExgMrSessionId_t   sessionId,
+                       uint16_t           pass,
+                       fon9::TimeInterval overTimesDelay)
       : Role_{role}
       , SessionId_{sessionId}
       , Pass_{pass}
-      , ChannelMgr_{std::move(channelMgr)} {
+      , ChannelMgr_{std::move(channelMgr)}
+      , OverTimesDelay_{overTimesDelay} {
    }
    ~ExgMrRecoverSession();
 

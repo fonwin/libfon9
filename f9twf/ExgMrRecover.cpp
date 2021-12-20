@@ -31,11 +31,31 @@ io::RecvBufferSize ExgMrRecoverSession::OnDevice_LinkReady(io::Device& dev) {
 void ExgMrRecoverSession::OnDevice_StateChanged(io::Device& dev, const io::StateChangedArgs&) {
    if (this->State_ >= ExgMrState::ApReady) {
       this->State_ = ExgMrState::LinkBroken;
-      dev.Manager_->OnSession_StateUpdated(dev, "ApBroken", LogLevel::Info);
-      for (unsigned L = 0; L < ExgMcChannelMgr::kChannelCount; ++L) {
-         if (auto* channel = this->ChannelMgr_->GetChannel(static_cast<ExgMrChannelId_t>(L)))
-            channel->DelRecover(this);
-      }
+      this->SetDelRecover(dev, "ApBroken");
+   }
+}
+void ExgMrRecoverSession::SetDelRecover(io::Device& dev, fon9::StrView apStMsg) {
+   dev.Manager_->OnSession_StateUpdated(dev, apStMsg, LogLevel::Info);
+   for (unsigned L = 0; L < ExgMcChannelMgr::kChannelCount; ++L) {
+      if (auto* channel = this->ChannelMgr_->GetChannel(static_cast<ExgMrChannelId_t>(L)))
+         channel->DelRecover(this);
+   }
+}
+void ExgMrRecoverSession::OnDevice_CommonTimer(fon9::io::Device& dev, fon9::TimeStamp now) {
+   (void)now;
+   // assert(this->State_ == ExgMrState::OverTimesSuspend);
+   fon9::StrView chList(ToStrView(this->ApReadyMsg_));
+   chList.SetBegin(chList.Find(':'));
+   if (chList.begin() == nullptr)
+      return;
+   this->State_ = ExgMrState::ApReady;
+   std::string stmsg = this->ApReadyMsg_.ToString() + "/Resume";
+   dev.Manager_->OnSession_StateUpdated(dev, &stmsg, LogLevel::Info);
+   while (!chList.empty()) {
+      chList.SetBegin(chList.begin() + 1);
+      ExgMrChannelId_t  chId = fon9::StrTo(&chList, ExgMrChannelId_t{});
+      if (auto* channel = this->ChannelMgr_->GetChannel(chId))
+         channel->AddRecover(this);
    }
 }
 io::RecvBufferSize ExgMrRecoverSession::OnDevice_Recv(io::Device& dev, DcQueue& rxbuf) {
@@ -86,22 +106,29 @@ __FEED_BUFFER:;
          break;
       case 102: // 請求行情資料回補回覆訊息(102).
          auto pkrec = static_cast<const ExgMrRecoverSt102*>(pkptr);
-         if (pkrec->StatusCode_ == 0) {
-            this->Recovering_ = TmpGetValueU(pkrec->RecoverNum_);
-            rxbuf.PopConsumed(pksz);
-            // 回補的訊息可能會緊接在 102 之後, 所以需要立即處理.
-            goto __FEED_BUFFER;
+         const auto recoverNum = TmpGetValueU(pkrec->RecoverNum_);
+         this->Recovering_ = recoverNum;
+         if (pkrec->StatusCode_ != 0) {
+            const auto channelId = TmpGetValueU(pkrec->ChannelId_);
+            const auto beginSeqNo = TmpGetValueU(pkrec->BeginSeqNo_);
+            fon9_LOG_WARN("ExgMrRecoverSession.RecoverErr|dev=", ToPtr(&dev),
+                          "|channelId=", channelId, "|st=", pkrec->StatusCode_,
+                          "|beginSeqNo=", beginSeqNo, "|recoverNum=", recoverNum);
+            // (st!=0 && recoverNum==0) 沒有回補訊息, 此時視為失敗, 需要通知 channel->OnRecoverErr();
+            // (st!=0 && recoverNum!=0) 回補雖然有些問題, 但仍有回補訊息, 此時的回補要求, 應視為成功.
+            if (recoverNum == 0) {
+               this->State_ = ExgMrState::ApReady;
+               if (auto* channel = this->ChannelMgr_->GetChannel(channelId))
+                  channel->OnRecoverErr(beginSeqNo, recoverNum, pkrec->StatusCode_);
+            }
+            if (pkrec->StatusCode_ == 9) {
+               this->SetDelRecover(dev, "OverTimes.Suspend");
+               dev.CommonTimerRunAfter(this->OverTimesDelay_);
+            }
          }
-         auto channelId = TmpGetValueU(pkrec->ChannelId_);
-         auto beginSeqNo = TmpGetValueU(pkrec->BeginSeqNo_);
-         auto recoverNum = TmpGetValueU(pkrec->RecoverNum_);
-         fon9_LOG_WARN("ExgMrRecoverSession.RecoverErr|dev=", ToPtr(&dev),
-                        "|channelId=", channelId, "|st=", pkrec->StatusCode_,
-                        "|beginSeqNo=", beginSeqNo, "|recoverNum=", recoverNum);
-         this->State_ = ExgMrState::ApReady;
-         if (auto* channel = this->ChannelMgr_->GetChannel(channelId))
-            channel->OnRecoverErr(beginSeqNo, recoverNum, pkrec->StatusCode_);
-         break;
+         rxbuf.PopConsumed(pksz);
+         // 回補的訊息可能會緊接在 102 之後(即使 st != 0), 所以需要立即處理 [回補的訊息].
+         goto __FEED_BUFFER;
       }
       rxbuf.PopConsumed(pksz);
    }
@@ -140,9 +167,10 @@ ExgMrState ExgMrRecoverSession::RequestMcRecover(ExgMrChannelId_t channelId, Exg
 io::SessionSP ExgMrRecoverFactory::CreateSession(IoManager& ioMgr, const IoConfigItem& cfg, std::string& errReason) {
    if (auto mgr = dynamic_cast<ExgMcGroupIoMgr*>(&ioMgr)) {
       StrView  tag, value, args = ToStrView(cfg.SessionArgs_);
-      ExgMcRecoverRole role{};
-      ExgMrSessionId_t sessionId{};
-      uint16_t         pass{};
+      ExgMcRecoverRole     role{};
+      ExgMrSessionId_t     sessionId{};
+      uint16_t             pass{};
+      fon9::TimeInterval   overTimesDelay = fon9::TimeInterval_Minute(15);
       while (StrFetchTagValue(args, tag, value)) {
          if (tag == "Role") { // Role=P or Role=S
             switch (value.Get1st()) {
@@ -158,13 +186,15 @@ io::SessionSP ExgMrRecoverFactory::CreateSession(IoManager& ioMgr, const IoConfi
             sessionId = StrTo(value, sessionId);
          else if (tag == "Pass")
             pass = StrTo(value, pass);
+         else if (tag == "OverTimesDelay")
+            overTimesDelay = StrTo(value, overTimesDelay);
          else {
             errReason = "f9twf.ExgMrRecoverFactory.CreateSession: Unknown tag:";
             tag.AppendTo(errReason);
             return nullptr;
          }
       }
-      return new ExgMrRecoverSession(mgr->McGroup_->ChannelMgr_, role, sessionId, pass);
+      return new ExgMrRecoverSession(mgr->McGroup_->ChannelMgr_, role, sessionId, pass, overTimesDelay);
    }
    errReason = "f9twf.ExgMrRecoverFactory.CreateSession: Unknown IoMgr.";
    return nullptr;
