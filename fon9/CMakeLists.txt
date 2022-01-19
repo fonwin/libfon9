@@ -57,6 +57,7 @@ set(fon9src
  FdrNotify.cpp
  ConfigFileBinder.cpp
  FileRevRead.cpp
+ FileReadAll.cpp
 
  InnFile.cpp
  InnSyncer.cpp
@@ -156,6 +157,7 @@ set(fon9src
  auth/PolicyTree.cpp
  auth/PolicyMaster.cpp
  auth/PolicyAcl.cpp
+ auth/PoDupLogon.cpp
  auth/SaslClient.cpp
  auth/SaslScramServer.cpp
  auth/SaslScramSha256.cpp

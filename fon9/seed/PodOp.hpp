@@ -30,6 +30,9 @@ public:
    /// - 用以因應某些指令必須檢查使用者的權限.
    /// - 預設直接轉給 this->OnSeedCommand(); 執行.
    virtual void OnVisitorCommand(Tab* tab, StrView cmdln, FnCommandResultHandler resHandler, SeedVisitor& visitor);
+   /// 對於一些機密資訊，不應紀錄在 log, 此時應返回可記錄的字串, 預設直接返回 cmdln.
+   /// 例: cmdln="repw xxx"; 重設密碼, 返回值不應包含 "xxx";
+   virtual StrView GetCommandLogStr(StrView cmdln);
 
    virtual void BeginRead(Tab& tab, FnReadOp fnCallback) = 0;
    virtual void BeginWrite(Tab& tab, FnWriteOp fnCallback) = 0;

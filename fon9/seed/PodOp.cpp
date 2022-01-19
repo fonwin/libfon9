@@ -18,6 +18,9 @@ void PodOp::OnVisitorCommand(Tab* tab, StrView cmdln, FnCommandResultHandler res
    (void)visitor;
    return this->OnSeedCommand(tab, cmdln, std::move(resHandler));
 }
+StrView PodOp::GetCommandLogStr(StrView cmdln) {
+   return cmdln;
+}
 
 //--------------------------------------------------------------------------//
 

@@ -33,6 +33,9 @@ typedef enum fon9_Auth_R : int {
    /// 收到此通知後 AuthSession 就不會再有任何訊息了.
    fon9_Auth_Disposed,
 
+   /// 在 UserMgr::CheckLogon() 使用.
+   fon9_Auth_CheckLogon,
+
    /// 不認識的認證機制.
    fon9_Auth_EArgs_Mechanism = -1,
    /// 新密碼錯誤.
@@ -64,6 +67,11 @@ typedef enum fon9_Auth_R : int {
 
    /// AuthMgr已死亡, 程式正在結束中?
    fon9_Auth_EInternal_NoAuthMgr = -300,
+
+   /// 重複登入.
+   fon9_Auth_EDupLogon = -400,
+   /// 非預期的來源.
+   fon9_Auth_EBindFrom = -401,
 } fon9_Auth_R;
 
 inline bool fon9_IsAuthError(fon9_Auth_R res) {

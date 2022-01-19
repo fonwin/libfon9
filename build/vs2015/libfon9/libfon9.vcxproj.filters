@@ -1154,6 +1154,9 @@
     <ClInclude Include="..\..\..\fon9\StrPicAux.hpp">
       <Filter>Header Files\_base\_AlNum / StrTools</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\auth\PoDupLogon.hpp">
+      <Filter>Header Files\auth</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -1872,6 +1875,12 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\rc\RcSvsTicket.cpp">
       <Filter>Source Files\rc\_RcSeedVisitor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\auth\PoDupLogon.cpp">
+      <Filter>Source Files\auth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\FileReadAll.cpp">
+      <Filter>Source Files\_base\_File</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

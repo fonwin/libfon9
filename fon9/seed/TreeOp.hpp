@@ -56,6 +56,10 @@ struct SeedOpResult : public PodOpResult {
    /// - 在 FnReadOp() 或 FnWriteOp()
    ///   - 此值必定有效, 不會是 nullptr.
    Tab*     Tab_;
+   /// 若此處非 null, 則取代預設的 log, 改用此處紀錄 log;
+   /// 參考 TicketRunnerCommand::OnSeedCommandResult();
+   /// 通常用於: 寫 log 時, 排除一些機密資訊(例:密碼);
+   StrView  LogStr_{nullptr};
 };
 
 using FnReadOp = std::function<void(const SeedOpResult& res, const RawRd* rd)>;

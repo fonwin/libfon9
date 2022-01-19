@@ -45,15 +45,19 @@ void UserRec::OnSeedCommand(PolicyMaps::Locker& locker, seed::SeedOpResult& res,
    // cmd:
    //    repw [NewPass]
    //
+#define kCSTR_repw   "repw"
    StrView cmd = StrFetchTrim(cmdln, &isspace);
    StrTrim(&cmdln);
-   if (cmd == "repw") {
+   if (cmd == kCSTR_repw) {
       char  newpass[13];
       if (cmdln.empty()) {
          RandomString(newpass, sizeof(newpass));
          cmdln.Reset(newpass, newpass + sizeof(newpass) - 1);
       }
-      static const char kCSTR_LOG_repw[] = "UserRec.OnSeedCommand.repw|userId=";
+      else {
+         newpass[0] = 0;
+      }
+      static const char kCSTR_LOG_repw[] = "UserRec.OnSeedCommand." kCSTR_repw "|userId=";
       auto& fnHashPass = static_cast<UserTree*>(res.Sender_)->FnHashPass_;
       PassRec passRec;
       if (!fnHashPass(cmdln.begin(), cmdln.size(), passRec, HashPassFlag::ResetAll)) {
@@ -69,6 +73,7 @@ void UserRec::OnSeedCommand(PolicyMaps::Locker& locker, seed::SeedOpResult& res,
          std::string msg = "The new password is: ";
          cmdln.AppendTo(msg);
          res.OpResult_ = seed::OpResult::no_error;
+         res.LogStr_ = "Password changed.";
          resHandler(res, &msg);
          fon9_LOG_INFO(kCSTR_LOG_repw, this->PolicyId_);
       }
@@ -78,11 +83,17 @@ void UserRec::OnSeedCommand(PolicyMaps::Locker& locker, seed::SeedOpResult& res,
    if (cmd == "?") {
       res.OpResult_ = seed::OpResult::no_error;
       resHandler(res,
-                 "repw" fon9_kCSTR_CELLSPL "Reset password" fon9_kCSTR_CELLSPL "[NewPass] or Random new password.");
+                 kCSTR_repw fon9_kCSTR_CELLSPL "Reset password" fon9_kCSTR_CELLSPL "[NewPass] or Random new password.");
       return;
    }
    res.OpResult_ = seed::OpResult::not_supported_cmd;
    resHandler(res, cmd);
+}
+StrView UserRec::GetSeedCommandLogStr(StrView cmdln) {
+   constexpr size_t kCSTR_repw_size = sizeof(kCSTR_repw) - 1;
+   if (cmdln.size() >= kCSTR_repw_size && memcmp(cmdln.begin(), kCSTR_repw, kCSTR_repw_size) == 0)
+      return StrView{kCSTR_repw};
+   return base::GetSeedCommandLogStr(cmdln);
 }
 
 //--------------------------------------------------------------------------//
@@ -162,6 +173,17 @@ AuthR UserTree::AuthUpdate(fon9_Auth_R rcode, const AuthRequest& req, AuthResult
    if (UserRec* user = lockedUser.second) {
       fon9_WARN_DISABLE_SWITCH;
       switch (rcode) {
+      case fon9_Auth_CheckLogon:
+      {
+         auto pass = user->Pass_;
+         this->FnHashPass_(req.Response_.c_str(), req.Response_.size(), pass, HashPassFlag{});
+         if (pass.SaltedPass_ == user->Pass_.SaltedPass_) {
+            rcode = fon9_Auth_Success;
+            authz.RoleId_ = (user->RoleId_.empty() ? authz.AuthcId_ : user->RoleId_);
+            goto __PASS;
+         }
+      }
+      /* fall through */
       default:
          if (++user->ErrCount_ == 0)
             --user->ErrCount_;
@@ -170,6 +192,7 @@ AuthR UserTree::AuthUpdate(fon9_Auth_R rcode, const AuthRequest& req, AuthResult
          break;
       case fon9_Auth_PassChanged:
       case fon9_Auth_Success:
+      __PASS:;
          if (!user->NotBefore_.IsNull() && now < user->NotBefore_)
             ERR_RETURN(fon9_Auth_ENotBefore, "not-before");
          if (!user->NotAfter_.IsNull() && user->NotAfter_ < now)

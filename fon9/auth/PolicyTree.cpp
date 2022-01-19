@@ -46,6 +46,9 @@ struct PolicyTree::PodOp : public seed::PodOpLocker<PodOp, PolicyMaps::Locker> {
    seed::TreeSP HandleGetSapling(seed::Tab&) {
       return this->Seed_->GetSapling();
    }
+   StrView GetCommandLogStr(StrView cmdln) override {
+      return this->Seed_->GetSeedCommandLogStr(cmdln);
+   }
    void HandleSeedCommand(PolicyMaps::Locker& locker, SeedOpResult& res, StrView cmdln, seed::FnCommandResultHandler&& resHandler) {
       this->Seed_->OnSeedCommand(locker, res, cmdln, std::move(resHandler));
    }

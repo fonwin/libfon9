@@ -29,8 +29,10 @@ void RcFuncConnServer::OnRecvFunctionCall(RcSession& ses, RcFunctionParam& param
    ses.SendConnecting(std::move(rbuf));
 }
 //--------------------------------------------------------------------------//
-RcServerNote_SaslAuth::RcServerNote_SaslAuth(RcSession& ses, auth::AuthMgr& authMgr, StrView mechName, std::string&& firstMessage)
-   : RcSession_(ses) {
+RcServerNote_SaslAuth::RcServerNote_SaslAuth(RcSession& ses, auth::AuthMgr& authMgr, StrView mechName, std::string&& firstMessage,
+                                             auth::PoDupLogonAgentSP onlineMgr)
+   : RcSession_(ses)
+   , OnlineMgr_(std::move(onlineMgr)) {
    this->AuthRequest_.UserFrom_ = ses.GetRemoteIp().ToString();
    this->AuthRequest_.Response_ = std::move(firstMessage);
    using namespace std::placeholders;
@@ -38,20 +40,36 @@ RcServerNote_SaslAuth::RcServerNote_SaslAuth(RcSession& ses, auth::AuthMgr& auth
 }
 RcServerNote_SaslAuth::~RcServerNote_SaslAuth() {
 }
+unsigned RcServerNote_SaslAuth::PoDupLogonClient_AddRef() const {
+   return intrusive_ptr_add_ref(&this->RcSession_);
+}
+unsigned RcServerNote_SaslAuth::PoDupLogonClient_Release() const {
+   return intrusive_ptr_release(&this->RcSession_);
+}
+void RcServerNote_SaslAuth::PoDupLogonClient_ForceLogout(StrView reason) {
+   this->RcSession_.ForceLogout(reason.ToString());
+}
 void RcServerNote_SaslAuth::OnAuthVerifyCB(auth::AuthR rcode, auth::AuthSessionSP authSession) {
-   RevBufferList  rbuf{static_cast<BufferNodeSize>(64 + rcode.Info_.size())};
-   if (rcode.RCode_ == fon9_Auth_Success || rcode.RCode_ == fon9_Auth_PassChanged)
-      ToBitv(rbuf, authSession->GetAuthResult().ExtInfo_);
+   RevBufferList     rbuf{static_cast<BufferNodeSize>(64 + rcode.Info_.size())};
+   auth::AuthResult& authr = authSession->GetAuthResult();
+   if (rcode.RCode_ == fon9_Auth_Success || rcode.RCode_ == fon9_Auth_PassChanged) {
+      if (this->OnlineMgr_) {
+         this->OnlineMgr_->CheckLogon(ToStrView(authr.AuthcId_), "Rc",
+                                      ToStrView(this->RcSession_.GetDevice()->WaitGetDeviceId()),
+                                      this, rcode);
+      }
+      ToBitv(rbuf, authr.ExtInfo_);
+   }
    ToBitv(rbuf, rcode.Info_);
    ToBitv(rbuf, rcode.RCode_);
    this->RcSession_.SendSasl(std::move(rbuf));
    if (rcode.RCode_ == fon9_Auth_NeedsMore)
       return;
    if (rcode.RCode_ == fon9_Auth_Success || rcode.RCode_ == fon9_Auth_PassChanged) {
-      rcode.Info_ = authSession->GetAuthResult().ExtInfo_;
-      authSession->GetAuthResult().UpdateRoleConfig();
+      rcode.Info_ = authr.ExtInfo_;
+      authr.UpdateRoleConfig();
    }
-   this->RcSession_.OnSaslDone(rcode, ToStrView(authSession->GetAuthResult().AuthcId_));
+   this->RcSession_.OnSaslDone(rcode, ToStrView(authr.AuthcId_));
 }
 void RcServerNote_SaslAuth::OnRecvFunctionCall(RcSession& ses, RcFunctionParam& param) {
    if (ses.GetSessionSt() > RcSessionSt::Logoning)
@@ -68,7 +86,11 @@ void RcFuncSaslServer::OnRecvFunctionCall(RcSession& ses, RcFunctionParam& param
    BitvTo(param.RecvBuffer_, mechName);
    BitvTo(param.RecvBuffer_, firstMessage);
    RcServerNote_SaslAuth*  note;
-   RcFunctionNoteSP noteSP{note = new RcServerNote_SaslAuth{ses, *this->AuthMgr_, ToStrView(mechName), std::move(firstMessage)}};
+   RcFunctionNoteSP noteSP{
+      note = new RcServerNote_SaslAuth(ses, *this->AuthMgr_,
+                                       ToStrView(mechName), std::move(firstMessage),
+                                       this->OnlineMgr_)
+   };
    if (!note->AuthSession_)
       ses.ForceLogout("SASL mech not found.");
    else {
@@ -78,6 +100,11 @@ void RcFuncSaslServer::OnRecvFunctionCall(RcSession& ses, RcFunctionParam& param
 }
 void RcFuncSaslServer::OnSessionLinkBroken(RcSession& ses) {
    ses.SetUserId(StrView{});
+   if (this->OnlineMgr_) {
+      if (RcServerNote_SaslAuth* authNote = ses.GetNote<RcServerNote_SaslAuth>(f9rc_FunctionCode_SASL)) {
+         this->OnlineMgr_->OnLogonClientClosed(*authNote);
+      }
+   }
    base::OnSessionLinkBroken(ses);
 }
 //--------------------------------------------------------------------------//
@@ -158,20 +185,19 @@ public:
 
 struct RcSessionServer_Factory : public SessionFactory, public RcFunctionMgr {
    fon9_NON_COPY_NON_MOVE(RcSessionServer_Factory);
-   const auth::AuthMgrSP   AuthMgr_;
    const CharVector        NameVer_;
    const CharVector        Description_;
    // 傳送阻塞偵測間隔(秒).
    const TimeInterval      DeSbInterval_;
 
-   RcSessionServer_Factory(std::string name, auth::AuthMgrSP&& authMgr, const CharVector& nameVer, const CharVector& desp, TimeInterval deSbInterval)
+   RcSessionServer_Factory(std::string name, auth::AuthMgrSP authMgr, const CharVector& nameVer, const CharVector& desp, TimeInterval deSbInterval,
+                           auth::PoDupLogonAgentSP onlineMgr)
       : SessionFactory(std::move(name))
-      , AuthMgr_{authMgr}
       , NameVer_{nameVer}
       , Description_{desp}
       , DeSbInterval_{deSbInterval} {
       this->Add(RcFunctionAgentSP{new RcFuncConnServer("f9rcServer.0", "fon9 RcServer", authMgr)});
-      this->Add(RcFunctionAgentSP{new RcFuncSaslServer{authMgr}});
+      this->Add(RcFunctionAgentSP{new RcFuncSaslServer(std::move(authMgr), std::move(onlineMgr))});
    }
    unsigned RcFunctionMgrAddRef() override {
       return intrusive_ptr_add_ref(static_cast<SessionFactory*>(this));
@@ -240,8 +266,10 @@ static bool RcSessionServer_Start(fon9::seed::PluginsHolder& holder, fon9::StrVi
       fon9::SessionFactorySP CreateSessionFactory() override {
          if (auto authMgr = this->GetAuthMgr())
             return new fon9::rc::RcSessionServer_Factory(
-               this->Name_, std::move(authMgr), this->NameVer_, this->Description_,
-               this->DeSbInterval_);
+               this->Name_, authMgr, this->NameVer_, this->Description_,
+               this->DeSbInterval_,
+               authMgr->Agents_->Get<fon9::auth::PoDupLogonAgent>(fon9_kCSTR_PoDupLogonAgent_Name)
+               );
          return nullptr;
       }
       bool OnUnknownTag(fon9::seed::PluginsHolder& holder, fon9::StrView tag, fon9::StrView value) override {

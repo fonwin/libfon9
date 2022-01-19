@@ -33,6 +33,9 @@ void PolicyItem::OnSeedCommand(PolicyMaps::Locker&, seed::SeedOpResult& res, Str
    res.OpResult_ = seed::OpResult::not_supported_cmd;
    resHandler(res, nullptr);
 }
+StrView PolicyItem::GetSeedCommandLogStr(StrView cmdln) {
+   return cmdln;
+}
 seed::TreeSP PolicyItem::GetSapling() {
    return seed::TreeSP{};
 }

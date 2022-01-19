@@ -76,10 +76,16 @@ struct UserEv {
 
 struct fon9_API UserRec : public PolicyItem {
    fon9_NON_COPY_NON_MOVE(UserRec);
-   using PolicyItem::PolicyItem;
+   using base = PolicyItem;
+
+protected:
    void LoadPolicy(DcQueue&) override;
    void SavePolicy(RevBuffer&) override;
    void OnSeedCommand(PolicyMaps::Locker& locker, seed::SeedOpResult& res, StrView cmdln, seed::FnCommandResultHandler resHandler) override;
+   StrView GetSeedCommandLogStr(StrView cmdln) override;
+
+public:
+   using base::base;
 
    PassRec     Pass_;
    RoleId      RoleId_;
@@ -172,6 +178,12 @@ public:
    }
    AuthR PassChanged(const PassRec& passRec, const AuthRequest& req, AuthResult& authr) {
       return static_cast<UserTree*>(this->Sapling_.get())->AuthUpdate(fon9_Auth_PassChanged, req, authr, &passRec, *this);
+   }
+   /// 檢查密碼(密碼存放在 AuthRequest::Response_);
+   /// 用於某些不支援 SASL 的處理程序(例如:FIX).
+   /// 如果密碼正確, 則會設定 authr.RoleId_ = (user->RoleId_.empty() ? authr.AuthcId_ : user->RoleId_);
+   AuthR CheckLogon(const AuthRequest& req, AuthResult& authr) {
+      return static_cast<UserTree*>(this->Sapling_.get())->AuthUpdate(fon9_Auth_CheckLogon, req, authr, nullptr, *this);
    }
 };
 using UserMgrSP = intrusive_ptr<UserMgr>;

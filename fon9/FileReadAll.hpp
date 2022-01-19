@@ -4,9 +4,15 @@
 #define __fon9_FileReadAll_hpp__
 #include "fon9/buffer/DcQueueList.hpp"
 #include "fon9/buffer/FwdBufferList.hpp"
+#include "fon9/File.hpp"
 
 namespace fon9 {
 
+using ReadAllResult = Result2T<ErrC>;
+
+/// fname.empty() 則不需要開啟檔案;
+fon9_API ReadAllResult OpenReadAll(File& fd, CharVector& fbuf, std::string fname, FileMode fmode);
+   
 template <class FileT, typename PosT, class ConsumerT>
 typename FileT::Result FileReadAll(FileT& fd, PosT& fpos, ConsumerT&& consumer) {
    DcQueueList rdbuf;

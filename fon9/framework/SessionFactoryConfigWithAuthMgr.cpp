@@ -11,13 +11,15 @@ bool SessionFactoryConfigWithAuthMgr::OnUnknownTag(seed::PluginsHolder& holder, 
    }
    return base::OnUnknownTag(holder, tag, value);
 }
-auth::AuthMgrSP SessionFactoryConfigWithAuthMgr::GetAuthMgr() {
-   if (auto authMgr = this->PluginsHolder_.Root_->Get<auth::AuthMgr>(this->AuthMgrName_))
+auth::AuthMgrSP SessionFactoryConfig_GetAuthMgr(IoFactoryConfigParser& parser,
+                                                seed::MaTree&          root,
+                                                const StrView&         authMgrName) {
+   if (auto authMgr = root.Get<auth::AuthMgr>(authMgrName))
       return authMgr;
-   this->ErrMsg_ += "|err=Unknown AuthMgr";
-   if (!this->AuthMgrName_.empty()) {
-      this->ErrMsg_.push_back('=');
-      this->AuthMgrName_.AppendTo(this->ErrMsg_);
+   parser.ErrMsg_ += "|err=Unknown AuthMgr";
+   if (!authMgrName.empty()) {
+      parser.ErrMsg_.push_back('=');
+      authMgrName.AppendTo(parser.ErrMsg_);
    }
    return nullptr;
 }

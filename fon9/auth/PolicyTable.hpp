@@ -93,6 +93,7 @@ public:
 
    /// 預設: OpResult::not_supported_cmd;
    virtual void OnSeedCommand(PolicyMaps::Locker& locker, seed::SeedOpResult& res, StrView cmdln, seed::FnCommandResultHandler resHandler);
+   virtual StrView GetSeedCommandLogStr(StrView cmdln);
 };
 
 struct PolicyItemMonitor {

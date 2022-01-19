@@ -313,7 +313,8 @@ void TicketRunnerCommand::OnLastSeedOp(const PodOpResult& resPod, PodOp* pod, Ta
       this->SetNewCurrPath();
    else {
       if (this->SeedCommandLine_ != "?")
-         TicketLogRequest("SeedOp.Command", *this, &tab, ToStrView(this->SeedCommandLine_));
+         TicketLogRequest("SeedOp.Command", *this, &tab,
+                          pod->GetCommandLogStr(ToStrView(this->SeedCommandLine_)));
       pod->OnVisitorCommand(&tab, &this->SeedCommandLine_,
                             std::bind(&TicketRunnerCommand::OnSeedCommandResult,
                                       intrusive_ptr<TicketRunnerCommand>(this),
@@ -326,7 +327,8 @@ void TicketRunnerCommand::OnSeedCommandResult(const SeedOpResult& res, StrView m
    this->OpResult_ = res.OpResult_;
    this->Visitor_->OnTicketRunnerCommand(*this, res, msg);
    if (this->SeedCommandLine_ != "?")
-      TicketLogResult("SeedOp.Command", *this, res.OpResult_, msg);
+      TicketLogResult("SeedOp.Command", *this, res.OpResult_,
+                      res.LogStr_.IsNull() ? msg : res.LogStr_);
 }
 //--------------------------------------------------------------------------//
 TicketRunnerSubscribe::TicketRunnerSubscribe(SeedVisitor& visitor, StrView seed, StrView tabName)

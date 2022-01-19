@@ -6,6 +6,7 @@
 #include "fon9/auth/SaslScramSha256Server.hpp"
 #include "fon9/auth/SaslClient.hpp"
 #include "fon9/auth/PolicyAcl.hpp"
+#include "fon9/auth/PoDupLogon.hpp"
 #include "fon9/CountDownLatch.hpp"
 #include "fon9/CmdArgs.hpp"
 #include "fon9/Log.hpp"
@@ -234,6 +235,7 @@ int fon9::Fon9CoRun(int argc, char** argv, int (*fnBeforeStart)(fon9::Framework&
 void fon9::PlantMaAuth_UserAgent(Framework& fon9sys) {
    fon9::auth::PlantScramSha256(*fon9sys.MaAuth_);
    fon9::auth::PolicyAclAgent::Plant(*fon9sys.MaAuth_);
+   fon9::auth::PoDupLogonAgent::Plant(*fon9sys.MaAuth_);
 }
 
 int fon9::Fon9SysCoStart(fon9::Framework& fon9sys, int argc, char** argv, int (*fnBeforeStart)(fon9::Framework&)) {

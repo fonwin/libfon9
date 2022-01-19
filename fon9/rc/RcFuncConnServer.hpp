@@ -7,6 +7,7 @@
 #define __fon9_rc_RcFuncConnServer_hpp__
 #include "fon9/rc/RcFuncConn.hpp"
 #include "fon9/auth/AuthMgr.hpp"
+#include "fon9/auth/PoDupLogon.hpp"
 
 namespace fon9 { namespace rc {
 
@@ -32,11 +33,13 @@ public:
 class fon9_API RcFuncSaslServer : public RcFunctionAgent {
    fon9_NON_COPY_NON_MOVE(RcFuncSaslServer);
    using base = RcFunctionAgent;
-   const auth::AuthMgrSP   AuthMgr_;
+   const auth::AuthMgrSP         AuthMgr_;
+   const auth::PoDupLogonAgentSP OnlineMgr_;
 public:
-   RcFuncSaslServer(auth::AuthMgrSP authMgr)
+   RcFuncSaslServer(auth::AuthMgrSP authMgr, auth::PoDupLogonAgentSP onlineMgr)
       : base{f9rc_FunctionCode_SASL, RcSessionSt::Connecting}
-      , AuthMgr_(std::move(authMgr)) {
+      , AuthMgr_{std::move(authMgr)}
+      , OnlineMgr_{std::move(onlineMgr)} {
    }
    void OnSessionLinkBroken(RcSession& ses) override;
    void OnRecvFunctionCall(RcSession& ses, RcFunctionParam& param) override;
@@ -53,12 +56,17 @@ public:
 ///       agent->GetPolicy(authr, policy);
 /// }
 /// \endcode
-class fon9_API RcServerNote_SaslAuth : public RcFunctionNote {
+class fon9_API RcServerNote_SaslAuth : public RcFunctionNote, public auth::PoDupLogonClient {
    fon9_NON_COPY_NON_MOVE(RcServerNote_SaslAuth);
 protected:
+   unsigned PoDupLogonClient_AddRef() const override;
+   unsigned PoDupLogonClient_Release() const override;
+   void PoDupLogonClient_ForceLogout(StrView reason) override;
+
    RcSession&          RcSession_;
    auth::AuthRequest   AuthRequest_;
    auth::AuthSessionSP AuthSession_;
+   const auth::PoDupLogonAgentSP OnlineMgr_;
    friend class RcFuncSaslServer;
    void OnAuthVerifyCB(auth::AuthR rcode, auth::AuthSessionSP authSession);
 
@@ -66,7 +74,8 @@ protected:
       this->AuthSession_->AuthVerify(this->AuthRequest_);
    }
 public:
-   RcServerNote_SaslAuth(RcSession& ses, auth::AuthMgr& authMgr, StrView mechName, std::string&& firstMessage);
+   RcServerNote_SaslAuth(RcSession& ses, auth::AuthMgr& authMgr, StrView mechName, std::string&& firstMessage,
+                         auth::PoDupLogonAgentSP onlineMgr);
    ~RcServerNote_SaslAuth();
 
    void OnRecvFunctionCall(RcSession& ses, RcFunctionParam& param) override;
