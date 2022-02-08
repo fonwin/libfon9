@@ -59,6 +59,7 @@ public:
 
    using base::Locker;
    using base::Lock;
+   using base::GetNextSendSeq;
 
    /// 完成 fixmsg 並觸發 OnSendFixMessage 事件.
    /// \param fldMsgType    f9fix_SPLFLDMSGTYPE(NewOrderSingle)

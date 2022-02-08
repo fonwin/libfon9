@@ -79,6 +79,24 @@ protected:
    virtual bool OnPkReceived(const void* pk, unsigned pksz) = 0;
 };
 //--------------------------------------------------------------------------//
+
+/// 使用範例:
+/// class MySession : public fon9::io::Session {
+///   fon9::FixedSizePkReceiver  Receiver_;
+///   fon9::io::RecvBufferSize OnDevice_LinkReady(fon9::io::Device& dev) override {
+///      (void)dev;
+///      this->Receiver_.Clear();
+///      return fon9::io::RecvBufferSize::Default;
+///   }
+///   fon9::io::RecvBufferSize OnDevice_Recv(fon9::io::Device& dev, fon9::DcQueue& rxbuf) override {
+///      (void)dev;
+///      while (auto* const rec = reinterpret_cast<const MyRec*>(this->Receiver_.FeedBuffer(rxbuf))) {
+///         ... parse rec ...
+///         this->Receiver_.PopConsumed(rxbuf, rec);
+///      }
+///      return fon9::io::RecvBufferSize::Default;
+///   }
+/// };
 class fon9_API FixedSizePkReceiver {
    fon9_NON_COPY_NON_MOVE(FixedSizePkReceiver);
    char* const    PkBuffer_;

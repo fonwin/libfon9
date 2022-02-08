@@ -104,6 +104,11 @@ void IoFixSession::OnDevice_StateChanged(io::Device&, const io::StateChangedArgs
       if (auto fixout = this->OnFixSessionDisconnected(e.After_.Info_))
          this->FixManager_.OnFixSessionDisconnected(*this, std::move(fixout));
    }
+   else if (e.After_.State_ == fon9::io::State::LinkReady) {
+      // 連線了 => 取得 RemoteIp, 不包含「:port」
+      fon9::StrView remote = fon9::StrFindValue(&e.After_.DeviceId_, "R");
+      this->RemoteIp_.assign(StrFetchNoTrim(remote, ':'));
+   }
 }
 io::RecvBufferSize IoFixSession::OnDevice_LinkReady(io::Device&) {
    this->OnFixSessionConnected();

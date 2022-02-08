@@ -105,7 +105,7 @@ FixParser::Result FixParser::Parse(StrView& fixmsg, Until until) {
    return rcode;
 }
 FixParser::Result FixParser::ParseFields(StrView& fixmsg, Until until) {
-   const char* msgend = fixmsg.end();
+   const char* const msgend = fixmsg.end();
    while (fixmsg.begin() < msgend) {
       const FixTag tag = StrTo(&fixmsg, 0u);
       if (fon9_UNLIKELY(tag == 0 || fixmsg.Get1st() != '='))
@@ -128,7 +128,7 @@ FixParser::Result FixParser::ParseFields(StrView& fixmsg, Until until) {
             if (this->MFields_.size() < this->MIndexNext_)
                this->MFields_.resize(this->MIndexNext_ + kMaxDupFieldCount * 4u);
          }
-         pValue = &this->MFields_[fld.MIndex_ * static_cast<size_t>(kMaxDupFieldCount) + (fld.ValueCount_ - 1)];
+         pValue = &this->MFields_[fld.MIndex_ + (fld.ValueCount_ - 1)];
       }
 
       if (fon9_LIKELY(tag != f9fix_kTAG_RawData))
@@ -147,7 +147,7 @@ FixParser::Result FixParser::ParseFields(StrView& fixmsg, Until until) {
             if (fon9_UNLIKELY(fixmsg.begin()[rawDataLength] != f9fix_kCHAR_SPL))
                return ERawData;
             pValue->Reset(fixmsg.begin(), fixmsg.begin() + rawDataLength);
-            fixmsg.SetBegin(pValue->end() + 1);// +1 移除 f9fix_kCHAR_SPL
+            fixmsg.SetBegin(pValue->end() + (pValue->end() != msgend));// +1 移除 f9fix_kCHAR_SPL
          }
       }
       ++fld.ValueCount_;
@@ -172,7 +172,7 @@ FixParser::Result FixParser::ParseFields(StrView& fixmsg, Until until) {
 StrView FixParser::GetValue(const FixField& fld, unsigned index) const {
    return index >= fld.ValueCount_ ? StrView{nullptr}
       : index == 0 ? fld.Value_
-      : this->MFields_[fld.MIndex_ * kMaxDupFieldCount + (index - 1)];
+      : this->MFields_[fld.MIndex_ + (index - 1)];
 }
 
 } } // namespaces

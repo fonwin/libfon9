@@ -33,6 +33,9 @@ public:
    void OnFixSessionConnected(io::DeviceSP dev) {
       this->SwapDevice(dev);
    }
+   io::DeviceSP  GetDevice() const {
+      return this->Device_;
+   }
 };
 using IoFixSenderSP = intrusive_ptr<IoFixSender>;
 

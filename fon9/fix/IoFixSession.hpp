@@ -70,6 +70,7 @@ class fon9_API IoFixSession : public io::Session, public FixSession {
    using baseFix = FixSession;
    // 在 OnDevice_Initialized() 時設定.
    io::Device*   Dev_{nullptr};
+   CharVector    RemoteIp_;
 
 protected:
    // override io::Session
@@ -95,6 +96,10 @@ public:
    IoFixSession(IoFixManager& mgr, const FixConfig& cfg)
       : baseFix{cfg}
       , FixManager_(mgr) {
+   }
+
+   const CharVector& RemoteIp() const {
+      return this->RemoteIp_;
    }
 
    /// 通常只會在 OnDevice_LinkReady() 事件時,
