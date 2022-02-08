@@ -49,7 +49,7 @@ static_assert(sizeof(TmpR31) == 100, "struct TmpR31; must pack?");
 //--------------------------------------------------------------------------//
 
 struct TmpR2Front : public TmpHeaderSt, public TmpR1BfSym {
-   struct BackType : public TmpR1AfSym {
+   struct BackTypeNoCheckSum : public TmpR1AfSym {
       TmpPrice       LastPx_;
       TmpQty         LastQty_;
       TmpAmt         PxSubTotal_;
@@ -72,16 +72,30 @@ struct TmpR2Front : public TmpHeaderSt, public TmpR1BfSym {
       TmpMsgSeqNum   RptSeq_;
       /// 新單資料來源: 0:保留; 1:TMP; 2:FIX;
       uint8_t        ProtocolType_;
-
+   };
+   struct BackType : public BackTypeNoCheckSum {
       TmpCheckSum    CheckSum_;
    };
 };
+using TmpR2BackNoCheckSum = TmpR2Front::BackTypeNoCheckSum;
 using TmpR2Back = TmpR2Front::BackType;
 using TmpR02 = TmpTriDef<TmpR2Front, TmpSymIdS>;
 using TmpR32 = TmpTriDef<TmpR2Front, TmpSymIdL>;
 
 static_assert(sizeof(TmpR02) == 133, "struct TmpR02; must pack?");
 static_assert(sizeof(TmpR32) == 153, "struct TmpR32; must pack?");
+
+//--------------------------------------------------------------------------//
+
+struct TmpB50Header {
+   TmpMessageType MessageType_; // 102(0x66) or 132(0x84)
+   TmpStatusCode  StatusCode_;
+};
+struct TmpB50R2Front : public TmpB50Header, public TmpR1BfSym {
+   using BackType = TmpR2BackNoCheckSum;
+};
+using TmpB50R02 = TmpTriDef<TmpB50R2Front, TmpSymIdS>;
+using TmpB50R32 = TmpTriDef<TmpB50R2Front, TmpSymIdL>;
 
 //--------------------------------------------------------------------------//
 
