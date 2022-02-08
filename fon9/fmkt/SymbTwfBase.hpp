@@ -3,6 +3,7 @@
 #ifndef __fon9_fmkt_SymbTwfBase_hpp__
 #define __fon9_fmkt_SymbTwfBase_hpp__
 #include "fon9/seed/Tab.hpp"
+#include "fon9/Decimal.hpp"
 
 namespace fon9 { namespace fmkt {
 
@@ -32,7 +33,12 @@ struct fon9_API SymbTwfBase {
    /// 台灣期交所的流程群組代碼.
    SymbFlowGroup_t   FlowGroup_{0};
 
-   char  Padding__[1];
+   /// 買賣權別 'C':call, 'P':put; '\0':期貨.
+   char     CallPut_;
+   /// 交割年月.
+   uint32_t SettleYYYYMM_;
+   /// 履約價;
+   Decimal<uint32_t,4>  StrikePrice_;
 
    void SymbTwfBaseClear() {
       this->FlowGroup_ = 0;

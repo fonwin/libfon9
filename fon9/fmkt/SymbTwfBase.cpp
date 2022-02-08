@@ -11,6 +11,9 @@ void SymbTwfBase::AddFields(int ofsadj, seed::Fields& flds) {
    flds.Add(fon9_MakeField2_OfsAdj(ofsadj, SymbTwfBase, StrikePriceDiv));
    flds.Add(fon9_MakeField2_OfsAdj(ofsadj, SymbTwfBase, ExgSymbSeq));
    flds.Add(fon9_MakeField_OfsAdj (ofsadj, SymbTwfBase, EndYYYYMMDD_, "EndDate"));
+   flds.Add(fon9_MakeField2_OfsAdj(ofsadj, SymbTwfBase, SettleYYYYMM));
+   flds.Add(fon9_MakeField2_OfsAdj(ofsadj, SymbTwfBase, StrikePrice));
+   flds.Add(fon9_MakeField2_OfsAdj(ofsadj, SymbTwfBase, CallPut));
 }
 
 } } // namespaces
