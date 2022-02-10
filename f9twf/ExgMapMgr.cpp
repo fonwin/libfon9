@@ -205,7 +205,10 @@ struct ExgMapMgr::ImpSeedP08 : public ExgMapMgr_ImpSeed {
    void ClearReload(ConfigLocker&& lk) override {
       this->SetDescription(std::string{});
       base::ClearReload(std::move(lk));
-      // this->SetForceLoadOnce(std::move(lk), true); // 即使是 SchOut 也要載入一次?
+      // 日盤P08: 即使是 SchOut 也要載入一次, 避免系統中沒有商品基本資料(價格小數位數), 無法正確處理價格.
+      // 夜盤P08: 避免有前日的殘留, 所以必須在 SchIn 才需要載入, 此時不用強制載入.
+      if (!ExgSystemTypeIsAfterHour(this->ExgSystemType_))
+         this->SetForceLoadOnce(std::move(lk), true);
    }
 };
 //--------------------------------------------------------------------------//
