@@ -244,8 +244,10 @@ void FileIO::OpImpl_Open(const std::string cfgstr) {
          this->InFileCfg_.Mode_ = StrToFileMode(value) | FileMode::Read;
       else if (tag == fon9_FileIO_TAG_OutMode)
          this->OutFileCfg_.Mode_ = StrToFileMode(value) | FileMode::Append;
-      else if (!this->InProps_.Parse(tag, value)) {
-         // Unknown tag.
+      else if (this->InProps_.Parse(tag, value)) {
+      }
+      else if (this->OpImpl_SetProperty(tag, value) != ConfigParser::Result::Success) {
+         // Unknown tag or value.
          this->OpImpl_SetState(State::ConfigError, ToStrView(RevPrintTo<std::string>(
             "Unknown '", tag, '=', value, '\''
             )));
