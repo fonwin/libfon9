@@ -139,9 +139,28 @@ void Device::OpImpl_StateChanged(const StateChangedArgs& e) {
    (void)e;
 }
 bool Device::OpImpl_SetState(State afst, StrView stmsg) {
+   struct Aux {
+      static bool CheckStartTimer(Device& dev, State afst) {
+         uint32_t msTimerInterval;
+         if (afst == State::LinkBroken || afst == State::ListenBroken)
+            msTimerInterval = dev.Options_.LinkBrokenReopenInterval_;
+         else if (afst == State::LinkError)
+            msTimerInterval = dev.Options_.LinkErrorRetryInterval_;
+         else if (afst == State::Closed)
+            msTimerInterval = dev.Options_.ClosedReopenInterval_;
+         else {
+            return false;
+         }
+         if (msTimerInterval <= 0u)
+            return false;
+         dev.CommonTimer_.RunAfter(TimeInterval_Millisecond(msTimerInterval));
+         return true;
+      }
+   };
    State bfst = this->State_;
    if (bfst == afst) {
       if (afst < State::Disposing) { // Disposing 訊息不需要重複更新.
+         Aux::CheckStartTimer(*this, afst);
          StateUpdatedArgs e{afst, stmsg, this->DeviceId_};
          this->Session_->OnDevice_StateUpdated(*this, e);
          if (this->Manager_)
@@ -157,17 +176,8 @@ bool Device::OpImpl_SetState(State afst, StrView stmsg) {
    e.BeforeState_ = bfst;
    e.After_.State_ = afst;
    this->OpImpl_StateChanged(e);
-   uint32_t msTimerInterval{0u};
-   if (afst == State::LinkBroken || afst == State::ListenBroken)
-      msTimerInterval = this->Options_.LinkBrokenReopenInterval_;
-   else if (afst == State::LinkError)
-      msTimerInterval = this->Options_.LinkErrorRetryInterval_;
-   else if (afst == State::Closed)
-      msTimerInterval = this->Options_.ClosedReopenInterval_;
 
-   if (msTimerInterval > 0u)
-      this->CommonTimer_.RunAfter(TimeInterval_Millisecond(msTimerInterval));
-   else
+   if (!Aux::CheckStartTimer(*this, afst))
       this->CommonTimer_.StopNoWait();
 
    this->Session_->OnDevice_StateChanged(*this, e);
