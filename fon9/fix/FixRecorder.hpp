@@ -82,7 +82,8 @@ public:
    /// 1. 開啟記錄檔.
    /// 2. 取得 NextRecvSeq_, NextSeqSeq_
    /// 若重複呼叫(之前已成功過), 則返回 std::errc::text_file_busy;
-   File::Result Initialize(std::string fileName);
+   File::Result Initialize(std::string fileName,
+                           FileMode fileMode = FileMode::Append | FileMode::CreatePath | FileMode::DenyWrite);
 
    FixSeqNum GetNextSendSeq(const Locker&) const {
       return this->NextSendSeq_;

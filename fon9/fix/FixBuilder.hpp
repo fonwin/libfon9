@@ -45,7 +45,7 @@ public:
    FixBuilder() {
       this->Start();
    }
-   FixBuilder(bool isManualStart) {
+   explicit FixBuilder(bool isManualStart) {
       if (isManualStart) {
          this->CheckSumPos_ = nullptr;
          this->TimeFIXMS_ = nullptr;

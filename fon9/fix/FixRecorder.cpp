@@ -14,10 +14,10 @@ FixRecorder::~FixRecorder() {
    this->Worker_.TakeCallLocked(std::move(lk));
 }
 
-File::Result FixRecorder::Initialize(std::string fileName) {
+File::Result FixRecorder::Initialize(std::string fileName, FileMode fileMode) {
    if (this->GetStorage().IsOpened())
       return File::Result{std::errc::text_file_busy};
-   auto res = this->OpenImmediately(std::move(fileName), FileMode::Append | FileMode::CreatePath | FileMode::Read | FileMode::DenyWrite);
+   auto res = this->OpenImmediately(std::move(fileName), fileMode | FileMode::Read);
    if (!res)
       return res;
    FixParser fixParser;
