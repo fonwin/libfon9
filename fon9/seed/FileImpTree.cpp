@@ -7,6 +7,19 @@
 
 namespace fon9 { namespace seed {
 
+static inline void LastFileTime_SetAsOpenErr(TimeStamp& lastFileTime) {
+   lastFileTime.Assign0();
+}
+static inline bool LastFileTime_IsOpenErr(TimeStamp lastFileTime) {
+   return lastFileTime.IsZero();
+}
+static inline void LastFileTime_SetAsWaitReload(TimeStamp& lastFileTime) {
+   lastFileTime.AssignNull();
+}
+static inline bool LastFileTime_IsWaitReload(TimeStamp lastFileTime) {
+   return lastFileTime.IsNullOrZero();
+}
+//--------------------------------------------------------------------------//
 FileImpMgr::~FileImpMgr() {
    this->MonitorTimer_.DisposeAndWait();
    this->DisposeAndWait();
@@ -211,10 +224,10 @@ TimeInterval FileImpSeed::MonitorCheck(ConfigLocker&& lk, TimeStamp now) {
       if (!this->IsInSch(now)) {
          // 現在是排程時間外, 在下次進入排程時間內時, 至少要載入一次.
          // 所以清除 this->LastFileTime_; 讓下次進入排程時間內時, 至少載入一次.
-         this->LastFileTime_.AssignNull();
+         LastFileTime_SetAsWaitReload(this->LastFileTime_);
          return TimeInterval_Second(1);
       }
-      if (isNoMon && !this->LastFileTime_.IsNullOrZero()) {
+      if (isNoMon && !LastFileTime_IsWaitReload(this->LastFileTime_)) {
          // 不用監控, 且已經有載入過, 則不用再檢查排程時間.
          return TimeInterval{};
       }
@@ -242,14 +255,14 @@ TimeInterval FileImpSeed::MonitorCheck(ConfigLocker&& lk, TimeStamp now) {
       }
    #endif
    #define kTimeInterval_FileNotChanged   TimeInterval_Millisecond(200)
-      if (ftm.IsNullOrZero()) { // 現在檔案不存在?
-         if (this->LastFileTime_.IsNullOrZero()) // 上次偵測時, 檔案也不存在.
-            break;
-         // 上次偵測時, 檔案存在, 但現在檔案不存在,
+      if (ftm.IsNullOrZero()) {                           // 現在檔案不存在?
+         if (LastFileTime_IsOpenErr(this->LastFileTime_)) // 上次偵測時, 開檔失敗(檔案也不存在?).
+            break;                                        // => 此時不用更新 this->Description;
+         // 上次偵測時, 檔案存在(開檔成功), 但現在檔案不存在,
          // 繼續處理: 呼叫 this->Reload(); 將此狀況顯示在 this->Description;
       }
       else { // 現在檔案存在.
-         if (this->LastFileTime_.IsNullOrZero()) {
+         if (LastFileTime_IsWaitReload(this->LastFileTime_)) {
             // 上次偵測時, 檔案不存在, 現在檔案出現了!
             // => 不用其餘判斷, 繼續處理: 呼叫 this->Reload(); 
          }
@@ -339,7 +352,7 @@ TimeInterval FileImpSeed::Reload(ConfigLocker&& lk, std::string fname, bool isCl
    if (res.IsError()) {
       errfnc = "Open";
       // TODO: 開檔失敗是否需要 this->ClearAddTailRemain()? 是否需要增加另一設定(FileImpMonitorFlag::AddTail_ErrClear)?
-      this->LastFileTime_.Assign0();
+      LastFileTime_SetAsOpenErr(this->LastFileTime_);
    __ERROR_FNC:;
       RevPrint(rbuf, '|', errfnc, ' ', res);
    __ADD_DESC_HEAD_INFO_AND_RETURN:;
@@ -375,7 +388,7 @@ TimeInterval FileImpSeed::Reload(ConfigLocker&& lk, std::string fname, bool isCl
                "|mon=", monFlag);
       goto __ADD_DESC_HEAD_INFO_AND_RETURN;
    }
-   if (this->LastFileTime_.IsNullOrZero()) { // 在 this->OnBeforeLoad() 呼叫了 this->ClearReload()?
+   if (LastFileTime_IsWaitReload(this->LastFileTime_)) { // 在 this->OnBeforeLoad() 呼叫了 this->ClearReload()?
       RevPrint(rbuf, "|ClearReload.");
       goto __ADD_DESC_HEAD_INFO_AND_RETURN;  // 等候下次載入時機, 重新載入.
    }
@@ -433,7 +446,7 @@ void FileImpSeed::OnLoadEmptyFile() {
 void FileImpSeed::ClearReload(ConfigLocker&& lk) {
    (void)lk;
    this->ClearAddTailRemain();
-   this->LastFileTime_.Assign0();
+   LastFileTime_SetAsWaitReload(this->LastFileTime_);
 }
 void FileImpSeed::SetForceLoadOnce(ConfigLocker&& lk, bool v) {
    if ((this->IsForceLoadOnce_ = v) == true)

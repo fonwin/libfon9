@@ -199,7 +199,8 @@ void MaConfigSeed_SchTask::SetNextTimeInfo(TimeStamp tmNext, StrView exInfo) {
    this->OwnerTree_.UpdateConfigSeed(locker, *this, nullptr, &desc);
 }
 void MaConfigSeed_SchTask::OnSchTask_NextCheckTime(const SchConfig::CheckResult&) {
-   this->SetNextTimeInfo(this->GetNextSchInTime(), "NextCheckTime");
+   const TimeStamp tmNext = this->GetNextSchInTime();
+   this->SetNextTimeInfo(tmNext, tmNext.IsNullOrZero() ? StrView{"NoNextCheckTime"} : StrView{"NextCheckTime"});
 }
 
 } } // namespaces
