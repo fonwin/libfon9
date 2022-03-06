@@ -207,8 +207,57 @@ struct ExgMapMgr::ImpSeedP08 : public ExgMapMgr_ImpSeed {
       base::ClearReload(std::move(lk));
       // 日盤P08: 即使是 SchOut 也要載入一次, 避免系統中沒有商品基本資料(價格小數位數), 無法正確處理價格.
       // 夜盤P08: 避免有前日的殘留, 所以必須在 SchIn 才需要載入, 此時不用強制載入.
-      if (!ExgSystemTypeIsAfterHour(this->ExgSystemType_))
+      if (this->GetMonitorFlag(lk) != FileImpMonitorFlag::Exclude // 有可能不載入 PA8;
+          && !ExgSystemTypeIsAfterHour(this->ExgSystemType_))
          this->SetForceLoadOnce(std::move(lk), true);
+   }
+};
+//--------------------------------------------------------------------------//
+struct ExgMapMgr::ImpSeedP09 : public ImpSeedP08 {
+   fon9_NON_COPY_NON_MOVE(ImpSeedP09);
+   using base = ImpSeedP08;
+   using base::base;
+
+   struct Loader : public FileImpLoader {
+      fon9_NON_COPY_NON_MOVE(Loader);
+      ImpSeedP09&       Owner_;
+      const size_t      IdSize_;
+      P09Recs*          P09Recs_;
+      fon9::TimeStamp   UpdatedTime_;
+   
+      Loader(ImpSeedP09& owner, size_t addSize)
+         : Owner_{owner}
+         , IdSize_{// owner.Name_[1] == 'A' ? sizeof(ExgContractIdL::Id) : 
+                   sizeof(ExgContractIdS::Id)}
+         , UpdatedTime_{owner.LastFileTime()} {
+         assert(owner.Name_[1] == '0'); // 僅支援 P09, 不支援 PA9;
+         size_t       rsz = addSize / (this->IdSize_ + sizeof(TmpP09Base)) + 1;
+         Maps::Locker maps{this->Owner_.GetExgMapMgr().Maps_};
+         this->P09Recs_ = &maps->MapP09Recs_[ExgSystemTypeToIndex(this->Owner_.ExgSystemType_)];
+         this->P09Recs_->reserve(rsz);
+      }
+      ~Loader() {
+         ExgMapMgr& exgMapMgr = this->Owner_.GetExgMapMgr();
+         exgMapMgr.OnP09Updated(*this->P09Recs_,
+                                this->Owner_.ExgSystemType_,
+                                exgMapMgr.Maps_.ConstLock());
+      }
+      size_t OnLoadBlock(char* pbuf, size_t bufsz, bool isEOF) override {
+         Maps::Locker maps{this->Owner_.GetExgMapMgr().Maps_};
+         return this->ParseBlock(pbuf, bufsz, isEOF, this->IdSize_ + sizeof(TmpP09Base));
+      }
+      void OnLoadLine(char* pbuf, size_t bufsz, bool isEOF) override {
+         (void)bufsz; (void)isEOF;
+         assert(bufsz == this->IdSize_ + sizeof(TmpP09Base) && bufsz == sizeof(TmpP09));
+         this->P09Recs_->emplace_back(*reinterpret_cast<const TmpP09*>(pbuf));
+      }
+   };
+   FileImpLoaderSP OnBeforeLoad(fon9::RevBuffer& rbufDesp, uint64_t addSize, FileImpMonitorFlag monFlag) override {
+      if (monFlag == FileImpMonitorFlag::AddTail) {
+         fon9::RevPrint(rbufDesp, "|err=P09 not support AddTail.");
+         return nullptr;
+      }
+      return new Loader(*this, addSize);
    }
 };
 //--------------------------------------------------------------------------//
@@ -267,25 +316,31 @@ FileImpTreeSP ExgMapMgr::MakeSapling(ExgMapMgr& rthis) {
    // - 是否需要等 P08(ShortId)+PA8(LongId) 都載入後才觸發通知?
    //   - P08/PA8 的 Sch 是否為 AlwaysOut? 若是, 則不等.
    // - 或是個別通知? 不考慮另一個是否已載入.
-   ///  - 因為還需要配合帳務系統的結算.
+   //   - 因為還需要配合帳務系統的結算.
    //   - 所以由訂閱者自行決定, 以「長Id」或「短Id」為主.
    // - 期交所行情也有用不同的 Multicast 群組,
    //   來播送「長Id」或「短Id」的行情.
    // -------------------------------------
-   #define AddImpSeedP08(fname, sysStr, sysName) \
-   retval->Add(new ImpSeedP08(ExgSystemType::sysName##AfterHour, *retval, fname "_" sysStr "1", "./tmpsave/" fname "." sysStr "1")); \
-   retval->Add(new ImpSeedP08(ExgSystemType::sysName##Normal,    *retval, fname "_" sysStr "0", "./tmpsave/" fname "." sysStr "0"))
+   #define AddImpSeed(impClass, fname, sysStr, sysName) \
+   retval->Add(new impClass(ExgSystemType::sysName##AfterHour, *retval, fname "_" sysStr "1", "./tmpsave/" fname "." sysStr "1")); \
+   retval->Add(new impClass(ExgSystemType::sysName##Normal,    *retval, fname "_" sysStr "0", "./tmpsave/" fname "." sysStr "0"))
    // -------------------------
-   AddImpSeedP08("P08", "1", Opt);
-   AddImpSeedP08("PA8", "1", Opt);
-   AddImpSeedP08("P08", "2", Fut);
-   AddImpSeedP08("PA8", "2", Fut);
+   AddImpSeed(ImpSeedP08, "P08", "1", Opt);
+   AddImpSeed(ImpSeedP08, "PA8", "1", Opt);
+   AddImpSeed(ImpSeedP08, "P08", "2", Fut);
+   AddImpSeed(ImpSeedP08, "PA8", "2", Fut);
+   // -------------------------
+   AddImpSeed(ImpSeedP09, "P09", "1", Opt);
+   AddImpSeed(ImpSeedP09, "P09", "2", Fut);
 
    return retval;
 }
 //--------------------------------------------------------------------------//
 void ExgMapMgr::OnP08Updated(const P08Recs& p08recs, ExgSystemType sysType, Maps::ConstLocker&& lk) {
    (void)p08recs; (void)sysType; (void)lk;
+}
+void ExgMapMgr::OnP09Updated(const P09Recs& p09recs, ExgSystemType sysType, Maps::ConstLocker&& lk) {
+   (void)p09recs; (void)sysType; (void)lk;
 }
 void ExgMapMgr::OnP06Updated(const ExgMapBrkFcmId& mapBrkFcmId, Maps::Locker&& lk) {
    (void)mapBrkFcmId; (void)lk;

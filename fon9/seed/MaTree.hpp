@@ -201,8 +201,8 @@ public:
    virtual void OnTreeOp(FnTreeOp fnCallback) override;
 
    template <class... NamedArgsT>
-   void AddNamedSapling(TreeSP sapling, NamedArgsT&&... namedargs) {
-      this->Add(new NamedSapling(std::move(sapling), std::forward<NamedArgsT>(namedargs)...));
+   bool AddNamedSapling(TreeSP sapling, NamedArgsT&&... namedargs) {
+      return this->Add(new NamedSapling(std::move(sapling), std::forward<NamedArgsT>(namedargs)...));
    }
 };
 

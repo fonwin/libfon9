@@ -6,6 +6,7 @@
 #include "fon9/fmkt/FmktTypes.h"
 #include "fon9/CharAryL.hpp"
 #include "fon9/Utility.hpp"
+#include "fon9/Decimal.hpp"
 
 namespace f9twf {
 
@@ -24,6 +25,7 @@ static_assert(sizeof(SymbolId) == 41, "SymbolId must pack?");
 /// 契約代號.
 using ContractId = fon9::CharAryP<4, 3, char, ' '>;
 using StkNo = fon9::CharAryP<6, 4, char, ' '>;
+using ContractSize = fon9::Decimal<uint64_t, 4>;
 
 using FcmId = uint16_t;
 using SessionId = uint16_t;
@@ -41,23 +43,6 @@ enum class ExgSystemType : uint8_t {
 constexpr unsigned ExgSystemTypeCount() {
    return 4;
 }
-constexpr bool ExgSystemTypeIsAfterHour(ExgSystemType val) {
-   return (fon9::cast_to_underlying(val) % 10) == 1;
-}
-inline f9fmkt_TradingMarket ExgSystemTypeToMarket(ExgSystemType val) {
-   if (fon9::cast_to_underlying(val) <= 19)
-      return f9fmkt_TradingMarket_TwOPT;
-   if (fon9::cast_to_underlying(val) <= 29)
-      return f9fmkt_TradingMarket_TwFUT;
-   return f9fmkt_TradingMarket_Unknown;
-}
-inline f9fmkt_TradingSessionId ExgSystemTypeToSessionId(ExgSystemType val) {
-   switch (fon9::cast_to_underlying(val) % 10) {
-   case 0: return f9fmkt_TradingSessionId_Normal;
-   case 1: return f9fmkt_TradingSessionId_AfterHour;
-   }
-   return f9fmkt_TradingSessionId_Unknown;
-}
 /// OptNormal=0; OptAfterHour=1; FutNormal=2; FutAfterHour=3;
 /// else >= ExgSystemTypeCount();
 constexpr unsigned ExgSystemTypeToIndex(ExgSystemType val) {
@@ -69,6 +54,24 @@ static_assert(ExgSystemTypeToIndex(ExgSystemType::OptNormal) == 0
               && ExgSystemTypeToIndex(ExgSystemType::FutNormal) == 2
               && ExgSystemTypeToIndex(ExgSystemType::FutAfterHour) == 3,
               "ExgSystemTypeToIndex() error.");
+
+constexpr bool ExgSystemTypeIsAfterHour(ExgSystemType val) {
+   return (fon9::cast_to_underlying(val) % 10) == 1;
+}
+static inline f9fmkt_TradingMarket ExgSystemTypeToMarket(ExgSystemType val) {
+   if (fon9::cast_to_underlying(val) <= 19)
+      return f9fmkt_TradingMarket_TwOPT;
+   if (fon9::cast_to_underlying(val) <= 29)
+      return f9fmkt_TradingMarket_TwFUT;
+   return f9fmkt_TradingMarket_Unknown;
+}
+static inline f9fmkt_TradingSessionId ExgSystemTypeToSessionId(ExgSystemType val) {
+   switch (fon9::cast_to_underlying(val) % 10) {
+   case 0: return f9fmkt_TradingSessionId_Normal;
+   case 1: return f9fmkt_TradingSessionId_AfterHour;
+   }
+   return f9fmkt_TradingSessionId_Unknown;
+}
 
 enum class ExgPosEff : char {
    Open = 'O',
@@ -95,6 +98,37 @@ enum class ExgCombSide : uint8_t {
    /// Leg2.Side = 下單要求的買賣別;
    /// Leg1.Side = (Leg2.Side==Buy ? Sell : Buy);
    SideIsLeg2,
+};
+
+//--------------------------------------------------------------------------//
+
+/// 契約類別.
+enum class ExgContractType : char {
+   /// I:指數類.
+   Index = 'I',
+   /// R:利率類.
+   InterestRate = 'R',
+   /// B:債券類.
+   Bond = 'B',
+   /// C:商品類.
+   Commodity = 'C',
+   /// S:股票類.
+   Stock = 'S',
+   /// E:匯率類.
+   Currency = 'E',
+};
+
+/// 到期別: 標準 or 週;
+enum class ExgExpiryType : char {
+   Standard = 'S',
+   Weekly = 'W',
+};
+
+/// 股票類契約 的 現貨類別.
+/// E:ETF, S:個股.
+enum class ExgUnderlyingType {
+   ETF = 'E',
+   Stock = 'S',
 };
 
 //--------------------------------------------------------------------------//

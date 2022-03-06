@@ -64,9 +64,7 @@ struct TmpPA8 : public ExgProdIdL, public TmpP08Base {
 static_assert(sizeof(TmpP08Base) == 150, "struct TmpP08Base; must pack?");
 static_assert(sizeof(TmpP08) == 160, "struct TmpP08; must pack?");
 static_assert(sizeof(TmpPA8) == 170, "struct TmpPA8; must pack?");
-
 //--------------------------------------------------------------------------//
-
 struct P08Rec {
    using ShortId = fon9::CharAryL<sizeof(ExgProdIdS)>;
    using LongId = fon9::CharAryL<sizeof(ExgProdIdL)>;
@@ -93,10 +91,70 @@ struct P08Recs : public std::vector<P08Rec> {
       return this->GetP08(TmpGetValueU(pseq));
    }
 };
+//--------------------------------------------------------------------------//
+struct TmpP09Fields {
+   char              NameBig5_[30];
+   StkNo             stock_id_;
+   /// 契約類別: I:指數類 R:利率類 B:債券類 C:商品類 S:股票類 E:匯率類;
+   char              subtype_;
+   /// 契約乘數. 9(7)V9(4);
+   fon9::CharAry<11> contract_size_v4_;
+   /// 狀態碼 N：正常, P：暫停交易, U：即將上市;
+   char              status_code_;
+   /// 幣別: 台幣(1)、美元(2)、歐元(3)、日幣(4)、英鎊(5)、澳幣(6)、港幣(7)、人民幣(8)...;
+   char              currency_type_;
+   /// 選擇權商品代碼履約價格部份.
+   /// 股票類選擇權商品不適用此欄位，股票類選擇權商品代碼之履約價格小數位數請參考 P08/PA8 檔案.
+   fon9::CharAry<1>  strike_price_decimal_locator_;
+   /// 委託價格小數位數. 同 P08/PA8 商品價格小數位數.
+   fon9::CharAry<1>  decimal_locator_;
+   /// 是否可報價 Y:可報價, N:不可報價.
+   char              accept_quote_flag_;
+   /// 上市日期 日期格式為 YYYYMMDD 僅適用股票類契約.
+   fon9::CharAry<8>  begin_date_;
+   /// 是否可鉅額交易 Y:可, N:不可.
+   char              block_trade_flag_;
+   /// 到期別 S:標準 W:週.
+   char              expiry_type_;
+   /// 現貨類別 E:ETF, S:個股; 僅適用股票類契約.
+   char              underlying_type_;
+   /// 商品收盤時間群組
+   fon9::CharAry<2>  market_close_group_;
+   /// 一般交易時段：0, 盤後交易時段：1;
+   char              end_session_;
+};
+struct TmpP09Base : public TmpP09Fields {
+   fon9::CharAry<29> filler_;
+};
 
+struct ExgContractIdS {
+   using Id = ContractId;
+   Id  ContractId_{nullptr};
+};
+struct TmpP09 : public ExgContractIdS, public TmpP09Base {
+};
+
+// 目前不需要支援 PA9(Long ContractId).
+// 如果真要支援 Long ContractId 可以從 P08Rec 處理:
+// => Long  ContractId = P08Rec.LongId_ [0..7]
+//    Short ContractId = P08Rec.ShortId_[0..2]
+//    同一筆 P08Rec 必定參考同一個 Contract.
+// struct ExgContractIdL {
+//    using Id = fon9::CharAryF<8, char, ' '>;
+//    Id  ContractId_{nullptr};
+// };
+// struct TmpPA9 : public ExgContractIdL, public TmpP09Base {
+// };
+
+using P09Rec = TmpP09;
+using P09Recs = std::vector<P09Rec>;
+
+//--------------------------------------------------------------------------//
 /// 期交所提供給期貨商的一些基本資料對照表.
 /// - P06: BrkId <-> FcmId 對照.
 /// - P07: SocketId -> dn:Port 對照.
+/// - P08: 商品基本資料.
+/// - P09: 契約基本資料.
 class f9twf_API ExgMapMgr : public fon9::seed::FileImpMgr {
    fon9_NON_COPY_NON_MOVE(ExgMapMgr);
    using base = fon9::seed::FileImpMgr;
@@ -104,11 +162,13 @@ class f9twf_API ExgMapMgr : public fon9::seed::FileImpMgr {
    struct P06Loader;
    struct P07Loader;
    struct ImpSeedP08;
+   struct ImpSeedP09;
 
    struct MapsImpl {
       ExgMapBrkFcmId    MapBrkFcmId_;
       ExgMapSessionDn   MapSessionDn_[ExgSystemTypeCount()];
       P08Recs           MapP08Recs_[ExgSystemTypeCount()];
+      P09Recs           MapP09Recs_[ExgSystemTypeCount()];
    };
    using Maps = fon9::MustLock<MapsImpl>;
    Maps              Maps_;
@@ -123,6 +183,7 @@ protected:
    /// - 此時 lk 在鎖定狀態.
    /// - 預設 do nothing.
    virtual void OnP08Updated(const P08Recs& p08recs, ExgSystemType sysType, Maps::ConstLocker&& lk);
+   virtual void OnP09Updated(const P09Recs& p09recs, ExgSystemType sysType, Maps::ConstLocker&& lk);
    virtual void OnP06Updated(const ExgMapBrkFcmId& mapBrkFcmId, Maps::Locker&& lk);
 
 public:
@@ -142,7 +203,9 @@ public:
    }
    bool AppendDn(ExgSystemType sys, const ExgLineTmpArgs& lineArgs, std::string& devcfg) const;
 
-   void SetTDay(fon9::TimeStamp tday);
+   /// 初次啟動時, 必須在設定 TDay 之後, 才會根據排程載入 P08;
+   /// 每次設定 TDay: 會先清除全部的 P08Recs, 然後全部重新載入(包含 P06,P07,P08,P09...);
+   virtual void SetTDay(fon9::TimeStamp tday);
 
    using MapsConstLocker = Maps::ConstLocker;
    MapsConstLocker Lock() const {

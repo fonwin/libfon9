@@ -11,7 +11,6 @@ namespace f9twf {
 
 class f9twf_API ExgMdSymb;
 class f9twf_API ExgMdSymbsMgr;
-using ContractSize = fon9::Decimal<uint64_t, 4>;
 using SymbFlowGroup_t = fon9::fmkt::SymbFlowGroup_t;
 //--------------------------------------------------------------------------//
 class f9twf_API ExgMdContract {
