@@ -13,7 +13,7 @@ using SymbSeqNo_t = uint16_t;
 /// \ingroup fmkt
 /// 台灣期交所預設的商品基本資料.
 struct fon9_API SymbTwfBase {
-   /// 下市日期.
+   /// 下市日期(最後可交易日).
    uint32_t EndYYYYMMDD_{0};
 
    /// 交易所的價格欄位, 若沒有定義小數位, 則使用 PriceOrigDiv_ 來處理;

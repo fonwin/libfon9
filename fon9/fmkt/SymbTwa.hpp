@@ -18,6 +18,10 @@ public:
    using base::base;
    ~SymbTwa();
 
+   /// 使用 this->EndYYYYMMDD_ 及 this->TDayYYYYMMDD_ 判斷是否過期.
+   bool IsExpired() const {
+      return this->IsSymbExpired(this->EndYYYYMMDD_, this->TDayYYYYMMDD_);
+   }
    bool IsExpired(unsigned tdayYYYYMMDD) const override;
    void OnSymbDailyClear(SymbTree& tree, const Symb& symb) override;
    void OnSymbSessionClear(SymbTree& tree, const Symb& symb) override;
