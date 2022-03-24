@@ -309,12 +309,14 @@ void TwsSymbKindLvPriStep::Setup(StkNo stkno) {
       // 債券型ETN　　　　　　　　　 02000-02999+第六碼B
       // 槓桿型ETN　　　　　　　　　 02000-02999+第六碼L
       // 反向型ETN　　　　　　　　　 02000-02999+第六碼R
+      // 期權型ETN　　　　　　　　　 02000-02999+第六碼S
       this->LvPriSteps_ = LvPriSteps_ETF;
       switch (ch6) {
       default:    this->Kind_ = f9tws_SymbKind_ETN;      return;
       case 'B':   this->Kind_ = f9tws_SymbKind_ETN_B;    return;
       case 'L':   this->Kind_ = f9tws_SymbKind_ETN_L;    return;
       case 'R':   this->Kind_ = f9tws_SymbKind_ETN_I;    return;
+      case 'S':   this->Kind_ = f9tws_SymbKind_ETN_S;    return;
       }
    }
    // 註3：所訂之受益憑證(封閉式基金)、存託憑證(TDR)六碼編碼原則，適用於 98年12月15日以後新上市之證券，以前編定之證券代號仍以維持4碼為原則。

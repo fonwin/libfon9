@@ -52,6 +52,8 @@ fon9_ENUM(f9tws_SymbKind, uint8_t) {
    f9tws_SymbKind_ETN_L = 0x32,
    /// 反向型ETN
    f9tws_SymbKind_ETN_I = 0x33,
+   /// 期權型ETN
+   f9tws_SymbKind_ETN_S = 0x34,
 
    /// 不動產資產信託受益證券 / REAT / Real Estate Asset Trust.
    f9tws_SymbKind_REAT = 0x40,
