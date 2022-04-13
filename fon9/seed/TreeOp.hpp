@@ -407,11 +407,11 @@ void MakeGridViewRange(Iterator istart, Iterator ibeg, Iterator iend,
          lastLinePos = res.GridView_.size();
          BufferAppendTo(rbuf.MoveOut(), res.GridView_);
          ++res.RowCount_;
-         if (++istart == iend)
-            break;
          if (req.MaxRowCount_ > 0 && res.RowCount_ >= req.MaxRowCount_)
             break;
          if (req.MaxBufferSize_ > 0 && (res.GridView_.size() >= req.MaxBufferSize_))
+            break;
+         if (++istart == iend)
             break;
       }
       res.SetLastKey(lastLinePos);
@@ -494,16 +494,19 @@ void MakeGridViewArrayRange(Iterator istart, Iterator iend,
          lastLinePos = res.GridView_.size();
          BufferAppendTo(rbuf.MoveOut(), res.GridView_);
          ++res.RowCount_;
-         if (++istart == iend)
-            break;
          if (req.MaxRowCount_ > 0 && res.RowCount_ >= req.MaxRowCount_)
             break;
          if (req.MaxBufferSize_ > 0 && (res.GridView_.size() >= req.MaxBufferSize_))
             break;
+         if (++istart == iend)
+            break;
       }
       res.SetLastKey(lastLinePos);
+      res.DistanceEnd_ = (istart == iend) ? 1u : unsigned_cast(iend - istart);
    }
-   res.DistanceEnd_ = unsigned_cast(iend - istart);
+   else {
+      res.DistanceEnd_ = 0u;
+   }
 }
 
 //--------------------------------------------------------------------------//
