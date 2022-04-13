@@ -76,7 +76,7 @@ namespace fon9 { namespace seed {
 #define fon9_MakeField2_const(DerivedRaw, Member)  fon9_MakeField2_OfsAdj_const(0, DerivedRaw, Member)
 
 #define fon9_MakeField2_OfsAdj_const(ofsadj, DerivedRaw, Member) \
-   fon9_MakeField_OfsAdj_const(0, DerivedRaw, Member##_, #Member)
+   fon9_MakeField_OfsAdj_const(ofsadj, DerivedRaw, Member##_, #Member)
 
 /// 透過註冊擴充自訂型別的 Field.
 typedef FieldSP (*FnFieldMaker) (StrView& fldcfg, char chSpl, char chTail);
