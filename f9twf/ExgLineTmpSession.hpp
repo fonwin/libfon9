@@ -124,6 +124,14 @@ public:
       pktmp->MsgSeqNum_.Clear();
       this->SendTmpNoSeqNum(now, std::move(buf));
    }
+   /// 必須等 [回報回補] 完畢後, 才會進入 ApReady 狀態, 處理順序如下:
+   /// - 回報回補完畢.
+   /// - ApReady
+   /// - this->LineMgr_.OnSession_StateUpdated();
+   /// - this->OnExgTmp_ApReady();
+   bool IsApReady() const {
+      return(this->TmpSt_ == TmpSt::ApReady);
+   }
 };
 
 } // namespaces

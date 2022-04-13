@@ -5,6 +5,12 @@
 
 namespace f9twf {
 
+void TwfSymbRef_AddPriLmtFields(fon9::seed::Fields& flds, unsigned ifrom) {
+   for (; ifrom < TwfSymbRef_Data::kPriLmtCount; ++ifrom) {
+      flds.Add(fon9_MakeField(TwfSymbRef, Data_.PriLmts_[ifrom].Up_, fon9::RevPrintTo<std::string>("PriUpLmt", ifrom)));
+      flds.Add(fon9_MakeField(TwfSymbRef, Data_.PriLmts_[ifrom].Dn_, fon9::RevPrintTo<std::string>("PriDnLmt", ifrom)));
+   }
+}
 fon9::seed::Fields TwfSymbRef_MakeFields() {
    fon9::seed::Fields flds;
    flds.Add(fon9_MakeField(TwfSymbRef, Data_.PriRef_,         "PriRef"));
@@ -20,11 +26,7 @@ fon9::seed::Fields TwfSymbRef_MakeFields() {
    flds.Add(fon9_MakeField(TwfSymbRef, Data_.PPriClose_,      "PPriClose"));
    flds.Add(fon9_MakeField(TwfSymbRef, Data_.PQtyTotal_,      "PQtyTotal"));
    flds.Add(fon9_MakeField(TwfSymbRef, Data_.OpenInterest_,   "OpenInterest"));
-
-   for (unsigned L = 3; L < TwfSymbRef_Data::kPriLmtCount; ++L) {
-      flds.Add(fon9_MakeField(TwfSymbRef, Data_.PriLmts_[L].Up_, fon9::RevPrintTo<std::string>("PriUpLmt", L)));
-      flds.Add(fon9_MakeField(TwfSymbRef, Data_.PriLmts_[L].Dn_, fon9::RevPrintTo<std::string>("PriDnLmt", L)));
-   }
+   TwfSymbRef_AddPriLmtFields(flds, 3);
    return flds;
 }
 

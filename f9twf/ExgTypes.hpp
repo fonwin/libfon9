@@ -112,11 +112,18 @@ enum class ExgContractType : char {
    Bond = 'B',
    /// C:商品類.
    Commodity = 'C',
-   /// S:股票類.
-   Stock = 'S',
    /// E:匯率類.
    Currency = 'E',
+
+   /// S:股票類:一般(P09.subtype_=='S' && P09.underlying_type_=='S').
+   StockGen = 'S',
+   /// e:股票類:ETF(P09.subtype_=='S' && P09.underlying_type_=='E').
+   /// fon9 自訂, 若以後與期交所的 P09.subtype 衝突, 則需要調整.
+   StockETF = 'e',
 };
+static inline bool ExgContractType_IsStock(ExgContractType st) {
+   return(st == ExgContractType::StockGen || st == ExgContractType::StockETF);
+}
 
 /// 到期別: 標準 or 週;
 enum class ExgExpiryType : char {

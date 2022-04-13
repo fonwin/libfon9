@@ -5,27 +5,48 @@
 namespace f9twf {
 using namespace fon9::seed;
 
-fon9_WARN_DISABLE_PADDING;
-// 期交所相關檔案(P06,P07/PA7,P08,PA8...), 預設: 當檔案有異動時, 自動重新載入.
-class ExgMapMgr_ImpSeed : public FileImpSeed {
-   fon9_NON_COPY_NON_MOVE(ExgMapMgr_ImpSeed);
-   using base = FileImpSeed;
-
-public:
-   const ExgSystemType  ExgSystemType_{};
-
-   template <class... ArgsT>
-   ExgMapMgr_ImpSeed(ExgSystemType systemType, ArgsT&&... args)
-      : base(fon9::seed::FileImpMonitorFlag::Reload, std::forward<ArgsT>(args)...)
-      , ExgSystemType_{systemType} {
+f9twf_API void TwfSysImp_UnsafeSetDefaultSchCfg(ExgSystemType sysType, fon9::seed::FileImpSeed& imp) {
+   if (ExgSystemTypeIsAfterHour(sysType))
+      // 夜盤P08: 13:00-05:00(夜盤開始前..OMS換日前), 若有異動主動匯入.
+      imp.UnsafeSetSchCfgStr("Start=130000|End=050000");
+   else
+      // 日盤P08: 07:00-12:30(OMS換日後..夜盤開始前), 若有異動主動匯入.
+      imp.UnsafeSetSchCfgStr("Start=070000|End=123000");
+}
+//--------------------------------------------------------------------------//
+void ExgMapMgr::SetWaitingDescription(fon9::Named& impSeed, fon9::StrView cstrInfo, ExgSystemType sysType) {
+   const auto  cursz = impSeed.GetDescription().size();
+   const char* curmsg = impSeed.GetDescription().c_str();
+   if (cursz > cstrInfo.size() && memcmp(curmsg, cstrInfo.begin(), cstrInfo.size()) == 0) {
+      if (sysType == ExgSystemType{})
+         return;
+      if( curmsg[cursz - 2] == static_cast<char>('0' + fon9::cast_to_underlying(sysType) / 10)
+       && curmsg[cursz - 1] == static_cast<char>('0' + fon9::cast_to_underlying(sysType) % 10) )
+         return;
    }
-   ExgMapMgr& GetExgMapMgr() const {
-      return *static_cast<ExgMapMgr*>(&this->OwnerTree_.ConfigMgr_);
+   std::string info = cstrInfo.ToString();
+   if (sysType != ExgSystemType{}) {
+      info.push_back(static_cast<char>('0' + fon9::cast_to_underlying(sysType) / 10));
+      info.push_back(static_cast<char>('0' + fon9::cast_to_underlying(sysType) % 10));
    }
-   void OnAfterLoad(fon9::RevBuffer& rbufDesp, FileImpLoaderSP loader, FileImpMonitorFlag monFlag) override {
-      (void)rbufDesp; (void)loader; (void)monFlag;
+   impSeed.SetDescription(std::move(info));
+}
+//--------------------------------------------------------------------------//
+void ExgMapMgr::ImpSeedBase::OnAfterLoad(fon9::RevBuffer& rbufDesp, FileImpLoaderSP loader, FileImpMonitorFlag monFlag) {
+   (void)rbufDesp; (void)loader; (void)monFlag;
+}
+void ExgMapMgr::ImpSeedForceLoadSesNormal::ClearReload(ConfigLocker&& lk) {
+   this->SetDescription(std::string{});
+   base::ClearReload(std::move(lk));
+   if (this->GetMonitorFlag(lk) != FileImpMonitorFlag::Exclude // 有可能不載入 PA8;
+       && !ExgSystemTypeIsAfterHour(this->ExgSystemType_)) {
+      // 有些檔案是 [必要檔], 例如: 日盤P08, 即使是 OutSch, 在重啟時也要載入一次.
+      // 所以這裡設定強制載入.
+      this->SetForceLoadOnce(std::move(lk), true);
    }
-};
+}
+//--------------------------------------------------------------------------//
+using ExgMapMgr_ImpSeed = ExgMapMgr::ImpSeedBase;
 
 template <class Loader>
 struct ExgMapMgr_ImpSeedT : public ExgMapMgr_ImpSeed {
@@ -37,8 +58,6 @@ struct ExgMapMgr_ImpSeedT : public ExgMapMgr_ImpSeed {
       return new Loader(*this, addSize, monFlag);
    }
 };
-fon9_WARN_POP;
-//--------------------------------------------------------------------------//
 struct ExgMapMgr::P06Loader : public FileImpLoader {
    fon9_NON_COPY_NON_MOVE(P06Loader);
    ExgMapMgr_ImpSeed&   Owner_;
@@ -109,20 +128,18 @@ struct ExgMapMgr::P07Loader : public FileImpLoader {
    }
 };
 //--------------------------------------------------------------------------//
-struct ExgMapMgr::ImpSeedP08 : public ExgMapMgr_ImpSeed {
+struct ExgMapMgr::ImpSeedP08 : public ExgMapMgr::ImpSeedForceLoadSesNormal {
    fon9_NON_COPY_NON_MOVE(ImpSeedP08);
-   using base = ExgMapMgr_ImpSeed;
+   using base = ExgMapMgr::ImpSeedForceLoadSesNormal;
 
    template <class... ArgsT>
-   ImpSeedP08(ExgSystemType systemType, ArgsT&&... args)
-      : base(systemType, std::forward<ArgsT>(args)...) {
+   ImpSeedP08(ArgsT&&... args)
+      : base(std::forward<ArgsT>(args)...) {
+      this->Ctor();
+   }
+   void Ctor() {
       this->SetDescription("Waiting TDay");
-      if (ExgSystemTypeIsAfterHour(systemType))
-         // 夜盤P08: 13:00-05:00(夜盤開始前..OMS換日前), 若有異動主動匯入.
-         this->SetSchCfgStr("Start=130000|End=050000");
-      else
-         // 日盤P08: 07:00-12:30(OMS換日後..夜盤開始前), 若有異動主動匯入.
-         this->SetSchCfgStr("Start=070000|End=123000");
+      this->SetDefaultSchCfg();
    }
 
    struct Loader : public FileImpLoader {
@@ -191,25 +208,18 @@ struct ExgMapMgr::ImpSeedP08 : public ExgMapMgr_ImpSeed {
    };
    FileImpLoaderSP OnBeforeLoad(fon9::RevBuffer& rbufDesp, uint64_t addSize, FileImpMonitorFlag monFlag) override {
       if (monFlag == FileImpMonitorFlag::AddTail) {
-         fon9::RevPrint(rbufDesp, "|err=P08 not support AddTail.");
+         fon9::RevPrint(rbufDesp, "|err=", this->Name_, " not support AddTail.");
          return nullptr;
       }
+      return this->MakeLoader(addSize);
+   }
+   virtual FileImpLoaderSP MakeLoader(uint64_t addSize) {
       return new Loader(*this, addSize);
    }
-
    fon9::TimeInterval Reload(ConfigLocker&& lk, std::string fname, bool isClearAddTailRemain) override {
       if (!this->GetExgMapMgr().TDay_.IsNullOrZero())
          return base::Reload(std::move(lk), std::move(fname), isClearAddTailRemain);
       return fon9::TimeInterval_Second(1);
-   }
-   void ClearReload(ConfigLocker&& lk) override {
-      this->SetDescription(std::string{});
-      base::ClearReload(std::move(lk));
-      // 日盤P08: 即使是 SchOut 也要載入一次, 避免系統中沒有商品基本資料(價格小數位數), 無法正確處理價格.
-      // 夜盤P08: 避免有前日的殘留, 所以必須在 SchIn 才需要載入, 此時不用強制載入.
-      if (this->GetMonitorFlag(lk) != FileImpMonitorFlag::Exclude // 有可能不載入 PA8;
-          && !ExgSystemTypeIsAfterHour(this->ExgSystemType_))
-         this->SetForceLoadOnce(std::move(lk), true);
    }
 };
 //--------------------------------------------------------------------------//
@@ -252,11 +262,7 @@ struct ExgMapMgr::ImpSeedP09 : public ImpSeedP08 {
          this->P09Recs_->emplace_back(*reinterpret_cast<const TmpP09*>(pbuf));
       }
    };
-   FileImpLoaderSP OnBeforeLoad(fon9::RevBuffer& rbufDesp, uint64_t addSize, FileImpMonitorFlag monFlag) override {
-      if (monFlag == FileImpMonitorFlag::AddTail) {
-         fon9::RevPrint(rbufDesp, "|err=P09 not support AddTail.");
-         return nullptr;
-      }
+   FileImpLoaderSP MakeLoader(uint64_t addSize) override {
       return new Loader(*this, addSize);
    }
 };
@@ -268,11 +274,7 @@ FileImpTreeSP ExgMapMgr::MakeSapling(ExgMapMgr& rthis) {
    retval->Add(new ExgMapMgr_ImpSeedT<P06Loader>(ExgSystemType{}, *retval, "P06", "./tmpsave/P06"));
 
    // P07/PA7 二選一載入, 因為 PA7 包含 P07; 如果有需要使用備援的 dn, 則使用 PA7;
-   using P07LoaderSeed = ExgMapMgr_ImpSeedT<P07Loader>;
-   retval->Add(new P07LoaderSeed(ExgSystemType::OptNormal,    *retval, "P07_10", "./tmpsave/P07.10"));
-   retval->Add(new P07LoaderSeed(ExgSystemType::OptAfterHour, *retval, "P07_11", "./tmpsave/P07.11"));
-   retval->Add(new P07LoaderSeed(ExgSystemType::FutNormal,    *retval, "P07_20", "./tmpsave/P07.20"));
-   retval->Add(new P07LoaderSeed(ExgSystemType::FutAfterHour, *retval, "P07_21", "./tmpsave/P07.21"));
+   ExgMapMgr_AddImpSeed_S2FO(*retval, ExgMapMgr_ImpSeedT<P07Loader>, "P07");
 
    // -------------------------------------
    // 根據期交所文件(TCPIP_TMP_v2.11.0.pdf):
@@ -321,21 +323,56 @@ FileImpTreeSP ExgMapMgr::MakeSapling(ExgMapMgr& rthis) {
    // - 期交所行情也有用不同的 Multicast 群組,
    //   來播送「長Id」或「短Id」的行情.
    // -------------------------------------
-   #define AddImpSeed(impClass, fname, sysStr, sysName) \
-   retval->Add(new impClass(ExgSystemType::sysName##AfterHour, *retval, fname "_" sysStr "1", "./tmpsave/" fname "." sysStr "1")); \
-   retval->Add(new impClass(ExgSystemType::sysName##Normal,    *retval, fname "_" sysStr "0", "./tmpsave/" fname "." sysStr "0"))
+   ExgMapMgr_AddImpSeed_S2FO(*retval, ImpSeedP08, "P08");
+   ExgMapMgr_AddImpSeed_S2FO(*retval, ImpSeedP08, "PA8");
    // -------------------------
-   AddImpSeed(ImpSeedP08, "P08", "1", Opt);
-   AddImpSeed(ImpSeedP08, "PA8", "1", Opt);
-   AddImpSeed(ImpSeedP08, "P08", "2", Fut);
-   AddImpSeed(ImpSeedP08, "PA8", "2", Fut);
-   // -------------------------
-   AddImpSeed(ImpSeedP09, "P09", "1", Opt);
-   AddImpSeed(ImpSeedP09, "P09", "2", Fut);
-
+   ExgMapMgr_AddImpSeed_S2FO(*retval, ImpSeedP09, "P09");
    return retval;
 }
 //--------------------------------------------------------------------------//
+bool ExgMapMgr::IsP08Ready(ExgSystemType sys) const {
+   auto  maps = this->Lock();
+   auto& p08s = maps->MapP08Recs_[ExgSystemTypeToIndex(sys)];
+   return(!p08s.empty() && !p08s.UpdatedTimeS_.IsNullOrZero());
+}
+bool ExgMapMgr::IsP08Ready(ExgSystemType sys, const ConfigLocker& lk, fon9::seed::FileImpSeed& impSeed) const {
+   (void)lk; assert(lk.owns_lock());
+   if (this->IsP08Ready(sys))
+      return true;
+   SetWaitingDescription(impSeed, "Waiting P08_", sys);
+   return false;
+}
+bool ExgMapMgr::IsP09Ready(ExgSystemType sys) const {
+   auto maps = this->Lock();
+   if (sys != ExgSystemType{})
+      return !maps->MapP09Recs_[ExgSystemTypeToIndex(sys)].empty();
+   return !maps->MapP09Recs_[ExgSystemTypeToIndex(ExgSystemType::FutNormal)].empty()
+       && !maps->MapP09Recs_[ExgSystemTypeToIndex(ExgSystemType::OptNormal)].empty();
+}
+bool ExgMapMgr::IsP09Ready(ExgSystemType sys, const ConfigLocker& lk, fon9::seed::FileImpSeed& impSeed) const {
+   (void)lk; assert(lk.owns_lock());
+   if (this->IsP09Ready(sys))
+      return true;
+   SetWaitingDescription(impSeed, "Waiting P09_", sys);
+   return false;
+}
+bool ExgMapMgr::IsP13Ready(ExgSystemType sys, const ConfigLocker& lk, fon9::seed::FileImpSeed& impSeed) const {
+   (void)lk; assert(lk.owns_lock());
+   if (!(this->IsMainContractRefReadyBits_ & (1 << f9twf::ExgSystemTypeToIndex(sys)))) {
+      SetWaitingDescription(impSeed, "Waiting P13_", sys);
+      return false;
+   }
+   return true;
+}
+bool ExgMapMgr::IsMainContractRefReady(const ConfigLocker& lk, fon9::seed::FileImpSeed& impSeed) const {
+   (void)lk; assert(lk.owns_lock());
+   if (!(this->IsMainContractRefReadyBits_ & (1 << f9twf::ExgSystemTypeCount()))) {
+      SetWaitingDescription(impSeed, "Waiting ContractRef", ExgSystemType{});
+      return false;
+   }
+   return(this->IsP13Ready(f9twf::ExgSystemType::FutNormal, lk, impSeed)
+       && this->IsP13Ready(f9twf::ExgSystemType::OptNormal, lk, impSeed));
+}
 void ExgMapMgr::OnP08Updated(const P08Recs& p08recs, ExgSystemType sysType, Maps::ConstLocker&& lk) {
    (void)p08recs; (void)sysType; (void)lk;
 }
@@ -357,12 +394,17 @@ void ExgMapMgr::SetTDay(fon9::TimeStamp tday) {
       Maps::Locker maps{this->Maps_};
       for (auto& p08recs : maps->MapP08Recs_) {
          p08recs.clear();
-         p08recs.UpdatedTimeL_.Assign0();
-         p08recs.UpdatedTimeS_.Assign0();
+         p08recs.UpdatedTimeL_.AssignNull();
+         p08recs.UpdatedTimeS_.AssignNull();
+      }
+      for (auto& p09recs : maps->MapP09Recs_) {
+         p09recs.clear();
       }
       this->TDay_ = tday;
+      this->IsMainContractRefReadyBits_ = 0;
    }
    this->ClearReloadAll();
+   this->LoadAll("SetTDay", fon9::UtcNow());
 }
 
 } // namespaces

@@ -142,6 +142,9 @@ void FileImpTree::LoadAll(TimeStamp forChkSch) {
    }
 }
 //--------------------------------------------------------------------------//
+void FileImpSeed::Ctor() {
+   LastFileTime_SetAsWaitReload(this->LastFileTime_);
+}
 FileImpSeed::~FileImpSeed() {
 }
 LayoutSP FileImpSeed::MakeLayout(TabFlag tabFlag) {
@@ -304,7 +307,7 @@ void FileImpSeed::LoadFrom(ConfigLocker&& ulk, StrView fname, TimeStamp forChkSc
       // => 此時不載入.
       desc = "|Exclude";
    }
-   else if (forChkSch.IsNullOrZero() || this->IsInSch(forChkSch)) {
+   else if (forChkSch.IsNullOrZero() || this->IsInSch(forChkSch) || this->IsForceLoadOnce_) {
       this->Reload(std::move(ulk), std::move(strfn), true);
       assert(ulk.owns_lock());
    }

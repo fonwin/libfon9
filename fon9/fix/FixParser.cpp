@@ -128,7 +128,7 @@ FixParser::Result FixParser::ParseFields(StrView& fixmsg, Until until) {
             if (this->MFields_.size() < this->MIndexNext_)
                this->MFields_.resize(this->MIndexNext_ + kMaxDupFieldCount * 4u);
          }
-         pValue = &this->MFields_[fld.MIndex_ + (fld.ValueCount_ - 1)];
+         pValue = &this->MFields_[fld.MIndex_ + (fld.ValueCount_ - 1u)];
       }
 
       if (fon9_LIKELY(tag != f9fix_kTAG_RawData))

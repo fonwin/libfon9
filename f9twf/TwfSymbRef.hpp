@@ -27,6 +27,14 @@ struct TwfSymbRef_Data {
    struct PriLmt {
       fon9::fmkt::Pri   Up_{};
       fon9::fmkt::Pri   Dn_{};
+      PriLmt() {
+      }
+      PriLmt(fon9::fmkt::Pri up, fon9::fmkt::Pri dn) : Up_{up}, Dn_{dn} {
+      }
+      void Reset(fon9::fmkt::Pri up, fon9::fmkt::Pri dn) {
+         this->Up_ = up;
+         this->Dn_ = dn;
+      }
    };
    PriLmt   PriLmts_[kPriLmtCount];
    char     PaddingAfterPriLmts___[6];
@@ -53,6 +61,7 @@ struct TwfSymbRef_Data {
 using TwfSymbRef = fon9::fmkt::SimpleSymbData<TwfSymbRef_Data>;
 
 f9twf_API fon9::seed::Fields TwfSymbRef_MakeFields();
+f9twf_API void TwfSymbRef_AddPriLmtFields(fon9::seed::Fields& flds, unsigned ifrom);
 
 } // namespaces
 template class fon9::fmkt::SimpleSymbData<f9twf::TwfSymbRef_Data> f9twf_API;

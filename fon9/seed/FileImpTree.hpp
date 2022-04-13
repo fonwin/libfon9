@@ -19,8 +19,10 @@ struct fon9_API FileImpLoader : public intrusive_ref_counter<FileImpLoader> {
    /// 傳回 pbuf 的剩餘量.
    /// 預設: return this->ParseLine(pbuf, bufsz, isEOF);
    virtual size_t OnLoadBlock(char* pbuf, size_t bufsz, bool isEOF);
-
+   /// 使用換行字元('\n'), 呼叫 OnLoadLine() 時, 包含換行字元.
+   /// 若沒有換行字元, 即使 isEOF==true, 也不會呼叫 OnLoadLine();
    size_t ParseLine(char* pbuf, size_t bufsz, bool isEOF);
+   /// 使用固定大小(lnsz), 呼叫 OnLoadLine();
    size_t ParseBlock(char* pbuf, size_t bufsz, bool isEOF, size_t lnsz);
    /// 使用 ParseLine() 或 ParseBlock() 時, 每一行到此處理.
    virtual void OnLoadLine(char* pbuf, size_t bufsz, bool isEOF);
@@ -84,30 +86,18 @@ class fon9_API FileImpSeed : public MaConfigSeed {
    }
 
    bool IsInSch(TimeStamp tm);
+   void Ctor();
 
 protected:
-   void SetReloadCheck() {
-      this->LastFileSize_ = 0;
-   }
-
    /// 返回值: 建議下次檢查時間,
    /// 返回 TimeInterval{} 表示可以不用再檢查, 但是否會再次呼叫 Reload() 則視設定及操作而定.
    virtual TimeInterval Reload(ConfigLocker&& lk, std::string fname, bool isClearAddTailRemain);
-
-   /// ForceLoadOnce == true 表示暫時不考慮 Sch 的設定, 啟動計時器, 並強制載入一次.
-   /// - 預設為 false; 衍生者可在建構時(或其他適當時機), 將此旗標設為 true: 強制重載.
-   /// - 在每次 Reload() 時, 會清除此旗標: ForceLoadOnce = false;
-   void SetForceLoadOnce(ConfigLocker&& lk, bool v);
-
-   /// 通常在衍生者建構時提供預設值.
-   void SetSchCfgStr(const StrView& cfgstr) {
-      this->SchCfgStr_.AssignCfgStr(cfgstr);
-   }
 
 public:
    template <class... ArgsT>
    FileImpSeed(FileImpTree& owner, ArgsT&&... args)
       : base(owner, std::forward<ArgsT>(args)...) {
+      this->Ctor();
    }
    template <class... ArgsT>
    FileImpSeed(FileImpMonitorFlag defaultMonFlag, FileImpTree& owner, ArgsT&&... args)
@@ -117,12 +107,26 @@ public:
 
    ~FileImpSeed();
 
+   /// 通常在衍生者建構時提供預設值.
+   /// not thread safe.
+   void UnsafeSetSchCfgStr(const StrView& cfgstr) {
+      this->SchCfgStr_.AssignCfgStr(cfgstr);
+   }
+
    FileImpMonitorFlag GetMonitorFlag(const ConfigLocker& lk) const {
       auto cfg = this->GetConfigValue(lk);
       return cfg.empty() ? FileImpMonitorFlag::None : static_cast<FileImpMonitorFlag>(*cfg.begin());
    }
    bool IsForceLoadOnce() const {
       return this->IsForceLoadOnce_;
+   }
+   /// ForceLoadOnce == true 表示暫時不考慮 Sch 的設定, 啟動計時器, 並強制載入一次.
+   /// - 預設為 false; 衍生者可在建構時(或其他適當時機), 將此旗標設為 true: 強制重載.
+   /// - 在每次 Reload() 時, 會清除此旗標: ForceLoadOnce = false;
+   void SetForceLoadOnce(ConfigLocker&& lk, bool v);
+   /// 設定下次檢查時重新載入.
+   void SetReloadCheck() {
+      this->LastFileSize_ = 0;
    }
 
    /// 返回: 多久後再次檢查(建議值), TimeInterval{} 表示不用檢查.

@@ -31,6 +31,7 @@ struct PoDupLogonOnline : public intrusive_ref_counter<PoDupLogonOnline> {
    ~PoDupLogonOnline() {
       if (this->Client_->Online_)
          this->ForceLogout("Online.dtor");
+      // 20220331: 可能會發生, 在系統結束時, this->Client_ 提早死亡?!
    }
 
    void ForceLogout(StrView reason) {
