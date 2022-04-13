@@ -72,12 +72,12 @@ template <size_t arysz>
 inline FieldSPT<FieldChars> MakeField(Named&& named, int32_t ofs, const char(&)[arysz]) {
    return FieldSPT<FieldChars>{new FieldConst<FieldChars>{std::move(named), ofs, arysz}};
 }
-template <size_t arysz>
-inline FieldSPT<FieldChars> MakeField(Named&& named, int32_t ofs, CharAry<arysz, char>&) {
+template <size_t arysz, char kChFiller>
+inline FieldSPT<FieldChars> MakeField(Named&& named, int32_t ofs, CharAry<arysz, char, kChFiller>&) {
    return FieldSPT<FieldChars>{new FieldChars{std::move(named), ofs, arysz}};
 }
-template <size_t arysz>
-inline FieldSPT<FieldChars> MakeField(Named&& named, int32_t ofs, const CharAry<arysz, char>&) {
+template <size_t arysz, char kChFiller>
+inline FieldSPT<FieldChars> MakeField(Named&& named, int32_t ofs, const CharAry<arysz, char, kChFiller>&) {
    return FieldSPT<FieldChars>{new FieldConst<FieldChars>{std::move(named), ofs, arysz}};
 }
 
