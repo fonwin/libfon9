@@ -116,6 +116,10 @@ public:
    explicit ByteVector(const std::string& str) {
       this->CopyBytes(str.c_str(), str.size());
    }
+   ByteVector(const void* pbeg, const void* pend) {
+      assert(pbeg <= pend);
+      this->CopyBytes(pbeg, reinterpret_cast<uintptr_t>(pend) - reinterpret_cast<uintptr_t>(pbeg));
+   }
 
    ~ByteVector() {
       this->FreeBlob();

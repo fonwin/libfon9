@@ -14,6 +14,37 @@ struct LvPriStep {
    Pri   Step_;
 };
 
+class fon9_API LvPriStepVect {
+   fon9_NON_COPYABLE(LvPriStepVect);
+   LvPriStep*  Vect_;
+   void FreeThis();
+public:
+   LvPriStepVect() : Vect_{} {
+   }
+   LvPriStepVect(LvPriStepVect&& rhs) : Vect_{rhs.Vect_} {
+      rhs.Vect_ = nullptr;
+   }
+   LvPriStepVect& operator=(LvPriStepVect&& rhs) {
+      this->FreeThis();
+      this->Vect_ = rhs.Vect_;
+      rhs.Vect_ = nullptr;
+      return *this;
+   }
+   ~LvPriStepVect() {
+      this->FreeThis();
+   }
+   const LvPriStep* Get() const {
+      return this->Vect_;
+   }
+   void FromStr(fon9::StrView cfgs);
+};
+
+/// \ingroup fmkt
+/// \retval empty()  steps == nullptr
+/// \retval Step     steps->LvTop_ == Pri::max();
+/// \retval p1=t1|p2=t2|...|maxtick
+fon9_API CharVector LvPriStep_ToStr(const LvPriStep* steps);
+
 /// \ingroup fmkt
 /// 計算漲跌停價.
 /// - 若 pUpLmt != nullptr, 則 *pUpLmt 必須先填入最高價(或 Null), 例如: 台灣證交所應填入 10000,
