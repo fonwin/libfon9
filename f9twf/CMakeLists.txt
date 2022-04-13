@@ -13,6 +13,7 @@ set(f9twf_src
  ExgMdSymbs.cpp
  ExgMdContracts.cpp
  TwfSymbRef.cpp
+ TwfTickSize.cpp
 
  ExgMcReceiver.cpp
  ExgMcReceiverFactory.cpp

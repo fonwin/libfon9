@@ -122,6 +122,7 @@
     <ClInclude Include="..\..\..\f9twf\ExgTypes.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgTmpLinkSys.hpp" />
     <ClInclude Include="..\..\..\f9twf\ExgTmpTypes.hpp" />
+    <ClInclude Include="..\..\..\f9twf\TwfTickSize.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\f9twf\ExgLineTmpArgs.cpp" />
@@ -152,11 +153,15 @@
     <ClCompile Include="..\..\..\f9twf\ExgMrRecover.cpp" />
     <ClCompile Include="..\..\..\f9twf\ExgTradingLineMgr.cpp" />
     <ClCompile Include="..\..\..\f9twf\ExgTmpTypes.cpp" />
+    <ClCompile Include="..\..\..\f9twf\TwfTickSize.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\libfon9\libfon9.vcxproj">
       <Project>{6b9031a7-02e1-4171-8ca5-9f780be21806}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\f9twf\TwfTickSize.cfg" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -173,6 +173,9 @@
     <ClInclude Include="..\..\..\f9twf\ExgMcChannelTunnel.hpp">
       <Filter>Header Files\_MktData</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\f9twf\TwfTickSize.hpp">
+      <Filter>Header Files\_base</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\f9twf\ExgLineTmpArgs.cpp">
@@ -259,5 +262,11 @@
     <ClCompile Include="..\..\..\f9twf\ExgMcChannelTunnel.cpp">
       <Filter>Source Files\_MktData</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\f9twf\TwfTickSize.cpp">
+      <Filter>Source Files\_base</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\f9twf\TwfTickSize.cfg" />
   </ItemGroup>
 </Project>
