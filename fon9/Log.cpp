@@ -84,3 +84,14 @@ fon9_API void WaitLogFlush() {
 }
 
 }// namespace
+
+//--------------------------------------------------------------------------//
+#include "fon9/CTools.h"
+fon9_API void fon9_CAPI_CALL fon9_SetLogLevel(fon9_LogLevel lv) {
+   if (fon9::cast_to_underlying(lv) < fon9::cast_to_underlying(fon9::LogLevel::Count))
+      fon9::LogLevel_ = static_cast<fon9::LogLevel>(lv);
+}
+fon9_API fon9_LogLevel fon9_CAPI_CALL fon9_GetLogLevel(void) {
+   return static_cast<fon9_LogLevel>(fon9::LogLevel_);
+}
+//--------------------------------------------------------------------------//

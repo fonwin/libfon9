@@ -9,26 +9,9 @@ fon9_BEFORE_INCLUDE_STD;
 #ifdef fon9_WINDOWS
 #  include <Windows.h>
 #  include <thr/xtimec.h>
-inline void fon9_SleepMS(unsigned ms) {
-   Sleep(ms);
-}
-inline uint64_t fon9_GetSystemUS() {
-   #define DELTA_EPOCH_IN_USEC  11644473600000000ui64
-   FILETIME  ft;
-   GetSystemTimePreciseAsFileTime(&ft);
-   return((((uint64_t)(ft.dwHighDateTime) << 32) | ft.dwLowDateTime) + 5) / 10 - DELTA_EPOCH_IN_USEC;
-}
 #else // fon9_WINDOWS..else
 #  include <unistd.h>
 #  include <sys/time.h>
-static inline void fon9_SleepMS(useconds_t ms) {
-   usleep(ms * 1000);
-}
-static inline uint64_t fon9_GetSystemUS() {
-   struct timeval tv;
-   gettimeofday(&tv, (struct timezone*)NULL);
-   return (uint64_t)tv.tv_sec * (uint64_t)1000000 + (uint64_t)tv.tv_usec;
-}
 #endif
 fon9_AFTER_INCLUDE_STD;
 //--------------------------------------------------------------------------//
@@ -36,6 +19,27 @@ fon9_AFTER_INCLUDE_STD;
 extern "C" {
 #endif
 
+#ifdef fon9_WINDOWS
+static inline void fon9_SleepMS(unsigned ms) {
+   Sleep(ms);
+}
+static inline uint64_t fon9_GetSystemUS(void) {
+   #define DELTA_EPOCH_IN_USEC  11644473600000000ui64
+   FILETIME  ft;
+   GetSystemTimePreciseAsFileTime(&ft);
+   return((((uint64_t)(ft.dwHighDateTime) << 32) | ft.dwLowDateTime) + 5) / 10 - DELTA_EPOCH_IN_USEC;
+}
+#else // fon9_WINDOWS..else
+static inline void fon9_SleepMS(useconds_t ms) {
+   usleep(ms * 1000);
+}
+static inline uint64_t fon9_GetSystemUS(void) {
+   struct timeval tv;
+   gettimeofday(&tv, (struct timezone*)NULL);
+   return (uint64_t)tv.tv_sec * (uint64_t)1000000 + (uint64_t)tv.tv_usec;
+}
+#endif
+//--------------------------------------------------------------------------//
 /// \ingroup Misc
 /// 傳回 pbeg 字串中, 首個「!isspace()」或 EOS 的位置.
 extern fon9_API char* fon9_CAPI_CALL fon9_StrTrimHead(char* pbeg);
@@ -59,6 +63,29 @@ extern fon9_API const char* fon9_CAPI_CALL fon9_StrFetchNoTrim(
    const char* const pbeg,
    const char** ppend,
    const char* const delims);
+
+//--------------------------------------------------------------------------//
+/// 同 Log.hpp 裡面的 enum class LogLevel;
+/// 這裡寫個介面給 C API 使用.
+fon9_ENUM(fon9_LogLevel, uint8_t) {
+   /// 追蹤程式運行用的訊息.
+   fon9_LogLevel_Trace,
+   /// 抓蟲用的訊息.
+   fon9_LogLevel_Debug,
+   /// 一般資訊.
+   fon9_LogLevel_Info,
+   /// 重要訊息, 例如: thread start.
+   fon9_LogLevel_Important,
+   /// 警告訊息.
+   fon9_LogLevel_Warn,
+   /// 錯誤訊息.
+   fon9_LogLevel_Error,
+   /// 嚴重錯誤.
+   fon9_LogLevel_Fatal,
+};
+extern fon9_API void fon9_CAPI_CALL fon9_SetLogLevel(fon9_LogLevel lv);
+extern fon9_API fon9_LogLevel fon9_CAPI_CALL fon9_GetLogLevel(void);
+//--------------------------------------------------------------------------//
 
 #ifdef __cplusplus
 }// extern "C"
