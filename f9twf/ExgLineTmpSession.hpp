@@ -59,7 +59,7 @@ class f9twf_API ExgLineTmpSession : public fon9::io::Session {
       ApReady,
    };
    TmpSt TmpSt_{};
-   char  Padding___[2];
+   char  Padding___[1];
 
    void CheckApBroken(TmpSt st);
    void AsyncClose(std::string cause);
@@ -82,6 +82,8 @@ protected:
    virtual void OnExgTmp_ApPacket(const TmpHeader& pktmp) = 0;
 
 public:
+   /// 是否為可送出下單要求的線路?
+   const bool                    IsTradingLine_;
    const f9twf::TmpSessionId_t   OutPvcId_;
    ExgTradingLineMgr&            LineMgr_;
    const ExgLineTmpArgs          LineArgs_;
@@ -89,8 +91,10 @@ public:
    /// log 必須已開啟成功, 否則會直接 crash!
    ExgLineTmpSession(ExgTradingLineMgr&    lineMgr,
                      const ExgLineTmpArgs& lineArgs,
-                     ExgLineTmpLog&&       log)
+                     ExgLineTmpLog&&       log,
+                     bool                  isTradingLine)
       : Log_(std::move(log))
+      , IsTradingLine_{isTradingLine}
       , OutPvcId_{f9twf::TmpGetValueU(lineArgs.SessionId_)}
       , LineMgr_(lineMgr)
       , LineArgs_(lineArgs) {
