@@ -179,11 +179,19 @@ class f9twf_API ExgMapMgr : public fon9::seed::FileImpMgr {
    Maps              Maps_;
    fon9::TimeStamp   TDay_;
    uint8_t           IsMainContractRefReadyBits_;
-   char              Padding_______[7];
+   /// 因為 P09 有幣別設定, 但只有在 [程式需要處理幣別時] 才需要等候: 幣別設定完成.
+   /// 通常在衍生者建構時提供, 預設為 false = 不需要幣別設定.
+   bool              IsNeedsCurrencyConfig_{false};
+   bool              IsCurrencyConfigReady_;
+   char              Padding_______[5];
 
    static fon9::seed::FileImpTreeSP MakeSapling(ExgMapMgr& rthis);
 
 protected:
+   void SetNeedsCurrencyConfig(bool val) {
+      this->IsNeedsCurrencyConfig_ = val;
+   }
+
    using MapsLocker = Maps::Locker;
    /// 當 P08 載入後的通知.
    /// - 載入後立即通知, 可能僅有 LongId_ 或 ShortId_ 或兩者都有.
@@ -252,6 +260,16 @@ public:
    void SetP13Ready(f9twf::ExgSystemType sys) {
       this->IsMainContractRefReadyBits_ = static_cast<uint8_t>(this->IsMainContractRefReadyBits_ | (1 << f9twf::ExgSystemTypeToIndex(sys)));
    }
+
+   void SetCurrencyConfigReady() {
+      this->IsCurrencyConfigReady_ = true;
+   }
+   /// 檢查是否需要 CurrencyConfig 且已經 Ready?
+   /// 如果 !this->IsNeedsCurrencyConfig_ 返回 true;
+   /// 如果 this->IsCurrencyConfigReady_  返回 true;
+   /// 當 (this->IsNeedsCurrencyConfig_ && !this->IsCurrencyConfigReady_); 返回 false;
+   /// 匯入 P09 時, 要檢查.
+   bool IsCurrencyConfigNeedlessOrReady(const ConfigLocker& lk, fon9::seed::FileImpSeed& impSeed) const;
 
    // 期交所相關檔案(P06,P07/PA7,P08,PA8...), 預設: 當檔案有異動時, 自動重新載入.
    class f9twf_API ImpSeedBase : public fon9::seed::FileImpSeed {

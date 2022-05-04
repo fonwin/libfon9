@@ -265,6 +265,11 @@ struct ExgMapMgr::ImpSeedP09 : public ImpSeedP08 {
    FileImpLoaderSP MakeLoader(uint64_t addSize) override {
       return new Loader(*this, addSize);
    }
+   fon9::TimeInterval Reload(ConfigLocker&& lk, std::string fname, bool isClearAddTailRemain) override {
+      if (this->GetExgMapMgr().IsCurrencyConfigNeedlessOrReady(lk, *this))
+         return base::Reload(std::move(lk), std::move(fname), isClearAddTailRemain);
+      return fon9::TimeInterval_Second(1);
+   }
 };
 //--------------------------------------------------------------------------//
 FileImpTreeSP ExgMapMgr::MakeSapling(ExgMapMgr& rthis) {
@@ -373,6 +378,16 @@ bool ExgMapMgr::IsMainContractRefReady(const ConfigLocker& lk, fon9::seed::FileI
    return(this->IsP13Ready(f9twf::ExgSystemType::FutNormal, lk, impSeed)
        && this->IsP13Ready(f9twf::ExgSystemType::OptNormal, lk, impSeed));
 }
+bool ExgMapMgr::IsCurrencyConfigNeedlessOrReady(const ConfigLocker& lk, fon9::seed::FileImpSeed& impSeed) const {
+   (void)lk; assert(lk.owns_lock());
+   if (this->IsNeedsCurrencyConfig_) {
+      if (!this->IsCurrencyConfigReady_) {
+         SetWaitingDescription(impSeed, "Waiting CurrencyConfig", ExgSystemType{});
+         return false;
+      }
+   }
+   return true;
+}
 void ExgMapMgr::OnP08Updated(const P08Recs& p08recs, ExgSystemType sysType, Maps::ConstLocker&& lk) {
    (void)p08recs; (void)sysType; (void)lk;
 }
@@ -402,6 +417,7 @@ void ExgMapMgr::SetTDay(fon9::TimeStamp tday) {
       }
       this->TDay_ = tday;
       this->IsMainContractRefReadyBits_ = 0;
+      this->IsCurrencyConfigReady_ = false;
    }
    this->ClearReloadAll();
    this->LoadAll("SetTDay", fon9::UtcNow());
