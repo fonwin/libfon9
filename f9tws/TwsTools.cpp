@@ -188,16 +188,23 @@ void TwsSymbKindLvPriStep::Setup(StkNo stkno) {
          this->Kind_ = f9tws_SymbKind_Stock;
          return;
       }
-      // 一般特別股　　　　　　　　　　　股票 + 第五碼A~W
-      if ('A' <= ch5 && ch5 <= 'W') {
+      // 一般特別股　　　　　　　　　　　股票 + 第五碼A~Y(2022/06/06改,原為A~W)
+      if ('A' <= ch5 && ch5 <= 'Y') {
          this->Kind_ = f9tws_SymbKind_PS;
          return;
       }
+      // 2022/06/06 刪除 [可轉換公司債.換股權利證書], 新增[可交換特別股];
       // 換股權利證書　　　　　　　　　　股票 + 第五碼X~Z
-      if ('X' <= ch5 && ch5 <= 'Z') {
-         this->Kind_ = f9tws_SymbKind_EC;
+      // if ('X' <= ch5 && ch5 <= 'Z') {
+      //    this->Kind_ = f9tws_SymbKind_EC;
+      //    return;
+      // }
+      // 可交換特別股                  股票 + 第五碼Z   + 第六碼1-9
+      if (ch5 == 'Z' && ('1' <= ch6 && ch6 <= '9')) {
+         this->Kind_ = f9tws_SymbKind_EPS;
          return;
       }
+
       // 交換公司債及交換金融債　　　　　股票 + 第五碼0   + 第六碼1~9
       if (ch5 == '0' && ('1' <= ch6 && ch6 <= '9')) {
          this->LvPriSteps_ = LvPriSteps_CoBonds; // ???

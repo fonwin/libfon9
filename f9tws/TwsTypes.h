@@ -21,6 +21,8 @@ fon9_ENUM(f9tws_SymbKind, uint8_t) {
    f9tws_SymbKind_PSW = 0x04,
    /// 受益憑證(封閉式基金) / Beneficiary certificate (Close-end funds).
    f9tws_SymbKind_BC = 0x05,
+   /// 可交換特別股 / Exchangeable preferred stock.
+   f9tws_SymbKind_EPS = 0x06,
 
    /// ETF.
    f9tws_SymbKind_ETF = 0x10,
