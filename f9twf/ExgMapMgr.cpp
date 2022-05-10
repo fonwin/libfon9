@@ -150,8 +150,8 @@ struct ExgMapMgr::ImpSeedP08 : public ExgMapMgr::ImpSeedForceLoadSesNormal {
       fon9::TimeStamp   UpdatedTime_;
 
       Loader(ImpSeedP08& owner, size_t addSize)
-         : Owner_{owner}
-         , IdSize_{owner.Name_[1] == 'A' ? sizeof(ExgProdIdL) : sizeof(ExgProdIdS)}
+         : Owner_{owner}   // owner.Name_ = "0_PA8_XY" or "0_P08_XY"
+         , IdSize_{owner.Name_[owner.Name_.size()-5] == 'A' ? sizeof(ExgProdIdL) : sizeof(ExgProdIdS)}
          , UpdatedTime_{owner.LastFileTime()} {
          size_t       rsz = addSize / (this->IdSize_ + sizeof(TmpP08Base)) + 1;
          Maps::Locker maps{this->Owner_.GetExgMapMgr().Maps_};
@@ -237,10 +237,10 @@ struct ExgMapMgr::ImpSeedP09 : public ImpSeedP08 {
    
       Loader(ImpSeedP09& owner, size_t addSize)
          : Owner_{owner}
-         , IdSize_{// owner.Name_[1] == 'A' ? sizeof(ExgContractIdL::Id) : 
+         , IdSize_{// owner.Name_[owner.Name_.size() - 5] == 'A' ? sizeof(ExgContractIdL::Id) : 
                    sizeof(ExgContractIdS::Id)}
          , UpdatedTime_{owner.LastFileTime()} {
-         assert(owner.Name_[1] == '0'); // 僅支援 P09, 不支援 PA9;
+         assert(owner.Name_[owner.Name_.size() - 5] == '0'); // 僅支援 P09_XY, 不支援 PA9_XY;
          size_t       rsz = addSize / (this->IdSize_ + sizeof(TmpP09Base)) + 1;
          Maps::Locker maps{this->Owner_.GetExgMapMgr().Maps_};
          this->P09Recs_ = &maps->MapP09Recs_[ExgSystemTypeToIndex(this->Owner_.ExgSystemType_)];
@@ -276,10 +276,10 @@ FileImpTreeSP ExgMapMgr::MakeSapling(ExgMapMgr& rthis) {
    using namespace fon9::seed;
    FileImpTreeSP retval{new FileImpTree{rthis}};
 
-   retval->Add(new ExgMapMgr_ImpSeedT<P06Loader>(ExgSystemType{}, *retval, "P06", "./tmpsave/P06"));
+   retval->Add(new ExgMapMgr_ImpSeedT<P06Loader>(ExgSystemType{}, *retval, "0_P06", "./tmpsave/P06"));
 
    // P07/PA7 二選一載入, 因為 PA7 包含 P07; 如果有需要使用備援的 dn, 則使用 PA7;
-   ExgMapMgr_AddImpSeed_S2FO(*retval, ExgMapMgr_ImpSeedT<P07Loader>, "P07");
+   ExgMapMgr_AddImpSeed_S2FO(*retval, ExgMapMgr_ImpSeedT<P07Loader>, "0_", "P07");
 
    // -------------------------------------
    // 根據期交所文件(TCPIP_TMP_v2.11.0.pdf):
@@ -328,10 +328,10 @@ FileImpTreeSP ExgMapMgr::MakeSapling(ExgMapMgr& rthis) {
    // - 期交所行情也有用不同的 Multicast 群組,
    //   來播送「長Id」或「短Id」的行情.
    // -------------------------------------
-   ExgMapMgr_AddImpSeed_S2FO(*retval, ImpSeedP08, "P08");
-   ExgMapMgr_AddImpSeed_S2FO(*retval, ImpSeedP08, "PA8");
+   ExgMapMgr_AddImpSeed_S2FO(*retval, ImpSeedP08, "0_", "P08");
+   ExgMapMgr_AddImpSeed_S2FO(*retval, ImpSeedP08, "0_", "PA8");
    // -------------------------
-   ExgMapMgr_AddImpSeed_S2FO(*retval, ImpSeedP09, "P09");
+   ExgMapMgr_AddImpSeed_S2FO(*retval, ImpSeedP09, "0_", "P09");
    return retval;
 }
 //--------------------------------------------------------------------------//

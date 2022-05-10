@@ -321,20 +321,22 @@ public:
    };
 
    // -------------------------
-   #define ExgMapMgr_AddImpSeed_SNormal(configTree, impClass, fname, sysStr, sysName) \
-      (configTree).Add(new impClass(f9twf::ExgSystemType::sysName##Normal,    configTree, fname "_" sysStr "0", "./tmpsave/" fname "." sysStr "0"));
+   // priority = "0_" 系統優先載入(P08, P09...).
+   // priority = ""   fname 不可為數字開頭, 一般優先權.
+   #define ExgMapMgr_AddImpSeed_SNormal(configTree, impClass, priority, fname, sysStr, sysName) \
+      (configTree).Add(new impClass(f9twf::ExgSystemType::sysName##Normal,    configTree, priority fname "_" sysStr "0", "./tmpsave/" fname "." sysStr "0"));
    // -----
-   #define ExgMapMgr_AddImpSeed_S2(configTree, impClass, fname, sysStr, sysName) \
-      ExgMapMgr_AddImpSeed_SNormal(configTree, impClass, fname, sysStr, sysName);   \
-      (configTree).Add(new impClass(f9twf::ExgSystemType::sysName##AfterHour, configTree, fname "_" sysStr "1", "./tmpsave/" fname "." sysStr "1"));
+   #define ExgMapMgr_AddImpSeed_S2(configTree, impClass, priority, fname, sysStr, sysName) \
+      ExgMapMgr_AddImpSeed_SNormal(configTree, impClass, priority, fname, sysStr, sysName);   \
+      (configTree).Add(new impClass(f9twf::ExgSystemType::sysName##AfterHour, configTree, priority fname "_" sysStr "1", "./tmpsave/" fname "." sysStr "1"));
    // -----
-   #define ExgMapMgr_AddImpSeed_S2FO(configTree, impClass, fname)     \
-      ExgMapMgr_AddImpSeed_S2(configTree, impClass, fname, "1", Opt); \
-      ExgMapMgr_AddImpSeed_S2(configTree, impClass, fname, "2", Fut);
+   #define ExgMapMgr_AddImpSeed_S2FO(configTree, impClass, priority, fname)     \
+      ExgMapMgr_AddImpSeed_S2(configTree, impClass, priority, fname, "1", Opt); \
+      ExgMapMgr_AddImpSeed_S2(configTree, impClass, priority, fname, "2", Fut);
    // -----
-   #define ExgMapMgr_AddImpSeed_FO(configTree, impClass, fname)            \
-      ExgMapMgr_AddImpSeed_SNormal(configTree, impClass, fname, "1", Opt); \
-      ExgMapMgr_AddImpSeed_SNormal(configTree, impClass, fname, "2", Fut);
+   #define ExgMapMgr_AddImpSeed_FO(configTree, impClass, priority, fname)            \
+      ExgMapMgr_AddImpSeed_SNormal(configTree, impClass, priority, fname, "1", Opt); \
+      ExgMapMgr_AddImpSeed_SNormal(configTree, impClass, priority, fname, "2", Fut);
    // -------------------------
 };
 using ExgMapMgrSP = fon9::intrusive_ptr<ExgMapMgr>;
