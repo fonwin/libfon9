@@ -336,8 +336,11 @@ void Device::EmitOnCommonTimer(TimerEntry* timer, TimeStamp now) {
       break;
    case StateTimerAct::Reopen:
       rthis.OpQueue_.AddTask(DeviceAsyncOp{[](Device& dev) {
-         if(GetStateTimerAct(dev.Options_, dev.State_) == StateTimerAct::Reopen)
-            dev.OpImpl_Reopen();
+         if (GetStateTimerAct(dev.Options_, dev.State_) == StateTimerAct::Reopen) {
+            // dev.OpImpl_Reopen(); 20220516: 使用 OpThr_Open(dev, std::string{}) 來執行 Reopen;
+            // 讓 dev.Session_->OnDevice_BeforeOpen(); 在 reopen 時, 也有機會執行.
+            OpThr_Open(dev, std::string{});
+         }
       }});
       break;
    case StateTimerAct::ToDerived:
