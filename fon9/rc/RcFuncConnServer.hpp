@@ -58,15 +58,16 @@ public:
 /// \endcode
 class fon9_API RcServerNote_SaslAuth : public RcFunctionNote, public auth::PoDupLogonClient {
    fon9_NON_COPY_NON_MOVE(RcServerNote_SaslAuth);
-protected:
+
    unsigned PoDupLogonClient_AddRef() const override;
    unsigned PoDupLogonClient_Release() const override;
    void PoDupLogonClient_ForceLogout(StrView reason) override;
-
-   RcSession&          RcSession_;
-   auth::AuthRequest   AuthRequest_;
-   auth::AuthSessionSP AuthSession_;
+   RcSession&                    RcSession_;
+   auth::AuthRequest             AuthRequest_;
+   auth::AuthSessionSP           AuthSession_;
    const auth::PoDupLogonAgentSP OnlineMgr_;
+   mutable std::atomic_int       OnlineUsingCount_{0};
+   char                          Padding____[4];
    friend class RcFuncSaslServer;
    void OnAuthVerifyCB(auth::AuthR rcode, auth::AuthSessionSP authSession);
 
@@ -79,6 +80,7 @@ public:
    ~RcServerNote_SaslAuth();
 
    void OnRecvFunctionCall(RcSession& ses, RcFunctionParam& param) override;
+   void RcFunctionNote_FreeThis() override;
 
    const auth::AuthResult& GetAuthResult() const {
       return this->AuthSession_->GetAuthResult();

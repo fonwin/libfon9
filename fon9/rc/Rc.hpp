@@ -152,6 +152,9 @@ public:
    /// 當 RcSession 有對應的 Note, 則會直接進行呼叫, 不會檢查 RcFunctionAgent::SessionStRequired_,
    /// 也 **不會** 再呼叫 RcFunctionAgent::OnRecvFunctionCall();
    virtual void OnRecvFunctionCall(RcSession& ses, RcFunctionParam& param) = 0;
+   /// 呼叫時機: 當從 RcSession 移除時, 例: ~RcSession(), RcSession::ResetNote();
+   /// 預設為 delete this;
+   virtual void RcFunctionNote_FreeThis();
 };
 using RcFunctionNoteSP = std::unique_ptr<RcFunctionNote>;
 

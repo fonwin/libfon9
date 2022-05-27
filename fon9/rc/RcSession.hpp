@@ -173,7 +173,27 @@ private:
    ProtocolParamRemote  RemoteParam_;
    ProtocolParam        LocalParam_;
 
-   using Notes = std::array<RcFunctionNoteSP, f9rc_FunctionCode_Count>;
+   struct RcFuncNoteSP {
+      fon9_NON_COPY_NON_MOVE(RcFuncNoteSP);
+      RcFunctionNote* Ptr_;
+      RcFuncNoteSP(RcFunctionNoteSP&& px) : Ptr_{px.release()} {}
+      RcFuncNoteSP() : Ptr_{nullptr} {}
+      ~RcFuncNoteSP() { this->FreePtr(); }
+      void FreePtr() {
+         if (this->Ptr_) {
+            this->Ptr_->RcFunctionNote_FreeThis();
+            this->Ptr_ = nullptr;
+         }
+      }
+      void operator=(RcFunctionNoteSP&& px) {
+         this->FreePtr();
+         this->Ptr_ = px.release();
+      }
+      RcFunctionNote* get() const {
+         return this->Ptr_;
+      }
+   };
+   using Notes = std::array<RcFuncNoteSP, f9rc_FunctionCode_Count>;
    Notes Notes_;
 };
 

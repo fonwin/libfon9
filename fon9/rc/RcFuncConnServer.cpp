@@ -41,10 +41,15 @@ RcServerNote_SaslAuth::RcServerNote_SaslAuth(RcSession& ses, auth::AuthMgr& auth
 RcServerNote_SaslAuth::~RcServerNote_SaslAuth() {
 }
 unsigned RcServerNote_SaslAuth::PoDupLogonClient_AddRef() const {
-   return intrusive_ptr_add_ref(&this->RcSession_);
+   intrusive_ptr_add_ref(&this->RcSession_);
+   return thread_safe_counter::increment(this->OnlineUsingCount_);
 }
 unsigned RcServerNote_SaslAuth::PoDupLogonClient_Release() const {
-   return intrusive_ptr_release(&this->RcSession_);
+   intrusive_ptr_release(&this->RcSession_);
+   if (unsigned int res = thread_safe_counter::decrement(this->OnlineUsingCount_))
+      return res;
+   delete this;
+   return 0;
 }
 void RcServerNote_SaslAuth::PoDupLogonClient_ForceLogout(StrView reason) {
    this->RcSession_.ForceLogout(reason.ToString());
@@ -79,6 +84,9 @@ void RcServerNote_SaslAuth::OnRecvFunctionCall(RcSession& ses, RcFunctionParam& 
       this->VerifyRequest();
    }
 }
+void RcServerNote_SaslAuth::RcFunctionNote_FreeThis() {
+   this->PoDupLogonClient_Release();
+}
 //--------------------------------------------------------------------------//
 void RcFuncSaslServer::OnRecvFunctionCall(RcSession& ses, RcFunctionParam& param) {
    CharVector  mechName;
@@ -94,6 +102,7 @@ void RcFuncSaslServer::OnRecvFunctionCall(RcSession& ses, RcFunctionParam& param
    if (!note->AuthSession_)
       ses.ForceLogout("SASL mech not found.");
    else {
+      note->PoDupLogonClient_AddRef();
       ses.ResetNote(f9rc_FunctionCode_SASL, std::move(noteSP));
       note->VerifyRequest();
    }

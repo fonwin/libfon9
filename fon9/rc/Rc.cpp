@@ -100,5 +100,8 @@ void RcFunctionAgent::OnRecvFunctionCall(RcSession& ses, RcFunctionParam& param)
 //--------------------------------------------------------------------------//
 RcFunctionNote::~RcFunctionNote() {
 }
+void RcFunctionNote::RcFunctionNote_FreeThis() {
+   delete this;
+}
 
 } } // namespace
