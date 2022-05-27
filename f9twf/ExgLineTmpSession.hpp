@@ -59,7 +59,7 @@ class f9twf_API ExgLineTmpSession : public fon9::io::Session {
       ApReady,
    };
    TmpSt TmpSt_{};
-   char  Padding___[1];
+   bool  HasTaiFexDN_{};
 
    void CheckApBroken(TmpSt st);
    void AsyncClose(std::string cause);

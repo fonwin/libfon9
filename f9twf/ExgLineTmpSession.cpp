@@ -48,38 +48,44 @@ bool ExgLineTmpSession::OnDevice_BeforeOpen(fon9::io::Device& dev, std::string& 
    else { // 保留參數, 提供 reopen 使用.
       this->DevOpenArgs_ = cfgstr;
    }
-   if (this->LineMgr_.AppendDn(this->LineArgs_, cfgstr)) {
+   this->HasTaiFexDN_ = this->LineMgr_.AppendDn(this->LineArgs_, cfgstr);
+   if (this->HasTaiFexDN_) {
       this->LineMgr_.OnSession_StateUpdated(dev, &cfgstr, fon9::LogLevel::Info);
       return true;
    }
-   fon9::StrView                 cfgs{&cfgstr};
-   fon9::io::SocketClientConfig  clicfg;
-   clicfg.SetDefaults();
-   struct Parser : public fon9::io::SocketClientConfig::Parser {
-      fon9_NON_COPY_NON_MOVE(Parser);
-      using base = fon9::io::SocketClientConfig::Parser;
-      using base::base;
-      bool OnErrorBreak(ErrorEventArgs& e) {
-         // 不認識的 Tag: 可能是 Device.Options, 所以視為成功.
-         return e.Result_ != Result::EUnknownTag;
-      }
-   };
-   Parser{clicfg}.Parse(cfgs);
-   if (!clicfg.AddrRemote_.IsUnspec() || !clicfg.DomainNames_.empty())
-      return true;
-   this->LineMgr_.OnSession_StateUpdated(dev, "dn not found(P06 or P07 error)", fon9::LogLevel::Error);
-   if (dev.OpImpl_GetState() == fon9::io::State::Initialized) {
-      // 可能是 this->IoManager_.ExgMapMgr_ 的 P06、P07 尚未載入.
-      // 所以稍等一會兒之後再試一次.
-      dev.CommonTimerRunAfter(fon9::TimeInterval_Second(1));
-   }
-   return false;
+   // 改成在 ExgLineTmpSession::OnDevice_StateChanged():
+   // 當有 ConfigError 時, 關閉 dev, 透過 ClosedReopenInterval_ 重新開啟;
+   return true;
+   // fon9::StrView                 cfgs{&cfgstr};
+   // fon9::io::SocketClientConfig  clicfg;
+   // clicfg.SetDefaults();
+   // struct Parser : public fon9::io::SocketClientConfig::Parser {
+   //    fon9_NON_COPY_NON_MOVE(Parser);
+   //    using base = fon9::io::SocketClientConfig::Parser;
+   //    using base::base;
+   //    bool OnErrorBreak(ErrorEventArgs& e) {
+   //       // 不認識的 Tag: 可能是 Device.Options, 所以視為成功.
+   //       return e.Result_ != Result::EUnknownTag;
+   //    }
+   // };
+   // Parser{clicfg}.Parse(cfgs);
+   // if (!clicfg.AddrRemote_.IsUnspec() || !clicfg.DomainNames_.empty())
+   //    return true;
+   // this->LineMgr_.OnSession_StateUpdated(dev, "dn not found(P06 or P07 error)", fon9::LogLevel::Error);
+   // if (dev.OpImpl_GetState() == fon9::io::State::Initialized) {
+   //    // 可能是 this->IoManager_.ExgMapMgr_ 的 P06、P07 尚未載入.
+   //    // 所以稍等一會兒之後再試一次.
+   //    dev.CommonTimerRunAfter(fon9::TimeInterval_Second(1));
+   // }
+   // return false;
 }
 void ExgLineTmpSession::OnDevice_StateChanged(fon9::io::Device& dev, const fon9::io::StateChangedArgs& e) {
    (void)dev;
    this->WriteLogLinkSt(e.After_);
    if (e.BeforeState_ == fon9::io::State::LinkReady)
       this->CheckApBroken(TmpSt::ApBroken);
+   else if (e.After_.State_ == fon9::io::State::ConfigError)
+      this->AsyncClose("Error: config or P06 or P07"); // 關閉後重新設定 & 開啟.
 }
 void ExgLineTmpSession::OnDevice_StateUpdated(fon9::io::Device& dev, const fon9::io::StateUpdatedArgs& e) {
    (void)dev;
