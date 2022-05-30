@@ -66,12 +66,12 @@ static void McI084SSParserO(ExgMcMessage& e) {
    }
 }
 
-static void McI084SSParserP(ExgMcMessage& e) {
-   auto&    pk         = static_cast<const ExgMcI084*>(&e.Pk_)->_P_ProductStatus_;
-   auto     mdTime     = e.Pk_.InformationTime_.ToDayTime();
-   unsigned prodCount  = fon9::PackBcdTo<unsigned>(pk.NoEntries_);
-   auto*    prodEntry  = pk.Entry_;
-   auto*    symbs      = e.Channel_.GetChannelMgr()->Symbs_.get();
+template <class Pk>
+static void McI084SSParserP(ExgMcMessage& e, const Pk& pk) {
+   auto     mdTime    = e.Pk_.InformationTime_.ToDayTime();
+   unsigned prodCount = fon9::PackBcdTo<unsigned>(pk.NoEntries_);
+   auto*    prodEntry = pk.Entry_;
+   auto*    symbs     = e.Channel_.GetChannelMgr()->Symbs_.get();
 
    struct LvLmtParser {
       fon9_NON_COPY_NON_MOVE(LvLmtParser);
@@ -108,13 +108,21 @@ static void McI084SSParserP(ExgMcMessage& e) {
       }
    }
 }
-
+f9twf_API void I084SSParserToRtsV3(ExgMcMessage& e) {
+   switch (static_cast<const ExgMcI084*>(&e.Pk_)->MessageType_) {
+   //case 'A': McI084SSParserA(e);  break;
+     case 'O': McI084SSParserO(e);  break;
+   //case 'S': McI084SSParserS(e);  break;
+     case 'P': McI084SSParserP(e, static_cast<const ExgMcI084*>(&e.Pk_)->_P_ProductStatusV3_);  break;
+   //case 'Z': McI084SSParserZ(e);  break;
+   }
+}
 f9twf_API void I084SSParserToRts(ExgMcMessage& e) {
    switch (static_cast<const ExgMcI084*>(&e.Pk_)->MessageType_) {
    //case 'A': McI084SSParserA(e);  break;
      case 'O': McI084SSParserO(e);  break;
    //case 'S': McI084SSParserS(e);  break;
-     case 'P': McI084SSParserP(e);  break;
+     case 'P': McI084SSParserP(e, static_cast<const ExgMcI084*>(&e.Pk_)->_P_ProductStatus_);  break;
    //case 'Z': McI084SSParserZ(e);  break;
    }
 }

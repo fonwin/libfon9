@@ -106,6 +106,40 @@ struct ExgMcI084 : public ExgMcHead {
       fon9::PackBcd<2>     NoEntries_;
       ProductStatusEntry   Entry_[1];
    };
+   struct ProductStatusEntryV3 {
+      ExgMdProdId20     ProdId_;
+      /// 放寬漲幅階段: 若商品發生放寬漲跌幅時，此欄位表示該商品「目前」漲跌幅狀態。
+      /// 若無，則為預設值 0。
+      /// Ver1 = PackBcd<1>; Ver2 = PackBcd<2>; 基本上還是相容.
+      fon9::PackBcd<2>  ExpandTypeLevelR_;
+      /// 放寬跌幅階段: 若商品發生放寬漲跌幅時，此欄位表示該商品「目前」漲跌幅狀態。
+      /// 若無，則為預設值 0。
+      /// Ver1 = PackBcd<1>; Ver2 = PackBcd<2>; 基本上還是相容.
+      fon9::PackBcd<2>  ExpandTypeLevelF_;
+      /// 商品流程狀態陣列，預設值為 "NNNNNN";
+      /// 每個字元代表某個時間流程或商品暫停/恢復流程狀態。
+      /// 請參考: 「臺灣期貨交易所 逐筆行情資訊傳輸作業手冊」
+      char              ProdStatus_[7];
+      /// 若商品目前動態價格穩定措施發生暫停時，
+      /// 此欄位以 BITMAP 表示該商品目前暫停原因。若無，則為 0。
+      /// Bit 0：保留.
+      /// Bit 1：因應特殊市況.
+      /// Bit 2：動態價格穩定措施資訊異常.
+      /// Bit 3：因資訊異常基準價無法計算 BIT MAP.
+      fon9::byte  DynamicPriceBandingStatus_;
+      /// 若商品若發生多方動態價格穩定範圍倍數調整，
+      /// 此欄位顯示該商品動態價格穩定範圍倍數。
+      /// 若無，則為預設值 0。
+      fon9::PackBcd<2>  DynamicPriceBandingExpandRangeL_;
+      /// 若商品若發生空方動態價格穩定範圍倍數調整，
+      /// 此欄位顯示該商品動態價格穩定範圍倍數。
+      /// 若無，則為預設值 0。
+      fon9::PackBcd<2>  DynamicPriceBandingExpandRangeS_;
+   };
+   struct ProductStatusV3 {
+      fon9::PackBcd<2>     NoEntries_;
+      ProductStatusEntryV3 Entry_[1];
+   };
    //-----------------------------------------------------------------------//
    struct RefreshComplete {
       /// 此輪 Refresh 訊息，對應即時行情傳輸群組之訊息流水序號。
@@ -117,6 +151,7 @@ struct ExgMcI084 : public ExgMcHead {
       OrderData         _O_OrderData_;
       ProductStatistics _S_ProductStatistics_;
       ProductStatus     _P_ProductStatus_;
+      ProductStatusV3   _P_ProductStatusV3_;
       RefreshComplete   _Z_RefreshComplete_;
    };
 };

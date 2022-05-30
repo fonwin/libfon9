@@ -21,6 +21,8 @@ fon9_ENUM(f9fmkt_BreakReason, uint8_t) {
    f9fmkt_BreakReason_StockMessage = 0x03,
    /// 盤後商品契約資料尚未完成.
    f9fmkt_BreakReason_NotReady = 0x04,
+   /// 調整型契約任一月份 OI 為零，該月份契約暫停交易、終止掛牌.
+   f9fmkt_BreakReason_ZeroOI = 0x05,
    /// 前日暫停交易商品恢復交易公告.
    f9fmkt_BreakReason_Resumed = 0x99,
 };

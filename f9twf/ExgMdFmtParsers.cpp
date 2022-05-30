@@ -18,6 +18,7 @@ static bool BasicInfoLockedParser(ExgMcMessage& e, const ExgMdBasicInfo_C7& pk) 
    symb.EndYYYYMMDD_    = fon9::PackBcdTo<uint32_t>(pk.EndDateYYYYMMDD_);
    symb.PriceOrigDiv_   = ToPriceOrigDiv(pk);
    symb.StrikePriceDiv_ = ToStrikePriceDiv(pk);
+   symb.PriceDecimalLocator_ = fon9::PackBcdTo<uint8_t>(pk.DecimalLocator_);
    return true;
 }
 //-----//

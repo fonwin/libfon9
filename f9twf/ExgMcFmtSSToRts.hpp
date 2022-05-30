@@ -12,6 +12,7 @@ namespace f9twf {
 /// - 若沒有儲存, 則盤中重啟後, Rti 儲存的「BS明細」,
 ///   可能無法正確處理接續的 UpdateBS;
 f9twf_API void I084SSParserToRts(ExgMcMessage& e);
+f9twf_API void I084SSParserToRtsV3(ExgMcMessage& e);
 
 } // namespaces
 #endif//__f9twf_ExgMcFmtSSToRts_hpp__

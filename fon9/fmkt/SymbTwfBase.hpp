@@ -42,7 +42,9 @@ struct fon9_API SymbTwfBase {
    /// 期交所規範: https://www.taifex.com.tw/cht/4/oamOrderlimit
    /// 匯入 P08 時, 根據 [P08.prod_kind_ 及 期交所規範] 填入此值.
    uint16_t             MaxQtyLimit_{0};
-   char                 Padding____[4];
+   /// P08 or I010 提供的價格小數位數.
+   uint8_t              PriceDecimalLocator_{0};
+   char                 Padding____[3];
 
    void SymbTwfBaseClear() {
       this->FlowGroup_ = 0;
