@@ -312,7 +312,7 @@ void TicketRunnerCommand::OnLastSeedOp(const PodOpResult& resPod, PodOp* pod, Ta
    else if (this->SeedCommandLine_.empty())
       this->SetNewCurrPath();
    else {
-      if (this->SeedCommandLine_ != "?")
+      if (*this->SeedCommandLine_.c_str() != '?')
          TicketLogRequest("SeedOp.Command", *this, &tab,
                           pod->GetCommandLogStr(ToStrView(this->SeedCommandLine_)));
       pod->OnVisitorCommand(&tab, &this->SeedCommandLine_,
@@ -326,7 +326,7 @@ void TicketRunnerCommand::OnLastSeedOp(const PodOpResult& resPod, PodOp* pod, Ta
 void TicketRunnerCommand::OnSeedCommandResult(const SeedOpResult& res, StrView msg) {
    this->OpResult_ = res.OpResult_;
    this->Visitor_->OnTicketRunnerCommand(*this, res, msg);
-   if (this->SeedCommandLine_ != "?")
+   if (*this->SeedCommandLine_.c_str() != '?')
       TicketLogResult("SeedOp.Command", *this, res.OpResult_,
                       res.LogStr_.IsNull() ? msg : res.LogStr_);
 }

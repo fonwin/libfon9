@@ -27,7 +27,7 @@ public:
    using ExpectSize = uint16_t;
    using FixValue = StrView;
    enum : uint16_t {
-      /// 允許欄位重複次數, 1 = 允許重複1次, 也就是相同欄位最多可出現2次.
+      /// 允許欄位重複次數, 1 = 允許重複1次, 也就是相同欄位最多可出現 kMaxDupFieldCount 次.
       kMaxDupFieldCount = 4
    };
 
