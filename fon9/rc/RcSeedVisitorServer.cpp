@@ -220,7 +220,7 @@ void RcSeedVisitorServerNote::OnRecvFunctionCall(RcSession& ses, RcFunctionParam
          ses.ForceLogout("f9sv_Subscribe over MaxSubrCount.");
          return;
       }
-      if (reqKey.SubrIndex_ > subrs->size() + 100) {
+      if (reqKey.SubrIndex_ > (subrs->size() + (maxSubrCount ? maxSubrCount : 100))) {
          // 一般而言, reqKey.SubrIndex_ 會依序增加.
          // 但如果 client端取消「內部 pending 訂閱」, 因該訂閱尚未送出, 則有可能造成後續的訂閱跳號.
          // 為了避免發生此情況, 所以在此設定一個允許的「最大跳號 = N」數量: subrs->size() + N;

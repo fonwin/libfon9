@@ -41,11 +41,11 @@ f9sv_Result RcSvcReqSeed::CheckSeedWorkingSt(SvFuncCode fcWorking) {
 
    #define caseInWorkSt(name) \
    case SvFuncCode::name:    this->ExLogMsg_ = "|err=In" #name;      return f9sv_Result_In##name
-      caseInWorkSt(Query);
-      caseInWorkSt(Write);
-      caseInWorkSt(Remove);
-      caseInWorkSt(Command);
-      caseInWorkSt(GridView);
+      caseInWorkSt(Query);    // f9sv_Result_InQuery;
+      caseInWorkSt(Write);    // f9sv_Result_InWrite;
+      caseInWorkSt(Remove);   // f9sv_Result_InRemove;
+      caseInWorkSt(Command);  // f9sv_Result_InCommand;
+      caseInWorkSt(GridView); // f9sv_Result_InGridView;
    #undef caseInWorkSt
    }
 }
