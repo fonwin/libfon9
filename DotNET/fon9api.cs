@@ -50,6 +50,30 @@ namespace fon9
          UInt64 sz = getpass(IntPtr.Zero, prompt, ref pwbuf[0], (uint)pwbuf.Length);
          return Encoding.UTF8.GetString(pwbuf, 0, (int)sz);
       }
+
+      [DllImport(fon9.DotNetApi.kDllName, EntryPoint = "fon9_SetLogLevel", CharSet = CharSet.Ansi)]
+      public static extern void SetLogLevel(LogLevel lv);
+
+      [DllImport(fon9.DotNetApi.kDllName, EntryPoint = "fon9_GetLogLevel", CharSet = CharSet.Ansi)]
+      public static extern LogLevel GetLogLevel();
+   }
+
+   public enum LogLevel : byte
+   {
+      /// 追蹤程式運行用的訊息.
+      Trace,
+      /// 抓蟲用的訊息.
+      Debug,
+      /// 一般資訊.
+      Info,
+      /// 重要訊息, 例如: thread start.
+      Important,
+      /// 警告訊息.
+      Warn,
+      /// 錯誤訊息.
+      Error,
+      /// 嚴重錯誤.
+      Fatal,
    }
 
    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
@@ -57,6 +81,26 @@ namespace fon9
    {
       internal IntPtr Begin_;
       internal IntPtr End_;
+      /// <summary>
+      /// 在 CStrView 的使用期間, 參照的 byte[] refBytes; 必須保持有效.
+      /// </summary>
+      public CStrView(byte[] refBytes)
+      {
+         this.Begin_ = IntPtr.Zero;
+         this.End_ = IntPtr.Zero;
+         this.RefBytes(refBytes);
+      }
+      public void RefBytes(byte[] refBytes)
+      {
+         unsafe
+         {
+            fixed (byte* p = refBytes)
+            {
+               this.Begin_ = new IntPtr(p);
+               this.End_ = new IntPtr(p + refBytes.Length);
+            }
+         }
+      }
 
       public int Length { get { return (int)(this.End_.ToInt64() - this.Begin_.ToInt64()); } }
 
