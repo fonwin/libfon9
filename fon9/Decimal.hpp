@@ -228,21 +228,31 @@ public:
       return *this;
    }
 
-   constexpr friend Decimal operator* (Decimal lhs, IntTypeT rhs) {
+   /// Decimal 的 「*, /」運算僅支援整數, 為了避免誤用, 所以使用 enable_if_t<is_int_mul<IntT>::value> 來處理。
+   template <typename IntT>
+   struct is_int_mul {
+      enum : bool { value = std::is_integral<IntT>::value || std::is_enum<IntT>::value };
+   };
+   template <typename IntT>
+   constexpr friend auto operator* (Decimal lhs, IntT rhs) -> enable_if_t<is_int_mul<IntT>::value, Decimal> {
       return Decimal{lhs.Value_ * rhs};
    }
-   constexpr friend Decimal operator* (IntTypeT lhs, Decimal rhs) {
+   template <typename IntT>
+   constexpr friend auto operator* (IntT lhs, Decimal rhs) -> enable_if_t<is_int_mul<IntT>::value, Decimal> {
       return Decimal{lhs * rhs.Value_};
    }
-   Decimal& operator*=(IntTypeT rhs) {
+   template <typename IntT>
+   auto operator*=(IntT rhs) -> enable_if_t<is_int_mul<IntT>::value, Decimal&> {
       this->Value_ *= rhs;
       return *this;
    }
 
-   constexpr friend Decimal operator/ (Decimal lhs, IntTypeT rhs) {
+   template <typename IntT>
+   constexpr friend auto operator/ (Decimal lhs, IntT rhs) -> enable_if_t<is_int_mul<IntT>::value, Decimal> {
       return Decimal{lhs.Value_ / rhs};
    }
-   Decimal& operator/=(IntTypeT rhs) {
+   template <typename IntT>
+   auto operator/=(IntT rhs) -> enable_if_t<is_int_mul<IntT>::value, Decimal&> {
       this->Value_ /= rhs;
       return *this;
    }
