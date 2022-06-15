@@ -64,6 +64,9 @@ public:
       assert(this->RxSNO_ == 0);
       return this->RxSNO_ = sno;
    }
+   TradingRxSNO ForceResetRxSNO(TradingRxSNO sno) {
+      return this->RxSNO_ = sno;
+   }
 
    /// 將內容依照 Fields 的順序輸出到 rbuf;
    /// - 前方須包含 Name, 尾端 **不可加 '\n'**

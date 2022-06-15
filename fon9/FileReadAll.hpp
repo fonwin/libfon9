@@ -10,7 +10,7 @@ namespace fon9 {
 
 using ReadAllResult = Result2T<ErrC>;
 
-/// fname.empty() 則不需要開啟檔案;
+/// fname.empty() 則直接使用 fd, 不需要開啟檔案;
 fon9_API ReadAllResult OpenReadAll(File& fd, CharVector& fbuf, std::string fname, FileMode fmode);
    
 template <class FileT, typename PosT, class ConsumerT>

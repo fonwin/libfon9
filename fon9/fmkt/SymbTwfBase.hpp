@@ -9,6 +9,7 @@ namespace fon9 { namespace fmkt {
 
 using SymbFlowGroup_t = uint8_t;
 using SymbSeqNo_t = uint16_t;
+using TwfStrikePrice = Decimal<uint32_t, 4>;
 
 /// \ingroup fmkt
 /// 台灣期交所預設的商品基本資料.
@@ -34,7 +35,7 @@ struct fon9_API SymbTwfBase {
    /// 交割年月.
    uint32_t             SettleYYYYMM_;
    /// 履約價.
-   Decimal<uint32_t,4>  StrikePrice_;
+   TwfStrikePrice       StrikePrice_;
    /// 市價單最大委託量, 市價下單數量必須 <= MaxQtyMarket_.
    /// 來自 P08.market_order_ceiling_;
    uint16_t             MaxQtyMarket_{0};
