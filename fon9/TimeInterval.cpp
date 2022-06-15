@@ -133,7 +133,8 @@ fon9_API char* ToStrRev_HHMMSSmmm(char* pout, TimeInterval value, char chNull) {
    const unsigned dayss = dayms / 1000;
    pout = Put2Digs(pout, static_cast<uint8_t>(dayss % 60));
    pout = Put2Digs(pout, static_cast<uint8_t>((dayss / 60) % 60));
-   return Put2Digs(pout, static_cast<uint8_t>(dayss / 60 / 60));
+   const uint8_t hh = static_cast<uint8_t>(dayss / 60 / 60);
+   return Put2Digs(pout, (hh > 99 ? static_cast<uint8_t>(99) : hh));
 }
 fon9_API TimeInterval StrTo_HHMMSSmmm(const char strHHMMSSmmm[9]) {
    return TimeInterval_HHMMSS(StrTo(StrView{strHHMMSSmmm,6}, 0u))
