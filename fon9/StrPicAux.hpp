@@ -71,8 +71,12 @@ inline void RCopyToPicX(CharAry<kDstSize, CharT, kChDstFiller>& dst,
 //--------------------------------------------------------------------------//
 
 template <size_t Width, typename IntT, char kChFiller>
-static inline void UIntToPic9(CharAry<Width, char, kChFiller>& dst, IntT value) {
+static inline auto UIntToPic9(CharAry<Width, char, kChFiller>& dst, IntT value) -> enable_if_t<std::is_unsigned<IntT>::value> {
    impl::AuxPic9ToStr<IntT, Width>::ToStr(dst.end(), value);
+}
+template <size_t Width, typename IntT, char kChFiller>
+static inline auto SIntToPic9(CharAry<Width, char, kChFiller>& dst, IntT value) -> enable_if_t<std::is_signed<IntT>::value> {
+   SPic9ToStrRev<Width - 1>(dst.end(), value);
 }
 
 static inline void UPriToPic9_5v4(CharAry<9>& dst, Decimal<uint32_t, 4> pri) {
