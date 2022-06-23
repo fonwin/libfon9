@@ -877,6 +877,10 @@
             return;
          }
          for (let i = 1; i < cmds.length; ++i) {
+            if (cmds[i] == "-") {
+               divSeedMenuItems.appendChild(document.createElement('hr'));
+               continue;
+            }
             let cmd = cmds[i].split('\x01');
             if (cmd.length >= 3) // cmd + DisplayText + Prompt(for input text)
                cmd[1] += '\u2026'; // "..."
