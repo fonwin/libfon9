@@ -130,12 +130,12 @@ void IoManager::LockedDisposeDevices(const DeviceMap::Locker& map, std::string c
    }
 }
 //--------------------------------------------------------------------------//
-void IoManager::AssignStStr(CharVector& dst, TimeStamp now, StrView stmsg) {
+void IoManager::AssignStStr(CharVector& dst, TimeStamp utcNow, StrView stmsg) {
    size_t sz = kDateTimeStrWidth + stmsg.size() + 1;
    // 底下 -+sizeof(NumOutBuf) 是因為 RevPrint() 需要分配較多的保留大小.
    // 但因我確定實際大小不會超過, 所以自行調整.
    RevBufferFixedMem rbuf{static_cast<char*>(dst.alloc(sz)) - sizeof(NumOutBuf), sz + sizeof(NumOutBuf)};
-   RevPrint(rbuf, now, '|', stmsg);
+   RevPrint(rbuf, utcNow + GetLocalTimeZoneOffset(), '|', stmsg);
 }
 bool IoManager::AddConfig(StrView id, const IoConfigItem& cfg) {
    DeviceItemSP      item{new DeviceItem{id, cfg}};
@@ -277,7 +277,7 @@ void IoManager::UpdateDeviceStateLocked(io::Device& dev, const io::StateUpdatedA
       item->SessionSt_.clear();
       const BufferNode* bnode = rbuf.cfront();
       char* pmsg = static_cast<char*>(item->DeviceSt_.alloc(kDateTimeStrWidth + CalcDataSize(bnode)));
-      ToStrRev(pmsg += kDateTimeStrWidth, UtcNow());
+      ToStrRev(pmsg += kDateTimeStrWidth, LocalNow());
       pmsg = static_cast<char*>(CopyNodeList(pmsg, bnode));
       *(pmsg - 1) = 0; // for back '\n' => '\0';
       item->DeviceSt_.resize(item->DeviceSt_.size() - 1); // remove back '\n'
@@ -339,7 +339,7 @@ void IoManager::UpdateSessionStateLocked(io::Device& dev, StrView stmsg, LogLeve
       AssignStStr(item->SessionSt_, UtcNow(), stmsg);
       this->NotifyChanged(*item);
    }
-   if (fon9_UNLIKELY(lv >= fon9::LogLevel_)) {
+   if (fon9_UNLIKELY(lv >= fon9::LogLevel_ && !stmsg.empty())) {
       fon9::RevBufferList rbuf{fon9::kLogBlockNodeSize};
       fon9::RevPutChar(rbuf, '\n');
       fon9::RevPrint(rbuf, "|st=", stmsg);
