@@ -83,31 +83,31 @@ struct RtParser : public TwfPkReceiver, public fon9::fmkt::SymbTree {
 
    RtParser() : baseTree{fon9::seed::LayoutSP{}} {
       // 逐筆: 成交價量:I024;
-      this->McParserMap_.Reg('2', 'D', 1, &McI024MatchParser);
-      this->McParserMap_.Reg('5', 'D', 1, &McI024MatchParser);
+      this->McParserMap_.Reg<'2', 'D', 1>(&McI024MatchParser);
+      this->McParserMap_.Reg<'5', 'D', 1>(&McI024MatchParser);
       // 一般: 成交價量:I020; 試撮成交價量:I022;
-      this->MiParserMap_.Reg('2', '1', 4, &MiI020MatchParser);
-      this->MiParserMap_.Reg('5', '1', 4, &MiI020MatchParser);
-      this->MiParserMap_.Reg('2', '7', 2, &MiI022MatchParser);
-      this->MiParserMap_.Reg('5', '7', 2, &MiI022MatchParser);
+      this->MiParserMap_.Reg<'2', '1', 4>(&MiI020MatchParser);
+      this->MiParserMap_.Reg<'5', '1', 4>(&MiI020MatchParser);
+      this->MiParserMap_.Reg<'2', '7', 2>(&MiI022MatchParser);
+      this->MiParserMap_.Reg<'5', '7', 2>(&MiI022MatchParser);
       // 逐筆: 委託簿揭示訊息:I081; 委託簿快照訊息:I083;
-      this->McParserMap_.Reg('2', 'A', 1, &McI081BSParser);
-      this->McParserMap_.Reg('5', 'A', 1, &McI081BSParser);
-      this->McParserMap_.Reg('2', 'B', 1, &McI083BSParser);
-      this->McParserMap_.Reg('5', 'B', 1, &McI083BSParser);
+      this->McParserMap_.Reg<'2', 'A', 1>(&McI081BSParser);
+      this->McParserMap_.Reg<'5', 'A', 1>(&McI081BSParser);
+      this->McParserMap_.Reg<'2', 'B', 1>(&McI083BSParser);
+      this->McParserMap_.Reg<'5', 'B', 1>(&McI083BSParser);
       // 一般: 委託簿揭示訊息:I080; 試撮後剩餘委託簿揭示訊息:I082;
-      this->MiParserMap_.Reg('2', '2', 2, &MiI080BSParser);
-      this->MiParserMap_.Reg('5', '2', 2, &MiI080BSParser);
-      this->MiParserMap_.Reg('2', '8', 1, &MiI082BSParser);
-      this->MiParserMap_.Reg('5', '8', 1, &MiI082BSParser);
+      this->MiParserMap_.Reg<'2', '2', 2>(&MiI080BSParser);
+      this->MiParserMap_.Reg<'5', '2', 2>(&MiI080BSParser);
+      this->MiParserMap_.Reg<'2', '8', 1>(&MiI082BSParser);
+      this->MiParserMap_.Reg<'5', '8', 1>(&MiI082BSParser);
       // 最高價、最低價.
-      this->McParserMap_.Reg('2', 'E', 1, &McI025HLParser);
-      this->McParserMap_.Reg('5', 'E', 1, &McI025HLParser);
-      this->MiParserMap_.Reg('2', '5', 3, &MiI021HLParser);
-      this->MiParserMap_.Reg('5', '5', 3, &MiI021HLParser);
+      this->McParserMap_.Reg<'2', 'E', 1>(&McI025HLParser);
+      this->McParserMap_.Reg<'5', 'E', 1>(&McI025HLParser);
+      this->MiParserMap_.Reg<'2', '5', 3>(&MiI021HLParser);
+      this->MiParserMap_.Reg<'5', '5', 3>(&MiI021HLParser);
       // 快照.
-      this->McParserMap_.Reg('2', 'C', 1, &McI084SSParser);
-      this->McParserMap_.Reg('5', 'C', 1, &McI084SSParser);
+      this->McParserMap_.Reg<'2', 'C', 1>(&McI084SSParser);
+      this->McParserMap_.Reg<'5', 'C', 1>(&McI084SSParser);
    }
    fon9::fmkt::SymbSP MakeSymb(const fon9::StrView& symbid) override {
       return new f9extests::SymbIn{symbid};

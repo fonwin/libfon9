@@ -1,6 +1,7 @@
 ﻿// \file fon9/PkCont.cpp
 // \author fonwinz@gmail.com
 #include "fon9/PkCont.hpp"
+#include "fon9/Log.hpp"
 
 namespace fon9 {
 
@@ -69,6 +70,25 @@ __PK_RECEIVED:
          return;
    } // auto unlock this->PkPendings_.
    this->Timer_.RunAfter(this->WaitInterval_);
+}
+void PkContFeeder::LogSeqGap(const void* pk, SeqT seq, SeqT lostCount, FnOnLogSeqGap fnOnLogSeqGap) {
+   if (fon9_UNLIKELY(this->NextSeq_ == 0)) {
+      this->NextSeq_ = 1;
+      if ((lostCount = (seq - this->NextSeq_)) == 0)
+         return;
+      this->LostCount_ += lostCount;
+   }
+   constexpr auto lv = LogLevel::Warn;
+   if (fon9_UNLIKELY(lv >= LogLevel_)) {
+      RevBufferList rbuf_{kLogBlockNodeSize};
+      RevPutChar(rbuf_, '\n');
+      if (lostCount > 1)
+         RevPrint(rbuf_, "..", seq - 1);
+      RevPrint(rbuf_, "|lost=", lostCount, ':', this->NextSeq_);
+      if (fnOnLogSeqGap)
+         fnOnLogSeqGap(*this, rbuf_, pk);
+      LogWrite(lv, std::move(rbuf_));
+   }
 }
 
 } // namespaces

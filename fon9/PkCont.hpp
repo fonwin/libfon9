@@ -36,6 +36,18 @@ public:
       this->WaitInterval_ = v;
    }
 
+   using FnOnLogSeqGap = void (*)(PkContFeeder& rthis, RevBuffer& rbuf, const void* pk);
+   /// 若有需要記錄封包跳號, 則需要衍生者主動:
+   /// 在 void PkContOnReceived(const void* pk, unsigned pksz, SeqT seq) override;
+   /// 呼叫 this->CheckLogLost();
+   void CheckLogLost(const void* pk, SeqT seq, FnOnLogSeqGap fnOnLogSeqGap) {
+      if (auto lostCount = (seq - this->NextSeq_))
+         this->LogSeqGap(pk, seq, lostCount, fnOnLogSeqGap);
+   }
+   SeqT ReceivedCount() const { return this->ReceivedCount_; }
+   SeqT DroppedCount() const { return this->DroppedCount_; }
+   SeqT LostCount() const { return this->LostCount_; }
+
 protected:
    SeqT           NextSeq_{0};
    /// 收到的封包數量 = 呼叫 this->PkContOnReceived() 的次數.
@@ -44,7 +56,7 @@ protected:
    /// 這類封包會直接拋棄.
    SeqT           DroppedCount_{0};
    /// 遺失的封包數量: 根據 Seq 計算.
-   /// 不含第一個封包前的遺失數量.
+   /// 在呼叫 this->LogSeqGap() 之前, 不含第一個封包前的遺失數量.
    SeqT           LostCount_{0};
    /// 預計在 PkContOnReceived(..., seq) 處理完後的下一個封包序號.
    /// 您可以在 PkContOnReceived() 返回前改變此值.
@@ -95,6 +107,52 @@ protected:
          this->LostCount_ += (newNextSeq - this->NextSeq_);
          this->NextSeq_ = newNextSeq;
       }
+   }
+
+   void LogSeqGap(const void* pk, SeqT seq, SeqT lostCount, FnOnLogSeqGap fnOnLogSeqGap);
+};
+//--------------------------------------------------------------------------//
+template <class PkSysT, class PkTypeT>
+class PkHandlerBase {
+   fon9_NON_COPY_NON_MOVE(PkHandlerBase);
+public:
+   using PkType = PkTypeT;
+   PkSysT&  PkSys_;
+
+   PkHandlerBase(PkSysT& pkSys) : PkSys_(pkSys) {
+   }
+   virtual ~PkHandlerBase() {
+   }
+   virtual void OnPkReceived(const PkType& pk, unsigned pksz) = 0;
+   virtual void DailyClear() = 0;
+};
+
+template <class PkHandlerBase>
+class PkHandlerAnySeq : public PkHandlerBase {
+   fon9_NON_COPY_NON_MOVE(PkHandlerAnySeq);
+public:
+   using PkHandlerBase::PkHandlerBase;
+   /// do nothing;
+   void DailyClear() override {
+   }
+};
+
+template <class PkHandlerBase>
+class PkHandlerPkCont : public PkHandlerBase, public PkContFeeder {
+   fon9_NON_COPY_NON_MOVE(PkHandlerPkCont);
+public:
+   using PkType = typename PkHandlerBase::PkType;
+   using PkHandlerBase::PkHandlerBase;
+   virtual ~PkHandlerPkCont() {
+   }
+
+   // 轉呼叫: PkContFeeder::FeedPacket(&pk, pksz, pk.GetSeqNo());
+   void OnPkReceived(const PkType& pk, unsigned pksz) override {
+      this->FeedPacket(&pk, pksz, pk.GetSeqNo());
+   }
+   // 轉呼叫: PkContFeeder::Clear();
+   void DailyClear() override {
+      this->Clear();
    }
 };
 

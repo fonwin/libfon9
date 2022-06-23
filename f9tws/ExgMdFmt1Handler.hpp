@@ -8,7 +8,7 @@ namespace f9tws {
 
 class f9tws_API ExgMdFmt1TwseHandler : public ExgMdHandlerAnySeq {
    fon9_NON_COPY_NON_MOVE(ExgMdFmt1TwseHandler);
-   void OnPkReceived(const ExgMdHeader& pk, unsigned pksz) override;
+   void OnPkReceived(const ExgMdHead& pk, unsigned pksz) override;
 public:
    using ExgMdHandlerAnySeq::ExgMdHandlerAnySeq;
    virtual ~ExgMdFmt1TwseHandler();
@@ -16,7 +16,7 @@ public:
 
 class f9tws_API ExgMdFmt1TpexHandler : public ExgMdHandlerAnySeq {
    fon9_NON_COPY_NON_MOVE(ExgMdFmt1TpexHandler);
-   void OnPkReceived(const ExgMdHeader& pk, unsigned pksz) override;
+   void OnPkReceived(const ExgMdHead& pk, unsigned pksz) override;
 public:
    using ExgMdHandlerAnySeq::ExgMdHandlerAnySeq;
    virtual ~ExgMdFmt1TpexHandler();
@@ -24,7 +24,7 @@ public:
 
 class f9tws_API ExgMdFmt1V9TwseHandler : public ExgMdHandlerAnySeq {
    fon9_NON_COPY_NON_MOVE(ExgMdFmt1V9TwseHandler);
-   void OnPkReceived(const ExgMdHeader& pk, unsigned pksz) override;
+   void OnPkReceived(const ExgMdHead& pk, unsigned pksz) override;
 public:
    using ExgMdHandlerAnySeq::ExgMdHandlerAnySeq;
    virtual ~ExgMdFmt1V9TwseHandler();
@@ -32,7 +32,7 @@ public:
 
 class f9tws_API ExgMdFmt1V9TpexHandler : public ExgMdHandlerAnySeq {
    fon9_NON_COPY_NON_MOVE(ExgMdFmt1V9TpexHandler);
-   void OnPkReceived(const ExgMdHeader& pk, unsigned pksz) override;
+   void OnPkReceived(const ExgMdHead& pk, unsigned pksz) override;
 public:
    using ExgMdHandlerAnySeq::ExgMdHandlerAnySeq;
    virtual ~ExgMdFmt1V9TpexHandler();
@@ -66,7 +66,7 @@ struct ExgMdBaseInfoParser {
       (void)pk;
    }
 
-   void Publish(ExgMdSystem& mdsys, const ExgMdHeader& pk, unsigned pksz) const;
+   void Publish(ExgMdSystem& mdsys, const ExgMdHead& pk, unsigned pksz) const;
 };
 
 struct ExgMdBaseInfoParserV9 : public ExgMdBaseInfoParser {
@@ -92,7 +92,7 @@ inline bool EdgMdFmt_IsStockEntries(ExgMdSystem& mdsys, const char (&stockEntrie
 
 template <class Parser, class MdFmt>
 static inline void EdgMdParseBaseInfo(f9fmkt_TradingMarket mkt, ExgMdHandler& handler, ExgMdSymbs& symbs, const MdFmt& mdfmt, unsigned pksz) {
-   if (fon9_UNLIKELY(EdgMdFmt_IsStockEntries(handler.MdSys_, mdfmt.StockEntries_, pksz)))
+   if (fon9_UNLIKELY(EdgMdFmt_IsStockEntries(TwsMdSys(handler), mdfmt.StockEntries_, pksz)))
       return;
    Parser parser{symbs, mdfmt.StkNo_};
    parser.Symb_->TradingMarket_ = mkt;
@@ -101,7 +101,7 @@ static inline void EdgMdParseBaseInfo(f9fmkt_TradingMarket mkt, ExgMdHandler& ha
    parser.ParseShUnit(mdfmt);
    parser.ParseCTGCD(mdfmt);
 
-   parser.Publish(handler.MdSys_, mdfmt, pksz);
+   parser.Publish(TwsMdSys(handler), mdfmt, pksz);
 }
 
 } // namespaces

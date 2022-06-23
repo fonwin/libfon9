@@ -8,7 +8,7 @@ namespace f9tws {
 fon9_PACK(1);
 
 /// Fmt6(整股), Fmt23(零股) 的相同部分.
-struct ExgMdFmtRtBase : public ExgMdHeader {
+struct ExgMdFmtRtBase : public ExgMdHead {
    StkNo             StkNo_;
    ExgMdHHMMSSu6     Time_;
 
@@ -63,7 +63,7 @@ struct ExgMdFmt6v4 : public ExgMdFmtRtBase {
    }
 };
 static_assert(sizeof(ExgMdFmt6v4)
-              == sizeof(ExgMdHeader) + sizeof(StkNo) + sizeof(ExgMdHHMMSSu6) + sizeof(ExgMdTail)
+              == sizeof(ExgMdHead) + sizeof(StkNo) + sizeof(ExgMdHHMMSSu6) + sizeof(ExgMdTail)
                + sizeof(ExgMdFmt6v4::TotalQty_) + sizeof(ExgMdFmt6v4::PQs_),
               "ExgMdFmt6v4 沒有 pack?");
 

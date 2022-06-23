@@ -9,27 +9,31 @@ set(f9twf_src
  ExgMapSessionDn.cpp
  ExgMapMgr.cpp
 
- ExgMdPkReceiver.cpp
- ExgMdSymbs.cpp
- ExgMdContracts.cpp
  TwfSymbRef.cpp
  TwfTickSize.cpp
 
+ ExgMdPkReceiver.cpp
+ ExgMdSymbs.cpp
+ ExgMdContracts.cpp
+ ExgMdFmtParsers.cpp
+ ExgMdFmtMatchToRts.cpp
+ ExgMdFmtBSToRts.cpp
+ ExgMdFmtBasicInfoToRts.cpp
+ ExgMdFmtSysInfoToRts.cpp
+ ExgMdFmtQuoteReqToRts.cpp
+ ExgMdFmtClosingToRts.cpp
+
+ ExgMrRecover.cpp
  ExgMcReceiver.cpp
  ExgMcReceiverFactory.cpp
  ExgMcChannel.cpp
  ExgMcChannelTunnel.cpp
  ExgMcGroup.cpp
  ExgMcToMiConv.cpp
- ExgMrRecover.cpp
- ExgMdFmtParsers.cpp
- ExgMdFmtMatchToRts.cpp
- ExgMdFmtBSToRts.cpp
  ExgMcFmtSSToRts.cpp
- ExgMdFmtBasicInfoToRts.cpp
- ExgMdFmtSysInfoToRts.cpp
- ExgMdFmtQuoteReqToRts.cpp
- ExgMdFmtClosingToRts.cpp
+
+ ExgMiSystemBase.cpp
+ ExgMiReceiver.cpp
 )
 add_library(f9twf_s STATIC ${f9twf_src})
 target_link_libraries(f9twf_s pthread rt dl fon9_s)

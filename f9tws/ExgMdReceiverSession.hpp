@@ -2,9 +2,10 @@
 // \author fonwinz@gmail.com
 #ifndef __f9tws_ExgMdReceiverSession_hpp__
 #define __f9tws_ExgMdReceiverSession_hpp__
-#include "f9tws/ExgMdSystem.hpp"
+#include "f9tws/ExgMdSystemBase.hpp"
 #include "f9tws/ExgMdPkReceiver.hpp"
 #include "fon9/io/Session.hpp"
+#include "fon9/FileAppender.hpp"
 
 namespace f9tws {
 
@@ -28,10 +29,10 @@ protected:
    void OnDevice_CommonTimer(fon9::io::Device& dev, fon9::TimeStamp now);
 
 public:
-   const ExgMdSystemSP     MdDispatcher_;
+   const ExgMdSystemBaseSP MdDispatcher_;
    const fon9::CharVector  PkLogName_;
 
-   ExgMdReceiverSession(ExgMdSystemSP mdDispatcher, fon9::StrView pkLogName)
+   ExgMdReceiverSession(ExgMdSystemBaseSP mdDispatcher, fon9::StrView pkLogName)
       : MdDispatcher_(std::move(mdDispatcher))
       , PkLogName_{pkLogName} {
    }

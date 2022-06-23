@@ -29,7 +29,7 @@ struct TwsPkReceiver : public f9tws::ExgMdPkReceiver {
    }
    bool OnPkReceived(const void* pkptr, unsigned pksz) override {
       (void)pksz;
-      const f9tws::ExgMdHeader& pk = *reinterpret_cast<const f9tws::ExgMdHeader*>(pkptr);
+      const f9tws::ExgMdHead& pk = *reinterpret_cast<const f9tws::ExgMdHead*>(pkptr);
       auto fmtNo = fon9::PackBcdTo<uint32_t>(pk.FmtNo_);
       ++this->FmtCount_[fmtNo];
 
@@ -57,7 +57,7 @@ struct Fmt6Parser : public TwsPkReceiver, public fon9::fmkt::SymbTree {
    }
    bool OnPkReceived(const void* pkptr, unsigned pksz) override {
       basePkReceiver::OnPkReceived(pkptr, pksz);
-      const f9tws::ExgMdHeader& pk = *reinterpret_cast<const f9tws::ExgMdHeader*>(pkptr);
+      const f9tws::ExgMdHead& pk = *reinterpret_cast<const f9tws::ExgMdHead*>(pkptr);
       auto fmtNo = pk.GetFmtNo();
       if (fmtNo != 6 && fmtNo != 17)
          return true;

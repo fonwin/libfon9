@@ -24,11 +24,11 @@ static void PackOddLotBS(fon9::RevBuffer& rbuf, fon9::fmkt::RtBSType bsType, con
 void ExgMdFmt13Handler::PkContOnReceived(const void* pkptr, unsigned pksz, SeqT seq) {
    namespace f9fmkt = fon9::fmkt;
    const auto& mdfmt = *static_cast<const ExgMdFmt13v3*>(pkptr);
-   this->CheckLogLost(mdfmt, seq);
+   this->CheckLogLost(&mdfmt, seq);
    if (mdfmt.IsLastDealSent())
       return;
    const auto  dealTime = mdfmt.Time_.ToDayTime();
-   auto&       symbs  = *this->MdSys_.SymbsOdd_;
+   auto&       symbs  = *TwsMdSys(*this).SymbsOdd_;
    auto        symblk = symbs.SymbMap_.Lock();
    auto        symb   = fon9::static_pointer_cast<ExgMdSymb>(symbs.FetchSymb(symblk, ToStrView(mdfmt.StkNo_)));
    // dealTime < 143000 表示為試算揭示.

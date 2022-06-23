@@ -92,6 +92,7 @@
     <ClCompile Include="..\..\..\f9tws\ExgMdPlayer.cpp" />
     <ClCompile Include="..\..\..\f9tws\ExgLineArgs.cpp" />
     <ClCompile Include="..\..\..\f9tws\ExgLineFactory.cpp" />
+    <ClCompile Include="..\..\..\f9tws\ExgMdSystemBase.cpp" />
     <ClCompile Include="..\..\..\f9tws\ExgTradingLineFix.cpp" />
     <ClCompile Include="..\..\..\f9tws\ExgTradingLineFixFactory.cpp" />
     <ClCompile Include="..\..\..\f9tws\ExgTradingLineMgr.cpp" />
@@ -127,6 +128,7 @@
     <ClInclude Include="..\..\..\f9tws\ExgMdFmt6.hpp" />
     <ClInclude Include="..\..\..\f9tws\ExgLineArgs.hpp" />
     <ClInclude Include="..\..\..\f9tws\ExgLineFactory.hpp" />
+    <ClInclude Include="..\..\..\f9tws\ExgMdSystemBase.hpp" />
     <ClInclude Include="..\..\..\f9tws\ExgTradingLineFix.hpp" />
     <ClInclude Include="..\..\..\f9tws\ExgTradingLineFixFactory.hpp" />
     <ClInclude Include="..\..\..\f9tws\ExgTradingLineMgr.hpp" />
@@ -143,6 +145,9 @@
     <ProjectReference Include="..\libfon9\libfon9.vcxproj">
       <Project>{6b9031a7-02e1-4171-8ca5-9f780be21806}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\..\..\f9tws\CMakeLists.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

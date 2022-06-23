@@ -40,7 +40,7 @@ bool ExgMdReceiverSession::OnDevice_BeforeOpen(io::Device& dev, std::string& cfg
    (void)dev; (void)cfgstr;
    if (!this->PkLogName_.empty()) {
       this->PkLog_ = AsyncFileAppender::Make();
-      std::string fname = this->MdDispatcher_->LogPath() + this->PkLogName_.ToString();
+      std::string fname = this->MdDispatcher_->LogPathPre() + this->PkLogName_.ToString();
       auto res = this->PkLog_->OpenImmediately(fname, fon9::FileMode::CreatePath | fon9::FileMode::Append);
       if (res.IsError()) {
          this->PkLog_.reset();
@@ -55,10 +55,10 @@ io::RecvBufferSize ExgMdReceiverSession::OnDevice_Recv(io::Device& dev, DcQueue&
    return io::RecvBufferSize::Default;
 }
 bool ExgMdReceiverSession::OnPkReceived(const void* pkptr, unsigned pksz) {
-   this->MdDispatcher_->OnPkReceived(*static_cast<const ExgMdHeader*>(pkptr), pksz);
+   this->MdDispatcher_->OnPkReceived(*static_cast<const ExgMdHead*>(pkptr), pksz);
    this->LastRecvTime_ = UtcNow();
    if (this->PkLog_) {
-      static_assert(kExgMdMaxPacketSize < 0xfff0, "ExgMdHeader::Length_ cannot use uint16_t.");
+      static_assert(kExgMdMaxPacketSize < 0xfff0, "ExgMdHead::Length_ cannot use uint16_t.");
       fon9::TsAppend(*this->PkLog_, this->LastRecvTime_, pkptr, static_cast<uint16_t>(pksz));
    }
    return true;

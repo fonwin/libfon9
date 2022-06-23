@@ -8,7 +8,7 @@ namespace f9fmkt = fon9::fmkt;
 
 ExgMdFmt19Handler::~ExgMdFmt19Handler() {
 }
-void ExgMdFmt19Handler::OnPkReceived(const ExgMdHeader& pkhdr, unsigned pksz) {
+void ExgMdFmt19Handler::OnPkReceived(const ExgMdHead& pkhdr, unsigned pksz) {
    const ExgMdFmt19& fmt19 = *static_cast<const ExgMdFmt19*>(&pkhdr);
    // - 當日暫停交易時間與當日恢復交易時間記錄值均為"999999"時，
    //   該筆記錄之股票代號表示當次傳送之暫停/恢復交易股票數目，並且當次傳送作業結束。
@@ -20,9 +20,9 @@ void ExgMdFmt19Handler::OnPkReceived(const ExgMdHeader& pkhdr, unsigned pksz) {
    if (suspendHHMMSS == 999999)
       return;
    const unsigned resumeHHMMSS = fon9::PackBcdTo<unsigned>(fmt19.ResumeHHMMSS_);
-   auto  symblk = this->MdSys_.Symbs_->SymbMap_.Lock();
+   auto  symblk = TwsMdSys(*this).Symbs_->SymbMap_.Lock();
    auto  symb = fon9::static_pointer_cast<ExgMdSymb>(
-      this->MdSys_.Symbs_->FetchSymb(symblk, ToStrView(fmt19.StkNo_)));
+      TwsMdSys(*this).Symbs_->FetchSymb(symblk, ToStrView(fmt19.StkNo_)));
    if (symb->BreakSt_.Data_.BreakHHMMSS_ == suspendHHMMSS
        && symb->BreakSt_.Data_.RestartHHMMSS_ == resumeHHMMSS)
       return;
@@ -31,7 +31,7 @@ void ExgMdFmt19Handler::OnPkReceived(const ExgMdHeader& pkhdr, unsigned pksz) {
    symb->BreakSt_.Data_.RestartHHMMSS_ = resumeHHMMSS;
 
    // -----
-   const fon9::seed::Tab*  tabBreakSt = this->MdSys_.Symbs_->TabBreakSt_;
+   const fon9::seed::Tab*  tabBreakSt = TwsMdSys(*this).Symbs_->TabBreakSt_;
    if (tabBreakSt == nullptr)
       return;
    fon9::RevBufferList rts{pksz};

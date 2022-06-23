@@ -7,7 +7,7 @@
 namespace f9tws {
 fon9_PACK(1);
 
-struct ExgMdFmt1_C3 : public ExgMdHeader {
+struct ExgMdFmt1_C3 : public ExgMdHead {
    StkNo    StkNo_;
    /// 股票中文簡稱(BIG5 編碼);
    char     ChineseName_[16];

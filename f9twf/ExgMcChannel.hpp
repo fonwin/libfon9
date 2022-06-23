@@ -278,8 +278,9 @@ public:
    /// - McMessageParser 應由 Plugins 處理? 因為不同系統要處理的事項不同, 例:
    ///   - 行情發送系統: 解析行情時,同時編製要發行(儲存)的包封.
    ///   - 快速刪單系統: 解析行情後,直接觸發內部事件.
-   void RegMcMessageParser(char tx, char mg, uint8_t ver, FnMcMessageParser parser) {
-      this->McDispatcher_.Reg(tx, mg, ver, parser);
+   template <char tx, char mg, uint8_t ver>
+   void RegMcMessageParser(FnMcMessageParser parser) {
+      this->McDispatcher_.Reg<tx, mg, ver>(parser);
    }
 
    /// 在系統啟動時, 換日時... 會重新啟動 ChannelMgr;

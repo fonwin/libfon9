@@ -7,7 +7,7 @@ namespace f9tws {
 ExgMdPkReceiver::~ExgMdPkReceiver() {
 }
 unsigned ExgMdPkReceiver::GetPkSize(const void* pkptr) {
-   return reinterpret_cast<const ExgMdHeader*>(pkptr)->GetLength();
+   return reinterpret_cast<const ExgMdHead*>(pkptr)->GetLength();
 }
 
 } // namespaces

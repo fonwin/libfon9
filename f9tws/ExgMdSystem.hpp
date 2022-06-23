@@ -2,53 +2,14 @@
 // \author fonwinz@gmail.com
 #ifndef __f9tws_ExgMdSystem_hpp__
 #define __f9tws_ExgMdSystem_hpp__
-#include "fon9/fmkt/MdSystem.hpp"
-#include "fon9/FileAppender.hpp"
-#include "fon9/PkCont.hpp"
+#include "f9tws/ExgMdSystemBase.hpp"
 #include "f9tws/ExgMdSymbs.hpp"
 #include "f9tws/ExgMdIndices.hpp"
-#include "f9tws/ExgMdFmt.hpp"
+#include "fon9/FileAppender.hpp"
 
 namespace f9tws {
 
-class f9tws_API ExgMdSystem;
-
-struct f9tws_API ExgMdHandler {
-   fon9_NON_COPY_NON_MOVE(ExgMdHandler);
-   ExgMdSystem& MdSys_;
-   ExgMdHandler(ExgMdSystem& mdsys) : MdSys_(mdsys) {
-   }
-   virtual ~ExgMdHandler();
-   virtual void OnPkReceived(const ExgMdHeader& pk, unsigned pksz) = 0;
-   virtual void DailyClear() = 0;
-};
-using ExgMdHandlerSP = std::unique_ptr<ExgMdHandler>;
-
-struct f9tws_API ExgMdHandlerAnySeq : public ExgMdHandler {
-   fon9_NON_COPY_NON_MOVE(ExgMdHandlerAnySeq);
-   using ExgMdHandler::ExgMdHandler;
-   virtual ~ExgMdHandlerAnySeq();
-   /// do nothing;
-   void DailyClear() override;
-};
-
-class f9tws_API ExgMdHandlerPkCont : public ExgMdHandler, public fon9::PkContFeeder {
-   fon9_NON_COPY_NON_MOVE(ExgMdHandlerPkCont);
-   // fon9::PkContFeeder::FeedPacket(&pk, pksz, pk.GetSeqNo());
-   void OnPkReceived(const ExgMdHeader& pk, unsigned pksz) override;
-   // fon9::PkContFeeder::Clear();
-   void DailyClear() override;
-   void LogSeqGap(const ExgMdHeader& pk, SeqT seq, SeqT lostCount);
-public:
-   using ExgMdHandler::ExgMdHandler;
-   virtual ~ExgMdHandlerPkCont();
-
-   void CheckLogLost(const ExgMdHeader& pk, SeqT seq) {
-      if (auto lostCount = (seq - this->NextSeq_))
-         this->LogSeqGap(pk, seq, lostCount);
-   }
-};
-//--------------------------------------------------------------------------//
+/// f9tws::ExgMdSystem: for TWSE/TPEX Md Rts system;
 /// TwsMdSys
 ///   ├─ Symbs      商品資料表.
 ///   ├─ Indices    指數資料表.
@@ -75,12 +36,9 @@ public:
 /// - 包含 MdReceiver 的 FpSession: 可以放在別處, 在建立 IoMgr 時提供即可;
 /// - IoMgr: 由建構 ExgMdSystem 的人自行加入;
 ///   在 this->OnMdSystemStartup() 事件裡面, 會觸發 ioMgr->DisposeAndReopen();
-class f9tws_API ExgMdSystem : public fon9::fmkt::MdSystem {
+class f9tws_API ExgMdSystem : public ExgMdSystemBase {
    fon9_NON_COPY_NON_MOVE(ExgMdSystem);
-   using base = fon9::fmkt::MdSystem;
-   fon9::MustLock<std::string>   LogPath_;
-   using MdHandlers = ExgMdMessageDispatcher<ExgMdHandlerSP>;
-   MdHandlers                 MdHandlers_;
+   using base = ExgMdSystemBase;
    fon9::AsyncFileAppenderSP  BaseInfoPkLog_;
    bool                       IsReloading_{false};
    char                       Padding____[7];
@@ -99,21 +57,6 @@ public:
    ExgMdSystem(fon9::seed::MaTreeSP root, std::string name, bool useRtiForRecover, bool isAddMarketSeq);
    ~ExgMdSystem();
 
-   /// "./logs/yyyymmdd/" + this->Name_;
-   /// this->Name_ 通常為 "TwsMd", "TwseMd", "TpexMd"... 之類;
-   /// 尾端沒有 '/';
-   std::string LogPath() const {
-      return *this->LogPath_.ConstLock();
-   }
-
-   void RegMdMessageHandler(ExgMdMarket mkt, uint8_t fmt, uint8_t ver, ExgMdHandlerSP handler) {
-      this->MdHandlers_.Reg(mkt, fmt, ver, std::move(handler));
-   }
-   void OnPkReceived(const ExgMdHeader& pk, unsigned pksz) {
-      if (ExgMdHandler* handler = this->MdHandlers_.Get(pk).get())
-         handler->OnPkReceived(pk, pksz);
-   }
-
    /// 可以存任意交易所格式, 並於程式重新啟動時載入,
    /// 但通常應該只存基本資料, 例如:
    /// - 格式  1：個股基本資料.
@@ -121,7 +64,7 @@ public:
    /// - 格式 15：當日停止交易資料.
    /// - 格式 21︰指數基本資料.
    /// - 格式 22︰盤中零股交易個股基本資料.
-   void BaseInfoPkLog(const ExgMdHeader& pk, unsigned pksz) {
+   void BaseInfoPkLog(const ExgMdHead& pk, unsigned pksz) {
       if (this->BaseInfoPkLog_ && !this->IsReloading_)
          this->BaseInfoPkLog_->Append(&pk, pksz);
    }
@@ -130,6 +73,11 @@ public:
    }
 };
 using ExgMdSystemSP = fon9::intrusive_ptr<ExgMdSystem>;
+
+static inline ExgMdSystem& TwsMdSys(const ExgMdHandler& handler) {
+   assert(dynamic_cast<ExgMdSystem*>(&handler.PkSys_) != nullptr);
+   return *static_cast<ExgMdSystem*>(&handler.PkSys_);
+}
 
 } // namespaces
 #endif//__f9tws_ExgMdSystem_hpp__

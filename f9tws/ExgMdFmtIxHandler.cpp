@@ -10,10 +10,10 @@ namespace f9fmkt = fon9::fmkt;
 
 ExgMdFmt21Handler::~ExgMdFmt21Handler() {
 }
-void ExgMdFmt21Handler::OnPkReceived(const ExgMdHeader& pkhdr, unsigned pksz) {
+void ExgMdFmt21Handler::OnPkReceived(const ExgMdHead& pkhdr, unsigned pksz) {
    const ExgMdFmt21& fmt21 = *static_cast<const ExgMdFmt21*>(&pkhdr);
    {
-      ExgMdIndices&  ixs = *this->MdSys_.Indices_;
+      ExgMdIndices&  ixs = *TwsMdSys(*this).Indices_;
       auto           ixsLk{ixs.SymbMap_.Lock()};
       ExgMdIndex&    ix = *static_cast<ExgMdIndex*>(ixs.FetchSymb(ixsLk, ToStrView(fmt21.IdxNo_)).get());
       f9fmkt_TradingMarket mkt;
@@ -62,7 +62,7 @@ void ExgMdFmt21Handler::OnPkReceived(const ExgMdHeader& pkhdr, unsigned pksz) {
          ).c_str());
    #endif
    } // auto unlock.
-   this->MdSys_.BaseInfoPkLog(pkhdr, pksz);
+   TwsMdSys(*this).BaseInfoPkLog(pkhdr, pksz);
 }
 //--------------------------------------------------------------------------//
 struct ExgMdIndexUpdater {
@@ -108,10 +108,10 @@ struct ExgMdIndexUpdater {
 //--------------------------------------------------------------------------//
 ExgMdFmtIxHandler::~ExgMdFmtIxHandler() {
 }
-void ExgMdFmtIxHandler::OnPkReceived(const ExgMdHeader& pkhdr, unsigned pksz) {
+void ExgMdFmtIxHandler::OnPkReceived(const ExgMdHead& pkhdr, unsigned pksz) {
    (void)pksz;
    const ExgMdFmtIx& fmtIx = *static_cast<const ExgMdFmtIx*>(&pkhdr);
-   ExgMdIndexUpdater updater{this->MdSys_, fmtIx.IdxHHMMSS_, fmtIx.GetSeqNo()};
+   ExgMdIndexUpdater updater{TwsMdSys(*this), fmtIx.IdxHHMMSS_, fmtIx.GetSeqNo()};
    if (auto* ix = updater.Update(fmtIx.IdxNo_, fmtIx.IdxValueV2_)) {
       (void)ix;
       #ifdef DEBUG_PRINT_IDX
@@ -144,10 +144,10 @@ void ExgMdFmt3Handler::Initialize() {
    // for (auto L = this->IdxNoCount_; L > 0;)
    //    ixs.FetchSymb(ixsLk, ToStrView(this->IdxNoList_[--L]));
 }
-void ExgMdFmt3Handler::OnPkReceived(const ExgMdHeader& pkhdr, unsigned pksz) {
+void ExgMdFmt3Handler::OnPkReceived(const ExgMdHead& pkhdr, unsigned pksz) {
    (void)pksz;
    const ExgMdFmt3&  fmt3 = *static_cast<const ExgMdFmt3*>(&pkhdr);
-   ExgMdIndexUpdater updater{this->MdSys_, fmt3.IdxHHMMSS_, fmt3.GetSeqNo()};
+   ExgMdIndexUpdater updater{TwsMdSys(*this), fmt3.IdxHHMMSS_, fmt3.GetSeqNo()};
 
    ExgMdIndices::BlockPublish bpub(updater.Indicas_,
                                    static_cast<fon9::BufferNodeSize>(this->IdxNoCount_ * 15));

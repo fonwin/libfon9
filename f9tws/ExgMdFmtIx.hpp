@@ -17,7 +17,7 @@ using IdxNo = StkNo;
 // 指數值格式 9(5)V99
 using IdxValueV2 = fon9::PackBcd<7>;
 //--------------------------------------------------------------------------//
-struct ExgMdFmt21 : public ExgMdHeader {
+struct ExgMdFmt21 : public ExgMdHead {
    IdxNo IdxNo_;
    /// 指數中文名稱.
    char  NameBig5_[44];
@@ -33,7 +33,7 @@ struct ExgMdFmt21 : public ExgMdHeader {
    fon9::PackBcd<2>  FormatCode_;
 };
 //--------------------------------------------------------------------------//
-struct ExgMdFmt3 : public ExgMdHeader {
+struct ExgMdFmt3 : public ExgMdHead {
    /// 指數時間.
    fon9::PackBcd<6>  IdxHHMMSS_;
    /// TWSE=43, TPEX=28;
@@ -44,7 +44,7 @@ struct ExgMdFmt3 : public ExgMdHeader {
 //--------------------------------------------------------------------------//
 /// TWSE 格式10, 版本1;
 /// TPEX 格式12, 版本2;
-struct ExgMdFmtIx : public ExgMdHeader {
+struct ExgMdFmtIx : public ExgMdHead {
    IdxNo IdxNo_;
    /// 指數時間.
    fon9::PackBcd<6>  IdxHHMMSS_;

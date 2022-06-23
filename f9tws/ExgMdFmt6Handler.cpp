@@ -10,7 +10,7 @@ ExgMdFmt6Handler::~ExgMdFmt6Handler() {
 //--------------------------------------------------------------------------//
 void ExgMdFmt6Handler::PkContOnReceived(const void* pkptr, unsigned pksz, SeqT seq) {
    FmtRt_PkContOnReceived<f9fmkt_TradingSessionId_Normal>(
-      *this, *this->MdSys_.Symbs_,
+      *this, *TwsMdSys(*this).Symbs_,
       *static_cast<const ExgMdFmt6v4*>(pkptr), pksz, seq);
 }
 //--------------------------------------------------------------------------//

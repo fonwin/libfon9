@@ -3,7 +3,7 @@
 #include "fon9/fmkt/MdSystem.hpp"
 #include "fon9/seed/SysEnv.hpp"
 #include "fon9/TimedFileName.hpp"
-#include "fon9/Log.hpp"
+#include "fon9/framework/IoManagerTree.hpp"
 
 namespace fon9 { namespace fmkt {
 
@@ -33,6 +33,10 @@ void MdSystem::SetClearHHMMSS(unsigned clearHHMMSS) {
    if (this->TDayYYYYMMDD_) // 必須有啟動過, 才需要重啟計時器.
       this->StartupMdSystem();
 }
+void MdSystem::SetNoDataEventSch(StrView cfgstr) {
+   this->NoDataEventSch_.Parse(cfgstr);
+   this->SetClearHHMMSS(this->NoDataEventSch_.StartTime_.ToHHMMSS());
+}
 unsigned MdSystem::CheckTDayYYYYMMDD(TimeStamp tm) const {
    if (GetHHMMSS(tm) < this->ClearHHMMSS_)
       tm -= TimeInterval_Day(1);
@@ -52,10 +56,22 @@ void MdSystem::StartupMdSystem(TimeStamp nowLocalTime) {
    this->ClearTimer_.RunAt(nextClearLocalTime - GetLocalTimeZoneOffset());
 }
 void MdSystem::OnMdSystemStartup(const unsigned tdayYYYYMMDD, const std::string& logPath) {
-   (void)logPath;
    assert(tdayYYYYMMDD != this->TDayYYYYMMDD_);
    this->TDayYYYYMMDD_ = tdayYYYYMMDD;
-   this->SetDescription(RevPrintTo<std::string>("tday=", tdayYYYYMMDD));
+   *(this->LogPathPre_.Lock()) = logPath + this->Name_;
+   auto seeds = this->Sapling_->GetList(nullptr);
+   for (fon9::seed::NamedSeedSP& seed : seeds) {
+      if (auto* ioMgr = dynamic_cast<IoManagerTree*>(seed->GetSapling().get()))
+         ioMgr->DisposeAndReopen(this->Name_ + ".OnMdSystemStartup", TimeInterval_Second(1));
+   }
+   this->SetInfoToDescription();
+}
+void MdSystem::SetInfoToDescription() {
+   RevBufferFixedSize<1024> rbuf;
+   if (!this->NoDataEventSch_.IsAlwaysInSch())
+      RevPrint(rbuf, "|DataInSch='", this->NoDataEventSch_, "'");
+   RevPrint(rbuf, "TDay=", this->TDayYYYYMMDD_);
+   this->SetDescription(rbuf.ToStrT<std::string>());
    fon9_LOG_IMP("MdSystem.Startup|name=", this->Name_, '|', this->GetDescription());
 }
 

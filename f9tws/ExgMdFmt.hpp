@@ -30,7 +30,7 @@ enum ExgMdMarket : uint8_t {
 /// 每個封包的基本框架:
 /// - Esc: 1 byte = 27;
 /// - fon9::PackBcd<4> Length_; 包含: Esc, 及 ExgMdTail.
-struct ExgMdHeader {
+struct ExgMdHead {
    fon9::byte        Esc_;
    fon9::PackBcd<4>  Length_;
    /// 0x01=TSE, 0x02=OTC
@@ -49,10 +49,10 @@ struct ExgMdHeader {
    uint8_t  GetVerNo() const { return fon9::PackBcdTo<uint8_t>(this->VerNo_); }
    uint32_t GetSeqNo() const { return fon9::PackBcdTo<uint32_t>(this->SeqNo_); }
 };
-static_assert(sizeof(ExgMdHeader) == 10, "ExgMdHeader 沒有 pack?");
+static_assert(sizeof(ExgMdHead) == 10, "ExgMdHead 沒有 pack?");
 enum : size_t {
-   kExgMdMaxPacketSize = fon9::DecDivisor<size_t, sizeof(ExgMdHeader::Length_) * 2>::Divisor,
-   kExgMdMaxFmtNoSize = fon9::DecDivisor<size_t, sizeof(ExgMdHeader::FmtNo_) * 2>::Divisor,
+   kExgMdMaxPacketSize = fon9::DecDivisor<size_t, sizeof(ExgMdHead::Length_) * 2>::Divisor,
+   kExgMdMaxFmtNoSize = fon9::DecDivisor<size_t, sizeof(ExgMdHead::FmtNo_) * 2>::Divisor,
 };
 
 struct ExgMdPriQty {
@@ -89,16 +89,22 @@ class ExgMdMessageDispatcher {
    fon9_NON_COPY_NON_MOVE(ExgMdMessageDispatcher);
 
    HandlerT HandlerMap_[ExgMdMarket_MaxNo + 1][kExgMdMaxFmtNo + 1][kExgMdMaxVer + 1];
+   HandlerT NullHandler_{};
 
 public:
    ExgMdMessageDispatcher() {
       memset(this->HandlerMap_, 0, sizeof(this->HandlerMap_));
    }
 
-   void Reg(ExgMdMarket mkt, uint8_t fmt, uint8_t ver, HandlerT handler) {
-      assert(mkt <= ExgMdMarket_MaxNo && fmt <= kExgMdMaxFmtNo && ver <= kExgMdMaxVer);
+   template <ExgMdMarket mkt, uint8_t fmt, uint8_t ver>
+   void Reg(HandlerT handler) {
+      static_assert(mkt <= ExgMdMarket_MaxNo && fmt <= kExgMdMaxFmtNo && ver <= kExgMdMaxVer, "");
+      assert(!this->HandlerMap_[mkt][fmt][ver]); // 只能註冊一次.
       this->HandlerMap_[mkt][fmt][ver] = std::move(handler);
    }
+
+   /// DailyClear 時, 會需要對全部的 handler 清除最後序號.
+   /// 所以必須提供 begin(), end();
    const HandlerT* begin() const {
       return &this->HandlerMap_[0][0][0];
    }
@@ -111,7 +117,11 @@ public:
       assert(pk.GetMarket() <= ExgMdMarket_MaxNo
              && pk.GetFmtNo() <= kExgMdMaxFmtNo
              && pk.GetVerNo() <= kExgMdMaxVer);
-      return this->HandlerMap_[pk.GetMarket()][pk.GetFmtNo()][pk.GetVerNo()];
+      if (fon9_LIKELY(pk.GetMarket() <= ExgMdMarket_MaxNo
+                      && pk.GetFmtNo() <= kExgMdMaxFmtNo
+                      && pk.GetVerNo() <= kExgMdMaxVer))
+         return this->HandlerMap_[pk.GetMarket()][pk.GetFmtNo()][pk.GetVerNo()];
+      return this->NullHandler_;
    }
    template <class HeadT>
    const HandlerT& Get(const HeadT& pk) const {

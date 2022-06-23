@@ -9,7 +9,7 @@ namespace f9tws {
 
 class f9tws_API ExgMdFmt21Handler : public ExgMdHandlerAnySeq {
    fon9_NON_COPY_NON_MOVE(ExgMdFmt21Handler);
-   void OnPkReceived(const ExgMdHeader& pk, unsigned pksz) override;
+   void OnPkReceived(const ExgMdHead& pk, unsigned pksz) override;
 public:
    using ExgMdHandlerAnySeq::ExgMdHandlerAnySeq;
    virtual ~ExgMdFmt21Handler();
@@ -19,7 +19,7 @@ public:
 /// TPEX 格式12;
 class f9tws_API ExgMdFmtIxHandler : public ExgMdHandlerAnySeq {
    fon9_NON_COPY_NON_MOVE(ExgMdFmtIxHandler);
-   void OnPkReceived(const ExgMdHeader& pk, unsigned pksz) override;
+   void OnPkReceived(const ExgMdHead& pk, unsigned pksz) override;
 public:
    using ExgMdHandlerAnySeq::ExgMdHandlerAnySeq;
    virtual ~ExgMdFmtIxHandler();
@@ -30,7 +30,7 @@ using ExgMdTpexFmt12Handler = ExgMdFmtIxHandler;
 class f9tws_API ExgMdFmt3Handler : public ExgMdHandlerAnySeq {
    fon9_NON_COPY_NON_MOVE(ExgMdFmt3Handler);
    using base = ExgMdHandlerAnySeq;
-   void OnPkReceived(const ExgMdHeader& pk, unsigned pksz) override;
+   void OnPkReceived(const ExgMdHead& pk, unsigned pksz) override;
    void Initialize();
 public:
    const size_t         IdxNoCount_;

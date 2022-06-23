@@ -11,7 +11,7 @@ ExgMdFmt23Handler::~ExgMdFmt23Handler() {
 //--------------------------------------------------------------------------//
 void ExgMdFmt23Handler::PkContOnReceived(const void* pkptr, unsigned pksz, SeqT seq) {
    FmtRt_PkContOnReceived<f9fmkt_TradingSessionId_OddLot>(
-      *this, *this->MdSys_.SymbsOdd_,
+      *this, *TwsMdSys(*this).SymbsOdd_,
       *static_cast<const ExgMdFmt23v1*>(pkptr), pksz, seq);
 }
 

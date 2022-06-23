@@ -10,7 +10,7 @@
 namespace f9tws {
 fon9_PACK(1);
 
-struct ExgMdFmt9 : public ExgMdHeader {
+struct ExgMdFmt9 : public ExgMdHead {
    StkNo             StkNo_;
    fon9::PackBcd<6>  DealHHMMSS_;
    ExgMdPriQty       DealPQ_;

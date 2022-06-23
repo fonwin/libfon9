@@ -88,6 +88,10 @@ struct ExgMdHead0 {
 };
 struct ExgMiHeadInfoSeq {
    fon9::PackBcd<8>  InformationSeq_;
+
+   uint64_t GetSeqNo() const {
+      return fon9::PackBcdTo<uint64_t>(this->InformationSeq_);
+   }
 };
 struct ExgMcHeadChannelSeq {
    fon9::PackBcd<4>  ChannelId_;
@@ -185,16 +189,31 @@ enum {
 
 /// 透過 [tx][mg][ver] 來尋找 handler.
 template <class HandlerT>
-struct ExgMdMessageDispatcher {
-   HandlerT HandlerMap_[kExgMdMaxTx + 1][kExgMdMaxMg + 1][kExgMdMaxVer + 1];
+class ExgMdMessageDispatcher {
+   fon9_NON_COPY_NON_MOVE(ExgMdMessageDispatcher);
 
+   HandlerT HandlerMap_[kExgMdMaxTx + 1][kExgMdMaxMg + 1][kExgMdMaxVer + 1];
+   HandlerT NullHandler_{};
+
+public:
    ExgMdMessageDispatcher() {
       memset(this->HandlerMap_, 0, sizeof(this->HandlerMap_));
    }
 
-   void Reg(char tx, char mg, uint8_t ver, HandlerT handler) {
-      assert(AlNumToIdx(tx) <= kExgMdMaxTx && AlNumToIdx(mg) <= kExgMdMaxMg && ver <= kExgMdMaxVer);
-      HandlerMap_[AlNumToIdx(tx)][AlNumToIdx(mg)][ver] = std::move(handler);
+   template <char tx, char mg, uint8_t ver>
+   void Reg(HandlerT handler) {
+      static_assert(AlNumToIdx(tx) <= kExgMdMaxTx && AlNumToIdx(mg) <= kExgMdMaxMg && ver <= kExgMdMaxVer, "");
+      assert(!this->HandlerMap_[AlNumToIdx(tx)][AlNumToIdx(mg)][ver]); // 只能註冊一次.
+      this->HandlerMap_[AlNumToIdx(tx)][AlNumToIdx(mg)][ver] = std::move(handler);
+   }
+
+   /// DailyClear 時, 會需要對全部的 handler 清除最後序號.
+   /// 所以必須提供 begin(), end();
+   const HandlerT* begin() const {
+      return &this->HandlerMap_[0][0][0];
+   }
+   const HandlerT* end() const {
+      return this->begin() + (sizeof(this->HandlerMap_) / sizeof(HandlerT));
    }
 
    template <class HeadT>
@@ -202,10 +221,13 @@ struct ExgMdMessageDispatcher {
       assert(AlNumToIdx(pk.TransmissionCode_) <= kExgMdMaxTx
              && AlNumToIdx(pk.MessageKind_) <= kExgMdMaxMg
              && fon9::PackBcdTo<uint8_t>(pk.VersionNo_) <= kExgMdMaxVer);
-      return this->HandlerMap_
-         [AlNumToIdx(pk.TransmissionCode_)]
-         [AlNumToIdx(pk.MessageKind_)]
-         [fon9::PackBcdTo<uint8_t>(pk.VersionNo_)];
+      if (fon9_LIKELY(AlNumToIdx(pk.TransmissionCode_) <= kExgMdMaxTx
+                      && AlNumToIdx(pk.MessageKind_) <= kExgMdMaxMg
+                      && fon9::PackBcdTo<uint8_t>(pk.VersionNo_) <= kExgMdMaxVer))
+         return this->HandlerMap_[AlNumToIdx(pk.TransmissionCode_)]
+                                 [AlNumToIdx(pk.MessageKind_)]
+                                 [fon9::PackBcdTo<uint8_t>(pk.VersionNo_)];
+      return this->NullHandler_;
    }
    template <class HeadT>
    const HandlerT& Get(const HeadT& pk) const {

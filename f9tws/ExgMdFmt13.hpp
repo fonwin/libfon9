@@ -7,7 +7,7 @@
 namespace f9tws {
 fon9_PACK(1);
 
-struct ExgMdFmt13v3 : public ExgMdHeader {
+struct ExgMdFmt13v3 : public ExgMdHead {
    StkNo       StkNo_;
    /// a.數值 < 143000 表示為試算揭示.
    /// b.數值 = 143000 表示為正式撮合成交揭示.

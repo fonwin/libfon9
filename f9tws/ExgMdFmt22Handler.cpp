@@ -8,11 +8,11 @@ namespace f9tws {
 
 ExgMdFmt22Handler::~ExgMdFmt22Handler() {
 }
-void ExgMdFmt22Handler::OnPkReceived(const ExgMdHeader& pkhdr, unsigned pksz) {
+void ExgMdFmt22Handler::OnPkReceived(const ExgMdHead& pkhdr, unsigned pksz) {
    const ExgMdFmt22v1& fmt22 = *static_cast<const ExgMdFmt22v1*>(&pkhdr);
    EdgMdParseBaseInfo<ExgMdBaseInfoParser>(fon9::PackBcdTo<uint8_t>(pkhdr.Market_) == ExgMdMarket_TwTSE
                                            ? f9fmkt_TradingMarket_TwSEC : f9fmkt_TradingMarket_TwOTC,
-                                           *this, *this->MdSys_.SymbsOdd_,
+                                           *this, *TwsMdSys(*this).SymbsOdd_,
                                            fmt22, pksz);
 }
 

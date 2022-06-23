@@ -8,7 +8,7 @@ namespace f9tws {
 
 class f9tws_API ExgMdFmt22Handler : public ExgMdHandlerAnySeq {
    fon9_NON_COPY_NON_MOVE(ExgMdFmt22Handler);
-   void OnPkReceived(const ExgMdHeader& pk, unsigned pksz) override;
+   void OnPkReceived(const ExgMdHead& pk, unsigned pksz) override;
 public:
    using ExgMdHandlerAnySeq::ExgMdHandlerAnySeq;
    virtual ~ExgMdFmt22Handler();

@@ -46,6 +46,15 @@ fon9_AFTER_INCLUDE_STD;
 template class classOfTemplate<__VA_ARGS__> fon9_API;                \
 typedef  class classOfTemplate<__VA_ARGS__> nameOfTypedef;
 
+#if defined(_MSC_VER)
+#define fon9_EXPORT_TEMPLATE_CLASS(EXPORT_DEF, nameOfTypedef, classOfTemplate, ...) \
+template class classOfTemplate<__VA_ARGS__> EXPORT_DEF;                             \
+using nameOfTypedef = classOfTemplate<__VA_ARGS__>;
+#else
+#define fon9_EXPORT_TEMPLATE_CLASS(EXPORT_DEF, nameOfTypedef, classOfTemplate, ...) \
+using nameOfTypedef = classOfTemplate<__VA_ARGS__>;
+#endif
+
 /// \ingroup fon9_MACRO
 /// 使用巨集方式設定「禁止複製」.
 /// 如果用繼承 boost::noncopyable 的作法, 可能會有不必要的警告, 例如:

@@ -15,7 +15,7 @@ ExgMdBaseInfoParser::ExgMdBaseInfoParser(ExgMdSymbs& symbs, const StkNo& stkNo)
    , PrevRefData_(Symb_->Ref_.Data_)
    , PrevNameUTF8_{Symb_->NameUTF8_} {
 }
-void ExgMdBaseInfoParser::Publish(ExgMdSystem& mdsys, const ExgMdHeader& pk, unsigned pksz) const {
+void ExgMdBaseInfoParser::Publish(ExgMdSystem& mdsys, const ExgMdHead& pk, unsigned pksz) const {
    if (this->PrevTradingMarket_ == this->Symb_->TradingMarket_
        && this->PrevShUnit_ == this->Symb_->ShUnit_
        && this->PrevRefData_ == this->Symb_->Ref_.Data_)
@@ -53,33 +53,33 @@ using ExgMdFmt1Parser = ExgMdBaseInfoParser;
 //--------------------------------------------------------------------------//
 ExgMdFmt1TwseHandler::~ExgMdFmt1TwseHandler() {
 }
-void ExgMdFmt1TwseHandler::OnPkReceived(const ExgMdHeader& pkhdr, unsigned pksz) {
+void ExgMdFmt1TwseHandler::OnPkReceived(const ExgMdHead& pkhdr, unsigned pksz) {
    EdgMdParseBaseInfo<ExgMdFmt1Parser>(f9fmkt_TradingMarket_TwSEC,
-                                       *this, *this->MdSys_.Symbs_,
+                                       *this, *TwsMdSys(*this).Symbs_,
                                        *static_cast<const ExgMdFmt1v8_Twse*>(&pkhdr), pksz);
 }
 //--------------------------------------------------------------------------//
 ExgMdFmt1TpexHandler::~ExgMdFmt1TpexHandler() {
 }
-void ExgMdFmt1TpexHandler::OnPkReceived(const ExgMdHeader& pkhdr, unsigned pksz) {
+void ExgMdFmt1TpexHandler::OnPkReceived(const ExgMdHead& pkhdr, unsigned pksz) {
    EdgMdParseBaseInfo<ExgMdFmt1Parser>(f9fmkt_TradingMarket_TwOTC,
-                                       *this, *this->MdSys_.Symbs_,
+                                       *this, *TwsMdSys(*this).Symbs_,
                                        *static_cast<const ExgMdFmt1v8_Tpex*>(&pkhdr), pksz);
 }
 //--------------------------------------------------------------------------//
 ExgMdFmt1V9TwseHandler::~ExgMdFmt1V9TwseHandler() {
 }
-void ExgMdFmt1V9TwseHandler::OnPkReceived(const ExgMdHeader& pkhdr, unsigned pksz) {
+void ExgMdFmt1V9TwseHandler::OnPkReceived(const ExgMdHead& pkhdr, unsigned pksz) {
    EdgMdParseBaseInfo<ExgMdBaseInfoParserV9>(f9fmkt_TradingMarket_TwSEC,
-                                             *this, *this->MdSys_.Symbs_,
+                                             *this, *TwsMdSys(*this).Symbs_,
                                              *static_cast<const ExgMdFmt1v9_Twse*>(&pkhdr), pksz);
 }
 //--------------------------------------------------------------------------//
 ExgMdFmt1V9TpexHandler::~ExgMdFmt1V9TpexHandler() {
 }
-void ExgMdFmt1V9TpexHandler::OnPkReceived(const ExgMdHeader& pkhdr, unsigned pksz) {
+void ExgMdFmt1V9TpexHandler::OnPkReceived(const ExgMdHead& pkhdr, unsigned pksz) {
    EdgMdParseBaseInfo<ExgMdBaseInfoParserV9>(f9fmkt_TradingMarket_TwOTC,
-                                             *this, *this->MdSys_.Symbs_,
+                                             *this, *TwsMdSys(*this).Symbs_,
                                              *static_cast<const ExgMdFmt1v9_Tpex*>(&pkhdr), pksz);
 }
 

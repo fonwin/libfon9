@@ -25,7 +25,7 @@ template <f9fmkt_TradingSessionId kTradingSessionId, class MdFmt>
 inline void FmtRt_PkContOnReceived(ExgMdHandlerPkCont& handler, ExgMdSymbs& symbs,
                                    const MdFmt& mdfmt, unsigned pksz, ExgMdHandlerPkCont::SeqT seq) {
    namespace f9fmkt = fon9::fmkt;
-   handler.CheckLogLost(mdfmt, seq);
+   handler.CheckLogLost(&mdfmt, seq);
    if (mdfmt.IsLastDealSent())
       return;
    const auto  dealTime = mdfmt.Time_.ToDayTime();

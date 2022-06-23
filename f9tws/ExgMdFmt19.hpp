@@ -10,7 +10,7 @@
 namespace f9tws {
 fon9_PACK(1);
 
-struct ExgMdFmt19 : public ExgMdHeader {
+struct ExgMdFmt19 : public ExgMdHead {
    StkNo             StkNo_;
    /// 當日暫停交易時間.
    fon9::PackBcd<6>  SuspendHHMMSS_;

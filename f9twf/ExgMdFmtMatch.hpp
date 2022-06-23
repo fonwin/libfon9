@@ -26,7 +26,7 @@ struct ExgMdMatchHead {
    /// Bit 6-0 ＝（範圍 0000000-1111111）：揭示成交價、成交量之傳送之個數.
    /// 若為試撮結果(I022)僅會有 1 個試撮成交價量，故為 128（二進位值 10000000），不帶後面價量。
    fon9::byte        MatchDisplayItem_;
-   /// 實際數量 = [0 .. (MatchDisplayItem_ & 0x7f)]
+   /// 實際數量 = (MatchDisplayItem_ & 0x7f) 筆 MatchData_;
    ExgMdMatchData    MatchData_[1];
 };
 /// 緊接在 ExgMdMatchData MatchData_[] 之後的欄位.

@@ -8,16 +8,16 @@ namespace f9fmkt = fon9::fmkt;
 
 ExgMdFmt9Handler::~ExgMdFmt9Handler() {
 }
-void ExgMdFmt9Handler::OnPkReceived(const ExgMdHeader& pkhdr, unsigned pksz) {
+void ExgMdFmt9Handler::OnPkReceived(const ExgMdHead& pkhdr, unsigned pksz) {
    const ExgMdFmt9& fmt9 = *static_cast<const ExgMdFmt9*>(&pkhdr);
    const unsigned   dealHHMMSS = fon9::PackBcdTo<unsigned>(fmt9.DealHHMMSS_);
    if (dealHHMMSS == 999999)
       return;
    const fon9::DayTime  dealTime = fon9::TimeInterval_HHMMSS(dealHHMMSS);
 
-   auto  symblk = this->MdSys_.Symbs_->SymbMap_.Lock();
+   auto  symblk = TwsMdSys(*this).Symbs_->SymbMap_.Lock();
    auto  symb = fon9::static_pointer_cast<ExgMdSymb>(
-      this->MdSys_.Symbs_->FetchSymb(symblk, ToStrView(fmt9.StkNo_)));
+      TwsMdSys(*this).Symbs_->FetchSymb(symblk, ToStrView(fmt9.StkNo_)));
    if (dealTime == symb->Deal_.Data_.DealTime_)
       return;
 
@@ -33,7 +33,7 @@ void ExgMdFmt9Handler::OnPkReceived(const ExgMdHeader& pkhdr, unsigned pksz) {
    *rts.AllocPacket<uint8_t>() = 0; // = 1筆成交.
    fon9::RevPutBitv(rts, fon9_BitvV_NumberNull); // DealTime = InfoTime;
    *rts.AllocPacket<uint8_t>() = fon9::cast_to_underlying(symb->Deal_.Data_.Flags_);
-   if (IsEnumContains(this->MdSys_.Symbs_->CtrlFlags_, f9fmkt::MdSymbsCtrlFlag::HasMarketDataSeq)) {
+   if (IsEnumContains(TwsMdSys(*this).Symbs_->CtrlFlags_, f9fmkt::MdSymbsCtrlFlag::HasMarketDataSeq)) {
       /// 定價 Fmt9 的序號獨立編號, 與 Fmt6 無關, 所以必須額外處理.
       ToBitv(rts, ++symb->BS_.Data_.MarketSeq_);
    }

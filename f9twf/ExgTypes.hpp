@@ -45,9 +45,9 @@ constexpr unsigned ExgSystemTypeCount() {
 }
 /// OptNormal=0; OptAfterHour=1; FutNormal=2; FutAfterHour=3;
 /// else >= ExgSystemTypeCount();
-constexpr unsigned ExgSystemTypeToIndex(ExgSystemType val) {
-   return fon9::cast_to_underlying(val) % 10
-      + static_cast<unsigned>((fon9::cast_to_underlying(val) / 10) - 1) * 2;
+constexpr uint8_t ExgSystemTypeToIndex(ExgSystemType val) {
+   return static_cast<uint8_t>(fon9::cast_to_underlying(val) % 10
+                          + (((fon9::cast_to_underlying(val) / 10) - 1) * 2));
 }
 static_assert(ExgSystemTypeToIndex(ExgSystemType::OptNormal) == 0
               && ExgSystemTypeToIndex(ExgSystemType::OptAfterHour) == 1

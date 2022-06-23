@@ -113,6 +113,9 @@
     <ClCompile Include="..\..\..\f9tws\TwsTools.cpp">
       <Filter>Source Files\_base</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\f9tws\ExgMdSystemBase.cpp">
+      <Filter>Source Files\_MktData</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\f9tws\ExgTradingLineMgr.hpp">
@@ -220,8 +223,14 @@
     <ClInclude Include="..\..\..\f9tws\TwsTypes.h">
       <Filter>Header Files\_base</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\f9tws\ExgMdSystemBase.hpp">
+      <Filter>Header Files\_MktData</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\f9tws\README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\..\..\f9tws\CMakeLists.txt" />
   </ItemGroup>
 </Project>

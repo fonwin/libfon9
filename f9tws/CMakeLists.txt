@@ -3,6 +3,7 @@ set(f9tws_src
  ExgMdPlayer.cpp
  ExgMdIndices.cpp
  ExgMdSymbs.cpp
+ ExgMdSystemBase.cpp
  ExgMdSystem.cpp
  ExgMdFmt1Handler.cpp
  ExgMdFmt6Handler.cpp

@@ -13,7 +13,7 @@ class f9tws_API ExgMdPkReceiver : public fon9::PkReceiver {
    using base = fon9::PkReceiver;
 public:
    ExgMdPkReceiver(bool isDgram = false)
-      : base{sizeof(ExgMdHeader), isDgram} {
+      : base{sizeof(ExgMdHead), isDgram} {
    }
    virtual ~ExgMdPkReceiver();
 
