@@ -12,6 +12,11 @@ static constexpr DayTimeSec   kNoEndTime{25 * 60 * 60};
 
 //--------------------------------------------------------------------------//
 
+bool SchConfig::IsAlwaysInSch() const {
+   return this->Weekdays_.all()
+      && this->StartTime_.Seconds_ == 0
+      && this->EndTime_ == kNoEndTime;
+}
 void SchConfig::SetAlwaysInSch() {
    this->Weekdays_.set();
    this->TimeZoneName_.assign("L");
@@ -28,6 +33,14 @@ void SchConfig::Parse(StrView cfgstr) {
    StrView tag, value;
    while (!cfgstr.empty()) {
       StrFetchTagValue(cfgstr, tag, value, *kCSTR_SplitField, *kCSTR_SplitTagValue);
+      if (value.IsNull()) { // 沒有提供 "=xxx"; tag 是否為 "hhmmss" or "hhmmss-hhmmss"?
+         value = StrFetchTrim(tag, '-');
+         if (isdigit(value.Get1st())) {
+            this->StartTime_ = StrTo(value, DayTimeSec{});
+            this->EndTime_ = StrTo(tag, kNoEndTime);
+         }
+         continue;
+      }
       if (tag == "Weekdays") {
          this->Weekdays_.reset();
          for (char ch : value) {
