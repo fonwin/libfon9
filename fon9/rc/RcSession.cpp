@@ -349,8 +349,12 @@ void RcSession::OnDevice_CommonTimer(io::Device& dev, TimeStamp now) {
       else if (IsEnumContains(this->Role_, RcSessionRole::ProtocolAcceptor))
          dev.CommonTimerRunAfter(tiRecv);
       else { // RcSessionRole::ProtocolInitiator
-         const TimeInterval hbAfter = (this->LastSentTime_ + kRcSession_HbInterval) - now;
-         if (hbAfter > TimeInterval_Second(1) && tiRecv > kRcSession_HbInterval)
+         // - 因為有可能會有: 送出後,對方不需要回應的訊息.
+         //   所以, 不能只用 [上次送訊息的時間] 來決定是否需要送 Hb.
+         // - 太久沒送出 or 太久沒收到: 都需要送出 Hb:
+         //   所以 (now - 最後收到的時間) or (now - 最後送出的時間) >= kRcSession_HbInterval 就需要送出 Hb;
+         const TimeInterval hbAfter = (std::min(this->LastSentTime_, this->LastRecvTime_) + kRcSession_HbInterval) - now;
+         if (hbAfter > TimeInterval_Second(1))
             dev.CommonTimerRunAfter(hbAfter);
          else {
             RevBufferList  rbuf{64};
