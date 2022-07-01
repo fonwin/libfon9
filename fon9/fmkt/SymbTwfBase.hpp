@@ -31,9 +31,9 @@ struct fon9_API SymbTwfBase {
    /// 台灣期交所的流程群組代碼.
    SymbFlowGroup_t      FlowGroup_{0};
    /// 買賣權別 'C':call, 'P':put; '\0':期貨.
-   char                 CallPut_;
+   char                 CallPut_{};
    /// 交割年月.
-   uint32_t             SettleYYYYMM_;
+   uint32_t             SettleYYYYMM_{};
    /// 履約價.
    TwfStrikePrice       StrikePrice_;
    /// 市價單最大委託量, 市價下單數量必須 <= MaxQtyMarket_.
