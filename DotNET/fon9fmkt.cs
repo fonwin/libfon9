@@ -11,6 +11,8 @@
       RequestChgQty = 'C',
       RequestChgPri = 'P',
       RequestQuery = 'Q',
+      /// 修改條件單的觸發條件.
+      RequestChgCond = 'c',
       /// 成交回報.
       Filled = 'f',
       /// 委託異動.
@@ -140,6 +142,12 @@
    {
       /// 建構時的初始值.
       Initialing = 0,
+
+      /// 條件單初步檢查成功, 正在等候條件成立.
+      /// 條件成立後, 會繼續走 [風控、送單] 流程, 狀態依序變化.
+      WaitingCond = 0x0a,
+      /// 在另一台主機等候條件觸發.
+      WaitingCondAtOther = 0x0b,
 
       /// - 當檢查方式需要他方協助, 無法立即得到結果, 則在檢查前設定此狀態.
       /// - 如果檢查方式可立即完成:「失敗拒絕下單 or 檢查通過繼續下一步驟」, 則檢查前可以不用設定此狀態.
@@ -299,9 +307,13 @@
       ///   - 其他委託內容(例: ExgTime, Qty, Pri...)都不會變動.
       ReportStale = 2,
 
+      WaitingCond = TradingRequestSt.WaitingCond,
+      WaitingCondAtOther = TradingRequestSt.WaitingCondAtOther,
+
       NewStarting = 0x10,
       NewChecking = TradingRequestSt.Checking,
       NewQueuing = TradingRequestSt.Queuing,
+      NewQueuingAtOther = TradingRequestSt.QueuingAtOther,
       NewSending = TradingRequestSt.Sending,
       NewSent = TradingRequestSt.Sent,
 

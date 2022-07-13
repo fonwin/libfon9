@@ -19,6 +19,8 @@ fon9_ENUM(f9fmkt_RxKind, char) {
    f9fmkt_RxKind_RequestChgQty = 'C',
    f9fmkt_RxKind_RequestChgPri = 'P',
    f9fmkt_RxKind_RequestQuery  = 'Q',
+   /// 修改條件單的觸發條件.
+   f9fmkt_RxKind_RequestChgCond = 'c',
    /// 成交回報.
    f9fmkt_RxKind_Filled = 'f',
    /// 委託異動.
@@ -177,6 +179,11 @@ fon9_ENUM(f9fmkt_Side, char) {
 fon9_ENUM(f9fmkt_TradingRequestSt, uint8_t) {
    /// 建構時的初始值.
    f9fmkt_TradingRequestSt_Initialing = 0,
+
+   /// 條件單初步檢查成功, 正在等候條件成立.
+   /// 條件成立後, 會繼續走 [風控、送單] 流程, 狀態依序變化.
+   f9fmkt_TradingRequestSt_WaitingCond = 0x0a,
+   f9fmkt_TradingRequestSt_WaitingCondAtOther = 0x0b,
 
    /// - 當檢查方式需要他方協助, 無法立即得到結果, 則在檢查前設定此狀態.
    /// - 如果檢查方式可立即完成:「失敗拒絕下單 or 檢查通過繼續下一步驟」, 則檢查前可以不用設定此狀態.
@@ -348,9 +355,18 @@ fon9_ENUM(f9fmkt_OrderSt, uint8_t) {
    ///   - 其他委託內容(例: ExgTime, Qty, Pri...)都不會變動.
    f9fmkt_OrderSt_ReportStale = 2,
 
+   f9fmkt_OrderSt_WaitingCond        = f9fmkt_TradingRequestSt_WaitingCond,
+   f9fmkt_OrderSt_WaitingCondAtOther = f9fmkt_TradingRequestSt_WaitingCondAtOther,
+      
+   /// f9fmkt_OrderSt_IniAccepted 用於 OmsOrder::Initiator() 及 OmsOrder::EndUpdate();
+   /// >= f9fmkt_OrderSt_IniAccepted 則表示此單已被 f9oms 接受.
+   /// 後續異動必須更新 LastOrderSt_;
+   f9fmkt_OrderSt_IniAccepted        = f9fmkt_OrderSt_WaitingCond,
+
    f9fmkt_OrderSt_NewStarting             = 0x10,
    f9fmkt_OrderSt_NewChecking             = f9fmkt_TradingRequestSt_Checking,
    f9fmkt_OrderSt_NewQueuing              = f9fmkt_TradingRequestSt_Queuing,
+   f9fmkt_OrderSt_NewQueuingAtOther       = f9fmkt_TradingRequestSt_QueuingAtOther,
    f9fmkt_OrderSt_NewSending              = f9fmkt_TradingRequestSt_Sending,
    f9fmkt_OrderSt_NewSent                 = f9fmkt_TradingRequestSt_Sent,
 

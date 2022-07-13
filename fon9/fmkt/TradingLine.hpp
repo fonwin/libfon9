@@ -93,6 +93,10 @@ public:
    TradingLineManager() = default;
    virtual ~TradingLineManager();
 
+   bool IsNoReadyLine() const {
+      return this->TradingSvr_.ConstLock()->Lines_.empty();
+   }
+
    /// 當 src 進入可下單狀態時的通知:
    /// - 連線成功後, 進入可下單狀態.
    /// - 從忙碌狀態, 進入可下單狀態.

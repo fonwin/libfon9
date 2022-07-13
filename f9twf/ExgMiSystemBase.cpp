@@ -42,12 +42,16 @@ void ExgMiSystemBase::EmitHbTimer(fon9::TimerEntry* timer, fon9::TimeStamp now) 
             // 2 次 Hb 之間沒有收到任何封包, 行情可能斷線!
             fon9_LOG_WARN(rthis.Name_, '.', ch->Name_, ".Hb"
                           "|interval=", kMiHbInterval,
+                          "|sch=", rthis.NoDataEventSch_,
                           "|info=No data");
-            rthis.NoDataEventSubject_.Publish(*ch);
+            rthis.OnMiChannelNoData(*ch);
          }
       }
    }
    rthis.HbTimer_.RunAfter(kMiHbInterval);
+}
+void ExgMiSystemBase::OnMiChannelNoData(ExgMiChannel& ch) {
+   this->NoDataEventSubject_.Publish(ch);
 }
 
 } // namespaces

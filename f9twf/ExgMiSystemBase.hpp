@@ -33,6 +33,10 @@ class f9twf_API ExgMiSystemBase : public fon9::fmkt::MdSystem {
 protected:
    void OnMdSystemStartup(unsigned tdayYYYYMMDD, const std::string& logPath) override;
 
+   /// 沒資料(Hb timeout)時的通知, 通知前會先紀錄 log;
+   /// 預設呼叫 this->NoDataEventSubject_.Publish(ch);
+   virtual void OnMiChannelNoData(ExgMiChannel& ch);
+
 public:
    const f9fmkt_TradingSessionId TradingSessionId_;
    char                          Padding____[7];
