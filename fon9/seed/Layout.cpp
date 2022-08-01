@@ -48,13 +48,16 @@ void LayoutN::InitTabIndex() {
 size_t LayoutN::GetTabCount() const {
    return this->Tabs_.size();
 }
-Tab* LayoutN::GetTabImpl(StrView name) const {
-   for (const TabSP& sp : this->Tabs_) {
+fon9_API Tab* FindTab(const std::vector<TabSP>& tabs, StrView name) {
+   for (const TabSP& sp : tabs) {
       if (Tab* tab = sp.get())
          if (name == StrView{&tab->Name_})
             return tab;
    }
    return nullptr;
+}
+Tab* LayoutN::GetTabImpl(StrView name) const {
+   return FindTab(this->Tabs_, name);
 }
 Tab* LayoutN::GetTab(size_t index) const {
    return(index < this->Tabs_.size() ? this->Tabs_[index].get() : nullptr);

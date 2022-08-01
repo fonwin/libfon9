@@ -102,6 +102,8 @@ public:
    using base::GetTab;
 };
 
+fon9_API Tab* FindTab(const std::vector<TabSP>& tabs, StrView name);
+
 /// \ingroup seed
 /// 儲存 [Tab陣列] 的型別.
 using TabsDy = NamedIxMapNoRemove<TabSP>;
