@@ -54,16 +54,39 @@ fon9_API CharVector LvPriStep_ToStr(const LvPriStep* steps);
 fon9_API void CalcLmt(const LvPriStep* steps, Pri ref, double rate, Pri* pUpLmt, Pri* pDnLmt);
 
 /// \ingroup fmkt
-/// 尋找最接近但不超過的價格檔位.
-static inline Pri FindPriTickSize(const LvPriStep* steps, Pri pri) {
-   if (fon9_LIKELY(steps)) {
-      while (pri > steps->LvTop_) {
-         ++steps;
-      }
-      return steps->Step_;
-   }
-   return pri;
+/// 尋找最接近但不超過的價格檔位, steps 必須有效.
+/// assert(pri <= retval->LvTop_);
+static inline const LvPriStep* FindPriTickStep(const LvPriStep* steps, Pri pri) {
+   while (steps->LvTop_ < pri)
+      ++steps;
+   return steps;
 }
+/// \ingroup fmkt
+/// 尋找最接近但不超過的價格檔位, 若 steps == nullptr, 則直接返回 pri;
+static inline Pri FindPriTickSize(const LvPriStep* steps, Pri pri) {
+   return steps ? (FindPriTickStep(steps, pri)->Step_) : pri;
+}
+
+/// \ingroup fmkt
+/// 檢查 TickSize 是否正確.
+static inline bool CheckPriTickSize(const LvPriStep* steps, Pri pri) {
+   if (pri.GetOrigValue() < 0)
+      pri = Pri{} - pri;
+   const auto tickSize = FindPriTickSize(steps, pri);
+   return (pri % tickSize).IsZero();
+}
+
+
+/// \ingroup fmkt
+/// 價格從 priFrom 往上加 count 檔.
+/// 若 priFrom 不符合檔位, 則先往下調整到檔位, 然後再往上升 count 檔;
+/// 不考慮 upLmt 是否在符合檔位.
+fon9_API Pri MoveTicksUp(const LvPriStep* steps, Pri priFrom, uint16_t count, Pri upLmt);
+/// \ingroup fmkt
+/// 價格從 priFrom 往下減 count 檔.
+/// 若 priFrom 不符合檔位, 則先往上調整到檔位, 然後再往下降 count 檔;
+/// 不考慮 dnLmt 是否在符合檔位.
+fon9_API Pri MoveTicksDn(const LvPriStep* steps, Pri priFrom, uint16_t count, Pri dnLmt);
 
 } } // namespaces
 #endif//__fon9_fmkt_FmktTools_hpp__

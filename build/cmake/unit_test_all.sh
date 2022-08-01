@@ -78,6 +78,7 @@ $OUTPUT_DIR/AuthMgr_UT
 
 # unit tests: fmkt / fix
 $OUTPUT_DIR/Symb_UT
+$OUTPUT_DIR/FmktTools_UT
 $OUTPUT_DIR/FixParser_UT
 $OUTPUT_DIR/FixRecorder_UT
 $OUTPUT_DIR/FixFeeder_UT

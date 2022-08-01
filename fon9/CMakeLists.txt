@@ -380,6 +380,9 @@ if(CMAKE_FON9_BUILD_UNIT_TEST)
    add_executable(Symb_UT fmkt/Symb_UT.cpp)
    target_link_libraries(Symb_UT fon9_s)
 
+   add_executable(FmktTools_UT fmkt/FmktTools_UT.cpp)
+   target_link_libraries(FmktTools_UT fon9_s)
+
    # unit tests: fix
    add_executable(FixParser_UT fix/FixParser_UT.cpp)
    target_link_libraries(FixParser_UT fon9_s)
