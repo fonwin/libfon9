@@ -31,10 +31,11 @@ fon9::io::SessionSP ExgLineTmpFactory::CreateSession(fon9::IoManager& mgr, const
       return fon9::io::SessionSP{};
    fon9::NumOutBuf nbuf;
    logFileName.append("TWF_");
+   logFileName.append(fon9::Pic9ToStrRev<2>(nbuf.end(), fon9::cast_to_underlying(lineMgr->ExgSystemType_)), nbuf.end());
+   logFileName.push_back('_');
    logFileName.append(fon9::ToStrRev(nbuf.end(), TmpGetValueU(lineArgs.SessionFcmId_)), nbuf.end());
    logFileName.push_back('_');
-   fon9::FmtDef fmt{3, fon9::FmtFlag::IntPad0};
-   logFileName.append(fon9::ToStrRev(nbuf.end(), TmpGetValueU(lineArgs.SessionId_), fmt), nbuf.end());
+   logFileName.append(fon9::Pic9ToStrRev<3>(nbuf.end(), TmpGetValueU(lineArgs.SessionId_)), nbuf.end());
    logFileName.append(".bin");
    ExgLineTmpLog log;
    errReason = log.Open(lineArgs, std::move(logFileName), tday);
