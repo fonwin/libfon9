@@ -42,9 +42,9 @@ public:
 };
 using SymbDataTabSP = intrusive_ptr<SymbDataTab>;
 
-class fon9_API SymbDyTree : public SymbTree {
+class fon9_API SymbDyTree : public MdSymbTree {
    fon9_NON_COPY_NON_MOVE(SymbDyTree);
-   using base = SymbTree;
+   using base = MdSymbTree;
 
 public:
    using base::base;

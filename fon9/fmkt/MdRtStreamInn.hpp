@@ -78,7 +78,7 @@ struct MdRtSubrSP : public intrusive_ptr<MdRtSubr> {
    using base::base;
    /// 呼叫前必須: lock tree, 檢查 IsUnsubscribed();
    void operator()(const seed::SeedNotifyArgs& e) const {
-      assert(static_cast<SymbTree*>(&e.Tree_)->SymbMap_.IsLocked());
+      assert(static_cast<MdSymbTree*>(&e.Tree_)->SymbMap_.IsLocked());
       assert(!this->get()->IsUnsubscribed());
       if (IsEnumContainsAny(this->get()->RtFilter_, static_cast<f9sv_MdRtsKind>(e.StreamDataKind_)))
          this->get()->Callback_(e);

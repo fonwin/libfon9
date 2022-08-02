@@ -32,6 +32,7 @@ class f9twf_API ExgMiSystemBase : public fon9::fmkt::MdSystem {
 
 protected:
    void OnMdSystemStartup(unsigned tdayYYYYMMDD, const std::string& logPath) override;
+   void OnParentTreeClear(fon9::seed::Tree& parent) override;
 
    /// 沒資料(Hb timeout)時的通知, 通知前會先紀錄 log;
    /// 預設呼叫 this->NoDataEventSubject_.Publish(ch);

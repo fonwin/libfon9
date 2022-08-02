@@ -15,6 +15,10 @@ void ExgMiSystemBase::Ctor() {
 ExgMiSystemBase::~ExgMiSystemBase() {
    this->HbTimer_.DisposeAndWait();
 }
+void ExgMiSystemBase::OnParentTreeClear(fon9::seed::Tree& parent) {
+   base::OnParentTreeClear(parent);
+   this->HbTimer_.DisposeAndWait();
+}
 void ExgMiSystemBase::PlantIoMgr(fon9::seed::MaTree& root, fon9::IoManagerArgs& iomArgs) {
    iomArgs.DeviceFactoryPark_ = fon9::seed::FetchNamedPark<fon9::DeviceFactoryPark>(root, "FpDevice");
    iomArgs.SessionFactoryPark_ = fon9::seed::FetchNamedPark<fon9::SessionFactoryPark>(*this->Sapling_, "FpSession");

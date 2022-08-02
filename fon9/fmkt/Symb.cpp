@@ -43,6 +43,9 @@ bool Symb::IsExpired(unsigned tdayYYYYMMDD) const {
 void Symb::OnBeforeRemove(SymbTree& owner, unsigned tdayYYYYMMDD) {
    (void)owner; (void)tdayYYYYMMDD;
 }
+void Symb::OnBeforeInsertToTree(SymbTree& owner, const void* symbsLocker) {
+   (void)owner; (void)symbsLocker;
+}
 //--------------------------------------------------------------------------//
 SymbData* Symb::GetSymbData(int tabid) {
    return tabid <= 0 ? this : nullptr;

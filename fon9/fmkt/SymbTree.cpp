@@ -30,7 +30,10 @@ void SymbPodOp::BeginWrite(seed::Tab& tab, seed::FnWriteOp fnCallback) {
 //--------------------------------------------------------------------------//
 SymbTree::~SymbTree() {
 }
-void SymbTree::LockedDailyClear(Locker& symbs, unsigned tdayYYYYMMDD) {
+//--------------------------------------------------------------------------//
+MdSymbTree::~MdSymbTree() {
+}
+void MdSymbTree::LockedDailyClear(Locker& symbs, unsigned tdayYYYYMMDD) {
    auto iend = symbs->end();
    for (auto ibeg = symbs->begin(); ibeg != iend;) {
       auto& symb = *ibeg->second;

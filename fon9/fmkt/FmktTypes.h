@@ -207,15 +207,23 @@ fon9_ENUM(f9fmkt_TradingRequestSt, uint8_t) {
    /// 針對「某筆下單要求」交易所「最後一次回報」前的狀態.
    /// 此部分回報為成功.
    f9fmkt_TradingRequestSt_PartExchangeAccepted = 0xa2,
-   /// 交易所部分回報: 有些下單要求交易所會有多次回報.
-   /// 針對「某筆下單要求」交易所「最後一次回報」前的狀態.
-   /// 此部分回報為失敗.
-   f9fmkt_TradingRequestSt_PartExchangeRejected = 0xae,
+
+   // 保留:
+   // f9fmkt_OrderSt_ParentPartFilled = 0xa3,
+
+   /// 母單已完畢(全部子單已送出,尚未有失敗), 部分尚未收到回報.
+   /// 若子單全部成功, 則會變成 f9fmkt_TradingRequestSt_ExchangeAccepted;
+   f9fmkt_TradingRequestSt_ParentDone = 0xa4,
+
    /// 如果確定交易所刪單會分成多次傳送,
    /// 則首次收到的交易所刪單回報, 使用此狀態.
    /// - 例: 報價單 Bid/Offer 分2筆回報, 首次的 Bid 回報使用此狀態;
    ///       Offer 使用 f9fmkt_TradingRequestSt_ExchangeCanceled.
    f9fmkt_TradingRequestSt_PartExchangeCanceled = 0xa7,
+   /// 交易所部分回報: 有些下單要求交易所會有多次回報.
+   /// 針對「某筆下單要求」交易所「最後一次回報」前的狀態.
+   /// 此部分回報為失敗.
+   f9fmkt_TradingRequestSt_PartExchangeRejected = 0xae,
 
    /// 下單要求流程已結束.
    f9fmkt_TradingRequestSt_Done = 0xda,
@@ -355,13 +363,13 @@ fon9_ENUM(f9fmkt_OrderSt, uint8_t) {
    ///   - 其他委託內容(例: ExgTime, Qty, Pri...)都不會變動.
    f9fmkt_OrderSt_ReportStale = 2,
 
-   f9fmkt_OrderSt_WaitingCond        = f9fmkt_TradingRequestSt_WaitingCond,
-   f9fmkt_OrderSt_WaitingCondAtOther = f9fmkt_TradingRequestSt_WaitingCondAtOther,
+   f9fmkt_OrderSt_NewWaitingCond        = f9fmkt_TradingRequestSt_WaitingCond,
+   f9fmkt_OrderSt_NewWaitingCondAtOther = f9fmkt_TradingRequestSt_WaitingCondAtOther,
       
    /// f9fmkt_OrderSt_IniAccepted 用於 OmsOrder::Initiator() 及 OmsOrder::EndUpdate();
    /// >= f9fmkt_OrderSt_IniAccepted 則表示此單已被 f9oms 接受.
    /// 後續異動必須更新 LastOrderSt_;
-   f9fmkt_OrderSt_IniAccepted        = f9fmkt_OrderSt_WaitingCond,
+   f9fmkt_OrderSt_IniAccepted        = f9fmkt_OrderSt_NewWaitingCond,
 
    f9fmkt_OrderSt_NewStarting             = 0x10,
    f9fmkt_OrderSt_NewChecking             = f9fmkt_TradingRequestSt_Checking,
@@ -371,8 +379,15 @@ fon9_ENUM(f9fmkt_OrderSt, uint8_t) {
    f9fmkt_OrderSt_NewSent                 = f9fmkt_TradingRequestSt_Sent,
 
    f9fmkt_OrderSt_NewPartExchangeAccepted = f9fmkt_TradingRequestSt_PartExchangeAccepted,
-   f9fmkt_OrderSt_NewPartExchangeRejected = f9fmkt_TradingRequestSt_PartExchangeRejected,
+   /// 母單尚未完畢, 已有成交.
+   /// 若母單已完畢, 則會用 f9fmkt_OrderSt_PartFilled or f9fmkt_OrderSt_FullFilled;
+   f9fmkt_OrderSt_ParentPartFilled        = 0xa3,
+   /// 母單已完畢(全部子單已送出,尚未有失敗), 部分尚未收到回報.
+   /// 若子單全部成功, 則會變成 f9fmkt_OrderSt_ExchangeAccepted;
+   /// 之後除了刪減, 不再接受其他修改。
+   f9fmkt_OrderSt_ParentDone              = f9fmkt_TradingRequestSt_ParentDone,
    // = f9fmkt_TradingRequestSt_PartExchangeCanceled = 0xa7,
+   f9fmkt_OrderSt_NewPartExchangeRejected = f9fmkt_TradingRequestSt_PartExchangeRejected,
 
    f9fmkt_OrderSt_NewDone                 = f9fmkt_TradingRequestSt_Done,
  //f9fmkt_OrderSt_NewBroken               = f9fmkt_TradingRequestSt_Broken,
@@ -417,6 +432,21 @@ inline int f9fmkt_OrderSt_IsAnyRejected(f9fmkt_OrderSt st) {
 inline int f9fmkt_OrderSt_IsCanceled(f9fmkt_OrderSt st) {
    return f9fmkt_OrderSt_AsCanceled <= st && st <= f9fmkt_OrderSt_UserCanceled;
 }
+
+/// \ingroup fmkt
+/// 複式單組合方式.
+fon9_ENUM(f9fmkt_SymbCombSide, uint8_t) {
+   /// 不是複式單, 沒有第2隻腳.
+   f9fmkt_SymbCombSide_None = 0,
+   /// Leg1.Side = Leg2.Side = 下單要求的買賣別.
+   f9fmkt_SymbCombSide_SameSide = 1,
+   /// Leg1.Side = 下單要求的買賣別;
+   /// Leg2.Side = (Leg1.Side==Buy ? Sell : Buy);
+   f9fmkt_SymbCombSide_SideIsLeg1 = 2,
+   /// Leg2.Side = 下單要求的買賣別;
+   /// Leg1.Side = (Leg2.Side==Buy ? Sell : Buy);
+   f9fmkt_SymbCombSide_SideIsLeg2 = 3,
+};
 
 #ifdef __cplusplus
 }

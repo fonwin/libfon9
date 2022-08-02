@@ -11,9 +11,9 @@ namespace fon9 { namespace fmkt {
 
 void fon9_API SymbCellsToBitv(RevBuffer& rbuf, seed::Layout& layout, Symb& symb);
 //--------------------------------------------------------------------------//
-class fon9_API MdSymbsBase : public SymbTree {
+class fon9_API MdSymbsBase : public MdSymbTree {
    fon9_NON_COPY_NON_MOVE(MdSymbsBase);
-   using base = SymbTree;
+   using base = MdSymbTree;
    struct Recover;
 
    struct SymbsSubr : public MdRtSubr {
@@ -26,7 +26,7 @@ class fon9_API MdSymbsBase : public SymbTree {
       using base::base;
       /// 呼叫前必須: lock tree, 檢查 IsUnsubscribed();
       void operator()(const seed::SeedNotifyArgs& e) const {
-         assert(static_cast<SymbTree*>(&e.Tree_)->SymbMap_.IsLocked());
+         assert(static_cast<MdSymbTree*>(&e.Tree_)->SymbMap_.IsLocked());
          assert(!this->get()->IsUnsubscribed());
          auto& symbs = this->get()->SymbsRecovering_;
          if (symbs.empty() || symbs.find(e.KeyText_) == symbs.end())

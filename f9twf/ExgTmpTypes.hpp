@@ -356,6 +356,11 @@ struct f9twf_API ExgCombSymbId {
 f9twf_API bool FutMakeCombSymbolId(SymbolId& symb, fon9::StrView leg1, fon9::StrView leg2, TmpCombOp op);
 f9twf_API bool OptMakeCombSymbolId(SymbolId& symb, fon9::StrView leg1, fon9::StrView leg2, TmpCombOp op);
 
+/// 是否為台灣期交所期貨複式商品(短商品Id格式)?
+static inline bool IsFutShortComb(const char* futShortSymbId) {
+   return futShortSymbId[5] == '/';
+}
+
 /// 返回 TmpSymbolType::ShortText 或 TmpSymbolType::LongText;
 inline TmpSymbolType FutCheckSymbolType(const SymbolId& symbid, bool isComb) {
    // ShortId: PPPCC(5) or PPPCC/DD(8) or PPPCC/PPWDD(11)

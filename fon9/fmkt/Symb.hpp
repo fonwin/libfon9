@@ -108,6 +108,11 @@ public:
       assert(this->LvPriSteps_ == nullptr);
       this->LvPriSteps_ = lv;
    }
+   /// 若已經設定過 this->LvPriSteps_ 則不改變.
+   void CheckSetLvPriSteps(const LvPriStep* lv) {
+      if (this->LvPriSteps_ == nullptr)
+         this->SetLvPriSteps(lv);
+   }
 
    /// 每日清檔, 預設:
    /// - 設定 this->TDayYYYYMMDD_;
@@ -132,6 +137,10 @@ public:
    /// 預設 do nothing.
    virtual void OnBeforeRemove(SymbTree& owner, unsigned tdayYYYYMMDD);
 
+   /// 在 SymbTree.MakeSymb() 之後, map.insert 之前的通知;
+   /// static_cast<const SymbTreeT<>::Locker*>(symbsLocker); 必定有效
+   /// 預設 do nothing.
+   virtual void OnBeforeInsertToTree(SymbTree& owner, const void* symbsLocker);
 private:
    const LvPriStep*  LvPriSteps_{nullptr};
 };
@@ -216,8 +225,7 @@ inline SymbSP InsertSymb(SymbTrieMap& symbs, SymbSP v) {
 ///   更適合用來處理「全市場」的「商品資料表」, 因為資料筆數較多, 且商品Id散亂(不適合使用Trie)。
 /// - 但是如果是「個別帳戶」的「商品庫存」(個別的資料筆數較少, 但帳戶可能很多),
 ///   則仍需其他驗證, 才能決定用哪種容器: 「帳戶庫存表」應考慮使用較少記憶體的容器。
-using SymbMap = SymbHashMap;
-//using SymbMap = SymbTrieMap;
+using MdSymbMap = SymbHashMap;
 
 } } // namespaces
 #endif//__fon9_fmkt_Symb_hpp__

@@ -75,10 +75,29 @@ public:
    }
 };
 //--------------------------------------------------------------------------//
-template <class SymbMapImplT, class MutexT>
-class SymbTreeT : public seed::Tree {
-   fon9_NON_COPY_NON_MOVE(SymbTreeT);
+class fon9_API SymbTree : public seed::Tree {
+   fon9_NON_COPY_NON_MOVE(SymbTree);
    using base = seed::Tree;
+
+   /// 此時必定在 SymbMap locked 狀態下, 衍生者必須傳回有效的 SymbSP;
+   virtual SymbSP MakeSymb(const StrView& symbid) = 0;
+
+protected:
+   SymbSP MakeSymbBeforeInsert(const StrView& symbid, const void* symbsLocker) {
+      SymbSP retval = this->MakeSymb(symbid);
+      retval->OnBeforeInsertToTree(*this, symbsLocker);
+      return retval;
+   }
+
+public:
+   using base::base;
+   ~SymbTree();
+};
+//--------------------------------------------------------------------------//
+template <class SymbMapImplT, class MutexT>
+class SymbTreeT : public SymbTree {
+   fon9_NON_COPY_NON_MOVE(SymbTreeT);
+   using base = SymbTree;
 
 public:
    using SymbMapImpl = SymbMapImplT;
@@ -108,7 +127,7 @@ public:
       auto ifind = symbs->find(symbid);
       if (ifind != symbs->end())
          return SymbSP{&GetSymbValue(*ifind)};
-      return InsertSymb(*symbs, this->MakeSymb(symbid));
+      return InsertSymb(*symbs, this->MakeSymbBeforeInsert(symbid, &symbs));
    }
    SymbSP FetchSymb(const StrView& symbid) {
       return this->FetchSymb(this->SymbMap_.Lock(), symbid);
@@ -123,9 +142,6 @@ public:
    }
 
 protected:
-   /// 此時必定在 SymbMap locked 狀態下, 衍生者必須傳回有效的 SymbSP;
-   virtual SymbSP MakeSymb(const StrView& symbid) = 0;
-
    class PodOp : public SymbPodOp {
       fon9_NON_COPY_NON_MOVE(PodOp);
       using base = SymbPodOp;
@@ -197,16 +213,17 @@ protected:
 
 /// \ingroup fmkt
 /// 商品資料表, 一般行情系統使用: multi thread(mutex) + unordered
-class fon9_API SymbTree : public SymbTreeT<SymbMap, std::mutex> {
-   fon9_NON_COPY_NON_MOVE(SymbTree);
+class fon9_API MdSymbTree : public SymbTreeT<MdSymbMap, std::mutex> {
+   fon9_NON_COPY_NON_MOVE(MdSymbTree);
+   using base = SymbTreeT<MdSymbMap, std::mutex>;
 public:
-   using SymbTreeT::SymbTreeT;
-   ~SymbTree();
+   using base::base;
+   ~MdSymbTree();
 
    void LockedDailyClear(Locker& symbs, unsigned tdayYYYYMMDD);
 };
 // 使用 fon9_API_TEMPLATE_CLASS 造成 VS 2015 Debug build 失敗?!
-// fon9_API_TEMPLATE_CLASS(SymbTree, SymbTreeT, SymbMap, std::mutex);
+// fon9_API_TEMPLATE_CLASS(MdSymbTree, SymbTreeT, MdSymbMap, std::mutex);
 
 } } // namespaces
 #endif//__fon9_fmkt_SymbTree_hpp__

@@ -41,10 +41,10 @@ struct TwsPkReceiver : public f9tws::ExgMdPkReceiver {
    }
 };
 
-struct Fmt6Parser : public TwsPkReceiver, public fon9::fmkt::SymbTree {
+struct Fmt6Parser : public TwsPkReceiver, public fon9::fmkt::MdSymbTree {
    fon9_NON_COPY_NON_MOVE(Fmt6Parser);
    using basePkReceiver = TwsPkReceiver;
-   using baseTree = fon9::fmkt::SymbTree;
+   using baseTree = fon9::fmkt::MdSymbTree;
    Fmt6Parser() : baseTree{fon9::seed::LayoutSP{}} {
    }
    fon9::fmkt::SymbSP MakeSymb(const fon9::StrView& symbid) override {

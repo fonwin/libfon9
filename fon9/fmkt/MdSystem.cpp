@@ -15,6 +15,11 @@ MdSystem::~MdSystem() {
    this->ClearTimer_.DisposeAndWait();
 }
 void MdSystem::OnParentTreeClear(seed::Tree& parent) {
+   auto seeds = this->Sapling_->GetList(nullptr);
+   for (fon9::seed::NamedSeedSP& seed : seeds) {
+      if (auto* ioMgr = dynamic_cast<IoManagerTree*>(seed->GetSapling().get()))
+         ioMgr->DisposeDevices(this->Name_ + ".OnParentTreeClear");
+   }
    base::OnParentTreeClear(parent);
    this->ClearTimer_.DisposeAndWait();
 }

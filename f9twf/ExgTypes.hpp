@@ -7,6 +7,7 @@
 #include "fon9/CharAryL.hpp"
 #include "fon9/Utility.hpp"
 #include "fon9/Decimal.hpp"
+#include <array>
 
 namespace f9twf {
 
@@ -89,15 +90,15 @@ enum class ExgPosEff : char {
 /// 複式商品買賣別.
 enum class ExgCombSide : uint8_t {
    /// 不是複式單, 沒有第2隻腳.
-   None,
+   None = f9fmkt_SymbCombSide_None,
    /// Leg1.Side = Leg2.Side = 下單要求的買賣別.
-   SameSide,
+   SameSide = f9fmkt_SymbCombSide_SameSide,
    /// Leg1.Side = 下單要求的買賣別;
    /// Leg2.Side = (Leg1.Side==Buy ? Sell : Buy);
-   SideIsLeg1,
+   SideIsLeg1 = f9fmkt_SymbCombSide_SideIsLeg1,
    /// Leg2.Side = 下單要求的買賣別;
    /// Leg1.Side = (Leg2.Side==Buy ? Sell : Buy);
-   SideIsLeg2,
+   SideIsLeg2 = f9fmkt_SymbCombSide_SideIsLeg2,
 };
 
 //--------------------------------------------------------------------------//
@@ -174,6 +175,38 @@ struct CodeMY {
       return this->FromYYYYMM(yyyymm, 'M');
    }
 };
+
+//--------------------------------------------------------------------------//
+
+/// PriLmts[lv], 例: lv == 0 使用 PriLmts_[0];
+/// - <0=預告: -1 or -2...;
+/// - >0=實施:  1 or  2...;
+using TwfLvLmts = std::array<int8_t, 2>;
+
+enum UDIdx : uint8_t {
+   UDIdx_Up = 0,
+   UDIdx_Dn = 1,
+};
+
+/// define: union { LvLmts_[]; struct { LvUpLmt_, LvDnLmt_ }};
+#define f9twf_DEF_MEMBERS_LvLmts       \
+fon9_MSC_WARN_DISABLE(4201);           \
+union {                                \
+   f9twf::TwfLvLmts  LvLmts_{{0,0}};   \
+   struct {                            \
+      int8_t         LvUpLmt_;         \
+      int8_t         LvDnLmt_;         \
+   };                                  \
+};                                     \
+fon9_MSC_WARN_POP
+
+static inline uint8_t TwfGetLmtLv(int8_t lvContract, int8_t lvSymb) {
+   if (fon9_UNLIKELY(lvContract < 0))                       // 預告,尚未實施.
+      lvContract = static_cast<int8_t>((-lvContract) - 1);  // 所以使用前一檔.
+   if (fon9_UNLIKELY(lvSymb < 0))
+      lvSymb = static_cast<int8_t>((-lvSymb) - 1);
+   return fon9::unsigned_cast(std::max(lvContract, lvSymb));
+}
 
 } // namespaces
 #endif//__f9twf_ExgTypes_hpp__

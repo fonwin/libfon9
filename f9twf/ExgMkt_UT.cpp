@@ -69,10 +69,10 @@ struct TwfPkReceiver : public fon9::PkReceiver {
 //--------------------------------------------------------------------------//
 
 /// 買賣報價 & 成交明細.
-struct RtParser : public TwfPkReceiver, public fon9::fmkt::SymbTree {
+struct RtParser : public TwfPkReceiver, public fon9::fmkt::MdSymbTree {
    fon9_NON_COPY_NON_MOVE(RtParser);
    using basePkReceiver = TwfPkReceiver;
-   using baseTree = fon9::fmkt::SymbTree;
+   using baseTree = fon9::fmkt::MdSymbTree;
    using MiParserMap = f9twf::ExgMdParserMap<f9twf::ExgMiHead, RtParser>;
    using McParserMap = f9twf::ExgMdParserMap<f9twf::ExgMcHead, RtParser>;
    MiParserMap MiParserMap_;

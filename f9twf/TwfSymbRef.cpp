@@ -29,5 +29,33 @@ fon9::seed::Fields TwfSymbRef_MakeFields() {
    TwfSymbRef_AddPriLmtFields(flds, 3);
    return flds;
 }
+//--------------------------------------------------------------------------//
+using TwfPri = fon9::fmkt::Pri;
+
+f9twf_API bool TwfGetCombLmtPri(ExgCombSide combSide, const TwfSymbRef_Data& leg1, const TwfSymbRef_Data& leg2,
+                                TwfLvLmts contractLvLmts, TwfPri* upLmt, TwfPri* dnLmt) {
+   const TwfPri up1 = TwfGetLmtPri(leg1, contractLvLmts, UDIdx_Up);
+   const TwfPri up2 = TwfGetLmtPri(leg2, contractLvLmts, UDIdx_Up);
+   const TwfPri dn1 = TwfGetLmtPri(leg1, contractLvLmts, UDIdx_Dn);
+   const TwfPri dn2 = TwfGetLmtPri(leg2, contractLvLmts, UDIdx_Dn);
+   switch (combSide) {
+   case ExgCombSide::SameSide:
+      if (upLmt) *upLmt = CombPriLmt_SameSide(up1, up2);
+      if (dnLmt) *dnLmt = CombPriLmt_SameSide(dn1, dn2);
+      break;
+   case ExgCombSide::SideIsLeg1:
+      if (upLmt) *upLmt = CombPriLmt_SideIsLeg1(up1, dn2);
+      if (dnLmt) *dnLmt = CombPriLmt_SideIsLeg1(dn1, up2);
+      break;
+   case ExgCombSide::SideIsLeg2:
+      if (upLmt) *upLmt = CombPriLmt_SideIsLeg2(dn1, up2);
+      if (dnLmt) *dnLmt = CombPriLmt_SideIsLeg2(up1, dn2);
+      break;
+   default:
+   case ExgCombSide::None:
+      return false;
+   }
+   return true;
+}
 
 } // namespaces

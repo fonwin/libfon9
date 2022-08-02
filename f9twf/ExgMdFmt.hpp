@@ -237,7 +237,13 @@ public:
 
 /// 透過 [tx][mg][ver] 來尋找 parser.
 template <class HeadT, class ParserArgsT, typename FnExgMdParserT = void (*)(const HeadT& pk, unsigned pksz, ParserArgsT& dst)>
-struct ExgMdParserMap : public ExgMdMessageDispatcher<FnExgMdParserT> {
+class ExgMdParserMap : public ExgMdMessageDispatcher<FnExgMdParserT> {
+   fon9_NON_COPY_NON_MOVE(ExgMdParserMap);
+   using base = ExgMdMessageDispatcher<FnExgMdParserT>;
+public:
+   using base::base;
+   ExgMdParserMap() = default;
+
    bool Call(const HeadT& pk, unsigned pksz, ParserArgsT& dst) const {
       if (auto fn = this->Get(pk)) {
          fn(pk, pksz, dst);
