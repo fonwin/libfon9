@@ -38,6 +38,10 @@ void TradingLineManager::ClearReqQueue(Locker&& tsvr, StrView cause) {
    for (const TradingRequestSP& r : reqs)
       this->NoReadyLineReject(*r, cause);
 }
+SendRequestResult TradingLineManager::RequestPushToQueue(TradingRequest& req, const Locker& tsvr) {
+   tsvr->ReqQueue_.push_back(&req);
+   return SendRequestResult::Queuing;
+}
 //--------------------------------------------------------------------------//
 void TradingLineManager::OnTradingLineReady(TradingLine& src) {
    TradingSvr::Locker tsvr{this->TradingSvr_};

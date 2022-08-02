@@ -117,9 +117,9 @@ public:
       else {
          res = this->CheckOpQueuingRequest(tsvr->ReqQueue_, req);
       }
-      if (res == SendRequestResult::Queuing)
-         tsvr->ReqQueue_.push_back(&req);
-      return res;
+      if (fon9_LIKELY(res != SendRequestResult::Queuing))
+         return res;
+      return this->RequestPushToQueue(req, tsvr);
    }
 
    /// 透過 req.IsPreferTradingLine(); 來選擇下一個建議的交易線路.
@@ -133,6 +133,9 @@ protected:
 
    /// 清除全部的「排隊中下單要求」.
    virtual void ClearReqQueue(Locker&& tsvr, StrView cause);
+
+   /// 預設: tsvr->ReqQueue_.push_back(&req); 返回 SendRequestResult::Queuing;
+   virtual SendRequestResult RequestPushToQueue(TradingRequest& req, const Locker& tsvr);
 
    /// - 無可用線路時的拒絕.
    /// - TradingLineManager 解構時, 拒絕還在 Queue 裡面的要求.
