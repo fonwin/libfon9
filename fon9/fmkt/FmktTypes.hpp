@@ -42,5 +42,20 @@ using Amt = Pri;
 /// 大金額型別, 但小數位縮減成 2 位, 最大約可表達 +- 92,233,720e;
 using BigAmt = Decimal<int64_t, 2>;
 
+enum MdReceiverSt : int8_t {
+   /// DailyClear 狀態下, 一段時間沒資料.
+   DailyClearNoData = -1,
+   /// DataIn 狀態下, 一段時間沒資料.
+   DataBroken = -2,
+
+   /// 每日清盤 or 系統重啟, 尚未收到任何有效封包.
+   DailyClear = 0,
+   /// 在 DailyClear 狀態下, 且有收到正確封包後, 一段時間後, 才會進入 DataIn 狀態.
+   DataIn = 1,
+};
+static inline bool MdReceiverSt_IsNoData(MdReceiverSt v) {
+   return v < MdReceiverSt::DailyClear;
+}
+
 } } // namespaces
 #endif//__fon9_fmkt_FmktTypes_hpp__

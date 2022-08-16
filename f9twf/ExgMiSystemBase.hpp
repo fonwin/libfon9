@@ -34,17 +34,17 @@ protected:
    void OnMdSystemStartup(unsigned tdayYYYYMMDD, const std::string& logPath) override;
    void OnParentTreeClear(fon9::seed::Tree& parent) override;
 
-   /// 沒資料(Hb timeout)時的通知, 通知前會先紀錄 log;
-   /// 預設呼叫 this->NoDataEventSubject_.Publish(ch);
-   virtual void OnMiChannelNoData(ExgMiChannel& ch);
+   /// channel 狀態異動時的通知, 通知前會先紀錄 log;
+   /// 預設呼叫 this->StChangedEventSubject_.Publish(ch, bf, af);
+   virtual void OnMdReceiverStChanged(ExgMiChannel& ch, fon9::fmkt::MdReceiverSt bf, fon9::fmkt::MdReceiverSt af);
 
 public:
    const f9fmkt_TradingSessionId TradingSessionId_;
    char                          Padding____[7];
 
-   using NoDataEvent = std::function<void(ExgMiChannel&)>;
-   using NoDataEventSubject = fon9::Subject<NoDataEvent>;
-   NoDataEventSubject   NoDataEventSubject_;
+   using StChangedEvent = std::function<void(ExgMiChannel&, fon9::fmkt::MdReceiverSt bf, fon9::fmkt::MdReceiverSt af)>;
+   using StChangedEventSubject = fon9::Subject<StChangedEvent>;
+   StChangedEventSubject   StChangedEventSubject_;
 
    template <class... ArgsT>
    ExgMiSystemBase(f9fmkt_TradingSessionId txSessionId, ArgsT&&... args)

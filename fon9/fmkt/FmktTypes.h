@@ -448,6 +448,18 @@ fon9_ENUM(f9fmkt_SymbCombSide, uint8_t) {
    f9fmkt_SymbCombSide_SideIsLeg2 = 3,
 };
 
+/// \ingroup fmkt
+/// 條件單觸發後的執行價.
+fon9_ENUM(f9fmkt_ExecPriSel, char) {
+   f9fmkt_ExecPriSel_Unknown = 0,
+   /// 觸發下單當時的 買進價.
+   f9fmkt_ExecPriSel_Bid = 'B',
+   /// 觸發下單當時的 賣出價.
+   f9fmkt_ExecPriSel_Ask = 'A',
+   /// 觸發下單當時的 成交價.
+   f9fmkt_ExecPriSel_LastPrice = 'P',
+};
+
 #ifdef __cplusplus
 }
 #endif

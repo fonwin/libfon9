@@ -35,22 +35,39 @@ class f9twf_API ExgMiChannel : public fon9::SessionFactory {
    fon9_NON_COPY_NON_MOVE(ExgMiChannel);
    using base = fon9::SessionFactory;
    using MiHandlers = ExgMdMessageDispatcher<ExgMiHandlerSP>;
-   MiHandlers  MiHandlers_;
+   MiHandlers        MiHandlers_;
    // 2 次 Hb 之間, 若沒有任何訊息, 則可能發生斷線.
-   uint64_t    ReceivedCountInHb_{0};
+   uint64_t          ReceivedCountInHb_{0};
+   fon9::TimeStamp   HbChkTime_;
 
+   friend class ExgMiSystemBase;
+   /// 取得收到的封包數量, 並清除封包數量計數器.
+   uint64_t ResetReceivedCount() {
+      auto retval = this->ReceivedCountInHb_;
+      this->ReceivedCountInHb_ = 0;
+      return retval;
+   }
+   /// 由於 Hb timeout 由 ExgMiSystemBase 處理,
+   /// 所以相關狀態變化, 由 ExgMiSystemBase 負責更新.
+   void SetMdReceiverSt(fon9::fmkt::MdReceiverSt st, fon9::TimeStamp now) {
+      this->HbChkTime_ = now;
+      this->CurMdReceiverSt_ = this->EvMdReceiverSt_ = st;
+   }
+
+   fon9::fmkt::MdReceiverSt   CurMdReceiverSt_;
+   fon9::fmkt::MdReceiverSt   EvMdReceiverSt_;
+   char                       Padding____[4];
 public:
-   ExgMiSystemBase&           MiSystem_;
    const uint8_t              ChannelId_;
    const f9fmkt_TradingMarket Market_;
-   char                       Padding____[6];
+   ExgMiSystemBase&           MiSystem_;
 
    template <class... ArgsT>
    ExgMiChannel(ExgMiSystemBase& miSystem, uint8_t channelId, f9fmkt_TradingMarket market, ArgsT&&... args)
       : base(std::forward<ArgsT>(args)...)
-      , MiSystem_(miSystem)
       , ChannelId_{channelId}
-      , Market_{market} {
+      , Market_{market}
+      , MiSystem_(miSystem) {
       assert(market == f9fmkt_TradingMarket_TwFUT || market == f9fmkt_TradingMarket_TwOPT);
    }
 
@@ -58,11 +75,8 @@ public:
 
    void DailyClear();
 
-   /// 取得收到的封包數量, 並清除封包數量計數器.
-   uint64_t ResetReceivedCount() {
-      auto retval = this->ReceivedCountInHb_;
-      this->ReceivedCountInHb_ = 0;
-      return retval;
+   const fon9::fmkt::MdReceiverSt* GetMdReceiverStPtr() const {
+      return &this->CurMdReceiverSt_;
    }
 
    template <char tx, char mg, uint8_t ver>
@@ -75,6 +89,7 @@ public:
       if (ExgMiHandler* handler = this->MiHandlers_.Get(pk).get())
          handler->OnPkReceived(pk, pksz);
       ++this->ReceivedCountInHb_;
+      this->CurMdReceiverSt_ = fon9::fmkt::MdReceiverSt::DataIn;
    }
 
    fon9::io::SessionSP CreateSession(fon9::IoManager& ioMgr, const fon9::IoConfigItem& cfg, std::string& errReason) override;

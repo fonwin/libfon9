@@ -7,6 +7,7 @@ namespace f9twf {
 ExgMiChannel::~ExgMiChannel() {
 }
 void ExgMiChannel::DailyClear() {
+   this->SetMdReceiverSt(fon9::fmkt::MdReceiverSt::DailyClear, fon9::UtcNow());
    for (const ExgMiHandlerSP& pph : this->MiHandlers_) {
       if (pph.get())
          pph->DailyClear();
