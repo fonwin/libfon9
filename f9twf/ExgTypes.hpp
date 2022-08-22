@@ -141,6 +141,11 @@ enum class ExgUnderlyingType {
 
 //--------------------------------------------------------------------------//
 
+/// 台灣期交所 [商品年月] 編碼規則.
+/// MY:
+/// - M = 'A'..'L' = 1..12月(期貨 or 選擇權Call);
+/// - M = 'M'..'X' = 1..12月(選擇權Put)
+/// - Y = 西元年最後一碼 = '0'..'9';
 struct CodeMY {
    char  MY_[2];
 
@@ -157,6 +162,28 @@ struct CodeMY {
             return (yy * (-100)) - (mm - 12 + 1);
       }
       return 0;
+   }
+   /// \retval =0 MY碼有誤.
+   /// \retval YYYYMM; 例:
+   ///         tdayYYYY=2018; this="A8"; 返回 201801;
+   ///         tdayYYYY=2018; this="B9"; 返回 201902;
+   ///         tdayYYYY=2019; this="C9"; 返回 201903;
+   ///         tdayYYYY=2019; this="D0"; 返回 202004;
+   unsigned ToYYYYMM(unsigned tdayYYYY) const {
+      uint8_t  y1 = static_cast<uint8_t>(this->MY_[1] - '0');
+      if (fon9_LIKELY(y1 < 10)) {
+         uint8_t mm = static_cast<uint8_t>(this->MY_[0] - 'A');
+         if (mm >= 12) { // IsOptPut?
+            if ((mm = static_cast<uint8_t>(mm - 12)) >= 12)
+               return 0;
+         }
+         unsigned yyy = (tdayYYYY / 10) + (y1 < (tdayYYYY % 10));
+         return (((yyy * 10) + y1) * 100) + (mm + 1);
+      }
+      return 0;
+   }
+   bool IsOptPut() const {
+      return this->MY_[0] >= static_cast<char>('A' + 12);
    }
    /// 期貨 or 買權格式: 月份碼 = 'A'..'L';
    /// \retval false mm 不是 1..12;
