@@ -45,6 +45,9 @@ namespace fon { namespace fix {
 #define f9fix_kVAL_OrdType_MarketWithLeftover_as_Limit   "K" // market order then unexecuted quantity becomes limit order at last price.
 #define f9fix_kVAL_OrdType_HistoricPricing         "L"   // Previous Fund Valuation Point (Historic pricing) (for CIV)
 
+#define f9fix_kTAG_StopPx                          99    // 停損單(OrdType=Stop or StopLimit) 的 [停損價].
+#define f9fix_kTAG_WorkingIndicator                636
+
 #define f9fix_kTAG_TimeInForce                     59
 #define f9fix_kVAL_TimeInForce_Day                 "0"
 #define f9fix_kVAL_TimeInForce_GoodTillCancel      "1"
