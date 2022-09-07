@@ -73,7 +73,7 @@ bool SocketServerConfig::Parser::OnErrorBreakClient(ErrorEventArgs& e) {
 
 bool SocketServerConfig::CreateListenSocket(Socket& soListen, SocketResult& soRes) const {
    if(soListen.CreateDeviceSocket(this->ListenConfig_.GetAF(), SocketType::Stream, soRes)
-      && soListen.SetSocketOptions(this->ListenConfig_.Options_, soRes)
+      && soListen.SetSocketOptions(this->ListenConfig_.Options_, this->ListenConfig_.GetAF(), soRes)
       && soListen.Bind(this->ListenConfig_.AddrBind_, soRes)) {
       if (::listen(soListen.GetSocketHandle(), this->ListenBacklog_) == 0)
          return true;

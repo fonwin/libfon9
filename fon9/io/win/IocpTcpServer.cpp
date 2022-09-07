@@ -188,7 +188,7 @@ void IocpTcpListener::OnIocp_Done(OVERLAPPED* lpOverlapped, DWORD bytesTransfere
       if (cfg.ServiceArgs_.Capacity_ > 0 && this->GetConnectionCount() >= cfg.ServiceArgs_.Capacity_)
          // 如果超過了 MaxConnections, 要等一個 AcceptedClient 斷線後, 才允許接受新的連線.
          soRes = SocketResult{"OverMaxConnections", std::errc::too_many_files_open};
-      else if (this->ClientSocket_.SetSocketOptions(cfg.AcceptedSocketOptions_, soRes)) {
+      else if (this->ClientSocket_.SetSocketOptions(cfg.AcceptedSocketOptions_, static_cast<AddressFamily>(addrRemote->sa_family), soRes)) {
          SOCKET soListen = this->ListenSocket_.GetSocketHandle();
          if (setsockopt(soAccepted, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT, reinterpret_cast<const char *>(&soListen), sizeof(soListen)) != 0)
             soRes = SocketResult{"SO_UPDATE_ACCEPT_CONTEXT"};

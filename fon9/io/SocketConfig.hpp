@@ -7,7 +7,6 @@
 
 namespace fon9 { namespace io {
 
-fon9_WARN_DISABLE_PADDING;
 /// \ingroup io
 /// Socket 基本參數.
 struct fon9_API SocketOptions {
@@ -40,6 +39,15 @@ struct fon9_API SocketOptions {
    /// - >1:  TCP_KEEPIDLE,TCP_KEEPINTVL 的間隔秒數, 此時 TCP_KEEPCNT 一律設為 3.
    int KeepAliveInterval_;
 
+   /// QoS 的參數: 0=不設定.
+   /// - 可用 "Dscp=" or "IpTos="; IpTos = (Dscp << 2);
+   ///   - IPv4 使用: setsockopt(..., IP_TOS, IpTos);
+   ///   - IPv6 使用: setsockopt(..., IPV6_TCLASS, IpTos);
+   /// - 例 AF11 的設定: "Dscp=x0a" 或 "IpTos=x28"
+   /// - 例 AF21 的設定: "Dscp=x12" 或 "IpTos=x48"
+   uint8_t  IpTos_;
+   char     Padding____[7];
+
    void SetDefaults();
 
    ConfigParser::Result OnTagValue(StrView tag, StrView& value);
@@ -57,6 +65,7 @@ struct fon9_API SocketConfig {
    /// - Tcp Client: 遠端Server的 address & port.
    SocketAddress AddrRemote_;
    SocketOptions Options_;
+   char          Padding____[4];
 
    /// 取得 Address family: 透過 AddrBind_ 的 sa_family.
    AddressFamily GetAF() const {
@@ -92,7 +101,6 @@ struct fon9_API SocketConfig {
       Result OnTagValue(StrView tag, StrView& value) override;
    };
 };
-fon9_WARN_POP;
 
 } } // namespaces
 #endif//__fon9_io_SocketConfig_hpp__

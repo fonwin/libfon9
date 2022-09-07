@@ -132,7 +132,7 @@ inline static void SetOpt(socket_t so, int level, int optname, const ValueT& val
       SetSocketResultError(cstrOptName, soRes);
 }
 
-bool Socket::SetSocketOptions(const SocketOptions& opts, SocketResult& soRes) const {
+bool Socket::SetSocketOptions(const SocketOptions& opts, AddressFamily af, SocketResult& soRes) const {
    auto  so = this->GetSocketHandle();
 #ifdef SO_NOSIGPIPE // iOS
    int   setNoSigPIPE = 1;
@@ -188,6 +188,12 @@ bool Socket::SetSocketOptions(const SocketOptions& opts, SocketResult& soRes) co
          #endif
       #endif
       }
+   }
+#ifndef SOL_IP
+#define SOL_IP    IPPROTO_IP
+#endif
+   if (opts.IpTos_) {
+      SetOpt(so, SOL_IP, (af == AddressFamily::INET6 ? IPV6_TCLASS : IP_TOS), opts.IpTos_, "IpTos.Dscp", soRes);
    }
    return soRes.IsSuccess();
 }

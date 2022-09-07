@@ -129,7 +129,7 @@ public:
       return Socket::LoadSocketErrC(this->GetSocketHandle());
    }
 
-   bool SetSocketOptions(const SocketOptions& opts, SocketResult& soRes) const;
+   bool SetSocketOptions(const SocketOptions& opts, AddressFamily af, SocketResult& soRes) const;
    bool Bind(const SocketAddress& addr, SocketResult& soRes) const;
 
 #ifdef fon9_WINDOWS

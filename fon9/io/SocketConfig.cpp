@@ -37,33 +37,37 @@ void SocketConfig::SetAddrFamily() {
 //--------------------------------------------------------------------------//
 
 ConfigParser::Result SocketOptions::OnTagValue(StrView tag, StrView& value) {
-   if (tag == "TcpNoDelay")
+   if (iequals(tag, "TcpNoDelay"))
       this->TCP_NODELAY_ = (toupper(static_cast<unsigned char>(value.Get1st())) != 'N');
-   else if (tag == "SNDBUF")
+   else if (iequals(tag, "SNDBUF"))
       this->SO_SNDBUF_ = StrTo(value, -1);
-   else if (tag == "RCVBUF")
+   else if (iequals(tag, "RCVBUF"))
       this->SO_RCVBUF_ = StrTo(value, -1);
-   else if (tag == "ReuseAddr")
+   else if (iequals(tag, "ReuseAddr"))
       this->SO_REUSEADDR_ = (toupper(static_cast<unsigned char>(value.Get1st())) == 'Y');
-   else if (tag == "ReusePort")
+   else if (iequals(tag, "ReusePort"))
       this->SO_REUSEPORT_ = (toupper(static_cast<unsigned char>(value.Get1st())) == 'Y');
-   else if (tag == "Linger") {
+   else if (iequals(tag, "Linger")) {
       if (toupper(static_cast<unsigned char>(value.Get1st())) == 'N') { // 開啟linger設定,但等候0秒.
          this->Linger_.l_onoff = 1;
          this->Linger_.l_linger = 0;
       }
    }
-   else if (tag == "KeepAlive")
+   else if (iequals(tag, "KeepAlive"))
       this->KeepAliveInterval_ = StrTo(value, int{});
+   else if (iequals(tag, "IpTos"))
+      this->IpTos_ = static_cast<uint8_t>(HIntStrTo(value));
+   else if (iequals(tag, "Dscp"))
+      this->IpTos_ = static_cast<uint8_t>(HIntStrTo(value) << 2);
    else
       return ConfigParser::Result::EUnknownTag;
    return ConfigParser::Result::Success;
 }
 
 ConfigParser::Result SocketConfig::OnTagValue(StrView tag, StrView& value) {
-   if (tag == "Bind")
+   if (iequals(tag, "Bind"))
       this->AddrBind_.FromStr(value);
-   else if (tag == "Remote")
+   else if (iequals(tag, "Remote"))
       this->AddrRemote_.FromStr(value);
    else
       return this->Options_.OnTagValue(tag, value);

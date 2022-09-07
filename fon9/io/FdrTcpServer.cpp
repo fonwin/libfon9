@@ -150,7 +150,7 @@ void FdrTcpListener::OnFdrEvent_Handling(FdrEventFlag evs) {
          if (cfg.ServiceArgs_.Capacity_ > 0 && this->GetConnectionCount() >= cfg.ServiceArgs_.Capacity_)
             // 如果超過了 MaxConnections, 要等一個 AcceptedClient 斷線後, 才允許接受新的連線.
             soRes = SocketResult{"OverMaxConnections", std::errc::too_many_files_open};
-         else if (soAccepted.SetSocketOptions(cfg.AcceptedSocketOptions_, soRes)) {
+         else if (soAccepted.SetSocketOptions(cfg.AcceptedSocketOptions_, cfg.ListenConfig_.GetAF(), soRes)) {
             if (SessionSP sesAccepted = server.OnDevice_Accepted()) {
                DeviceSP dev{devAccepted = new AcceptedClient::Impl(*this,
                                                                    std::move(soAccepted),

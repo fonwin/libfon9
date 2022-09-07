@@ -27,7 +27,7 @@ void SocketClientDevice::OnCommonTimer(TimeStamp now) {
    }});
 }
 bool SocketClientDevice::SetSocketOptions(Socket& soCli, SocketResult& soRes) {
-   return soCli.SetSocketOptions(this->Config_.Options_, soRes)
+   return soCli.SetSocketOptions(this->Config_.Options_, this->Config_.GetAF(), soRes)
       && (this->Config_.AddrBind_.IsEmpty() || soCli.Bind(this->Config_.AddrBind_, soRes));
 }
 void SocketClientDevice::OpImpl_ConnectToNext(StrView lastError) {
