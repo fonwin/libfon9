@@ -184,9 +184,61 @@ void TestConfigLoaderFile() {
    // TODO: $include: 搜尋路徑是否正確?
    // TODO: 展開後的 GetCfgStr() 是否正確?
 }
-
 //--------------------------------------------------------------------------//
-
+void TestVarSel() {
+   ConfigLoaderSP cfgld{new fon9::ConfigLoader{""}};
+   std::cout << "[TEST ] Var sel";
+   try {
+      cfgld->CheckLoad(
+         "$A=aaa\n"
+         "$B=bbbbb\n"
+         "{${A}}\n"
+         "{\n"
+            "${B}\n"
+         "}\n"
+         "${A-ccc}\n"
+         "${X-X not exists}\n"
+         "${A-$B}\n"
+         "${X- $B}\n"
+         "${X- ${B}}\n"
+         "$C={\n"
+         "${A:-}\n"
+         "${X:-}\n"
+         "}\n"
+         "$C\n"
+      );
+      if (strcmp(cfgld->GetCfgStr().c_str(),
+                 "\n"
+                 "\n"
+                 "{aaa}\n"
+                 "{\n" "bbbbb\n" "}\n"
+                 "aaa\n"
+                 "X not exists\n"
+                 "aaa\n"
+                 "bbbbb\n"
+                 "bbbbb\n"
+                 "\n"
+                 "\n"
+                 "\n"
+                 "\n"
+                 "\n"//$C={
+                 "aaa\n"
+                 "\n"
+                 "\n"//}
+      ) != 0) {
+         std::cout << "Not expected!\r[ERROR]\n"
+                   << cfgld->GetCfgStr();
+         abort();
+         return;
+      }
+   }
+   catch (fon9::ConfigLoader::Err& e) {
+      std::cout << ':' << fon9::RevPrintTo<std::string>(e) << "\r[ERROR]\n";
+      abort();
+   }
+   std::cout << "\r[OK   ]\n";
+}
+//--------------------------------------------------------------------------//
 int main() {
 #if defined(_MSC_VER) && defined(_DEBUG)
    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -199,6 +251,7 @@ int main() {
 
    TestConfigLoader();
    TestConfigLoaderFile();
+   TestVarSel();
 
    RemoveTestFiles();
 }

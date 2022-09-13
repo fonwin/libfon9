@@ -9,9 +9,10 @@ namespace fon9 {
 
 static constexpr StrBrPair CfgBrPair[]{
    {'\'', '\'', false},
-   {'"', '"', false},
-   {'`', '`', false},
-   {'#', '\n', false},
+   {'"',  '"',  false},
+   {'`',  '`',  false},
+   {'#',  '\n', false},
+   {'{',  '}',  true},
 };
 static const StrBrArg CfgBrArg{CfgBrPair};
 
@@ -233,6 +234,8 @@ struct ConfigLoader::Appender {
          case BeforeAppend_ContinueSameLine:
             continue;
          case BeforeAppend_NormalLine:
+            // lnpr 還原到尚未 StrTrimHead() 之前的位置 = 此行原本開始位置, 因為: 展開時,保留原本空白.
+            lnpr.SetBegin(this->CfgRemain_.begin());
             this->ExpandLine(lnpr, plnEnd);
             /* fall through */  // 繼續檢查是否需要 push_back('\n');
          case BeforeAppend_ToNextLineNormal:
@@ -254,10 +257,10 @@ struct ConfigLoader::Appender {
    }
    void ExpandLine(StrView lnpr, const char* plnEnd) {
       StrView     inVar;
-      const char* prvBeg;
-      // lnpr 還原到尚未 StrTrimHead() 之前的位置 = 此行原本開始位置, 因為: 展開時,保留原本空白.
-      lnpr.SetBegin(prvBeg = this->CfgRemain_.begin());
+      const char* prvBeg = lnpr.begin();
+      const char* nxtBeg = nullptr;
       while (const char* pnBeg = lnpr.Find('$')) {
+      __CONTINUE_VAR:;
          lnpr.SetBegin(pnBeg + 1);
          VariableSP  var;
          if (lnpr.Get1st() != '{') {
@@ -294,6 +297,20 @@ struct ConfigLoader::Appender {
                   continue;
                break;
             }
+            if (!var) {
+               const char* pNxt = StrFindTrimHead(inVar.begin(), inVar.end());
+               if (pNxt != inVar.end() && *pNxt == '$') {
+                  // 如果 value 為變數.
+                  pnBeg = prvBeg = pNxt;
+                  if (nxtBeg == nullptr)
+                     nxtBeg = lnpr.begin();
+                  goto __CONTINUE_VAR;
+               }
+            }
+         }
+         if (nxtBeg) {
+            lnpr.SetBegin(nxtBeg);
+            nxtBeg = nullptr;
          }
          if (prvBeg != pnBeg) {
             this->LineInfos_.push_back(this->From_, this->LineNo_, this->ColNo_);
