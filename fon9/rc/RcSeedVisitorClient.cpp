@@ -21,7 +21,8 @@ static void ParseStrValuesToSeed(StrView vals, const seed::RawWr& wr, const seed
 void RcSvcNotifySeeds(f9sv_FnOnReport fnOnReport, f9rc_ClientSession* ses, f9sv_ClientReport* rpt,
                       StrView gv, const seed::RawWr& wr, const seed::Fields& flds, bool hasKeyText) {
    rpt->ResultCode_ = f9sv_Result_NoError;
-   while (!gv.empty()) {
+   // 至少要通知一次 fnOnReport(), 所以 while (!gv.empty()); 放在最後.
+   do {
       StrView fldValues = StrFetchNoTrim(gv, *fon9_kCSTR_ROWSPL);
       if (hasKeyText) {
          rpt->SeedKey_ = StrFetchNoTrim(fldValues, '\x01').ToCStrView();
@@ -29,7 +30,7 @@ void RcSvcNotifySeeds(f9sv_FnOnReport fnOnReport, f9rc_ClientSession* ses, f9sv_
       }
       ParseStrValuesToSeed(fldValues, wr, flds);
       fnOnReport(ses, rpt);
-   }
+   } while (!gv.empty());
 }
 //--------------------------------------------------------------------------//
 RcSeedVisitorClientAgent::~RcSeedVisitorClientAgent() {
