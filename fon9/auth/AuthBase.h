@@ -74,7 +74,7 @@ typedef enum fon9_Auth_R : int {
    fon9_Auth_EBindFrom = -401,
 } fon9_Auth_R;
 
-inline bool fon9_IsAuthError(fon9_Auth_R res) {
+static inline bool fon9_IsAuthError(fon9_Auth_R res) {
    return res < fon9_Auth_Success;
 }
 

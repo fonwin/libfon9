@@ -36,13 +36,13 @@ fon9_API size_t fon9_getpass(FILE* promptFD, const char* promptStr, char* pwbuf,
 
 #ifdef fon9_WINDOWS
 typedef struct { int ws_row, ws_col; } fon9_winsize;
-inline void fon9_GetConsoleSize(fon9_winsize* winsz) {
+static inline void fon9_GetConsoleSize(fon9_winsize* winsz) {
    CONSOLE_SCREEN_BUFFER_INFO csbi;
    GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
    winsz->ws_row = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
    winsz->ws_col = csbi.srWindow.Right - csbi.srWindow.Left + 1;
 }
-inline void fon9_SetConsoleUTF8(void) {
+static inline void fon9_SetConsoleUTF8(void) {
    SetConsoleCP(CP_UTF8);
    SetConsoleOutputCP(CP_UTF8);
 }

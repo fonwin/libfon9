@@ -34,7 +34,7 @@ fon9_ENUM(f9sv_FieldType, uint8_t) {
    /// 輸出格式 `days-hh:mm:ss.uuuuuu`
    f9sv_FieldType_DayTime,
 };
-inline int f9sv_IsFieldTypeNumber(f9sv_FieldType v) {
+static inline int f9sv_IsFieldTypeNumber(f9sv_FieldType v) {
    return v >= f9sv_FieldType_Integer;
 }
 

@@ -58,11 +58,11 @@ fon9_ENUM(f9fmkt_TradingMarket, char) {
    f9fmkt_TradingMarket_MaxIndex = 'z'
 };
 /// 返回值必定在 [0..f9fmkt_TradingMarket_MaxIndex] 之間.
-inline unsigned char f9fmkt_TradingMarket_ToIndex(f9fmkt_TradingMarket v) {
+static inline unsigned char f9fmkt_TradingMarket_ToIndex(f9fmkt_TradingMarket v) {
    return (unsigned char)(v) > (unsigned char)f9fmkt_TradingMarket_MaxIndex
       ? (unsigned char)(0) : (unsigned char)(v);
 }
-inline f9fmkt_TradingMarket IndexTo_f9fmkt_TradingMarket(unsigned idx) {
+static inline f9fmkt_TradingMarket IndexTo_f9fmkt_TradingMarket(unsigned idx) {
    return idx > (unsigned char)f9fmkt_TradingMarket_MaxIndex
       ? f9fmkt_TradingMarket_Unknown : (f9fmkt_TradingMarket)(idx);
 }
@@ -93,11 +93,11 @@ fon9_ENUM(f9fmkt_TradingSessionId, char) {
    f9fmkt_TradingSessionId_MaxIndex = 'z'
 };
 /// 返回值必定在 [0..f9fmkt_TradingSessionId_MaxIndex] 之間.
-inline unsigned char f9fmkt_TradingSessionId_ToIndex(f9fmkt_TradingSessionId v) {
+static inline unsigned char f9fmkt_TradingSessionId_ToIndex(f9fmkt_TradingSessionId v) {
    return (unsigned char)(v) > (unsigned char)f9fmkt_TradingSessionId_MaxIndex
       ? (unsigned char)(0) : (unsigned char)(v);
 }
-inline f9fmkt_TradingSessionId IndexTo_f9fmkt_TradingSessionId(unsigned idx) {
+static inline f9fmkt_TradingSessionId IndexTo_f9fmkt_TradingSessionId(unsigned idx) {
    return idx > (unsigned char)f9fmkt_TradingSessionId_MaxIndex
       ? f9fmkt_TradingSessionId_Unknown : (f9fmkt_TradingSessionId)(idx);
 }
@@ -138,7 +138,7 @@ fon9_ENUM(f9fmkt_TradingSessionSt, uint8_t) {
    /// 該時段收盤, 或該時段不再恢復交易.
    f9fmkt_TradingSessionSt_Closed          = 0xf3,
 };
-inline char f9fmkt_TradingSessionSt_ToFixTradSesStatus(f9fmkt_TradingSessionSt st) {
+static inline char f9fmkt_TradingSessionSt_ToFixTradSesStatus(f9fmkt_TradingSessionSt st) {
    return (char)((st & 0x0f) + '0');
 }
 
@@ -297,14 +297,14 @@ fon9_ENUM(f9fmkt_TradingRequestSt, uint8_t) {
    // 這裡的狀態碼, 必須與 f9fmkt_OrderSt 一起考慮.
    // 因為新單的 RequestSt 改變時, 通常會拿新單的 RequestSt 直接更新 OrderSt.
 };
-inline int f9fmkt_TradingRequestSt_IsFinishedRejected(f9fmkt_TradingRequestSt st) {
+static inline int f9fmkt_TradingRequestSt_IsFinishedRejected(f9fmkt_TradingRequestSt st) {
    return (unsigned char)(st & 0xf0) == (unsigned char)(0xe0);
 }
-inline int f9fmkt_TradingRequestSt_IsAnyRejected(f9fmkt_TradingRequestSt st) {
+static inline int f9fmkt_TradingRequestSt_IsAnyRejected(f9fmkt_TradingRequestSt st) {
    return f9fmkt_TradingRequestSt_IsFinishedRejected(st)
       || st == f9fmkt_TradingRequestSt_PartExchangeRejected;
 }
-inline int f9fmkt_TradingRequestSt_IsPart(f9fmkt_TradingRequestSt st) {
+static inline int f9fmkt_TradingRequestSt_IsPart(f9fmkt_TradingRequestSt st) {
    return (unsigned char)(st & 0xf0) == (unsigned char)(0xa0);
 }
 
@@ -423,13 +423,13 @@ fon9_ENUM(f9fmkt_OrderSt, uint8_t) {
    // 這裡的狀態碼, 必須與 f9fmkt_TradingRequestSt 一起考慮.
    // 因為新單的 RequestSt 改變時, 通常會拿新單的 RequestSt 直接更新 OrderSt.
 };
-inline int f9fmkt_OrderSt_IsFinishedRejected(f9fmkt_OrderSt st) {
+static inline int f9fmkt_OrderSt_IsFinishedRejected(f9fmkt_OrderSt st) {
    return f9fmkt_TradingRequestSt_IsFinishedRejected((f9fmkt_TradingRequestSt)st);
 }
-inline int f9fmkt_OrderSt_IsAnyRejected(f9fmkt_OrderSt st) {
+static inline int f9fmkt_OrderSt_IsAnyRejected(f9fmkt_OrderSt st) {
    return f9fmkt_TradingRequestSt_IsAnyRejected((f9fmkt_TradingRequestSt)st);
 }
-inline int f9fmkt_OrderSt_IsCanceled(f9fmkt_OrderSt st) {
+static inline int f9fmkt_OrderSt_IsCanceled(f9fmkt_OrderSt st) {
    return f9fmkt_OrderSt_AsCanceled <= st && st <= f9fmkt_OrderSt_UserCanceled;
 }
 
