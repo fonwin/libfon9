@@ -272,13 +272,16 @@ std::string Device::OnDevice_Command(StrView cmd, StrView param) {
          return std::string(cstrHelp, sizeof(cstrHelp) - 2); // -2: 移除尾端 "\n\0"
       std::string res{cstrHelp};
       res.append("-" fon9_kCSTR_ROWSPL);
-      StrView     sesCommands{&sesCommandHelp};
+      StrView sesCommands{&sesCommandHelp};
       while (!sesCommands.empty()) {
          StrView  sesCmd = StrFetchNoTrim(sesCommands, *fon9_kCSTR_ROWSPL);
          if (!sesCmd.empty()) {
             res.append("ses ");
             res.append(sesCmd.begin(), sesCmd.size() + 1); // +1 = fon9_kCSTR_ROWSPL;
          }
+      }
+      while (res.back() == '\0' || res.back() == *fon9_kCSTR_ROWSPL) {
+         res.pop_back();
       }
       return res;
    }

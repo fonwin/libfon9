@@ -76,7 +76,7 @@ void ExgTradingLineFix::OnFixSessionConnected() {
    // KEY-VALUE = (APPEND-NO * PASSWORD)取千與百二位數字。
    // APPEND-NO + KEY-VALUE: 3 digits + 2 digits
    #define kRawDataLength     5
-   app = (app * 100) + (((app * this->LineArgs_.PassCode_) / 100) % 100);
+   app = (app * 100) + (((app * this->LineArgs_.GetPassNum()) / 100) % 100);
    auto pOutRawData = fixb.GetBuffer().AllocPrefix(kRawDataLength);
    fixb.GetBuffer().SetPrefixUsed(fon9::Pic9ToStrRev<kRawDataLength>(pOutRawData, app));
    fon9::RevPrint(fixb.GetBuffer(), f9fix_kFLD_EncryptMethod_None

@@ -7,7 +7,8 @@ namespace f9tws {
 void ExgLineArgs::Clear() {
    this->BrkId_.Clear(' ');
    this->SocketId_.Clear(' ');
-   this->PassCode_ = static_cast<uint16_t>(-1);
+   this->PassKey_.Clear();
+   this->PassNum_ = static_cast<uint16_t>(-1);
    this->HbInterval_ = 0;
 }
 
@@ -25,7 +26,11 @@ fon9::ConfigParser::Result ExgLineArgs::OnTagValue(fon9::StrView tag, fon9::StrV
    else if (tag == "SocketId" || tag == "PvcId")
       return CopyToCharAry(this->SocketId_, value);
    else if (tag == "Pass")
-      this->PassCode_ = fon9::StrTo(&value, this->PassCode_);
+      this->PassNum_ = fon9::StrTo(&value, this->PassNum_);
+   else if (tag == "PassKey") {
+      this->PassKey_.AssignFrom(value);
+      return fon9::ConfigParser::Result::Success;
+   }
    else if (tag == "HbInt")
       this->HbInterval_ = fon9::StrTo(&value, this->HbInterval_);
    else {
@@ -39,9 +44,21 @@ std::string ExgLineArgs::Verify() const {
       return "Unknown BrkId";
    if (fon9::isspace(this->SocketId_.Chars_[0]))
       return "Unknown SocketId/PvcId";
-   if (this->PassCode_ > 9999)
+   if (this->PassNum_ > 9999 && this->PassKey_.empty1st())
       return "Unknown Pass";
    return std::string{};
+}
+//--------------------------------------------------------------------------//
+static uint16_t GetPassNum(const ExgLineArgs& args) {
+   return args.PassNum_;
+}
+static ExgLineArgs::FnGetPassNum twsFnGetPassNum = &f9tws::GetPassNum;
+
+void ExgLineArgs::SetFnGetPassNum(FnGetPassNum fnGetPassNum) {
+   twsFnGetPassNum = fnGetPassNum ? fnGetPassNum : &f9tws::GetPassNum;
+}
+uint16_t ExgLineArgs::GetPassNum() const {
+   return twsFnGetPassNum(*this);
 }
 
 } // namespaces

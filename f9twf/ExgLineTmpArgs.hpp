@@ -7,13 +7,13 @@
 
 namespace f9twf {
 
-fon9_WARN_DISABLE_PADDING;
-struct ExgLineTmpArgs {
+struct f9twf_API ExgLineTmpArgs {
    TmpApCode            ApCode_;
    TmpSessionId         SessionId_;
    TmpFcmId             SessionFcmId_;
-   uint16_t             Pass_;
    bool                 IsUseSymNum_;
+   uint16_t             PassNum_;
+   fon9::CharAry<16>    PassKey_;
    fon9::TimeInterval   FcInterval_;
 
    void Clear() {
@@ -21,10 +21,17 @@ struct ExgLineTmpArgs {
    }
    fon9::ConfigParser::Result OnTagValue(fon9::StrView tag, fon9::StrView& value);
    std::string Verify() const;
+
+   typedef uint16_t (*FnGetPassNum) (const ExgLineTmpArgs& args);
+   /// 預設: 不理會 args.PassKey_; 直接返回 args.PassNum_;
+   /// 若須透過 fon9::auth::PassIdMgr 提供 args.PassKey_; 取得密碼, 則應自行設定 FnGetPassNum;
+   static void SetFnGetPassNum(FnGetPassNum fnGetPassNum);
+
+   uint16_t GetPassNum() const;
 };
-fon9_WARN_POP;
 
 /// - cfg = "FcmId=數字代號|SessionId=|Pass=|ApCode="; 每個欄位都必須提供.
+/// - 若有提供 "PassKey=" 則必須自定 FnGetPassNum;
 /// - 額外的設定 "IsUseSymNum=Y";  送給期交所的 SymbId, 使用數字格式.
 ///   預設使用文字格式(根據 SymbolId 的長度決定使用 LongId or ShortId).
 /// - retval.empty() 成功, retval = 失敗訊息.

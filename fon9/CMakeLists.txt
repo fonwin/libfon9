@@ -153,6 +153,7 @@ set(fon9src
  auth/AuthMgr.cpp
  auth/RoleMgr.cpp
  auth/UserMgr.cpp
+ auth/PassIdMgr.cpp
  auth/PolicyTable.cpp
  auth/PolicyTree.cpp
  auth/PolicyMaster.cpp

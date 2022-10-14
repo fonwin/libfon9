@@ -316,7 +316,7 @@ void ExgTmpIoSession::OnExgTmp_RecvTmp(const char* pkptr, unsigned pksz) {
          pkptr += f9tws_kSIZE_TMP_HEAD_A - this->LinkSubName_.size();
          unsigned appn = fon9::Pic9StrTo<kSIZE_APPEND_NO, unsigned>(pkptr);
          // 計算 KEY-VALUE = (APPEND-NO * PASSWORD)取千與百二位數字。
-         appn = ((appn * this->LineArgs_.PassCode_) / 100) % 100;
+         appn = ((appn * this->LineArgs_.GetPassNum()) / 100) % 100;
          // APPEND-NO   9(3)
          // BROKER-ID   X(4)
          // AP-CODE     X(1)

@@ -10,7 +10,7 @@ std::string ExgLineTmpArgs::Verify() const {
       return "Unknown FcmId";
    if (TmpGetValueU(this->SessionId_) == 0)
       return "Unknown SessionId";
-   if (this->Pass_ > 9999)
+   if (this->PassNum_ > 9999 && this->PassKey_.empty1st())
       return "Unknown Pass";
    if (!this->FcInterval_.IsNullOrZero() && this->FcInterval_.GetOrigValue() < 0)
       return "Bad FcInterval";
@@ -24,7 +24,11 @@ fon9::ConfigParser::Result ExgLineTmpArgs::OnTagValue(fon9::StrView tag, fon9::S
    else if (tag == "FcmId")
       TmpPutValue(this->SessionFcmId_, fon9::StrTo(&value, TmpFcmId_t{}));
    else if (tag == "Pass")
-      this->Pass_ = fon9::StrTo(&value, this->Pass_);
+      this->PassNum_ = fon9::StrTo(&value, this->PassNum_);
+   else if (tag == "PassKey") {
+      this->PassKey_.AssignFrom(value);
+      return fon9::ConfigParser::Result::Success;
+   }
    else if (tag == "IsUseSymNum") {
       this->IsUseSymNum_ = (value.Get1st() == 'Y');
       return fon9::ConfigParser::Result::Success;
@@ -38,6 +42,18 @@ fon9::ConfigParser::Result ExgLineTmpArgs::OnTagValue(fon9::StrView tag, fon9::S
 
 f9twf_API std::string ExgLineTmpArgsParser(ExgLineTmpArgs& args, fon9::StrView cfg) {
    return fon9::ParseFullConfig(args, cfg);
+}
+//--------------------------------------------------------------------------//
+static uint16_t GetPassNum(const ExgLineTmpArgs& args) {
+   return args.PassNum_;
+}
+static ExgLineTmpArgs::FnGetPassNum twfFnGetPassNum = &f9twf::GetPassNum;
+
+void ExgLineTmpArgs::SetFnGetPassNum(FnGetPassNum fnGetPassNum) {
+   twfFnGetPassNum = fnGetPassNum ? fnGetPassNum : &f9twf::GetPassNum;
+}
+uint16_t ExgLineTmpArgs::GetPassNum() const {
+   return twfFnGetPassNum(*this);
 }
 
 } // namespaces

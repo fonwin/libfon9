@@ -1157,6 +1157,9 @@
     <ClInclude Include="..\..\..\fon9\auth\PoDupLogon.hpp">
       <Filter>Header Files\auth</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\auth\PassIdMgr.hpp">
+      <Filter>Header Files\auth</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -1881,6 +1884,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\FileReadAll.cpp">
       <Filter>Source Files\_base\_File</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\auth\PassIdMgr.cpp">
+      <Filter>Source Files\auth</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
