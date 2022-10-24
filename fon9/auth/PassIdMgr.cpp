@@ -5,6 +5,7 @@
 #include "fon9/BitvArchive.hpp"
 #include "fon9/Random.hpp"
 #include "fon9/Log.hpp"
+#include "fon9/PassKey.hpp"
 
 namespace fon9 { namespace auth {
 
@@ -187,11 +188,22 @@ PassIdMgr::PassIdMgr(const seed::MaTree* authMgrAgents, std::string name)
    : base(new PassIdTree(), std::move(name)) {
    (void)authMgrAgents;
 }
-unsigned PassIdMgr::GetPassNum(PassIdMgr* mgr, const StrView& passKey, unsigned defaultPassNum) {
-   CharVector password;
-   if (GetPass(mgr, passKey, password))
-      return StrTo(ToStrView(password), defaultPassNum);
-   return defaultPassNum;
+//--------------------------------------------------------------------------//
+static PassIdMgrSP gPassIdMgr;
+static bool PassIdMgr_PasssKeyToPassword(const StrView& passKey, CharVector& password) {
+   if (gPassIdMgr && gPassIdMgr->GetPass(passKey, password))
+      return true;
+   password.assign(passKey);
+   return false;
+}
+
+PassIdMgrSP PassIdMgr::PlantPassKeyMgr(AuthMgr& authMgr, std::string name) {
+   PassIdMgrSP retval = Plant(authMgr, std::move(name));
+   if (retval) {
+      gPassIdMgr = retval;
+      SetFnPassKeyToPassword(&PassIdMgr_PasssKeyToPassword);
+   }
+   return retval;
 }
 
 } } // namespaces

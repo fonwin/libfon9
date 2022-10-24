@@ -42,6 +42,7 @@ set(fon9src
  FlowCounter.cpp
  FlowControlCalc.cpp
  CtrlBreakHandler.c
+ PassKey.cpp
 
  PkCont.cpp
  PkReceiver.cpp

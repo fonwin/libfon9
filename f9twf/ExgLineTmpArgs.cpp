@@ -2,6 +2,7 @@
 // \author fonwinz@gmail.com
 #include "f9twf/ExgLineTmpArgs.hpp"
 #include "fon9/buffer/RevBufferList.hpp"
+#include "fon9/PassKey.hpp"
 
 namespace f9twf {
 
@@ -44,16 +45,8 @@ f9twf_API std::string ExgLineTmpArgsParser(ExgLineTmpArgs& args, fon9::StrView c
    return fon9::ParseFullConfig(args, cfg);
 }
 //--------------------------------------------------------------------------//
-static uint16_t GetPassNum(const ExgLineTmpArgs& args) {
-   return args.PassNum_;
-}
-static ExgLineTmpArgs::FnGetPassNum twfFnGetPassNum = &f9twf::GetPassNum;
-
-void ExgLineTmpArgs::SetFnGetPassNum(FnGetPassNum fnGetPassNum) {
-   twfFnGetPassNum = fnGetPassNum ? fnGetPassNum : &f9twf::GetPassNum;
-}
 uint16_t ExgLineTmpArgs::GetPassNum() const {
-   return twfFnGetPassNum(*this);
+   return static_cast<uint16_t>(PassKeyToPassNum(ToStrView(this->PassKey_), this->PassNum_));
 }
 
 } // namespaces

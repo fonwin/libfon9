@@ -1,6 +1,7 @@
 ﻿// \file f9tws/ExgLineArgs.cpp
 // \author fonwinz@gmail.com
 #include "f9tws/ExgLineArgs.hpp"
+#include "fon9/PassKey.hpp"
 
 namespace f9tws {
 
@@ -49,16 +50,8 @@ std::string ExgLineArgs::Verify() const {
    return std::string{};
 }
 //--------------------------------------------------------------------------//
-static uint16_t GetPassNum(const ExgLineArgs& args) {
-   return args.PassNum_;
-}
-static ExgLineArgs::FnGetPassNum twsFnGetPassNum = &f9tws::GetPassNum;
-
-void ExgLineArgs::SetFnGetPassNum(FnGetPassNum fnGetPassNum) {
-   twsFnGetPassNum = fnGetPassNum ? fnGetPassNum : &f9tws::GetPassNum;
-}
 uint16_t ExgLineArgs::GetPassNum() const {
-   return twsFnGetPassNum(*this);
+   return static_cast<uint16_t>(PassKeyToPassNum(ToStrView(this->PassKey_), this->PassNum_));
 }
 
 } // namespaces

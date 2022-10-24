@@ -64,15 +64,13 @@ public:
          res->LinkStorage(authMgr.Storage_, sizeof(PassIdRec));
       return res;
    }
+   /// 若成功, 則設定 fon9::SetFnPassKeyToPassword();
+   static intrusive_ptr<PassIdMgr> PlantPassKeyMgr(AuthMgr& authMgr, std::string name);
 
    /// passKey = "PassId/Salt"
    bool GetPass(const StrView& passKey, CharVector& password) const {
       return static_cast<PassIdTree*>(this->Sapling_.get())->GetPass(passKey, password);
    }
-   static bool GetPass(PassIdMgr* mgr, const StrView& passKey, CharVector& password) {
-      return (mgr && !passKey.empty()) ? mgr->GetPass(passKey, password) : false;
-   }
-   static unsigned GetPassNum(PassIdMgr* mgr, const StrView& passKey, unsigned defaultPassNum);
 
    enum {
       kPassKeyMaxLength = 15

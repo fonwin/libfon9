@@ -29,11 +29,6 @@ struct f9tws_API ExgLineArgs {
    /// 檢查欄位是否正確.
    std::string Verify() const;
 
-   typedef uint16_t (*FnGetPassNum) (const ExgLineArgs& args);
-   /// 預設: 不理會 args.PassKey_; 直接返回 args.PassNum_;
-   /// 若須透過 fon9::auth::PassIdMgr 提供 args.PassKey_; 取得密碼, 則應自行設定 FnGetPassNum;
-   static void SetFnGetPassNum(FnGetPassNum fnGetPassNum);
-
    uint16_t GetPassNum() const;
 };
 
