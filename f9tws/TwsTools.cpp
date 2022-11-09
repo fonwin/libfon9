@@ -131,7 +131,7 @@ void TwsSymbKindLvPriStep::Setup(StkNo stkno) {
    if (fon9_UNLIKELY(fon9::isdigit(static_cast<unsigned char>(ch5))
                      && ((3 <= hdr2 && hdr2 <= 8) || (70 <= hdr2 && hdr2 <= 73)))) {
       // 集 國內標的認購權證　　　　 030000-089999
-      // 中 國內標的認售權證　　　　 03000-08999+第六碼P
+      // 中 國內標的認售權證　　　　 03000-08999+第六碼P、U、T
       // 市 外國標的認購權證　　　　 03000-08999+第六碼F
       // 場 外國標的認售權證　　　　 03000-08999+第六碼Q
       // 權 下限型認購權證　　　　　 03000-08999+第六碼C
@@ -140,7 +140,7 @@ void TwsSymbKindLvPriStep::Setup(StkNo stkno) {
       // 　 可展延型上限型認售權證　 03000-08999+第六碼Y
       // -----
       // 櫃 國內標的認購權證　　　　 700000-739999
-      // 買 國內標的認售權證　　　　 70000-73999+第六碼P
+      // 買 國內標的認售權證　　　　 70000-73999+第六碼P、U、T
       // 中 外國標的認購權證　　　　 70000-73999+第六碼F
       // 心 外國標的認售權證　　　　 70000-73999+第六碼Q
       // 權 下限型認購權證　　　　　 70000-73999+第六碼C
@@ -156,6 +156,8 @@ void TwsSymbKindLvPriStep::Setup(StkNo stkno) {
          }
          break;
       case 'P':
+	  case 'T':
+      case 'U':
          this->Kind_ = f9tws_SymbKind_WP;
          return;
       case 'F':
