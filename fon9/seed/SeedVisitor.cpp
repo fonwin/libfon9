@@ -188,7 +188,13 @@ void TicketRunnerWrite::ParseSetValues(RevBufferList& rbuf, const SeedOpResult& 
             }
             nstr.push_back(*i);
          }
-         seed::OpResult r = fld->StrToCell(wr, &nstr);
+         val = &nstr;
+         if (fld->Type_ == f9sv_FieldType_Chars) {
+            if (auto sz = fld->GetAvailSize()) {
+               val = StrView_TruncUTF8(val, sz);
+            }
+         }
+         seed::OpResult r = fld->StrToCell(wr, val);
          if (r != seed::OpResult::no_error)
             RevPrint(rbuf, "fieldName=", fldName, "|err=StrToCell():", r, ':', seed::GetOpResultMessage(r), '\n');
       }

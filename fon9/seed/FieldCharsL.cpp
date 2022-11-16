@@ -7,6 +7,9 @@
 
 namespace fon9 { namespace seed {
 
+uint32_t FieldCharsL::GetAvailSize() const {
+   return this->MaxSize();
+}
 StrView FieldCharsL::GetTypeId(NumOutBuf& nbuf) const {
    nbuf.SetEOS();
    char* pbeg = nbuf.end();

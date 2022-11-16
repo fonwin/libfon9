@@ -35,6 +35,8 @@ public:
 
    /// 傳回: this->Type_ == f9sv_FieldType_Chars ? "C0 : "B0";
    virtual StrView GetTypeId(NumOutBuf&) const override;
+   /// return 0;
+   virtual uint32_t GetAvailSize() const override;
 
    /// 若 this->Type_ == f9sv_FieldType_Chars 內容直接字串輸出.
    /// 否則輸出 base64 字串, 此時不理會 fmt.

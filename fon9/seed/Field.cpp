@@ -7,6 +7,9 @@ namespace fon9 { namespace seed {
 
 Field::~Field() {
 }
+uint32_t Field::GetAvailSize() const {
+   return this->Size_;
+}
 FieldNumberT Field::GetNullValue() const {
    return 0;
 }

@@ -44,6 +44,7 @@ public:
 
    /// 傳回: "CnL"; n = this->Size_ - 1;
    virtual StrView GetTypeId(NumOutBuf&) const override;
+   virtual uint32_t GetAvailSize() const override;
 
    virtual void CellRevPrint(const RawRd& rd, StrView fmt, RevBuffer& out) const override;
    virtual OpResult StrToCell(const RawWr& wr, StrView value) const override;

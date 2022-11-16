@@ -10,6 +10,9 @@ namespace fon9 { namespace seed {
 StrView FieldDyBlob::GetTypeId(NumOutBuf&) const {
    return this->Type_ == f9sv_FieldType_Chars ? StrView{"C0"} : StrView{"B0"};
 }
+uint32_t FieldDyBlob::GetAvailSize() const {
+   return 0;
+}
 
 void FieldDyBlob::CellRevPrint(const RawRd& rd, StrView fmt, RevBuffer& out) const {
    const fon9_Blob blob = GetUnaligned(rd.GetCellPtr<fon9_Blob>(*this));

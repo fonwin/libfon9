@@ -50,6 +50,9 @@ public:
    virtual StrView GetTypeId(NumOutBuf&) const override {
       return StrView{"C0"};
    }
+   virtual uint32_t GetAvailSize() const override {
+      return 0;
+   }
 
    virtual void CellRevPrint(const RawRd& rd, StrView fmt, RevBuffer& out) const override {
       FmtRevPrint(fmt, out, this->GetValue(rd));

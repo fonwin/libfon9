@@ -80,7 +80,10 @@ public:
    /// - class MySeed : public Base1, public Raw {};
    /// - 如果使用 Base1 的 data member, 則 Offset_ 為負值!
    int32_t        Offset_;
-   /// 欄位資料的大小.
+   /// 欄位占用記憶體的大小 bytes.
+   /// 例如: FieldInt<IntT> 則此處為 sizeof(IntT);
+   /// 例如: FieldString<StrT> 則此處為 sizeof(StrT);
+   /// 例如: 給 CharAryL<sz> 用的 FieldCharsL, 此處為 (sz+1), 因為需要多用 1 byte 儲存長度.
    uint32_t       Size_;
    FieldSource    Source_;
    f9sv_FieldType Type_;
@@ -91,6 +94,11 @@ public:
    /// 取得型別字串: 參考 MakeField() 建立.
    /// 傳回值不一定會填入 buf.
    virtual StrView GetTypeId(NumOutBuf& buf) const = 0;
+   /// 傳回實際的資料大小.
+   /// 預設傳回 this->Size_;
+   /// 若為 FieldString<>, FieldDyBlob 則傳回 0;
+   /// 若為 FieldCharsL 則傳回 this->Size_ - 1;
+   virtual uint32_t GetAvailSize() const;
 
    /// 取出 rd 的資料, 根據 fmt 指定的格式, 輸出字串填入 out.
    virtual void CellRevPrint(const RawRd& rd, StrView fmt, RevBuffer& out) const = 0;
