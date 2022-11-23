@@ -10,7 +10,6 @@
 namespace f9twf {
 namespace f9fmkt = fon9::fmkt;
 
-fon9_WARN_DISABLE_PADDING;
 /// 負責管理: 可用線路、下單時尋找適當線路.
 /// - 管理一組相同 ExgSystemType 的「交易線路」
 /// - 日盤、夜盤時間會有重疊, 使用各自的 TradingLineMgr;
@@ -28,6 +27,7 @@ class f9twf_API ExgTradingLineMgr : public f9fmkt::TradingLineManager
 public:
    const ExgMapMgrSP    ExgMapMgr_;
    const ExgSystemType  ExgSystemType_;
+   char                 Padding7____[7];
 
    ExgTradingLineMgr(const fon9::IoManagerArgs& ioargs, fon9::TimeInterval afterOpen,
                      ExgMapMgrSP exgMapMgr, ExgSystemType systemType)
@@ -41,14 +41,11 @@ public:
    }
 
    /// 清除排隊中的下單要求.
-   /// - this->RegularLineMgr_.OnBeforeDestroy();
-   /// - this->AfterHourLineMgr_.OnBeforeDestroy();
    void OnParentSeedClear() override;
 
    /// 交易日變更時通知, 必要時在這裡會重建連線: this->DisposeAndReopen(std::move(cause));
    void OnTDayChanged(fon9::TimeStamp tday, std::string cause);
 };
-fon9_WARN_POP;
 
 } // namespaces
 #endif//__f9twf_ExgTradingLineMgr_hpp__

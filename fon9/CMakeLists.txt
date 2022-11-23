@@ -201,6 +201,9 @@ set(fon9src
  fmkt/SymbQuoteReq.cpp
  fmkt/TradingRequest.cpp
  fmkt/TradingLine.cpp
+ fmkt/TradingLineGroup.cpp
+ fmkt/TradingLineHelper1.cpp
+ fmkt/TradingLineManagerSeed.cpp
  fmkt/FmktTools.cpp
 
  fmkt/MdRtsTypes.cpp

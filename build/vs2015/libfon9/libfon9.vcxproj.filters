@@ -1163,6 +1163,15 @@
     <ClInclude Include="..\..\..\fon9\PassKey.hpp">
       <Filter>Header Files\_base\_Tools / Utility</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\TradingLineGroup.hpp">
+      <Filter>Header Files\fmkt\_Trading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\TradingLineHelper1.hpp">
+      <Filter>Header Files\fmkt\_Trading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\fmkt\TradingLineManagerSeed.hpp">
+      <Filter>Header Files\fmkt\_Trading</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -1893,6 +1902,15 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\PassKey.cpp">
       <Filter>Source Files\_base\_Tools / Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\TradingLineGroup.cpp">
+      <Filter>Source Files\fmkt\_Trading</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\TradingLineHelper1.cpp">
+      <Filter>Source Files\fmkt\_Trading</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\fmkt\TradingLineManagerSeed.cpp">
+      <Filter>Source Files\fmkt\_Trading</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

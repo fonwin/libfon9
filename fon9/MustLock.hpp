@@ -86,6 +86,15 @@ public:
       /// 取出的物件必須小心使用, 如果您呼叫了 unlock(); 則在 lock() 之前, 都不可使用他.
       LockedBaseT* get() const { return &this->Owner_->Base_; }
       OwnerT* GetOwner() const { return this->Owner_; }
+      /// 若 this->owns_lock() 則 do nothing.
+      /// 若 !this->owns_lock() 則重新上鎖.
+      void Relock(OwnerT& owner) {
+         assert(this->Owner_ == nullptr || this->Owner_ == &owner);
+         if (this->owns_lock())
+            return;
+         this->lock();
+         this->Owner_ = &owner;
+      }
    };
    using Locker = LockerT<MustLock, BaseT>;
    using ConstLocker = LockerT<const MustLock, const BaseT>;

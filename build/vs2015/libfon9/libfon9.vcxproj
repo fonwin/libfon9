@@ -193,6 +193,9 @@
     <ClInclude Include="..\..\..\fon9\fmkt\SymbTws.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\SymbTwsBase.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\TradingLine.hpp" />
+    <ClInclude Include="..\..\..\fon9\fmkt\TradingLineGroup.hpp" />
+    <ClInclude Include="..\..\..\fon9\fmkt\TradingLineHelper1.hpp" />
+    <ClInclude Include="..\..\..\fon9\fmkt\TradingLineManagerSeed.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\TradingRequest.hpp" />
     <ClInclude Include="..\..\..\fon9\fmkt\TwExgMdTime.hpp" />
     <ClInclude Include="..\..\..\fon9\framework\Framework.hpp" />
@@ -493,6 +496,9 @@
     <ClCompile Include="..\..\..\fon9\fmkt\SymbTws.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\SymbTwsBase.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\TradingLine.cpp" />
+    <ClCompile Include="..\..\..\fon9\fmkt\TradingLineGroup.cpp" />
+    <ClCompile Include="..\..\..\fon9\fmkt\TradingLineHelper1.cpp" />
+    <ClCompile Include="..\..\..\fon9\fmkt\TradingLineManagerSeed.cpp" />
     <ClCompile Include="..\..\..\fon9\fmkt\TradingRequest.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\Framework.cpp" />
     <ClCompile Include="..\..\..\fon9\framework\IoFactory.cpp" />

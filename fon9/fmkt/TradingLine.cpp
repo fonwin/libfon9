@@ -13,12 +13,75 @@ bool TradingLine::IsOrigSender(const TradingRequest& req) const {
    return false;
 }
 //--------------------------------------------------------------------------//
+TradingLineHelper::~TradingLineHelper() {
+}
+SendRequestResult TradingLineHelper::OnAskFor_BeforeQueue(TradingRequest& req, const TLineLocker& tsvrAsker) {
+   (void)req; (void)tsvrAsker;
+   return SendRequestResult::Queuing;
+}
+SendRequestResult TradingLineHelper::OnAskFor_NoReadyLine(TradingRequest& req, const TLineLocker& tsvrAsker) {
+   (void)req; (void)tsvrAsker;
+   return SendRequestResult::NoReadyLine;
+}
+//--------------------------------------------------------------------------//
+TradingLineManagerEv::~TradingLineManagerEv() {
+}
+void TradingLineManagerEv::OnNewTradingLineReady(TradingLine* src, const TLineLocker& tsvrFrom) {
+   (void)src; (void)tsvrFrom;
+}
+void TradingLineManagerEv::OnTradingLineBroken(TradingLine* src, const TLineLocker& tsvrFrom) {
+   (void)src; (void)tsvrFrom;
+}
+void TradingLineManagerEv::OnSendReqQueueEmpty(const TLineLocker& tsvrFrom) {
+   (void)tsvrFrom;
+}
+void TradingLineManagerEv::OnTradingLineManagerDetach(const TLineLocker& tsvrFrom) {
+   (void)tsvrFrom;
+}
+//--------------------------------------------------------------------------//
+void TradingLineManager::TradingSvrImpl::GetStInfo(RevBuffer& rbuf) const {
+   if (!this->Helper_)
+      RevPrint(rbuf, "|NoHelper");
+   else {
+      this->Helper_->GetStInfo(rbuf);
+      RevPrint(rbuf, "|Helper=");
+   }
+   RevPrint(rbuf, "ReadyLines=", this->CountReadyLines());
+}
+void TradingLineManager::TradingSvrImpl::SendReqQueue(void* tsvr) {
+   if (this->ReqQueue_.empty())
+      return;
+   TradingLineManager& owner = this->GetOwner();
+   SendRequestResult   res;
+   do {
+      res = owner.Send_ByLinesOrHelper(*this->ReqQueue_.front(), *static_cast<Locker*>(tsvr));
+      switch (res) {
+      case SendRequestResult::Queuing:
+         return;
+      default:
+      case SendRequestResult::RejectRequest:
+      case SendRequestResult::Sent:
+      case SendRequestResult::NoReadyLine:
+      case SendRequestResult::RequestEnd:
+         this->ReqQueue_.pop_front();
+         continue;
+      }
+   } while (!this->ReqQueue_.empty());
+   if (res != SendRequestResult::NoReadyLine) {
+      if (this->EvHandler_)
+         this->EvHandler_->OnSendReqQueueEmpty(*static_cast<Locker*>(tsvr));
+   }
+}
+//--------------------------------------------------------------------------//
 TradingLineManager::~TradingLineManager() {
    this->OnBeforeDestroy();
 }
 void TradingLineManager::OnBeforeDestroy() {
    this->FlowControlTimer_.DisposeAndWait();
-   this->ClearReqQueue(TradingSvr::Locker{this->TradingSvr_}, "TradingLineManager.dtor");
+   TradingSvr::Locker  tsvr{this->TradingSvr_};
+   if (tsvr->EvHandler_)
+      tsvr->EvHandler_->OnTradingLineManagerDetach(tsvr);
+   this->ClearReqQueue(std::move(tsvr), "TradingLineManager.dtor");
 }
 void TradingLineManager::OnTradingLineBroken(TradingLine& src) {
    TradingSvr::Locker tsvr{this->TradingSvr_};
@@ -29,16 +92,24 @@ void TradingLineManager::OnTradingLineBroken(TradingLine& src) {
    if (tsvr->LastIndex_ > static_cast<unsigned>(ifind - ibeg))
       --tsvr->LastIndex_;
    tsvr->Lines_.erase(ifind);
-   if (tsvr->Lines_.empty())
-      this->ClearReqQueue(std::move(tsvr), "No ready line.");
+   this->OnTradingLineBroken(&src, std::move(tsvr));
+}
+void TradingLineManager::OnTradingLineBroken(TradingLine* src, Locker&& tsvr) {
+   assert(&tsvr->GetOwner() == this);
+   if (tsvr->EvHandler_)
+      tsvr->EvHandler_->OnTradingLineBroken(src, tsvr);
+   if (!tsvr->IsSendable())
+      this->ClearReqQueue(std::move(tsvr), (src ? StrView{"No ready line."} : StrView{"No helper."}));
 }
 void TradingLineManager::ClearReqQueue(Locker&& tsvr, StrView cause) {
+   assert(&tsvr->GetOwner() == this);
    Reqs reqs = std::move(tsvr->ReqQueue_);
    tsvr.unlock();
    for (const TradingRequestSP& r : reqs)
       this->NoReadyLineReject(*r, cause);
 }
 SendRequestResult TradingLineManager::RequestPushToQueue(TradingRequest& req, const Locker& tsvr) {
+   assert(&tsvr->GetOwner() == this);
    tsvr->ReqQueue_.push_back(&req);
    return SendRequestResult::Queuing;
 }
@@ -59,29 +130,36 @@ void TradingLineManager::FlowControlTimer::EmitOnTimer(TimeStamp now) {
    (void)now;
    TradingLineManager&  rmgr = ContainerOf(*this, &TradingLineManager::FlowControlTimer_);
    TradingSvr::Locker   tsvr{rmgr.TradingSvr_};
-   if (!tsvr->Lines_.empty())
+   if (tsvr->IsSendable())
       rmgr.OnNewTradingLineReady(nullptr, std::move(tsvr));
 }
-void TradingLineManager::SendReqQueue(const Locker& tsvr) {
-   while (!tsvr->ReqQueue_.empty()) {
-      auto res = this->SendRequestImpl(*tsvr->ReqQueue_.front(), tsvr);
-      switch (res) {
-      case SendRequestResult::Queuing:
-         return;
-      default:
-      case SendRequestResult::RejectRequest:
-      case SendRequestResult::Sent:
-      case SendRequestResult::NoReadyLine:
-      case SendRequestResult::RequestEnd:
-         tsvr->ReqQueue_.pop_front();
-         continue;
-      }
-   }
+void TradingLineManager::SendReqQueue(Locker&& tsvr) {
+   assert(&tsvr->GetOwner() == this);
+   tsvr->SendReqQueue(&tsvr);
 }
 void TradingLineManager::OnNewTradingLineReady(TradingLine* src, Locker&& tsvr) {
-   (void)src;
-   this->SendReqQueue(tsvr);
+   assert(&tsvr->GetOwner() == this);
+   this->SendReqQueue(std::move(tsvr));
+   tsvr.Relock(this->TradingSvr_);
+   if (tsvr->EvHandler_)
+      tsvr->EvHandler_->OnNewTradingLineReady(src, tsvr);
 }
+void TradingLineManager::UpdateHelper(TradingLineHelperSP helper) {
+   Locker tsvr{this->TradingSvr_};
+   tsvr->Helper_ = std::move(helper);
+   if (tsvr->Helper_ && tsvr->Helper_->IsHelperReady())
+      this->OnNewTradingLineReady(nullptr, std::move(tsvr));
+   else
+      this->OnTradingLineBroken(nullptr, std::move(tsvr));
+}
+void TradingLineManager::SetEvHandler(EventSP evHandler) {
+   Locker tsvr{this->TradingSvr_};
+   if (tsvr->EvHandler_ == evHandler)
+      return;
+   if (tsvr->EvHandler_)
+      tsvr->EvHandler_->OnTradingLineManagerDetach(tsvr);
+   tsvr->EvHandler_ = std::move(evHandler);
+}   
 //--------------------------------------------------------------------------//
 SendRequestResult TradingLineManager::CheckOpQueuingRequest(Reqs& reqQueue, TradingRequest& req) {
    // 因為 req 已經準備要進排隊了, 所以這裡沒有速度的要求, 就整個 queue 都掃一遍吧!
@@ -102,8 +180,8 @@ SendRequestResult TradingLineManager::CheckOpQueuingRequest(Reqs& reqQueue, Trad
    }
    return SendRequestResult::Queuing;
 }
-void TradingLineManager::SelectPreferNextLine(const TradingRequest& req) {
-   Locker tsvr{this->TradingSvr_};
+void TradingLineManager::SelectPreferNextLine(const TradingRequest& req, const Locker& tsvr) {
+   assert(&tsvr->GetOwner() == this);
    if (const size_t lineCount = tsvr->Lines_.size()) {
       for (size_t L = 0; L < lineCount; ++L) {
          unsigned nextIndex = static_cast<unsigned>((tsvr->LastIndex_ + 1) % lineCount);
@@ -113,58 +191,88 @@ void TradingLineManager::SelectPreferNextLine(const TradingRequest& req) {
       }
    }
 }
-SendRequestResult TradingLineManager::SendRequestImpl(TradingRequest& req, const Locker& tsvr) {
-   if (size_t lineCount = tsvr->Lines_.size()) {
-      using LineSendResult = TradingLine::SendResult;
-      LineSendResult resFlowControl{LineSendResult::Busy};
-      bool           hasBusyLine = false;
-      for (size_t L = 0; L < lineCount; ++L) {
+SendRequestResult TradingLineManager::OnAskFor_SendRequest(TradingRequest& req, const Locker& tsvrSelf, const Locker& tsvrAsker) {
+   (void)tsvrAsker;
+   assert(&tsvrSelf->GetOwner() == this);
+   return this->SendRequest_ByLines_NoQueue(req, tsvrSelf);
+}
+SendRequestResult TradingLineManager::Send_ByLinesOnly(TradingRequest& req, TradingLines& tsvr) {
+   size_t lineCount = tsvr.Lines_.size();
+   if (lineCount == 0)
+      return SendRequestResult::NoReadyLine;
+   using LineSendResult = TradingLine::SendResult;
+   LineSendResult resFlowControl{LineSendResult::Busy};
+   bool           hasBusyLine = false;
+   for (size_t L = 0; L < lineCount; ++L) {
 
-         // 若有多條線路, 目前使用輪流(均分)的方式送出要求.
-         // - 但是此法是最快的嗎? => 不一定.
-         // - 現代 CPU 有大量的 cache, 盡量固定使用某一條線路, 可讓 CPU cache 發揮最大功效.
-         // - 但是某條線路塞到滿之後再換下一條, 也有TCP流量問題要考慮.
-         // - 多線路時怎樣使用才是最好? 還要進一步研究.
-         ++tsvr->LastIndex_;
+      // 若有多條線路, 目前使用輪流(均分)的方式送出要求.
+      // - 但是此法是最快的嗎? => 不一定.
+      // - 現代 CPU 有大量的 cache, 盡量固定使用某一條線路, 可讓 CPU cache 發揮最大功效.
+      // - 但是某條線路塞到滿之後再換下一條, 也有TCP流量問題要考慮.
+      // - 多線路時怎樣使用才是最好? 還要進一步研究.
+      ++tsvr.LastIndex_;
 
-      __RETRY_SAME_INDEX:
-         if (tsvr->LastIndex_ >= lineCount)
-            tsvr->LastIndex_ = 0;
-         LineSendResult resSend = tsvr->Lines_[tsvr->LastIndex_]->SendRequest(req);
-         if (fon9_LIKELY(resSend == LineSendResult::Sent))
-            return SendRequestResult::Sent;
+   __RETRY_SAME_INDEX:
+      if (tsvr.LastIndex_ >= lineCount)
+         tsvr.LastIndex_ = 0;
+      LineSendResult resSend = tsvr.Lines_[tsvr.LastIndex_]->SendRequest(req);
+      if (fon9_LIKELY(resSend == LineSendResult::Sent))
+         return SendRequestResult::Sent;
 
-         if (fon9_LIKELY(resSend >= LineSendResult::FlowControl)) {
-            if (resFlowControl < LineSendResult::FlowControl || resSend < resFlowControl)
-               resFlowControl = resSend;
-         }
-         else if (fon9_LIKELY(resSend == LineSendResult::RejectRequest))
-            return SendRequestResult::RejectRequest;
-         else if (fon9_LIKELY(resSend == LineSendResult::NotSupport)) {
-            // 等迴圈結束, 再來判斷是否需要 Queue.
-         }
-         else if (fon9_LIKELY(resSend == LineSendResult::Busy))
-            hasBusyLine = true;
-         else {
-            assert(resSend == LineSendResult::Broken);
-            tsvr->Lines_.erase(tsvr->Lines_.begin() + tsvr->LastIndex_);
-            if (L < --lineCount)
-               goto __RETRY_SAME_INDEX;
-            if (lineCount == 0)
-               goto __SendRequestResult_NoReadyLine;
-            break;
-         }
-         // FlowControl or Busy: continue check the next line.
-      } // for(L < lineCount)
-      if (resFlowControl >= LineSendResult::FlowControl)
-         this->FlowControlTimer_.RunAfter(ToFlowControlInterval(resFlowControl));
-      else if (!hasBusyLine) { // All not support.
-         goto __SendRequestResult_NoReadyLine;
+      if (fon9_LIKELY(resSend >= LineSendResult::FlowControl)) {
+         if (resFlowControl < LineSendResult::FlowControl || resSend < resFlowControl)
+            resFlowControl = resSend;
       }
-      return SendRequestResult::Queuing;
+      else if (fon9_LIKELY(resSend == LineSendResult::RejectRequest))
+         return SendRequestResult::RejectRequest;
+      else if (fon9_LIKELY(resSend == LineSendResult::NotSupport)) {
+         // 等迴圈結束, 再來判斷是否需要 Queue.
+      }
+      else if (fon9_LIKELY(resSend == LineSendResult::Busy))
+         hasBusyLine = true;
+      else {
+         assert(resSend == LineSendResult::Broken);
+         tsvr.Lines_.erase(tsvr.Lines_.begin() + tsvr.LastIndex_);
+         if (L < --lineCount)
+            goto __RETRY_SAME_INDEX;
+         if (lineCount == 0)
+            return SendRequestResult::NoReadyLine;
+         break;
+      }
+      // FlowControl or Busy: continue check the next line.
+   } // for(L < lineCount)
+   if (resFlowControl >= LineSendResult::FlowControl)
+      this->FlowControlTimer_.RunAfter(ToFlowControlInterval(resFlowControl));
+   else if (!hasBusyLine) { // All not support.
+      return SendRequestResult::NoReadyLine;
    }
-__SendRequestResult_NoReadyLine:
-   return this->NoReadyLineReject(req, "No ready line.");
+   return SendRequestResult::Queuing;
+}
+SendRequestResult TradingLineManager::Send_ByLinesOrHelper(TradingRequest& req, const Locker& tsvr) {
+   assert(&tsvr->GetOwner() == this);
+   switch (auto retval = this->Send_ByLinesOnly(req, *tsvr)) {
+   default:
+   case SendRequestResult::RejectRequest:
+   case SendRequestResult::Sent:
+   case SendRequestResult::RequestEnd:
+      return retval;
+   case SendRequestResult::Queuing:
+      if (tsvr->Helper_) {
+         retval = tsvr->Helper_->OnAskFor_BeforeQueue(req, tsvr);
+         if (retval == SendRequestResult::NoReadyLine)
+            return SendRequestResult::Queuing;
+      }
+      // 這裡不可將 req 放入 tsvr->ReqQueue_; 也不可呼叫 this->RequestPushToQueue();
+      // 因為可能是從 this->SendReqQueue() 來到此處: 嘗試傳送 tsvr->ReqQueue_.front();
+      return retval;
+   case SendRequestResult::NoReadyLine:
+      if (tsvr->Helper_) {
+         retval = tsvr->Helper_->OnAskFor_NoReadyLine(req, tsvr);
+         if (fon9_LIKELY(retval != SendRequestResult::NoReadyLine))
+            return retval;
+      }
+      return this->NoReadyLineReject(req, "No ready line.");
+   }
 }
 SendRequestResult TradingLineManager::NoReadyLineReject(TradingRequest& req, StrView cause) {
    (void)req; (void)cause;
