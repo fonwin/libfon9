@@ -111,7 +111,7 @@ struct PluginsMgr::PluginsTree : public Tree {
       void OnSeedCommand(Tab* tab, StrView cmdln, FnCommandResultHandler resHandler) override {
          if (auto desc = this->Rec_.GetPluginsDesc()) {
             if (desc->FnCommand_)
-               return desc->FnCommand_(this->Rec_, cmdln, std::move(resHandler));
+               return desc->FnCommand_(this->Rec_, cmdln, std::move(resHandler), std::move(*this));
          }
          base::OnSeedCommand(tab, cmdln, std::move(resHandler));
       }
@@ -119,7 +119,7 @@ struct PluginsMgr::PluginsTree : public Tree {
    struct TreeOp : public seed::TreeOp {
       fon9_NON_COPY_NON_MOVE(TreeOp);
       using base = seed::TreeOp;
-      TreeOp(PluginsTree& tree) : base{tree} {
+      TreeOp(PluginsTree& tree) : base(tree) {
       }
       static void MakePluginsRecView(PluginsRecs::iterator ivalue, Tab* tab, RevBuffer& rbuf) {
          PluginsRec& rec = **ivalue;

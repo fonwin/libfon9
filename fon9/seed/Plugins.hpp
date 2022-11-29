@@ -83,7 +83,7 @@ struct PluginsDesc {
    bool (*FnStop_)(PluginsHolder& holder);
 
    /// 當插件啟動之後, 可透過指令與已啟動的 plugins 互動.
-   void (*FnCommand_)(PluginsHolder& holder, StrView cmdln, FnCommandResultHandler resHandler);
+   void (*FnCommand_)(PluginsHolder& holder, StrView cmdln, FnCommandResultHandler resHandler, SeedOpResult&& opResult);
 };
 
 /// \ingroup seed
