@@ -421,9 +421,14 @@ struct RcSvStreamDecoder_MdRts : public RcMdRtsDecoder {
    #define f9sv_DealFlag_IsOld   static_cast<f9sv_DealFlag>(0xff)
    f9sv_DealFlag DecodeDealPack(InfoAux&& aux, svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {
       if (this->FldBSMktSeq_) {
-         if (!aux.Note_.IsRxMktSeqNewer(*this->FldBSMktSeq_, seed::SimpleRawWr{const_cast<f9sv_Seed*>(rpt.SeedArray_[this->TabIdxBS_])},
-                                        rx, rxbuf))
+         seed::SimpleRawWr bsRawWr{ const_cast<f9sv_Seed*>(rpt.SeedArray_[this->TabIdxBS_]) };
+         if (!aux.Note_.IsRxMktSeqNewer(*this->FldBSMktSeq_, bsRawWr, rx, rxbuf))
             return f9sv_DealFlag_IsOld;
+
+         if (this->FldIdxDealMktSeq_) {
+            uint64_t  mktSeq = unsigned_cast(this->FldBSMktSeq_->GetNumber(bsRawWr, 0, 0));
+            this->FldIdxDealMktSeq_->PutNumber(aux.RawWr_, mktSeq, 0);
+         }
       }
 
       DayTime  dealTime = *aux.SeInfoTime_;

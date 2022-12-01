@@ -32,6 +32,9 @@ struct SymbDealData {
    f9sv_DealLmtFlag  LmtFlags_;
 
    char     Padding___[6];
+   
+   /// 市場行情序號.
+   MarketDataSeq  MarketSeq_{ 0 };
 
    SymbDealData() {
       this->Clear();

@@ -5,9 +5,11 @@
 
 namespace fon9 { namespace fmkt {
 
-fon9_API seed::Fields SymbDeal_MakeFields(bool isAddLmtFlags) {
+fon9_API seed::Fields SymbDeal_MakeFields(bool isAddLmtFlags, bool isAddMarketSeq) {
    seed::Fields flds;
    flds.Add(fon9_MakeField(SymbDeal, Data_.InfoTime_,    "InfoTime"));
+   if (isAddMarketSeq)
+      flds.Add(fon9_MakeField(SymbDeal, Data_.MarketSeq_, "MktSeq"));
    flds.Add(fon9_MakeField(SymbDeal, Data_.DealTime_,    "DealTime"));
    flds.Add(fon9_MakeField(SymbDeal, Data_.Deal_.Pri_,   "DealPri"));
    flds.Add(fon9_MakeField(SymbDeal, Data_.Deal_.Qty_,   "DealQty"));
