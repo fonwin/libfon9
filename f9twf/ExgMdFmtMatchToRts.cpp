@@ -94,8 +94,7 @@ f9twf_API void I024MatchParserToRts(ExgMcMessage& e) {
          fon9::ToBitv(parser.Rts_, symb.Deal_.Data_.DealTime_);
    }
    *parser.Rts_.AllocPacket<uint8_t>() = fon9::cast_to_underlying(parser.Flags_);
-   f9fmkt::PackMktSeq(parser.Rts_, symb.BS_.Data_.MarketSeq_, e.Channel_.GetChannelMgr()->Symbs_->CtrlFlags_, pk.ProdMsgSeq_);
-   symb.Deal_.Data_.MarketSeq_ = symb.BS_.Data_.MarketSeq_;
+   f9fmkt::PackMktSeq(parser.Rts_, symb.Deal_.Data_.MarketSeq_, e.Channel_.GetChannelMgr()->Symbs_->CtrlFlags_, pk.ProdMsgSeq_);
    symb.MdRtStream_.Publish(ToStrView(symb.SymbId_), f9sv_RtsPackType_DealPack, f9sv_MdRtsKind_Deal,
                             symb.Deal_.Data_.InfoTime_, std::move(parser.Rts_));
 }
