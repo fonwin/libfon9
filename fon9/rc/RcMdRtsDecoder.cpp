@@ -70,7 +70,7 @@ RcMdRtsDecoder_TabFields::RcMdRtsDecoder_TabFields(svc::TreeRec& tree) {
       this->FldDealSellCnt_  = GetFieldOrNull(*tab, "DealSellCnt");
       this->FldDealFlags_    = GetFieldOrNull(*tab, "Flags");
       this->FldDealLmtFlags_ = GetFieldOrNull(*tab, "LmtFlags");
-      this->FldIdxDealMktSeq_= GetFieldOrNull(*tab, "MktSeq");
+      this->FldDealMktSeq_   = GetFieldOrNull(*tab, "MktSeq");
    }
    if ((tab = GetTabOrNull(*tree.Layout_, fon9_kCSTR_TabName_BS)) == nullptr)
       this->TabIdxBS_      = f9sv_TabSize_Null;
@@ -425,9 +425,9 @@ struct RcSvStreamDecoder_MdRts : public RcMdRtsDecoder {
          if (!aux.Note_.IsRxMktSeqNewer(*this->FldBSMktSeq_, bsRawWr, rx, rxbuf))
             return f9sv_DealFlag_IsOld;
 
-         if (this->FldIdxDealMktSeq_) {
+         if (this->FldDealMktSeq_) {
             uint64_t  mktSeq = unsigned_cast(this->FldBSMktSeq_->GetNumber(bsRawWr, 0, 0));
-            this->FldIdxDealMktSeq_->PutNumber(aux.RawWr_, mktSeq, 0);
+            this->FldDealMktSeq_->PutNumber(aux.RawWr_, mktSeq, 0);
          }
       }
 
@@ -666,9 +666,9 @@ struct RcSvStreamDecoder_MdRts : public RcMdRtsDecoder {
    }
    // -----
    bool IsIdxDealMktSeqNewer(const InfoAux& aux, svc::RxSubrData& rx, DcQueue& rxbuf) const {
-      if (!this->FldIdxDealMktSeq_)
+      if (!this->FldDealMktSeq_)
          return true;
-      return aux.Note_.IsRxMktSeqNewer(*this->FldIdxDealMktSeq_, aux.RawWr_, rx, rxbuf);
+      return aux.Note_.IsRxMktSeqNewer(*this->FldDealMktSeq_, aux.RawWr_, rx, rxbuf);
    }
    static void BitvToIndexValue(const seed::Field& fld, seed::RawWr& wr, DcQueue& rxbuf) {
       fon9_BitvNumR numr;
