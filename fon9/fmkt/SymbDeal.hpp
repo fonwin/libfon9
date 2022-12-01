@@ -15,8 +15,8 @@ fon9_API seed::Fields SymbDeal_MakeFields(bool isAddLmtFlags, bool isAddMarketSe
 inline seed::Fields SymbTwsDeal_MakeFields(bool isAddMarketSeq) {
    return SymbDeal_MakeFields(true, isAddMarketSeq);
 }
-inline seed::Fields SymbTwfDeal_MakeFields() {
-   return SymbDeal_MakeFields(false, false);
+inline seed::Fields SymbTwfDeal_MakeFields(bool isAddMarketSeq) {
+   return SymbDeal_MakeFields(false, isAddMarketSeq);
 }
 inline seed::Fields SymbTwaDeal_MakeFields(bool isAddMarketSeq) {
    return SymbDeal_MakeFields(true, isAddMarketSeq);
