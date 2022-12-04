@@ -31,5 +31,21 @@ fon9_API StrView GetCmdArg(int argc, char** argv, const CmdArgDef& def);
 /// - 如果 argv 沒找到, 則 StrView{nullptr};
 fon9_API StrView GetCmdArg(int argc, char** argv, const StrView& argShort, const StrView& argLong);
 
+/// \ingroup Misc
+/// 設定執行時的參數.
+/// 若有設定過, 則 GetCmdArg() 的 argv 為 nullptr 時, 使用此處的設定.
+/// 預設在 Framework::Initialize() 會呼叫此處.
+fon9_API void SetCmdArg(int argc, char** argv);
+
+/// \ingroup Misc
+/// 設定執行時的參數.
+/// 返回 SetCmdArg() 提供的 argv;
+fon9_API char** GetCmdArgv();
+
+/// \ingroup Misc
+/// 設定執行時的參數.
+/// 返回 SetCmdArg() 提供的 argc;
+fon9_API int GetCmdArgc();
+
 } // namespaces
 #endif//__fon9_CmdArgs_hpp__

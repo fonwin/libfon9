@@ -29,6 +29,7 @@ static void RaiseInitializeError(std::string err) {
 }
 
 int Framework::Initialize(int argc, char** argv) {
+   fon9::SetCmdArg(argc, argv);
    auto workDir = GetCmdArg(argc, argv, CmdArgDef{
       StrView{"WorkDir"}, //Name
       StrView{},          //DefaultValue
