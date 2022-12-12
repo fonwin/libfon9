@@ -155,6 +155,7 @@ inline void FmtRt_PkContOnReceived(ExgMdHandlerPkCont& handler, ExgMdSymbs& symb
       if (IsEnumContains(symb->Deal_.Data_.Flags_, f9sv_DealFlag_DealTimeChanged))
          fon9::RevPutBitv(rts, fon9_BitvV_NumberNull);
       *rts.AllocPacket<uint8_t>() = fon9::cast_to_underlying(symb->Deal_.Data_.Flags_);
+      symb->Deal_.Data_.MarketSeq_ = static_cast<f9fmkt::MarketDataSeq>(seq);
    }
    else { // none Deal, none BS?
       return;
