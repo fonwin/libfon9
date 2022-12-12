@@ -83,6 +83,7 @@ public:
    using Reqs = std::deque<TradingRequestSP>;
    using HelperSP = TradingLineHelperSP;
    using EventSP = TradingLineManagerEvSP;
+   using FnHelpOffer = std::function<SendRequestResult(TradingRequest& req, void* tsvrAsker)>;
    /// 可送出下單要求的連線. 流量管制時不移除.
    class TradingLines {
       fon9_NON_COPY_NON_MOVE(TradingLines);
@@ -113,6 +114,9 @@ public:
       EventSP  EvHandler_;
    public:
       TradingSvrImpl() = default;
+      TradingLineManager& GetOwner() {
+         return ContainerOf(TradingSvr::StaticCast(*this), &TradingLineManager::TradingSvr_);
+      }
       bool IsReqQueueEmpty() const {
          return this->ReqQueue_.empty();
       }
@@ -122,11 +126,13 @@ public:
       bool IsHelperReady() const;
       bool IsSendable() const;
       void GetStInfo(RevBuffer& rbuf) const;
+
       /// MustLock<TradingSvrImpl>::Locker* tsvr;
+      /// 若有需要會觸發 this->EvHandler_->OnSendReqQueueEmpty() 事件.
       void SendReqQueue(void* tsvr);
-      TradingLineManager& GetOwner() {
-         return ContainerOf(TradingSvr::StaticCast(*this), &TradingLineManager::TradingSvr_);
-      }
+      /// tsvrSelf = this->Owner().Lock() = Asker;
+      /// 若有需要會觸發 this->EvHandler_->OnSendReqQueueEmpty() 事件.
+      void SendReqQueueByOffer(void* tsvrSelf, FnHelpOffer&& fnOffer);
    };
    using TradingSvr = MustLock<TradingSvrImpl>;
 
@@ -166,7 +172,7 @@ public:
    SendRequestResult SendRequest(TradingRequest& req, const Locker& tsvr) {
       SendRequestResult res;
       if (fon9_LIKELY(tsvr->ReqQueue_.empty())) {
-         res = this->Send_ByLinesOrHelper(req, tsvr);
+         res = this->SendRequest_ByLinesOrHelper(req, tsvr);
       }
       else {
          res = this->CheckOpQueuingRequest(tsvr->ReqQueue_, req);
@@ -187,16 +193,25 @@ public:
    /// 協助轉送下單要求.
    /// tsvrSelf = this->Lock();
    /// 預設: this->SendRequest_ByLines_NoQueue();
-   virtual SendRequestResult OnAskFor_SendRequest(TradingRequest& req, const Locker& tsvrSelf, const Locker& tsvrAsker);
+   virtual SendRequestResult OnAskFor_SendRequest_FromLocal(TradingRequest& req, const Locker& tsvrSelf, const Locker& tsvrAsker);
+
+   /// - 若 tsvr 已有排隊, 則不會送出, 也不會加入 tsvr->ReqQueue_, 會直接返回 SendRequestResult::Queuing;
+   /// - 若可以使用 tsvr->Lines_ 立即送出(有線路,且流量允許), 則會將 req 送出.
+   /// - 若沒送出, 則 req 不會有任何變動, 也不會呼叫 Helper.
+   SendRequestResult SendRequest_ByLines_NoQueue(TradingRequest& req, const Locker& tsvr) {
+      if (fon9_LIKELY(tsvr->ReqQueue_.empty()))
+         return this->SendRequest_ByLinesOnly(req, *tsvr);
+      return SendRequestResult::Queuing;
+   }
 
    /// 設定 ev handler, 設定時不會觸發事件.
    void SetEvHandler(EventSP evHandler);
    /// 設定 helper, 或 helper 狀態改變時呼叫;
    /// - 若 helper!=nullptr 且 helper->IsHelperReady():
-   ///   - 觸發 OnNewTradingLineReady() 事件:
+   ///   - 觸發 OnHelperReady() 事件:
    ///     若現在有排隊中的委託, 則會立即呼叫 helper->OnAskFor_BeforeQueue(); 請求協助.
    /// - 否則(helper==nullptr 或 !helper->IsHelperReady()):
-   ///   - 觸發 OnTradingLineBroken() 事件:
+   ///   - 觸發 OnHelperBroken() 事件:
    ///     若現在沒有可用線路, 則會拒絕正在排隊中的委託.
    void UpdateHelper(TradingLineHelperSP helper);
 
@@ -211,7 +226,7 @@ protected:
    /// - 無可用線路時的拒絕.
    /// - TradingLineManager 解構時, 拒絕還在 Queue 裡面的要求.
    /// - 如果是從 ClearReqQueue() 來到此處, 則會先解鎖.
-   /// - 如果是從 Send_ByLinesOrHelper() 來到此處, 則仍在鎖定狀態.
+   /// - 如果是從 SendRequest_ByLinesOrHelper() 來到此處, 則仍在鎖定狀態.
    /// - 預設 do nothing, 直接返回 SendRequestResult::NoReadyLine;
    virtual SendRequestResult NoReadyLineReject(TradingRequest& req, StrView cause);
 
@@ -219,16 +234,21 @@ protected:
    /// - 預設:
    ///   1. this->SendReqQueue(tsvr); 送出 queue 的 req.
    ///   2. 觸發事件 tsvr->EvHandler_->OnNewTradingLineReady();
-   /// - src == nullptr 表示:
-   ///   - 從計時器來的: 流量管制解除.
-   ///   - 或是 Helper 可提供協助.
+   /// - src == nullptr 表示: 從計時器來的: 流量管制解除.
    /// - 如果是從 OnTradingLineReady() 來的, 則 tsvr->Lines_[tsvr->LastIndex_] == src.
    virtual void OnNewTradingLineReady(TradingLine* src, Locker&& tsvr);
-   /// 當 src 斷線時的通知, 若 src==nullptr 則表示 tsvr->Helper_ 無法提供協助.
+   virtual void OnHelperReady(Locker&& tsvr);
+   /// 當 src 斷線時的通知.
    /// 預設:
    /// 1. 觸發事件 tsvr->EvHandler_->OnTradingLineBroken();
    /// 2. 若 if (!tsvr->IsSendable()) 則: 呼叫 this->ClearReqQueue();
-   virtual void OnTradingLineBroken(TradingLine* src, Locker&& tsvr);
+   virtual void OnTradingLineBroken(TradingLine& src, Locker&& tsvr);
+   /// tsvr->Helper_ 無法提供協助時通知, 但必須由主動呼叫 this->UpdateHelper() 時才會觸發此事件.
+   /// 如果 !helper.IsHelperReady(); 但沒呼叫 this->UpdateHelper(); 則不會觸發此事件.
+   /// 預設:
+   /// 1. 觸發事件 tsvr->EvHandler_->OnHelperBroken();
+   /// 2. 若 if (!tsvr->IsSendable()) 則: 呼叫 this->ClearReqQueue();
+   virtual void OnHelperBroken(Locker&& tsvr);
 
    /// 預設: tsvr->ReqQueue_.push_back(&req); 返回 SendRequestResult::Queuing;
    virtual SendRequestResult RequestPushToQueue(TradingRequest& req, const Locker& tsvr);
@@ -240,31 +260,22 @@ protected:
    /// 表示 req 為一般要求, 呼叫端必定會將 req 放入 reqQueue.
    SendRequestResult CheckOpQueuingRequest(Reqs& reqQueue, TradingRequest& req);
 
-   /// - 若 tsvr 已有排隊, 則不會送出, 也不會加入 tsvr->ReqQueue_, 會直接返回 SendRequestResult::Queuing;
-   /// - 若可以使用 tsvr->Lines_ 立即送出(有線路,且流量允許), 則會將 req 送出.
-   /// - 若沒送出, 則 req 不會有任何變動, 也不會呼叫 Helper.
-   SendRequestResult SendRequest_ByLines_NoQueue(TradingRequest& req, const Locker& tsvr) {
-      if (fon9_LIKELY(tsvr->ReqQueue_.empty()))
-         return this->Send_ByLinesOnly(req, *tsvr);
-      return SendRequestResult::Queuing;
-   }
-
    /// 使用交易線路送出 req, 或是, 當 [無線路 or 流量管制] 時, 不做任何事情.
    /// - 若需流量管制, 則會啟動計時器, 不論: req 接下來是否透過 Helper 處理, 或是否有放到 Queue.
    /// - 可用 retval 判斷是否有送出, 或未送出原因.
    /// - 這裡不會將 req 放到 tsvr->ReqQueue_;
    /// - 這裡不會呼叫 this->NoReadyLineReject();
-   SendRequestResult Send_ByLinesOnly(TradingRequest& req, TradingLines& tsvr);
+   SendRequestResult SendRequest_ByLinesOnly(TradingRequest& req, TradingLines& tsvr);
 
 private:
    /// 用 Lines 或 Helper 送出 req, 若無法送出, 則透過 retval 告知原因, 不會放入 Queue;
-   /// - 透過 this->Send_ByLinesOnly() 送出 req;
+   /// - 透過 this->SendRequest_ByLinesOnly() 送出 req;
    /// - 若因 NoReadyLine 無法送出, 則透或 Helper 處理, 或 this->NoReadyLineReject();
    /// - 若有線路, 但暫時無法送出(需要 Queuing) 則:
    ///   - 若有 Helper 則請求 Helper 處理: 直接返回 Helper->OnAskFor_BeforeQueue();
    ///   - 若無 Helper 則返回 SendRequestResult::Queuing;
    ///     不會放入 tsvr->ReqQueue_; 也不會呼叫 this->RequestPushToQueue();
-   SendRequestResult Send_ByLinesOrHelper(TradingRequest& req, const Locker& tsvr);
+   SendRequestResult SendRequest_ByLinesOrHelper(TradingRequest& req, const Locker& tsvr);
 
    struct FlowControlTimer : public DataMemberTimer {
       fon9_NON_COPY_NON_MOVE(FlowControlTimer);
@@ -305,12 +316,12 @@ public:
    virtual ~TradingLineHelper();
 
    using TLineLocker = TradingLineManager::Locker;
-   /// 在 from.Send_ByLinesOrHelper() 有可用線路, 但因流量無法立即送出時, 請求 Helper 協助傳送.
+   /// 在 from.SendRequest_ByLinesOrHelper() 有可用線路, 但因流量無法立即送出時, 請求 Helper 協助傳送.
    /// - 返回 SendRequestResult::Queuing(預設) 或 SendRequestResult::NoReadyLine; 表示:
    ///   接下來呼叫端(from)會放入 tsvr->ReqQueue_; (或繼續放在 tsvr->ReqQueue_); 等候傳送.
    /// - 由於返回後可能會需要將 req 放入 queue, 所以返回前不允許 tsvr.unlock();
    virtual SendRequestResult OnAskFor_BeforeQueue(TradingRequest& req, const TLineLocker& tsvrAsker);
-   /// 在 from.Send_ByLinesOrHelper() 發現無可用線路, 請求 Helper 協助傳送.
+   /// 在 from.SendRequest_ByLinesOrHelper() 發現無可用線路, 請求 Helper 協助傳送.
    /// - 預設返回 SendRequestResult::NoReadyLine; 表示:
    ///   呼叫端(from)執行: from.NoReadyLineReject(req, "No ready line.");
    /// - 返回 SendRequestResult::Queuing 表示:
@@ -318,7 +329,7 @@ public:
    /// - 由於返回後可能會需要將 req 放入 queue, 所以返回前不允許 tsvr.unlock();
    virtual SendRequestResult OnAskFor_NoReadyLine(TradingRequest& req, const TLineLocker& tsvrAsker);
    /// 是否可以提供協助傳送.
-   /// - 若因流量管制暫時不能送, 應視為 [可協助];
+   /// - 若因流量管制暫時不能送, 仍應視為 [可協助];
    virtual bool IsHelperReady() const = 0;
    /// 取得狀態說明文字.
    virtual void GetStInfo(RevBuffer& rbuf) const = 0;
@@ -342,21 +353,22 @@ public:
 
    using TLineLocker = TradingLineManager::Locker;
    /// 當 src 線路可用時通知.
-   /// - 若 src==nullptr 表示:
-   ///   - 解除流量管制時的通知.
-   ///   - 或是 Helper 可提供協助.
+   /// - 若 src==nullptr 表示: 解除流量管制時的通知.
    /// - 在 from.OnNewTradingLineReady() 之中通知.
    /// - tsvr.ReqQueue_ 不一定為空.
    /// - 每條線路上線後都會有通知.
    virtual void OnNewTradingLineReady(TradingLine* src, const TLineLocker& tsvrFrom);
-   /// 當 src 斷線時的通知, 若 src==nullptr 則表示 tsvr->Helper_ 無法提供協助.
+   virtual void OnHelperReady(const TLineLocker& tsvrFrom);
+   /// 當 src 斷線時的通知.
    /// - 每條可用線路斷線後都會有通知.
    /// - 通知時 src 已從 tsvr->Lines_ 移除;
-   virtual void OnTradingLineBroken(TradingLine* src, const TLineLocker& tsvrFrom);
+   virtual void OnTradingLineBroken(TradingLine& src, const TLineLocker& tsvrFrom);
+   /// 當 tsvr->Helper_ 無法提供協助時通知.
+   virtual void OnHelperBroken(const TLineLocker& tsvrFrom);
    /// 傳送隊列送完後通知.
    /// 在 from.SendReqQueue();
    /// 當 !tsvr->ReqQueue_.empty() 有排隊中的要求,
-   /// 經由 from.Send_ByLinesOrHelper(); 處理後,
+   /// 經由 from.SendRequest_ByLinesOrHelper(); 處理後,
    /// 變成 tsvr->ReqQueue_.empty(); 如果不是因為 NoReadyLine,
    /// 則會觸發此事件.
    /// 若原本就沒有 req 在排隊, 則不會觸發此事件.

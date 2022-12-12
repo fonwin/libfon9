@@ -45,7 +45,7 @@ struct RcMdRtsDecoder_TabFields_POD {
    const seed::Field*   FldDealSellCnt_;
    const seed::Field*   FldDealFlags_;
    const seed::Field*   FldDealLmtFlags_;
-   const seed::Field*   FldIdxDealMktSeq_;
+   const seed::Field*   FldDealMktSeq_;
 
    const seed::Field*   FldBSInfoTime_;
    const seed::Field*   FldBSFlags_;

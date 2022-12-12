@@ -136,6 +136,8 @@ enum class LgOut : char {
    Common = '0',
    Count = 36,
 };
+constexpr auto kLgOutCount = static_cast<unsigned>(LgOut::Count);
+
 inline uint8_t LgOutToIndex(LgOut lg) {
    uint8_t idx = static_cast<uint8_t>(Alpha2Seq(static_cast<char>(lg)));
    return(idx < static_cast<uint8_t>(LgOut::Count) ? idx : static_cast<uint8_t>(0));

@@ -29,8 +29,14 @@ TradingLineManagerEv::~TradingLineManagerEv() {
 void TradingLineManagerEv::OnNewTradingLineReady(TradingLine* src, const TLineLocker& tsvrFrom) {
    (void)src; (void)tsvrFrom;
 }
-void TradingLineManagerEv::OnTradingLineBroken(TradingLine* src, const TLineLocker& tsvrFrom) {
+void TradingLineManagerEv::OnHelperReady(const TLineLocker& tsvrFrom) {
+   (void)tsvrFrom;
+}
+void TradingLineManagerEv::OnTradingLineBroken(TradingLine& src, const TLineLocker& tsvrFrom) {
    (void)src; (void)tsvrFrom;
+}
+void TradingLineManagerEv::OnHelperBroken(const TLineLocker& tsvrFrom) {
+   (void)tsvrFrom;
 }
 void TradingLineManagerEv::OnSendReqQueueEmpty(const TLineLocker& tsvrFrom) {
    (void)tsvrFrom;
@@ -54,7 +60,7 @@ void TradingLineManager::TradingSvrImpl::SendReqQueue(void* tsvr) {
    TradingLineManager& owner = this->GetOwner();
    SendRequestResult   res;
    do {
-      res = owner.Send_ByLinesOrHelper(*this->ReqQueue_.front(), *static_cast<Locker*>(tsvr));
+      res = owner.SendRequest_ByLinesOrHelper(*this->ReqQueue_.front(), *static_cast<Locker*>(tsvr));
       switch (res) {
       case SendRequestResult::Queuing:
          return;
@@ -64,13 +70,32 @@ void TradingLineManager::TradingSvrImpl::SendReqQueue(void* tsvr) {
       case SendRequestResult::NoReadyLine:
       case SendRequestResult::RequestEnd:
          this->ReqQueue_.pop_front();
-         continue;
+         break;
       }
    } while (!this->ReqQueue_.empty());
    if (res != SendRequestResult::NoReadyLine) {
       if (this->EvHandler_)
          this->EvHandler_->OnSendReqQueueEmpty(*static_cast<Locker*>(tsvr));
    }
+}
+void TradingLineManager::TradingSvrImpl::SendReqQueueByOffer(void* tsvrSelf, FnHelpOffer&& fnOffer) {
+   if (this->ReqQueue_.empty())
+      return;
+   do {
+      switch (fnOffer(*this->ReqQueue_.front(), tsvrSelf)) {
+      case SendRequestResult::Queuing: // offer => Busy; 可能原因: offer 流量管制, offer 繞進滿載.
+      case SendRequestResult::NoReadyLine:
+         return;
+      default:
+      case SendRequestResult::RejectRequest:
+      case SendRequestResult::Sent:
+      case SendRequestResult::RequestEnd:
+         this->ReqQueue_.pop_front();
+         break;
+      }
+   } while (!this->ReqQueue_.empty());
+   if (this->EvHandler_)
+      this->EvHandler_->OnSendReqQueueEmpty(*static_cast<Locker*>(tsvrSelf));
 }
 //--------------------------------------------------------------------------//
 TradingLineManager::~TradingLineManager() {
@@ -92,14 +117,21 @@ void TradingLineManager::OnTradingLineBroken(TradingLine& src) {
    if (tsvr->LastIndex_ > static_cast<unsigned>(ifind - ibeg))
       --tsvr->LastIndex_;
    tsvr->Lines_.erase(ifind);
-   this->OnTradingLineBroken(&src, std::move(tsvr));
+   this->OnTradingLineBroken(src, std::move(tsvr));
 }
-void TradingLineManager::OnTradingLineBroken(TradingLine* src, Locker&& tsvr) {
+void TradingLineManager::OnTradingLineBroken(TradingLine& src, Locker&& tsvr) {
    assert(&tsvr->GetOwner() == this);
    if (tsvr->EvHandler_)
       tsvr->EvHandler_->OnTradingLineBroken(src, tsvr);
    if (!tsvr->IsSendable())
-      this->ClearReqQueue(std::move(tsvr), (src ? StrView{"No ready line."} : StrView{"No helper."}));
+      this->ClearReqQueue(std::move(tsvr), "No ready line.");
+}
+void TradingLineManager::OnHelperBroken(Locker&& tsvr) {
+   assert(&tsvr->GetOwner() == this);
+   if (tsvr->EvHandler_)
+      tsvr->EvHandler_->OnHelperBroken(tsvr);
+   if (!tsvr->IsSendable())
+      this->ClearReqQueue(std::move(tsvr), "No helper.");
 }
 void TradingLineManager::ClearReqQueue(Locker&& tsvr, StrView cause) {
    assert(&tsvr->GetOwner() == this);
@@ -130,7 +162,7 @@ void TradingLineManager::FlowControlTimer::EmitOnTimer(TimeStamp now) {
    (void)now;
    TradingLineManager&  rmgr = ContainerOf(*this, &TradingLineManager::FlowControlTimer_);
    TradingSvr::Locker   tsvr{rmgr.TradingSvr_};
-   if (tsvr->IsSendable())
+   if (!tsvr->IsLinesEmpty())
       rmgr.OnNewTradingLineReady(nullptr, std::move(tsvr));
 }
 void TradingLineManager::SendReqQueue(Locker&& tsvr) {
@@ -144,13 +176,20 @@ void TradingLineManager::OnNewTradingLineReady(TradingLine* src, Locker&& tsvr) 
    if (tsvr->EvHandler_)
       tsvr->EvHandler_->OnNewTradingLineReady(src, tsvr);
 }
+void TradingLineManager::OnHelperReady(Locker&& tsvr) {
+   assert(&tsvr->GetOwner() == this);
+   this->SendReqQueue(std::move(tsvr));
+   tsvr.Relock(this->TradingSvr_);
+   if (tsvr->EvHandler_)
+      tsvr->EvHandler_->OnHelperReady(tsvr);
+}
 void TradingLineManager::UpdateHelper(TradingLineHelperSP helper) {
    Locker tsvr{this->TradingSvr_};
    tsvr->Helper_ = std::move(helper);
    if (tsvr->Helper_ && tsvr->Helper_->IsHelperReady())
-      this->OnNewTradingLineReady(nullptr, std::move(tsvr));
+      this->OnHelperReady(std::move(tsvr));
    else
-      this->OnTradingLineBroken(nullptr, std::move(tsvr));
+      this->OnHelperBroken(std::move(tsvr));
 }
 void TradingLineManager::SetEvHandler(EventSP evHandler) {
    Locker tsvr{this->TradingSvr_};
@@ -191,12 +230,12 @@ void TradingLineManager::SelectPreferNextLine(const TradingRequest& req, const L
       }
    }
 }
-SendRequestResult TradingLineManager::OnAskFor_SendRequest(TradingRequest& req, const Locker& tsvrSelf, const Locker& tsvrAsker) {
+SendRequestResult TradingLineManager::OnAskFor_SendRequest_FromLocal(TradingRequest& req, const Locker& tsvrSelf, const Locker& tsvrAsker) {
    (void)tsvrAsker;
    assert(&tsvrSelf->GetOwner() == this);
    return this->SendRequest_ByLines_NoQueue(req, tsvrSelf);
 }
-SendRequestResult TradingLineManager::Send_ByLinesOnly(TradingRequest& req, TradingLines& tsvr) {
+SendRequestResult TradingLineManager::SendRequest_ByLinesOnly(TradingRequest& req, TradingLines& tsvr) {
    size_t lineCount = tsvr.Lines_.size();
    if (lineCount == 0)
       return SendRequestResult::NoReadyLine;
@@ -248,9 +287,9 @@ SendRequestResult TradingLineManager::Send_ByLinesOnly(TradingRequest& req, Trad
    }
    return SendRequestResult::Queuing;
 }
-SendRequestResult TradingLineManager::Send_ByLinesOrHelper(TradingRequest& req, const Locker& tsvr) {
+SendRequestResult TradingLineManager::SendRequest_ByLinesOrHelper(TradingRequest& req, const Locker& tsvr) {
    assert(&tsvr->GetOwner() == this);
-   switch (auto retval = this->Send_ByLinesOnly(req, *tsvr)) {
+   switch (auto retval = this->SendRequest_ByLinesOnly(req, *tsvr)) {
    default:
    case SendRequestResult::RejectRequest:
    case SendRequestResult::Sent:

@@ -26,16 +26,19 @@ void ExgMdFmt9Handler::OnPkReceived(const ExgMdHead& pkhdr, unsigned pksz) {
    fmt9.DealPQ_.AssignTo(symb->Deal_.Data_.Deal_);
    symb->Deal_.Data_.TotalQty_ += symb->Deal_.Data_.Deal_.Qty_;
    symb->CheckOHL(symb->Deal_.Data_.Deal_.Pri_, dealTime);
-         
+
    fon9::RevBufferList rts{pksz};
    fon9::ToBitv(rts, symb->Deal_.Data_.Deal_.Qty_);
    fon9::ToBitv(rts, symb->Deal_.Data_.Deal_.Pri_);
+   /// 定價 Fmt9 的序號獨立編號, 與 Fmt6 無關, 所以必須額外處理.
+   symb->Deal_.Data_.MarketSeq_ = (symb->BS_.Data_.MarketSeq_ >= symb->Deal_.Data_.MarketSeq_)
+                                ? symb->BS_.Data_.MarketSeq_ + 1
+                                : symb->Deal_.Data_.MarketSeq_ + 1;
    *rts.AllocPacket<uint8_t>() = 0; // = 1筆成交.
    fon9::RevPutBitv(rts, fon9_BitvV_NumberNull); // DealTime = InfoTime;
    *rts.AllocPacket<uint8_t>() = fon9::cast_to_underlying(symb->Deal_.Data_.Flags_);
    if (IsEnumContains(TwsMdSys(*this).Symbs_->CtrlFlags_, f9fmkt::MdSymbsCtrlFlag::HasMarketDataSeq)) {
-      /// 定價 Fmt9 的序號獨立編號, 與 Fmt6 無關, 所以必須額外處理.
-      ToBitv(rts, ++symb->BS_.Data_.MarketSeq_);
+      ToBitv(rts, symb->Deal_.Data_.MarketSeq_);
    }
    symb->MdRtStream_.Publish(ToStrView(symb->SymbId_), f9sv_RtsPackType_DealPack, f9sv_MdRtsKind_Deal,
                              dealTime, std::move(rts));

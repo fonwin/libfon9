@@ -69,7 +69,7 @@ public:
    virtual SendRequestResult OnAskFor_SendRequest(TradingRequest& req, const TLineLocker& tsvrAsker);
 
    void OnNewTradingLineReady(TradingLine* src, const TLineLocker& tsvrFrom) override;
-   void OnTradingLineBroken(TradingLine* src, const TLineLocker& tsvrFrom) override;
+   void OnTradingLineBroken(TradingLine& src, const TLineLocker& tsvrFrom) override;
    void OnSendReqQueueEmpty(const TLineLocker& tsvrFrom) override;
    void OnTradingLineManagerDetach(const TLineLocker& tsvrFrom) override;
 };

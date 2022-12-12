@@ -31,7 +31,10 @@ struct SymbDealData {
    /// 由資訊來源提供, 若沒提供則為 0, 核心系統「不會主動」與「今日漲跌停」比對.
    f9sv_DealLmtFlag  LmtFlags_;
 
-   char     Padding___[6];
+   char     Padding___[2];
+
+   /// 市場行情序號.
+   MarketDataSeq  MarketSeq_{0};
 
    SymbDealData() {
       this->Clear();

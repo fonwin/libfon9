@@ -91,26 +91,25 @@ SendRequestResult LocalHelpOfferEvHandler::OnAskFor_SendRequest(TradingRequest& 
       return SendRequestResult::NoReadyLine;
    if (this->IsBusyWorking())
       return SendRequestResult::Queuing;
-   return this->Offer_.OnAskFor_SendRequest(req, tsvrOffer, tsvrAsker);
+   return this->Offer_.OnAskFor_SendRequest_FromLocal(req, tsvrOffer, tsvrAsker);
 }
 void LocalHelpOfferEvHandler::OnNewTradingLineReady(TradingLine* src, const TLineLocker& tsvrFrom) {
    (void)src;
-   assert(&this->Offer_ == &tsvrFrom->GetOwner());
-   if (tsvrFrom->IsReqQueueEmpty() && !tsvrFrom->IsLinesEmpty())
+   assert(&this->Offer_ == &tsvrFrom->GetOwner() && !tsvrFrom->IsLinesEmpty());
+   if (tsvrFrom->IsReqQueueEmpty())
       this->NotifyToAsker(&tsvrFrom);
-}
-void LocalHelpOfferEvHandler::OnTradingLineBroken(TradingLine* src, const TLineLocker& tsvrFrom) {
-   assert(&this->Offer_ == &tsvrFrom->GetOwner());
-   if (src == nullptr) // Helper 無法提供支援.
-      return;
-   // 如果 this->Offer_ 有多條線路, 但 this->WorkingRequest_ 送出後斷線,
-   // 可能無法更新 this->WorkingRequest_ 的後續狀態, 這會造成 asker 永遠等不到支援!!!
-   // 所以不論現在是否仍有可用線路, 接下來一律: 清除 this->WorkingRequest_, 並通知 Asker;
-   this->ClearWorkingRequests();
-   this->NotifyToAsker(&tsvrFrom);
 }
 void LocalHelpOfferEvHandler::OnSendReqQueueEmpty(const TLineLocker& tsvrFrom) {
    assert(&this->Offer_ == &tsvrFrom->GetOwner());
+   this->NotifyToAsker(&tsvrFrom);
+}
+void LocalHelpOfferEvHandler::OnTradingLineBroken(TradingLine& src, const TLineLocker& tsvrFrom) {
+   (void)src;
+   assert(&this->Offer_ == &tsvrFrom->GetOwner());
+   // this->WorkingRequest_ 送出後斷線,
+   // 可能無法更新 this->WorkingRequest_ 的後續狀態, 這會造成 asker 永遠等不到支援!!!
+   // 所以不論現在是否仍有可用線路, 接下來一律: 清除 this->WorkingRequest_, 並通知 Asker;
+   this->ClearWorkingRequests();
    this->NotifyToAsker(&tsvrFrom);
 }
 void LocalHelpOfferEvHandler::OnTradingLineManagerDetach(const TLineLocker& tsvrFrom) {
@@ -146,7 +145,6 @@ TradingLineHelperSP LocalHelperMaker::MakeHelper(TradingLgMgrBase& lgMgr, Tradin
    return new LocalHelper{lgMgr, asker, std::move(offerList)};
 }
 void LocalHelperMaker::MakeTradingLgLocalHelper(TradingLgMgrBase& lgMgr) {
-   constexpr auto kLgOutCount = static_cast<unsigned>(LgOut::Count);
    const unsigned lmgrCount = lgMgr.LgLineMgrCount();
 
    using OfferMap = std::array<LocalHelpOfferEvHandlerSP, kLgOutCount>;

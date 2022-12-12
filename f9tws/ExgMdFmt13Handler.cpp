@@ -61,6 +61,11 @@ void ExgMdFmt13Handler::PkContOnReceived(const void* pkptr, unsigned pksz, SeqT 
    const bool hasBS = (priSell != symb->BS_.Data_.Sells_[0].Pri_ || symb->BS_.Data_.Sells_[0].Qty_ != 0
                        || priBuy != symb->BS_.Data_.Buys_[0].Pri_ || symb->BS_.Data_.Buys_[0].Qty_ != 0);
 
+   // 盤後零股交易, 使用零股盤中資料表.
+   // symb->BS_.Data_.MarketSeq_ 序號必須 > 盤中序號, 否則 client 可能會認為是舊資料.
+   // 交易所序號使用 PackBcd<8>, 所以加上 10^8;
+   seq += 100000000;
+
    fon9::RevBufferList  rts{pksz};
    f9sv_RtsPackType     rtsPackType;
    f9sv_MdRtsKind       pkKind;
@@ -102,14 +107,12 @@ void ExgMdFmt13Handler::PkContOnReceived(const void* pkptr, unsigned pksz, SeqT 
       if (IsEnumContains(symb->Deal_.Data_.Flags_, f9sv_DealFlag_DealTimeChanged))
          fon9::RevPutBitv(rts, fon9_BitvV_NumberNull);
       *rts.AllocPacket<uint8_t>() = fon9::cast_to_underlying(symb->Deal_.Data_.Flags_);
+      symb->Deal_.Data_.MarketSeq_ = static_cast<f9fmkt::MarketDataSeq>(seq);
    }
    else { // none Deal, none BS?
       return;
    }
-   // 盤後零股交易, 使用零股盤中資料表.
-   // symb->BS_.Data_.MarketSeq_ 序號必須 > 盤中序號, 否則 client 可能會認為是舊資料.
-   // 交易所序號使用 PackBcd<8>, 所以加上 10^8;
-   seq += 100000000;
+
    f9fmkt::PackMktSeq(rts, symb->BS_.Data_.MarketSeq_, symbs.CtrlFlags_, static_cast<f9fmkt::MarketDataSeq>(seq));
    symb->MdRtStream_.Publish(ToStrView(symb->SymbId_), rtsPackType, pkKind, dealTime, std::move(rts));
 }

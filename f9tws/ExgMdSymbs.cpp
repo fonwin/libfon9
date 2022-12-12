@@ -26,7 +26,7 @@ LayoutSP ExgMdSymb::MakeLayout(bool isAddMarketSeq) {
       TabSP{new Tab{Named{fon9_kCSTR_TabName_Base},    std::move(symbBaseFields),   kTabFlag}},
       TabSP{new Tab{Named{fon9_kCSTR_TabName_Ref},     TwsSymbRef_MakeFields(),     kTabFlag}},
       TabSP{new Tab{Named{fon9_kCSTR_TabName_BS},      SymbTwsBS_MakeFields(isAddMarketSeq), kTabFlag}},
-      TabSP{new Tab{Named{fon9_kCSTR_TabName_Deal},    SymbTwsDeal_MakeFields(),    kTabFlag}},
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_Deal},    SymbTwsDeal_MakeFields(isAddMarketSeq), kTabFlag}},
       f9fmkt_MAKE_TABS_OpenHighLow(),
       TabSP{new Tab{Named{fon9_kCSTR_TabName_BreakSt}, SymbBreakSt_MakeFieldsTws(), kTabFlag}},
       TabSP{new Tab{Named{fon9_kCSTR_TabName_Rt},      MdRtStream::MakeFields(),    kTabFlag}}
