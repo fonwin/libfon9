@@ -426,7 +426,7 @@ struct RcSvStreamDecoder_MdRts : public RcMdRtsDecoder {
             return f9sv_DealFlag_IsOld;
 
          if (this->FldDealMktSeq_) {
-            uint64_t  mktSeq = unsigned_cast(this->FldBSMktSeq_->GetNumber(bsRawWr, 0, 0));
+            auto mktSeq = this->FldBSMktSeq_->GetNumber(bsRawWr, 0, 0);
             this->FldDealMktSeq_->PutNumber(aux.RawWr_, mktSeq, 0);
          }
       }
