@@ -41,7 +41,7 @@ enum class ExgSystemType : uint8_t {
    /// 盤後交易時段.期貨.
    FutAfterHour = 21,
 };
-constexpr unsigned ExgSystemTypeCount() {
+constexpr uint8_t ExgSystemTypeCount() {
    return 4;
 }
 /// OptNormal=0; OptAfterHour=1; FutNormal=2; FutAfterHour=3;

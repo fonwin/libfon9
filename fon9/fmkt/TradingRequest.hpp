@@ -126,6 +126,10 @@ using TradingRequestSP = intrusive_ptr<TradingRequest>;
 
 //--------------------------------------------------------------------------//
 
+/// 一個線路群組(Lg)裡面的, 某種線路管理員(Lm).
+/// 例: 證券的一個線路群組包含: LmIndex=0=上市線路群組、LmIndex=1=上櫃線路群組;
+using LmIndex = uint8_t;
+
 /// 線路群組代號.
 /// '0'..'9', 'A'..'Z'
 enum class LgOut : char {
@@ -136,18 +140,19 @@ enum class LgOut : char {
    Common = '0',
    Count = 36,
 };
-constexpr auto kLgOutCount = static_cast<unsigned>(LgOut::Count);
+using LgIndex = uint8_t;
+constexpr auto kLgOutCount = static_cast<LgIndex>(LgOut::Count);
 
-inline uint8_t LgOutToIndex(LgOut lg) {
-   uint8_t idx = static_cast<uint8_t>(Alpha2Seq(static_cast<char>(lg)));
-   return(idx < static_cast<uint8_t>(LgOut::Count) ? idx : static_cast<uint8_t>(0));
+inline LgIndex LgOutToIndex(LgOut lg) {
+   LgIndex idx = static_cast<LgIndex>(Alpha2Seq(static_cast<char>(lg)));
+   return(idx < kLgOutCount ? idx : static_cast<LgIndex>(0));
 }
 inline bool IsValidateLgOut(LgOut lgId) {
    return(fon9::isdigit(static_cast<unsigned char>(lgId))
           || fon9::isupper(static_cast<unsigned char>(lgId)));
 }
-inline LgOut LgIndexToOut(uint8_t lgIndex) {
-   return lgIndex < static_cast<uint8_t>(LgOut::Count)
+inline LgOut LgIndexToOut(LgIndex lgIndex) {
+   return lgIndex < kLgOutCount
       ? static_cast<LgOut>(Seq2Alpha(lgIndex))
       : LgOut::Unknown;
 }

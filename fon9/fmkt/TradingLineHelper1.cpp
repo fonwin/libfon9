@@ -145,17 +145,17 @@ TradingLineHelperSP LocalHelperMaker::MakeHelper(TradingLgMgrBase& lgMgr, Tradin
    return new LocalHelper{lgMgr, asker, std::move(offerList)};
 }
 void LocalHelperMaker::MakeTradingLgLocalHelper(TradingLgMgrBase& lgMgr) {
-   const unsigned lmgrCount = lgMgr.LgLineMgrCount();
+   const auto lmCount = lgMgr.LgLineMgrCount();
 
    using OfferMap = std::array<LocalHelpOfferEvHandlerSP, kLgOutCount>;
    std::vector<OfferMap>  offerMap;
-   offerMap.resize(lmgrCount);
+   offerMap.resize(lmCount);
 
    using AskerOfferList = std::array<HelpOfferList, kLgOutCount>;
    std::vector<AskerOfferList> askerMap;
-   askerMap.resize(lmgrCount);
+   askerMap.resize(lmCount);
 
-   for (uint8_t askerLgIndex = 0; askerLgIndex < kLgOutCount; ++askerLgIndex) {
+   for (LgIndex askerLgIndex = 0; askerLgIndex < kLgOutCount; ++askerLgIndex) {
       auto* askerLg = lgMgr.GetLgItem(askerLgIndex);
       if (askerLg == nullptr)
          continue;
@@ -171,38 +171,38 @@ void LocalHelperMaker::MakeTradingLgLocalHelper(TradingLgMgrBase& lgMgr) {
             const auto offerLgIndex = LgOutToIndex(static_cast<LgOut>(lgOffer));
             if (offerLgIndex == askerLgIndex)
                continue;
-            for (unsigned lmgrIndex = 0; lmgrIndex < lmgrCount; ++lmgrIndex) {
-               auto* lmgrAsker = lgMgr.GetLineMgr(askerLgIndex, lmgrIndex);
+            for (LmIndex lmIndex = 0; lmIndex < lmCount; ++lmIndex) {
+               auto* lmgrAsker = lgMgr.GetLineMgr(askerLgIndex, lmIndex);
                if (lmgrAsker == nullptr)
                   continue;
-               auto* lmgrOffer = lgMgr.GetLineMgr(offerLgIndex, lmgrIndex);
+               auto* lmgrOffer = lgMgr.GetLineMgr(offerLgIndex, lmIndex);
                if (lmgrOffer == nullptr)
                   continue;
-               auto& offer = offerMap[lmgrIndex][offerLgIndex];
+               auto& offer = offerMap[lmIndex][offerLgIndex];
                if (!offer) {
                   char name[3] = {'L', 'g', lgOffer}; // "Lg-";
                   offer = this->MakeHelpOffer(lgMgr, *lmgrOffer, StrView{name,3});
                }
                if (offer->AddAskerLg(LgIndexToOut(askerLgIndex))) {
-                  askerMap[lmgrIndex][askerLgIndex].push_back(offer);
+                  askerMap[lmIndex][askerLgIndex].push_back(offer);
                }
             }
          }
       }
    }
-   for (unsigned lgIndex = 0; lgIndex < kLgOutCount; ++lgIndex) {
+   for (LgIndex lgIndex = 0; lgIndex < kLgOutCount; ++lgIndex) {
       auto* lgItem = lgMgr.GetLgItem(lgIndex);
       if (lgItem == nullptr)
          continue;
-      for (unsigned lmgrIndex = 0; lmgrIndex < lmgrCount; ++lmgrIndex) {
-         auto* lmgr = lgMgr.GetLineMgr(lgIndex, lmgrIndex);
+      for (LmIndex lmIndex = 0; lmIndex < lmCount; ++lmIndex) {
+         auto* lmgr = lgMgr.GetLineMgr(lgIndex, lmIndex);
          if (lmgr == nullptr)
             continue;
-         auto& offerHandler = offerMap[lmgrIndex][lgIndex];
+         auto& offerHandler = offerMap[lmIndex][lgIndex];
          if (offerHandler && !offerHandler->IsAskerEmpty()) {
             lmgr->SetEvHandler(offerHandler);
          }
-         auto& askerOfferList = askerMap[lmgrIndex][lgIndex];
+         auto& askerOfferList = askerMap[lmIndex][lgIndex];
          if (!askerOfferList.empty()) {
             lmgr->UpdateHelper(this->MakeHelper(lgMgr, *lmgr, std::move(askerOfferList)));
          }

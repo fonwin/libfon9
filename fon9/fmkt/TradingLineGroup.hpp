@@ -18,13 +18,13 @@ protected:
    // class LgItem : public LgItemBase, public LineGroup;
    using LgItemBase = seed::NamedMaTree;
    using LgItemBaseSP = intrusive_ptr<LgItemBase>;
-   LgItemBaseSP LgItems_[static_cast<uint8_t>(LgOut::Count)];
+   LgItemBaseSP LgItems_[kLgOutCount];
 
    virtual LgItemBaseSP CreateLgItem(Named&& named) = 0;
    virtual TradingLineManager* GetLineMgr(LgItemBase& lg, const TradingRequest& req) const = 0;
    /// 參考 ref(例:上市線路管理員), 從 lg 取出相同的 LineMgr.
    virtual TradingLineManager* GetLineMgr(LgItemBase& lg, const TradingLineManager& ref) const = 0;
-   virtual TradingLineManager* GetLineMgr(LgItemBase& lg, unsigned lmgrIndex) const = 0;
+   virtual TradingLineManager* GetLineMgr(LgItemBase& lg, LmIndex lmIndex) const = 0;
 
 #define fon9_kCSTR_LgTAG_LEAD    "Lg"
 #define fon9_kSIZE_LgTAG_LEAD    (sizeof(fon9_kCSTR_LgTAG_LEAD) - 1)
@@ -36,7 +36,7 @@ public:
    using base::base;
    ~TradingLgMgrBase();
 
-   LgItemBase* GetLgItem(unsigned lgIndex) const {
+   LgItemBase* GetLgItem(LgIndex lgIndex) const {
       return lgIndex < numofele(this->LgItems_) ? this->LgItems_[lgIndex].get() : nullptr;
    }
    /// 根據 lg 選用適當的線路群組, 若 lg 沒有設定線路群組, 則使用 lg='0' 通用線路.
@@ -45,18 +45,18 @@ public:
          return retval;
       return this->LgItems_[0].get();
    }
-   /// LgIndex = LgOut or unsigned;
-   /// LgRef = TradingRequest or TradingLineManager or unsigned(同一組裡面的index,例:[0]=上市,[1]=上櫃);
-   template <typename LgIndex, typename LgRef>
-   TradingLineManager* GetLineMgr(LgIndex lgIndex, const LgRef& ref) const {
-      if (auto* lg = this->GetLgItem(lgIndex))
-         return this->GetLineMgr(*lg, ref);
+   /// LgValue = LgOut or LgIndex;
+   /// LgRef = TradingRequest or TradingLineManager or LmIndex(同一組裡面的index,例:[0]=上市,[1]=上櫃);
+   template <typename LgValue, typename LgRef>
+   TradingLineManager* GetLineMgr(LgValue lgValue, const LgRef& ref) const {
+      if (auto* lgItem = this->GetLgItem(lgValue))
+         return this->GetLineMgr(*lgItem, ref);
       return nullptr;
    }
    /// 每一個 Lg 裡面有幾個 LineMgr. 例:
    /// - 台股=2:   上市,上櫃.
    /// - 台期權=4: 期貨日盤,期貨夜盤,選擇權日盤,選擇權夜盤.
-   virtual unsigned LgLineMgrCount() const = 0;
+   virtual LmIndex LgLineMgrCount() const = 0;
 };
 
 } } // namespaces
