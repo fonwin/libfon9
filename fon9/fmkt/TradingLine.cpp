@@ -6,6 +6,10 @@
 
 namespace fon9 { namespace fmkt {
 
+/// 預設為 No; 當設為 EnabledYN::Yes, 則盡量使用同一條線路.
+fon9_API EnabledYN   gTradingLineSelect_TryLastLine_YN{};
+
+//--------------------------------------------------------------------------//
 TradingLine::~TradingLine() {
 }
 bool TradingLine::IsOrigSender(const TradingRequest& req) const {
@@ -242,15 +246,18 @@ SendRequestResult TradingLineManager::SendRequest_ByLinesOnly(TradingRequest& re
    using LineSendResult = TradingLine::SendResult;
    LineSendResult resFlowControl{LineSendResult::Busy};
    bool           hasBusyLine = false;
-   for (size_t L = 0; L < lineCount; ++L) {
 
-      // 若有多條線路, 目前使用輪流(均分)的方式送出要求.
-      // - 但是此法是最快的嗎? => 不一定.
-      // - 現代 CPU 有大量的 cache, 盡量固定使用某一條線路, 可讓 CPU cache 發揮最大功效.
-      // - 但是某條線路塞到滿之後再換下一條, 也有TCP流量問題要考慮.
-      // - 多線路時怎樣使用才是最好? 還要進一步研究.
+   // 若有多條線路, 目前使用輪流(均分)的方式送出要求.
+   // - 但是此法是最快的嗎? => 不一定.
+   // - 現代 CPU 有大量的 cache, 盡量固定使用某一條線路, 可讓 CPU cache 發揮最大功效.
+   // - 但是某條線路塞到滿之後再換下一條, 也有TCP流量問題要考慮.
+   // - 多線路時怎樣使用才是最好? 還要進一步研究.
+   // => 經過 f9twsqd 在客戶端的實際驗證, 瞬間多筆時, 總是使用同一條線路, 延遲最低。
+   //    所以系統增加一個選項, 由使用者決定使用哪種方法.
+   if (gTradingLineSelect_TryLastLine_YN != EnabledYN::Yes)
       ++tsvr.LastIndex_;
 
+   for (size_t L = 0; L < lineCount; ++L) {
    __RETRY_SAME_INDEX:
       if (tsvr.LastIndex_ >= lineCount)
          tsvr.LastIndex_ = 0;
@@ -279,6 +286,7 @@ SendRequestResult TradingLineManager::SendRequest_ByLinesOnly(TradingRequest& re
          break;
       }
       // FlowControl or Busy: continue check the next line.
+      ++tsvr.LastIndex_;
    } // for(L < lineCount)
    if (resFlowControl >= LineSendResult::FlowControl)
       this->FlowControlTimer_.RunAfter(ToFlowControlInterval(resFlowControl));

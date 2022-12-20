@@ -4,9 +4,13 @@
 #define __fon9_fmkt_TradingLine_hpp__
 #include "fon9/fmkt/TradingRequest.hpp"
 #include "fon9/Timer.hpp"
+#include "fon9/ConfigUtils.hpp"
 #include <deque>
 
 namespace fon9 { namespace fmkt {
+
+/// 預設為 No; 當設為 EnabledYN::Yes, 則盡量使用同一條線路.
+extern fon9_API EnabledYN   gTradingLineSelect_TryLastLine_YN;
 
 /// \ingroup fmkt
 /// 交易連線基底.
@@ -116,6 +120,9 @@ public:
       TradingSvrImpl() = default;
       TradingLineManager& GetOwner() {
          return ContainerOf(TradingSvr::StaticCast(*this), &TradingLineManager::TradingSvr_);
+      }
+      const TradingRequest* ReqQueueFront() {
+         return this->ReqQueue_.empty() ? nullptr : this->ReqQueue_.front().get();
       }
       bool IsReqQueueEmpty() const {
          return this->ReqQueue_.empty();
@@ -270,11 +277,14 @@ protected:
 private:
    /// 用 Lines 或 Helper 送出 req, 若無法送出, 則透過 retval 告知原因, 不會放入 Queue;
    /// - 透過 this->SendRequest_ByLinesOnly() 送出 req;
-   /// - 若因 NoReadyLine 無法送出, 則透或 Helper 處理, 或 this->NoReadyLineReject();
-   /// - 若有線路, 但暫時無法送出(需要 Queuing) 則:
-   ///   - 若有 Helper 則請求 Helper 處理: 直接返回 Helper->OnAskFor_BeforeQueue();
+   /// - 若有可用線路, 但暫時無法送出(需要 Queuing) 則:
+   ///   - 若有 Helper 則直接返回 Helper->OnAskFor_BeforeQueue();
    ///   - 若無 Helper 則返回 SendRequestResult::Queuing;
    ///     不會放入 tsvr->ReqQueue_; 也不會呼叫 this->RequestPushToQueue();
+   /// - 若無可用線路(NoReadyLine), 無法送出:
+   ///   - 若有 Helper 則透過 Helper->OnAskFor_NoReadyLine() 處理.
+   ///     - 即使 Helper->OnAskFor_NoReadyLine() 返回 Queuing, 也不會再呼叫 Helper->OnAskFor_BeforeQueue();
+   ///   - 或 this->NoReadyLineReject();
    SendRequestResult SendRequest_ByLinesOrHelper(TradingRequest& req, const Locker& tsvr);
 
    struct FlowControlTimer : public DataMemberTimer {
