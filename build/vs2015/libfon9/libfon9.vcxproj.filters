@@ -1172,6 +1172,9 @@
     <ClInclude Include="..\..\..\fon9\fmkt\TradingLineManagerSeed.hpp">
       <Filter>Header Files\fmkt\_Trading</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\framework\FrameworkFlag.hpp">
+      <Filter>Header Files\framework</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -1911,6 +1914,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\fmkt\TradingLineManagerSeed.cpp">
       <Filter>Source Files\fmkt\_Trading</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\framework\FrameworkFlag.cpp">
+      <Filter>Source Files\framework</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

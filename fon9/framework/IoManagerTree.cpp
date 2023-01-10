@@ -1,6 +1,7 @@
 ﻿/// \file fon9/framework/IoManagerTree.cpp
 /// \author fonwinz@gmail.com
 #include "fon9/framework/IoManagerTree.hpp"
+#include "fon9/framework/FrameworkFlag.hpp"
 #include "fon9/seed/TabTreeOp.hpp"
 #include "fon9/seed/ConfigGridView.hpp"
 
@@ -104,6 +105,11 @@ void IoManagerTree::EmitOnTimer(TimerEntry* timer, TimeStamp now) {
       bool isStMessageChanged = false;
       switch (rthis.TimerFor_) {
       case TimerFor::Open:
+         if (IsFrameworkInitializing) {
+            // 系統還在啟動中, 晚一點再開啟, 避免有些資源(例: MaAuth)尚未設定完成.
+            timer->RunAfter(TimeInterval_Second(1));
+            return;
+         }
          if (item->Config_.Enabled_ != EnabledYN::Yes) {
             isStMessageChanged = !item->AsyncDisposeDevice(now, "Disabled");
             break;
