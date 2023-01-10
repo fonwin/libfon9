@@ -193,6 +193,13 @@ fon9_ENUM(f9fmkt_TradingRequestSt, uint8_t) {
    /// 下單要求在另一台主機排隊.
    f9fmkt_TradingRequestSt_QueuingAtOther = 0x21,
 
+   /// 請求遠端支援送出.
+   /// 若遭遠端退回, 則有可能會回到 f9fmkt_TradingRequestSt_Queuing;
+   f9fmkt_TradingRequestSt_AskToRemote = 0x2a,
+   /// 遠端支援退回, 遠端可能在收到下單要求時, 無可用線路, 或流量管制.
+   /// 退回原因需參考 ErrCode;
+   f9fmkt_TradingRequestSt_BackFromRemote = 0x2b,
+
    /// 在呼叫 io.Send() 之前設定的狀態.
    /// 您可以自行決定要在 io.Send() 之前 or 之後 or both, 設定送出狀態.
    f9fmkt_TradingRequestSt_Sending = 0x30,
@@ -200,7 +207,9 @@ fon9_ENUM(f9fmkt_TradingRequestSt, uint8_t) {
    /// 如果要在送出後設定狀態: 則要小心考慮在 io.Send() 之後, 設定 Sent 之前, 就已收到送出的結果.
    f9fmkt_TradingRequestSt_Sent = 0x38,
 
-   /// 小於等於此值表示: 處理過程的狀態變化, 表示仍在處理中.
+   /// 小於等於 f9fmkt_TradingRequestSt_LastRunStep 表示:
+   /// [下單要求流程]處理過程的狀態變化, [下單要求流程]仍在處理中.
+   /// 與母單無關, 母單使用 f9fmkt_TradingRequestSt_ParentDone 來判斷.
    f9fmkt_TradingRequestSt_LastRunStep = 0x9f,
 
    /// 交易所部分回報: 有些下單要求交易所會有多次回報.
@@ -225,7 +234,7 @@ fon9_ENUM(f9fmkt_TradingRequestSt, uint8_t) {
    /// 此部分回報為失敗.
    f9fmkt_TradingRequestSt_PartExchangeRejected = 0xae,
 
-   /// 下單要求流程已結束.
+   /// >=f9fmkt_TradingRequestSt_Done 表示: 下單要求流程已結束, 下單要求失敗, 或已收到回報結果.
    f9fmkt_TradingRequestSt_Done = 0xda,
 
    // 不明原因結束, 無法確定此要求是否成功.
@@ -375,6 +384,7 @@ fon9_ENUM(f9fmkt_OrderSt, uint8_t) {
    f9fmkt_OrderSt_NewChecking             = f9fmkt_TradingRequestSt_Checking,
    f9fmkt_OrderSt_NewQueuing              = f9fmkt_TradingRequestSt_Queuing,
    f9fmkt_OrderSt_NewQueuingAtOther       = f9fmkt_TradingRequestSt_QueuingAtOther,
+   f9fmkt_OrderSt_NewAskToRemote          = f9fmkt_TradingRequestSt_AskToRemote,
    f9fmkt_OrderSt_NewSending              = f9fmkt_TradingRequestSt_Sending,
    f9fmkt_OrderSt_NewSent                 = f9fmkt_TradingRequestSt_Sent,
 
