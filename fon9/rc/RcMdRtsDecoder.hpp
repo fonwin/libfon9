@@ -46,11 +46,13 @@ struct RcMdRtsDecoder_TabFields_POD {
    const seed::Field*   FldDealFlags_;
    const seed::Field*   FldDealLmtFlags_;
    const seed::Field*   FldDealMktSeq_;
+   const seed::Field*   FldDealChannelSeq_;
 
    const seed::Field*   FldBSInfoTime_;
    const seed::Field*   FldBSFlags_;
    const seed::Field*   FldBSLmtFlags_;
    const seed::Field*   FldBSMktSeq_;
+   const seed::Field*   FldBSChannelSeq_;
 
    void RcMdRtsDecoder_TabFields_POD_ctor() {
       static_assert(std::is_pod<RcMdRtsDecoder_TabFields_POD>::value, "");
@@ -119,6 +121,9 @@ class RcMdRtsDecoderNote : public RcSvStreamDecoderNote {
 public:
    RcMdRtsDecoderNote() = default;
 
+   uint64_t GetRtMktSeq() const {
+      return this->RtMktSeq_;
+   }
    DecScaleT GetPriScale() const {
       return this->PriScale_;
    }
@@ -132,9 +137,9 @@ public:
    void ResetMktSeq(uint64_t mktseq) {
       this->RtMktSeq_ = mktseq;
    }
-   bool IsMktSeqNewer(const seed::Field& fldBSMktSeq, const seed::RawWr& bsWr, uint64_t rxSeq) {
+   bool IsMktSeqNewer(const seed::Field& fldMktSeq, const seed::RawWr& bsWr, uint64_t rxSeq) {
       if (fon9_LIKELY(this->RtMktSeq_ < rxSeq || rxSeq == 0)) {
-         fldBSMktSeq.PutNumber(bsWr, signed_cast(this->RtMktSeq_ = rxSeq), 0);
+         fldMktSeq.PutNumber(bsWr, signed_cast(this->RtMktSeq_ = rxSeq), 0);
          return true;
       }
       return false;

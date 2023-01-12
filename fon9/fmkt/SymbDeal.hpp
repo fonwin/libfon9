@@ -11,15 +11,15 @@ namespace fon9 { namespace fmkt {
 /// 商品資料的擴充: 行情的一筆成交資料.
 fon9_API_TEMPLATE_CLASS(SymbDeal, SimpleSymbData, SymbDealData);
 
-fon9_API seed::Fields SymbDeal_MakeFields(bool isAddLmtFlags, bool isAddMarketSeq);
+fon9_API seed::Fields SymbDeal_MakeFields(bool isAddLmtFlags, bool isAddMarketSeq, bool isAddChannelSeq);
 inline seed::Fields SymbTwsDeal_MakeFields(bool isAddMarketSeq) {
-   return SymbDeal_MakeFields(true, isAddMarketSeq);
+   return SymbDeal_MakeFields(true, isAddMarketSeq, false);
 }
-inline seed::Fields SymbTwfDeal_MakeFields(bool isAddMarketSeq) {
-   return SymbDeal_MakeFields(false, isAddMarketSeq);
+inline seed::Fields SymbTwfDeal_MakeFields(bool isAddMarketSeq, bool isAddChannelSeq) {
+   return SymbDeal_MakeFields(false, isAddMarketSeq, isAddChannelSeq);
 }
 inline seed::Fields SymbTwaDeal_MakeFields(bool isAddMarketSeq) {
-   return SymbDeal_MakeFields(true, isAddMarketSeq);
+   return SymbDeal_MakeFields(true, isAddMarketSeq, false);
 }
 
 class fon9_API SymbDealTabDy : public SymbDataTab {

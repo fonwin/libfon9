@@ -76,7 +76,7 @@ public:
    /// - this->Contract_->OnSymbRemove(*this);
    void OnBeforeRemove(fon9::fmkt::SymbTree& owner, unsigned tdayYYYYMMDD) override;
 
-   static fon9::seed::LayoutSP MakeLayout(bool isAddMarketSeq);
+   static fon9::seed::LayoutSP MakeLayout(bool isAddMarketSeq, bool isAddChannelSeq);
 };
 //--------------------------------------------------------------------------//
 class f9twf_API ExgMdSymbs : public fon9::fmkt::MdSymbsT<ExgMdSymb> {
@@ -87,7 +87,7 @@ class f9twf_API ExgMdSymbs : public fon9::fmkt::MdSymbsT<ExgMdSymb> {
    void OnAfterLoadFrom(Locker&& symbsLk) override;
 
 public:
-   ExgMdSymbs(std::string rtiPathFmt, bool isAddMarketSeq);
+   ExgMdSymbs(std::string rtiPathFmt, bool isAddMarketSeq, bool isAddChannelSeq);
 
    fon9::fmkt::SymbSP MakeSymb(const fon9::StrView& symbid) override;
 

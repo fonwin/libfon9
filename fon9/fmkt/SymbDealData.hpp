@@ -10,6 +10,8 @@ namespace fon9 { namespace fmkt {
 struct SymbDealData {
    /// 資訊時間(行情系統時間).
    DayTime  InfoTime_{DayTime::Null()};
+   /// 傳輸群組訊息流水序號.
+   uint64_t ChannelSeq_{0};
    /// 交易所的成交時間(撮合系統時間).
    /// 交易所「資訊源」與「成交明細」可能存在時間差,
    /// 若交易所有提供「撮合系統的成交時間」, 則提供此欄位.

@@ -27,6 +27,8 @@ enum class MdSymbsCtrlFlag {
    AllowSubrSnapshotSymb = 0x02 | AllowSubrTree,
    /// 是否有提供 MarketSeq 欄位?
    HasMarketDataSeq = 0x10,
+   /// 是否有提供 ChannelSeq 欄位?
+   HasChannelSeq = 0x20,
 };
 fon9_ENABLE_ENUM_BITWISE_OP(MdSymbsCtrlFlag);
 
