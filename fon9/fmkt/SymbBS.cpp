@@ -37,17 +37,19 @@ fon9_API seed::Fields SymbTwsBS_MakeFields(bool isAddMarketSeq) {
    AppendLmtFlags(fon9_OffsetOf(SymbTwsBS, Data_), flds);
    return flds;
 }
-fon9_API seed::Fields SymbTwfBS_MakeFields(bool isAddMarketSeq) {
+fon9_API seed::Fields SymbTwfBS_MakeFields(bool isAddMarketSeq, bool isAddChannelSeq) {
    seed::Fields flds;
    SymbBS_MakeFields(fon9_OffsetOf(SymbTwfBS, Data_), flds, isAddMarketSeq);
    flds.Add(fon9_MakeField(SymbTwfBS, Data_.DerivedSell_.Pri_, "DS1P"));
    flds.Add(fon9_MakeField(SymbTwfBS, Data_.DerivedSell_.Qty_, "DS1Q"));
    flds.Add(fon9_MakeField(SymbTwfBS, Data_.DerivedBuy_.Pri_,  "DB1P"));
    flds.Add(fon9_MakeField(SymbTwfBS, Data_.DerivedBuy_.Qty_,  "DB1Q"));
+   if (isAddChannelSeq)
+      flds.Add(fon9_MakeField(SymbTwfBS, Data_.ChannelSeq_, "ChannelSeq"));
    return flds;
 }
 fon9_API seed::Fields SymbTwaBS_MakeFields(bool isAddMarketSeq) {
-   seed::Fields flds = SymbTwfBS_MakeFields(isAddMarketSeq);
+   seed::Fields flds = SymbTwfBS_MakeFields(isAddMarketSeq, false);
    AppendLmtFlags(fon9_OffsetOf(SymbTwfBS, Data_), flds);
    return flds;
 }

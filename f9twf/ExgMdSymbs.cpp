@@ -8,7 +8,7 @@
 
 namespace f9twf {
 
-fon9::seed::LayoutSP ExgMdSymb::MakeLayout(bool isAddMarketSeq) {
+fon9::seed::LayoutSP ExgMdSymb::MakeLayout(bool isAddMarketSeq, bool isAddChannelSeq) {
    using namespace fon9;
    using namespace fon9::seed;
    using namespace fon9::fmkt;
@@ -17,8 +17,8 @@ fon9::seed::LayoutSP ExgMdSymb::MakeLayout(bool isAddMarketSeq) {
       fon9_MakeField(Symb, SymbId_, "Id"), TreeFlag::AddableRemovable | TreeFlag::Unordered,
       TabSP{new Tab{Named{fon9_kCSTR_TabName_Base}, MakeFields(),                  kTabFlag}},
       TabSP{new Tab{Named{fon9_kCSTR_TabName_Ref},  TwfSymbRef_MakeFields(),       kTabFlag}},
-      TabSP{new Tab{Named{fon9_kCSTR_TabName_BS},   SymbTwfBS_MakeFields(isAddMarketSeq),   kTabFlag}},
-      TabSP{new Tab{Named{fon9_kCSTR_TabName_Deal}, SymbTwfDeal_MakeFields(isAddMarketSeq), kTabFlag}},
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_BS},   SymbTwfBS_MakeFields(isAddMarketSeq, isAddChannelSeq), kTabFlag}},
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_Deal}, SymbTwfDeal_MakeFields(isAddMarketSeq, isAddChannelSeq), kTabFlag}},
       f9fmkt_MAKE_TABS_OpenHighLow(),
       TabSP{new Tab{Named{fon9_kCSTR_TabName_BreakSt}, SymbBreakSt_MakeFieldsTwf(),kTabFlag}},
       TabSP{new Tab{Named{fon9_kCSTR_TabName_Closing}, SymbFuoClosing_MakeFields(),kTabFlag}},
@@ -129,9 +129,10 @@ void ExgMdSymb::OnOpenSeqReset(fon9::fmkt::SymbTree& owner) {
    fon9_WARN_POP;
 }
 //--------------------------------------------------------------------------//
-ExgMdSymbs::ExgMdSymbs(std::string rtiPathFmt, bool isAddMarketSeq)
-   : base(ExgMdSymb::MakeLayout(isAddMarketSeq), std::move(rtiPathFmt),
-          isAddMarketSeq ? fon9::fmkt::MdSymbsCtrlFlag::HasMarketDataSeq : fon9::fmkt::MdSymbsCtrlFlag{}) {
+ExgMdSymbs::ExgMdSymbs(std::string rtiPathFmt, bool isAddMarketSeq, bool isAddChannelSeq)
+   : base(ExgMdSymb::MakeLayout(isAddMarketSeq, isAddChannelSeq), std::move(rtiPathFmt)
+   , (isAddMarketSeq  ? fon9::fmkt::MdSymbsCtrlFlag::HasMarketDataSeq : fon9::fmkt::MdSymbsCtrlFlag{}) 
+   | (isAddChannelSeq ? fon9::fmkt::MdSymbsCtrlFlag::HasChannelSeq    : fon9::fmkt::MdSymbsCtrlFlag{})) {
 }
 fon9::fmkt::SymbSP ExgMdSymbs::MakeSymb(const fon9::StrView& symbid) {
    assert(this->SymbMap_.IsLocked());

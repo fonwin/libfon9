@@ -129,6 +129,7 @@ inline void FmtRt_PkContOnReceived(ExgMdHandlerPkCont& handler, ExgMdSymbs& symb
          *rts.AllocPacket<uint8_t>() = fon9::cast_to_underlying(symb->BS_.Data_.LmtFlags_ = bsLmtFlags);
          *rts.AllocPacket<uint8_t>() = fon9::cast_to_underlying(f9fmkt::RtBSSnapshotSpc::LmtFlags);
       }
+      symb->BS_.Data_.MarketSeq_ = static_cast<f9fmkt::MarketDataSeq>(seq);
       if (hasDeal) {
          rtsPackType = f9sv_RtsPackType_DealBS;
          pkKind = f9sv_MdRtsKind_Deal | f9sv_MdRtsKind_BS;
@@ -160,7 +161,7 @@ inline void FmtRt_PkContOnReceived(ExgMdHandlerPkCont& handler, ExgMdSymbs& symb
    else { // none Deal, none BS?
       return;
    }
-   f9fmkt::PackMktSeq(rts, symb->BS_.Data_.MarketSeq_, symbs.CtrlFlags_, static_cast<f9fmkt::MarketDataSeq>(seq));
+   f9fmkt::PackMktSeq(rts, symbs.CtrlFlags_, static_cast<f9fmkt::MarketDataSeq>(seq));
    symb->MdRtStream_.Publish(ToStrView(symb->SymbId_), rtsPackType, pkKind, dealTime, std::move(rts));
 }
 
