@@ -15,7 +15,7 @@ fon9_API_TEMPLATE_CLASS(SymbTwfBS, SimpleSymbData, SymbTwfBSData);
 /// 不包含「衍生買賣」, 包含 LmtFlags.
 fon9_API seed::Fields SymbTwsBS_MakeFields(bool isAddMarketSeq);
 /// 包含「衍生買賣」, 不包含 LmtFlags.
-fon9_API seed::Fields SymbTwfBS_MakeFields(bool isAddMarketSeq);
+fon9_API seed::Fields SymbTwfBS_MakeFields(bool isAddMarketSeq, bool isAddChannelSeq);
 
 using SymbTwaBS = SymbTwfBS;
 fon9_API seed::Fields SymbTwaBS_MakeFields(bool isAddMarketSeq);

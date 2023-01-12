@@ -37,6 +37,8 @@ struct SymbTwfBSData : public SymbBSData {
    PriQty   DerivedSell_{};
    /// 衍生買進.
    PriQty   DerivedBuy_{};
+   /// 傳輸群組訊息流水序號.
+   uint64_t ChannelSeq_{0};
 
    void Clear(DayTime tm = DayTime::Null()) {
       ForceZeroNonTrivial(this);

@@ -115,6 +115,7 @@ f9twf_API void I081BSParserToRts(ExgMcMessage& e) {
    if (uCount <= 0)
       return;
    *rbuf.AllocPacket<uint8_t>() = static_cast<uint8_t>(uCount - 1);
+   fon9::ToBitv(rbuf, symbBS.ChannelSeq_ = pk.GetChannelSeq());
    symbBS.MarketSeq_ = PackBcdToMarketSeq(pk.ProdMsgSeq_);
    e.Symb_->MdRtStream_.PublishUpdateBS(ToStrView(e.Symb_->SymbId_), symbBS, std::move(rbuf),
                                         e.Channel_.GetChannelMgr()->Symbs_->CtrlFlags_);

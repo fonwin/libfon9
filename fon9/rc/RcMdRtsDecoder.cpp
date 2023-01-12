@@ -71,6 +71,7 @@ RcMdRtsDecoder_TabFields::RcMdRtsDecoder_TabFields(svc::TreeRec& tree) {
       this->FldDealFlags_    = GetFieldOrNull(*tab, "Flags");
       this->FldDealLmtFlags_ = GetFieldOrNull(*tab, "LmtFlags");
       this->FldDealMktSeq_   = GetFieldOrNull(*tab, "MktSeq");
+      this->FldDealChannelSeq_ = GetFieldOrNull(*tab, "ChannelSeq");
    }
    if ((tab = GetTabOrNull(*tree.Layout_, fon9_kCSTR_TabName_BS)) == nullptr)
       this->TabIdxBS_      = f9sv_TabSize_Null;
@@ -84,6 +85,7 @@ RcMdRtsDecoder_TabFields::RcMdRtsDecoder_TabFields(svc::TreeRec& tree) {
       SetBSFields(this->FldOrderSells_,   tab->Fields_, 'S', '\0');
       SetBSFields(this->FldDerivedBuys_,  tab->Fields_, 'D', 'B');
       SetBSFields(this->FldDerivedSells_, tab->Fields_, 'D', 'S');
+      this->FldBSChannelSeq_ = GetFieldOrNull(*tab, "ChannelSeq");
    }
    if ((tab = GetTabOrNull(*tree.Layout_, fon9_kCSTR_TabName_Ref)) != nullptr) {
       static const char kCSTR_PriUpLmt[] = "PriUpLmt";
@@ -420,15 +422,18 @@ struct RcSvStreamDecoder_MdRts : public RcMdRtsDecoder {
    // -----
    #define f9sv_DealFlag_IsOld   static_cast<f9sv_DealFlag>(0xff)
    f9sv_DealFlag DecodeDealPack(InfoAux&& aux, svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {
-      if (this->FldBSMktSeq_) {
-         seed::SimpleRawWr bsRawWr{ const_cast<f9sv_Seed*>(rpt.SeedArray_[this->TabIdxBS_]) };
-         if (!aux.Note_.IsRxMktSeqNewer(*this->FldBSMktSeq_, bsRawWr, rx, rxbuf))
-            return f9sv_DealFlag_IsOld;
-
-         if (this->FldDealMktSeq_) {
-            auto mktSeq = this->FldBSMktSeq_->GetNumber(bsRawWr, 0, 0);
-            this->FldDealMktSeq_->PutNumber(aux.RawWr_, mktSeq, 0);
-         }
+      if (!this->IsIdxDealMktSeqNewer(aux, rx, rxbuf))
+         return f9sv_DealFlag_IsOld;
+      if (this->FldDealChannelSeq_) {
+         uint64_t rxSeq{};
+         BitvTo(rxbuf, rxSeq);
+         this->FldDealChannelSeq_->PutNumber(aux.RawWr_, static_cast<seed::FieldNumberT>(rxSeq), 0);
+      }
+      if (this->FldDealChannelSeq_) {
+         seed::SimpleRawWr dealRawWr{ const_cast<f9sv_Seed*>(rpt.SeedArray_[this->TabIdxDeal_]) };
+         uint64_t rxSeq{};
+         BitvTo(rxbuf, rxSeq);
+         this->FldDealChannelSeq_->PutNumber(dealRawWr, static_cast<seed::FieldNumberT>(rxSeq), 0);
       }
 
       DayTime  dealTime = *aux.SeInfoTime_;
@@ -503,10 +508,13 @@ struct RcSvStreamDecoder_MdRts : public RcMdRtsDecoder {
    void DecodeDealBS(svc::RxSubrData& rx, f9sv_ClientReport& rpt, DcQueue& rxbuf) {
       InfoAux        auxDeal{rx, rpt, rxbuf, this->TabIdxDeal_};
       f9sv_DealFlag  dflag = this->DecodeDealPack(std::move(auxDeal), rx, rpt, rxbuf);
-      if (dflag != f9sv_DealFlag_IsOld)
+      if (dflag != f9sv_DealFlag_IsOld) {
+         // DecodeDealPack 已經驗證序號為最新, 直接更新 BSMktSeq 即可(此時的 DealMktSeq 與 BSMktSeq 一致)
+         this->FldBSMktSeq_->PutNumber(auxDeal.RawWr_, static_cast<seed::FieldNumberT>(auxDeal.Note_.GetRtMktSeq()), 0);
          this->DecodeSnapshotBS(InfoAux{auxDeal, rpt, this->TabIdxBS_},
                                 rx, rpt, rxbuf, (IsEnumContains(dflag, f9sv_DealFlag_Calculated)
                                                  ? f9sv_BSFlag_Calculated : f9sv_BSFlag{}));
+      }
    }
    // -----
    static void ClearFieldPQs(const seed::RawWr& wr, FieldPQList::const_iterator ibeg, FieldPQList::const_iterator iend) {
@@ -607,6 +615,11 @@ struct RcSvStreamDecoder_MdRts : public RcMdRtsDecoder {
       InfoAux  aux(rx, rpt, rxbuf, this->TabIdxBS_);
       if (!this->IsBSMktSeqNewer(aux, rx, rxbuf))
          return;
+      if (this->FldBSChannelSeq_) {
+         uint64_t rxSeq{};
+         BitvTo(rxbuf, rxSeq);
+         this->FldBSChannelSeq_->PutNumber(aux.RawWr_, static_cast<seed::FieldNumberT>(rxSeq), 0);
+      }
       aux.PutDecField(*this->FldBSInfoTime_, *aux.SeInfoTime_);
       const uint8_t first = ReadOrRaise<uint8_t>(rxbuf);
       f9sv_BSFlag   bsFlags{};

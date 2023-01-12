@@ -17,7 +17,7 @@ fon9::seed::LayoutSP ExgMdSymb::MakeLayout(bool isAddMarketSeq) {
       fon9_MakeField(Symb, SymbId_, "Id"), TreeFlag::AddableRemovable | TreeFlag::Unordered,
       TabSP{new Tab{Named{fon9_kCSTR_TabName_Base}, MakeFields(),                  kTabFlag}},
       TabSP{new Tab{Named{fon9_kCSTR_TabName_Ref},  TwfSymbRef_MakeFields(),       kTabFlag}},
-      TabSP{new Tab{Named{fon9_kCSTR_TabName_BS},   SymbTwfBS_MakeFields(isAddMarketSeq),   kTabFlag}},
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_BS},   SymbTwfBS_MakeFields(isAddMarketSeq, true), kTabFlag}},
       TabSP{new Tab{Named{fon9_kCSTR_TabName_Deal}, SymbTwfDeal_MakeFields(isAddMarketSeq), kTabFlag}},
       f9fmkt_MAKE_TABS_OpenHighLow(),
       TabSP{new Tab{Named{fon9_kCSTR_TabName_BreakSt}, SymbBreakSt_MakeFieldsTwf(),kTabFlag}},

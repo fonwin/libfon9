@@ -10,6 +10,8 @@ fon9_API seed::Fields SymbDeal_MakeFields(bool isAddLmtFlags, bool isAddMarketSe
    flds.Add(fon9_MakeField(SymbDeal, Data_.InfoTime_,    "InfoTime"));
    if (isAddMarketSeq)
       flds.Add(fon9_MakeField(SymbDeal, Data_.MarketSeq_, "MktSeq"));
+   if (!isAddLmtFlags)
+      flds.Add(fon9_MakeField(SymbDeal, Data_.ChannelSeq_, "ChannelSeq"));
    flds.Add(fon9_MakeField(SymbDeal, Data_.DealTime_,    "DealTime"));
    flds.Add(fon9_MakeField(SymbDeal, Data_.Deal_.Pri_,   "DealPri"));
    flds.Add(fon9_MakeField(SymbDeal, Data_.Deal_.Qty_,   "DealQty"));
