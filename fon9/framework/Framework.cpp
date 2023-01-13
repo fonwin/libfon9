@@ -1,6 +1,7 @@
 ﻿// \file fon9/framework/Framework.cpp
 // \author fonwinz@gmail.com
 #include "fon9/framework/Framework.hpp"
+#include "fon9/framework/FrameworkFlag.hpp"
 #include "fon9/seed/SysEnv.hpp"
 #include "fon9/ConfigLoader.hpp"
 #include "fon9/InnSyncerFile.hpp"
@@ -29,6 +30,7 @@ static void RaiseInitializeError(std::string err) {
 }
 
 int Framework::Initialize(int argc, char** argv) {
+   IsFrameworkInitializing = true;
    fon9::SetCmdArg(argc, argv);
    auto workDir = GetCmdArg(argc, argv, CmdArgDef{
       StrView{"WorkDir"}, //Name
@@ -183,6 +185,7 @@ void Framework::Start() {
    this->MaAuth_->Storage_->LoadAll();
    if (this->Syncer_)
       this->Syncer_->StartSync();
+   IsFrameworkInitializing = false;
 }
 
 void Framework::Dispose() {

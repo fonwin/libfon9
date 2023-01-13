@@ -221,6 +221,8 @@ public:
    ///   - 觸發 OnHelperBroken() 事件:
    ///     若現在沒有可用線路, 則會拒絕正在排隊中的委託.
    void UpdateHelper(TradingLineHelperSP helper);
+   void UpdateHelperReady();
+   void UpdateHelperBroken();
 
 protected:
    /// 衍生者在解構時, 應先呼叫此處,
@@ -386,6 +388,16 @@ public:
    /// TradingLineManager 解構, 或設定新的 EvHandler 時通知.
    virtual void OnTradingLineManagerDetach(const TLineLocker& tsvrFrom);
 };
+inline void TradingLineManager::UpdateHelperReady() {
+   Locker tsvr{this->TradingSvr_};
+   assert(tsvr->Helper_ && tsvr->Helper_->IsHelperReady());
+   this->OnHelperReady(std::move(tsvr));
+}
+inline void TradingLineManager::UpdateHelperBroken() {
+   Locker tsvr{this->TradingSvr_};
+   assert(!tsvr->Helper_ || !tsvr->Helper_->IsHelperReady());
+   this->OnHelperBroken(std::move(tsvr));
+}
 
 } } // namespaces
 #endif//__fon9_fmkt_TradingLine_hpp__

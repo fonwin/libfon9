@@ -168,6 +168,7 @@ set(fon9src
  auth/PolicySocketFrom.cpp
 
  framework/Framework.cpp
+ framework/FrameworkFlag.cpp
  framework/SeedSession.cpp
  framework/IoManager.cpp
  framework/IoManagerTree.cpp
