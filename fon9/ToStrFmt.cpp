@@ -40,7 +40,7 @@ static char* IntToStrRev_LastJustify(char* pout, char* const pstart, FmtDef fmt,
    int szfill = static_cast<int>(fmt.Precision_ - szout);
    if (fon9_UNLIKELY(szfill > 0)) {
       memset(pout -= szfill, '0', static_cast<size_t>(szfill));
-      szout += szfill;
+      szout += unsigned_cast(szfill); // 一些不大聰明的程式碼檢查工具, 可能會在此發出警告, 所以加上 unsigned_cast();
    }
    const unsigned szPrefix = fnPrefix.PrefixSize();
    szfill = static_cast<int>(fmt.Width_ - szout - szPrefix);
