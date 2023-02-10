@@ -54,7 +54,7 @@ fon9_WARN_DISABLE_PADDING;
 /// - 要解決的問題:
 ///   - 操作有順序性，必須依序處理。
 ///   - 某些不急迫的操作(例:關閉通訊設備), 可以安排在其他 thread 依序處理.
-///   - 如果只是要取得簡單的資料, 則可以 lock 後立即處理, 例如: Device::WaitGetDeviceId();
+///   - 如果只是要取得簡單的資料, 則可以 lock 後立即處理, 例如: Device::WaitGetDeviceInfo();
 /// - 解決方法:
 ///   - 每個通訊設備擁有一個 AQueue
 ///   - lock AQueue 之後可以判斷是否允許 **立即** 執行.

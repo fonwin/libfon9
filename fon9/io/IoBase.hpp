@@ -103,10 +103,10 @@ struct StateUpdatedArgs {
       : DeviceId_(deviceId)
       , Info_{info} {
    }
-   const std::string&   DeviceId_;
+   std::string DeviceId_;
    /// if (State_== State::Opening) 則 Info_ = cfgstr;
-   StrView              Info_;
-   State                State_;
+   StrView     Info_;
+   State       State_;
 };
 
 /// \ingroup io

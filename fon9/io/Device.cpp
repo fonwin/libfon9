@@ -161,7 +161,7 @@ bool Device::OpImpl_SetState(State afst, StrView stmsg) {
    if (bfst == afst) {
       if (afst < State::Disposing) { // Disposing 訊息不需要重複更新.
          Aux::CheckStartTimer(*this, afst);
-         StateUpdatedArgs e{afst, stmsg, this->DeviceId_};
+         StateUpdatedArgs e{afst, stmsg, *this->DeviceId_.Lock()};
          this->Session_->OnDevice_StateUpdated(*this, e);
          if (this->Manager_)
             this->Manager_->OnDevice_StateUpdated(*this, e);
@@ -172,7 +172,7 @@ bool Device::OpImpl_SetState(State afst, StrView stmsg) {
       // 狀態 >= State::Disposing 之後, 就不可再回頭!
       return false;
    this->State_ = afst;
-   StateChangedArgs e{stmsg, this->DeviceId_};
+   StateChangedArgs e{stmsg, *this->DeviceId_.Lock()};
    e.BeforeState_ = bfst;
    e.After_.State_ = afst;
    this->OpImpl_StateChanged(e);
@@ -186,14 +186,22 @@ bool Device::OpImpl_SetState(State afst, StrView stmsg) {
    return true;
 }
 
-std::string Device::WaitGetDeviceId() {
-   std::string res;
-   this->OpQueue_.InplaceOrWait(AQueueTaskKind::Get,
-                                DeviceAsyncOp{[&res](Device& dev) {
-      res = dev.DeviceId_;
-   }});
-   return res;
-}
+// 到 Op thread 取得 DeviceId, 然後才返回.
+// - 如果是在 OnDevice_* 事件(除了: OnDevice_Initialized(), OnDevice_Destructing()) 裡呼叫,
+//   表示已在 Op thread, 則會立即取得&返回.
+// - 因為「取得 DeviceId」不是常用操作, 所以不考慮速度.
+// - 由於可能會進入等待, 所以呼叫前不應有任何 lock, 須謹慎考慮死結問題.
+// =====> 許多協定會在收到資料後 lock 某些資源,
+// =====> 然後取得 DeviceId, 所以很容易陷入死結,
+// =====> 因此將 WaitGetDeviceId() 改成 MustLock<> 方式處理;
+//std::string Device::WaitGetDeviceId() {
+//   std::string res;
+//   this->OpQueue_.InplaceOrWait(AQueueTaskKind::Get,
+//                                DeviceAsyncOp{[&res](Device& dev) {
+//      res = dev.DeviceId_;
+//   }});
+//   return res;
+//}
 
 void Device::OpImpl_AppendDeviceInfo(std::string& info) {
    (void)info;
@@ -209,7 +217,7 @@ std::string Device::WaitGetDeviceInfo() {
       res.append("|st=");
       GetStateStr(dev.State_).AppendTo(res);
       res.append("|id={");
-      res.append(dev.DeviceId_);
+      res.append(*dev.DeviceId_.Lock());
       res.append("}|info=");
       dev.OpImpl_AppendDeviceInfo(res);
    }});

@@ -20,10 +20,11 @@ class fon9_API Device : public intrusive_ref_counter<Device> {
    State          State_;
    Bookmark       SessionBookmark_{0};
    Bookmark       ManagerBookmark_{0};
-   std::string    DeviceId_;
+   using DeviceIdT = MustLock<std::string, SpinBusy>;
+   DeviceIdT      DeviceId_;
    DeviceOptions  Options_;
    char           padding___[4];
-   
+
 public:
    const Style       Style_;
    const ManagerSP   Manager_;
@@ -131,12 +132,11 @@ public:
       return SendResult{0};
    }
 
-   /// 到 Op thread 取得 DeviceId, 然後才返回.
-   /// - 如果是在 OnDevice_* 事件(除了: OnDevice_Initialized(), OnDevice_Destructing()) 裡呼叫,
-   ///   表示已在 Op thread, 則會立即取得&返回.
-   /// - 因為「取得 DeviceId」不是常用操作, 所以不考慮速度.
-   /// - 由於可能會進入等待, 所以呼叫前不應有任何 lock, 須謹慎考慮死結問題.
-   std::string WaitGetDeviceId();
+   /// 由於 DeviceId 用途廣泛(例: 連線後記錄log, 登入時判斷來源, 處理某些訊息也許需要知道來源...)
+   /// 所以使用簡單的 lock 機制存取 DeviceId;
+   std::string WaitGetDeviceId() {
+      return *this->DeviceId_.Lock();
+   }
 
    /// 取得 device 的現在狀態訊息字串.
    /// - |tm=ToStrRev_Full(UtcNow())
@@ -241,10 +241,10 @@ protected:
    /// - 例: TcpClient: "R=RemoteIp:Port|L=LocalIp:Port"
    /// - 由於 WaitGetDeviceInfo() 會填入: "|id={DeivceId_}"; 所以 deviceId 不可有沒配對的大括號.
    static void OpThr_SetDeviceId(Device& dev, std::string deviceId) {
-      dev.DeviceId_ = std::move(deviceId);
+      *dev.DeviceId_.Lock() = std::move(deviceId);
    }
-   const std::string& OpImpl_GetDeviceId() const {
-      return this->DeviceId_;
+   std::string OpImpl_GetDeviceId() const {
+      return *this->DeviceId_.Lock();
    }
    /// \retval true  將 this->State_ 設為 afst,
    ///               並觸發 Session::OnDevice_StateChanged(), Manager::OnDevice_StateChanged() 事件.
