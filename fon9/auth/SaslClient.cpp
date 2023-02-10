@@ -15,20 +15,42 @@ SaslClient::~SaslClient() {
 //--------------------------------------------------------------------------//
 
 // 使用 Password 機制的 SaslClient 定義.
-typedef SaslClientSP (*FnSaslClientCreator) (const StrView& authz, const StrView& authc, const StrView& pass);
 struct SaslClientMech_Password {
    StrView              Name_;
    FnSaslClientCreator  Creator_;
 };
-static SaslClientMech_Password SaslClientMech_Password_[]{
+static std::vector<SaslClientMech_Password> SaslClientMech_Password_ {
    {StrView{"SCRAM-SHA-256"}, &SaslScramSha256ClientCreator}
 };
+static const SaslClientMech_Password* FindSaslClientCreator(fon9::StrView name) {
+   for (SaslClientMech_Password& c : SaslClientMech_Password_) {
+      if (c.Name_ == name)
+         return &c;
+   }
+   return nullptr;
+}
+
+fon9_API bool AddSaslClientCreator(fon9::StrView name, FnSaslClientCreator fnCreator) {
+   if (FindSaslClientCreator(name))
+      return false;
+   SaslClientMech_Password_.push_back(SaslClientMech_Password{name, fnCreator});
+   return true;
+}
 
 fon9_API SaslClientR CreateSaslClient(StrView saslMechList, char chSplitter,
                                       const StrView& authz, const StrView& authc, const StrView& pass) {
-   for (SaslClientMech_Password& c : SaslClientMech_Password_) {
-      if (StrSearchSubstr(saslMechList, c.Name_, chSplitter))
-         return SaslClientR{c.Name_, c.Creator_(authz, authc, pass)};
+   if (const char* pspl = authc.Find('/')) {
+      fon9::StrView mechName{authc.begin(), pspl};
+      if (StrSearchSubstr(saslMechList, mechName, chSplitter)) {
+         if (const SaslClientMech_Password* mech = FindSaslClientCreator(mechName))
+            return SaslClientR{mech->Name_, mech->Creator_(authz, fon9::StrView{pspl + 1, authc.end()}, pass)};
+      }
+   }
+   else {
+      for (SaslClientMech_Password& c : SaslClientMech_Password_) {
+         if (StrSearchSubstr(saslMechList, c.Name_, chSplitter))
+            return SaslClientR{c.Name_, c.Creator_(authz, authc, pass)};
+      }
    }
    return SaslClientR{StrView{}, SaslClientSP{}};
 }

@@ -48,8 +48,20 @@ struct SaslClientR {
    SaslClientSP   SaslClient_;
 };
 
+typedef SaslClientSP (*FnSaslClientCreator) (const StrView& authz, const StrView& authc, const StrView& pass);
+
+/// \ingroup auth
+/// 額外增加自訂的 SaslClientCreator;
+/// - 不是 thread safe, 通常必須在系統啟動階段呼叫.
+/// - name 的內容必須是常數(系統結束前必須有效), 不能用 std::string 的內容.
+///
+/// \retval false 表示該名稱已存在.
+fon9_API bool AddSaslClientCreator(fon9::StrView name, FnSaslClientCreator fnCreator);
+
 /// \ingroup auth
 /// 從 saslMechList 裡面選一個有支援的 sasl mech, 並建立 SaslClient.
+/// - authc 填入 "UserId", 或 "SaslMeth/UserId";
+/// - authz, 則為[訪問權限]的資源Id, 例: 在 UNIX 上使用 sudo, 則 authz="root"; authc=登入Id;
 fon9_API SaslClientR CreateSaslClient(StrView saslMechList, char chSplitter,
                                       const StrView& authz, const StrView& authc, const StrView& pass);
 
