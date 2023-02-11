@@ -90,7 +90,10 @@ fon9_ENUM(f9fmkt_TradingSessionId, char) {
 
    /// 提供給陣列使用, 例如:
    /// using SessionAry = std::array<SessionRec, f9fmkt_TradingSessionId_MaxIndex + 1u>;
-   f9fmkt_TradingSessionId_MaxIndex = 'z'
+   f9fmkt_TradingSessionId_MaxIndex = 'z',
+   /// 回報時, 若回報格式沒有提供 SessionId, 則可先填入此值,
+   /// 若 [回報處理程序] 有支援, 則: 根據現有委託書填入 SessionId.
+   f9fmkt_TradingSessionId_RptAutoSessionId = f9fmkt_TradingSessionId_MaxIndex
 };
 /// 返回值必定在 [0..f9fmkt_TradingSessionId_MaxIndex] 之間.
 static inline unsigned char f9fmkt_TradingSessionId_ToIndex(f9fmkt_TradingSessionId v) {
@@ -200,6 +203,12 @@ fon9_ENUM(f9fmkt_TradingRequestSt, uint8_t) {
    /// 退回原因需參考 ErrCode;
    f9fmkt_TradingRequestSt_BackFromRemote = 0x2b,
 
+   /// 下單要求送出給 [券商系統], 由券商系統處理下單要求.
+   f9fmkt_TradingRequestSt_SendingToBroker = 0x2d,
+   /// 下單要求送出給 [券商系統] 後, 券商系統告知在其內部排隊中, 尚未送出給交易所.
+   /// 券商系統送給交易所, 會變成 f9fmkt_TradingRequestSt_Sent 狀態.
+   f9fmkt_TradingRequestSt_BrokerQueuing = 0x2e,
+
    /// 在呼叫 io.Send() 之前設定的狀態.
    /// 您可以自行決定要在 io.Send() 之前 or 之後 or both, 設定送出狀態.
    f9fmkt_TradingRequestSt_Sending = 0x30,
@@ -255,6 +264,8 @@ fon9_ENUM(f9fmkt_TradingRequestSt, uint8_t) {
    f9fmkt_TradingRequestSt_OrdNoRejected = 0xe4,
    /// 下單要求因「內部其他原因」拒絕. 尚未送給交易所.
    f9fmkt_TradingRequestSt_InternalRejected = 0xe9,
+   /// 下單到券商系統, 被券商系統拒絕.
+   f9fmkt_TradingRequestSt_BrokerRejected = 0xeb,
    /// 下單要求因「風控檢查」拒絕. 尚未送給交易所.
    f9fmkt_TradingRequestSt_CheckingRejected = 0xec,
    /// 下單要求被「交易所」拒絕.
@@ -372,19 +383,24 @@ fon9_ENUM(f9fmkt_OrderSt, uint8_t) {
    ///   - 其他委託內容(例: ExgTime, Qty, Pri...)都不會變動.
    f9fmkt_OrderSt_ReportStale = 2,
 
-   f9fmkt_OrderSt_NewWaitingCond        = f9fmkt_TradingRequestSt_WaitingCond,
-   f9fmkt_OrderSt_NewWaitingCondAtOther = f9fmkt_TradingRequestSt_WaitingCondAtOther,
+   f9fmkt_OrderSt_NewWaitingCond          = f9fmkt_TradingRequestSt_WaitingCond,
+   f9fmkt_OrderSt_NewWaitingCondAtOther   = f9fmkt_TradingRequestSt_WaitingCondAtOther,
       
    /// f9fmkt_OrderSt_IniAccepted 用於 OmsOrder::Initiator() 及 OmsOrder::EndUpdate();
    /// >= f9fmkt_OrderSt_IniAccepted 則表示此單已被 f9oms 接受.
    /// 後續異動必須更新 LastOrderSt_;
-   f9fmkt_OrderSt_IniAccepted        = f9fmkt_OrderSt_NewWaitingCond,
+   f9fmkt_OrderSt_IniAccepted             = f9fmkt_OrderSt_NewWaitingCond,
 
    f9fmkt_OrderSt_NewStarting             = 0x10,
    f9fmkt_OrderSt_NewChecking             = f9fmkt_TradingRequestSt_Checking,
    f9fmkt_OrderSt_NewQueuing              = f9fmkt_TradingRequestSt_Queuing,
    f9fmkt_OrderSt_NewQueuingAtOther       = f9fmkt_TradingRequestSt_QueuingAtOther,
+
    f9fmkt_OrderSt_NewAskToRemote          = f9fmkt_TradingRequestSt_AskToRemote,
+
+   f9fmkt_OrderSt_NewSendingToBroker      = f9fmkt_TradingRequestSt_SendingToBroker,
+   f9fmkt_OrderSt_NewBrokerQueuing        = f9fmkt_TradingRequestSt_BrokerQueuing,
+
    f9fmkt_OrderSt_NewSending              = f9fmkt_TradingRequestSt_Sending,
    f9fmkt_OrderSt_NewSent                 = f9fmkt_TradingRequestSt_Sent,
 
@@ -406,6 +422,7 @@ fon9_ENUM(f9fmkt_OrderSt, uint8_t) {
    f9fmkt_OrderSt_NewLineRejected         = f9fmkt_TradingRequestSt_LineRejected,
    f9fmkt_OrderSt_NewOrdNoRejected        = f9fmkt_TradingRequestSt_OrdNoRejected,
    f9fmkt_OrderSt_NewInternalRejected     = f9fmkt_TradingRequestSt_InternalRejected,
+   f9fmkt_OrderSt_NewBrokerRejected       = f9fmkt_TradingRequestSt_BrokerRejected,
    f9fmkt_OrderSt_NewCheckingRejected     = f9fmkt_TradingRequestSt_CheckingRejected,
    f9fmkt_OrderSt_NewExchangeRejected     = f9fmkt_TradingRequestSt_ExchangeRejected,
 

@@ -56,7 +56,7 @@ public:
       this->Market_ = v;
    }
    void SetSessionId(f9fmkt_TradingSessionId v) {
-      assert(this->SessionId_ == f9fmkt_TradingSessionId{});
+      assert(this->SessionId_ == f9fmkt_TradingSessionId{} || this->SessionId_ == f9fmkt_TradingSessionId_RptAutoSessionId);
       this->SessionId_ = v;
    }
    /// 只能設定一次, 設定後不應該更改.
