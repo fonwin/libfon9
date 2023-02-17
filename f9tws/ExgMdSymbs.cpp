@@ -25,8 +25,8 @@ LayoutSP ExgMdSymb::MakeLayout(bool isAddMarketSeq) {
       fon9_MakeField(Symb, SymbId_, "Id"), TreeFlag::AddableRemovable | TreeFlag::Unordered,
       TabSP{new Tab{Named{fon9_kCSTR_TabName_Base},    std::move(symbBaseFields),   kTabFlag}},
       TabSP{new Tab{Named{fon9_kCSTR_TabName_Ref},     TwsSymbRef_MakeFields(),     kTabFlag}},
-      TabSP{new Tab{Named{fon9_kCSTR_TabName_BS},      SymbTwsBS_MakeFields(isAddMarketSeq), kTabFlag}},
       TabSP{new Tab{Named{fon9_kCSTR_TabName_Deal},    SymbTwsDeal_MakeFields(isAddMarketSeq), kTabFlag}},
+      TabSP{new Tab{Named{fon9_kCSTR_TabName_BS},      SymbTwsBS_MakeFields(isAddMarketSeq), kTabFlag}},
       f9fmkt_MAKE_TABS_OpenHighLow(),
       TabSP{new Tab{Named{fon9_kCSTR_TabName_BreakSt}, SymbBreakSt_MakeFieldsTws(), kTabFlag}},
       TabSP{new Tab{Named{fon9_kCSTR_TabName_Rt},      MdRtStream::MakeFields(),    kTabFlag}}
@@ -35,8 +35,8 @@ LayoutSP ExgMdSymb::MakeLayout(bool isAddMarketSeq) {
 static const int32_t kExgMdSymbOffset[]{
    0, // Base
    fon9_OffsetOf(ExgMdSymb, Ref_),
-   fon9_OffsetOf(ExgMdSymb, BS_),
    fon9_OffsetOf(ExgMdSymb, Deal_),
+   fon9_OffsetOf(ExgMdSymb, BS_),
    f9fmkt_MAKE_OFFSET_OpenHighLow(ExgMdSymb),
    fon9_OffsetOf(ExgMdSymb, BreakSt_),
    fon9_OffsetOf(ExgMdSymb, MdRtStream_),
