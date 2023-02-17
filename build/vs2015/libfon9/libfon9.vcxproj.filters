@@ -1175,6 +1175,15 @@
     <ClInclude Include="..\..\..\fon9\framework\FrameworkFlag.hpp">
       <Filter>Header Files\framework</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\auth\OuterAuth.hpp">
+      <Filter>Header Files\auth</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\auth\SaslOuterAuthClient.hpp">
+      <Filter>Header Files\auth</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\fon9\auth\SaslOuterAuthServer.hpp">
+      <Filter>Header Files\auth</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -1917,6 +1926,15 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\framework\FrameworkFlag.cpp">
       <Filter>Source Files\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\auth\OuterAuth.cpp">
+      <Filter>Source Files\auth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\auth\SaslOuterAuthClient.cpp">
+      <Filter>Source Files\auth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\auth\SaslOuterAuthServer.cpp">
+      <Filter>Source Files\auth</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

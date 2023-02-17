@@ -81,6 +81,7 @@
     <ClInclude Include="..\..\..\fon9\auth\AuthBase.h" />
     <ClInclude Include="..\..\..\fon9\auth\AuthBase.hpp" />
     <ClInclude Include="..\..\..\fon9\auth\AuthMgr.hpp" />
+    <ClInclude Include="..\..\..\fon9\auth\OuterAuth.hpp" />
     <ClInclude Include="..\..\..\fon9\auth\PassIdMgr.hpp" />
     <ClInclude Include="..\..\..\fon9\auth\PoDupLogon.hpp" />
     <ClInclude Include="..\..\..\fon9\auth\PolicyAcl.hpp" />
@@ -92,6 +93,8 @@
     <ClInclude Include="..\..\..\fon9\auth\RoleMgr.hpp" />
     <ClInclude Include="..\..\..\fon9\auth\SaslClient.hpp" />
     <ClInclude Include="..\..\..\fon9\auth\SaslScram.hpp" />
+    <ClInclude Include="..\..\..\fon9\auth\SaslOuterAuthClient.hpp" />
+    <ClInclude Include="..\..\..\fon9\auth\SaslOuterAuthServer.hpp" />
     <ClInclude Include="..\..\..\fon9\auth\SaslScramServer.hpp" />
     <ClInclude Include="..\..\..\fon9\auth\SaslScramSha256.hpp" />
     <ClInclude Include="..\..\..\fon9\auth\SaslScramSha256Client.hpp" />
@@ -411,6 +414,7 @@
     <ClCompile Include="..\..\..\fon9\Appender.cpp" />
     <ClCompile Include="..\..\..\fon9\Assert.c" />
     <ClCompile Include="..\..\..\fon9\auth\AuthMgr.cpp" />
+    <ClCompile Include="..\..\..\fon9\auth\OuterAuth.cpp" />
     <ClCompile Include="..\..\..\fon9\auth\PassIdMgr.cpp" />
     <ClCompile Include="..\..\..\fon9\auth\PoDupLogon.cpp" />
     <ClCompile Include="..\..\..\fon9\auth\PolicyAcl.cpp" />
@@ -420,6 +424,8 @@
     <ClCompile Include="..\..\..\fon9\auth\PolicySocketFrom.cpp" />
     <ClCompile Include="..\..\..\fon9\auth\RoleMgr.cpp" />
     <ClCompile Include="..\..\..\fon9\auth\SaslClient.cpp" />
+    <ClCompile Include="..\..\..\fon9\auth\SaslOuterAuthClient.cpp" />
+    <ClCompile Include="..\..\..\fon9\auth\SaslOuterAuthServer.cpp" />
     <ClCompile Include="..\..\..\fon9\auth\SaslScramServer.cpp" />
     <ClCompile Include="..\..\..\fon9\auth\SaslScramSha256.cpp" />
     <ClCompile Include="..\..\..\fon9\auth\SaslScramSha256Client.cpp" />

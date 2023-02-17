@@ -2,6 +2,7 @@
 /// \author fonwinz@gmail.com
 #include "fon9/auth/SaslClient.hpp"
 #include "fon9/auth/SaslScramSha256Client.hpp"
+#include "fon9/auth/SaslOuterAuthClient.hpp"
 #include "fon9/Random.hpp"
 #include "fon9/StrTools.hpp"
 #include "fon9/StrTo.hpp"
@@ -20,7 +21,8 @@ struct SaslClientMech_Password {
    FnSaslClientCreator  Creator_;
 };
 static std::vector<SaslClientMech_Password> SaslClientMech_Password_ {
-   {StrView{"SCRAM-SHA-256"}, &SaslScramSha256ClientCreator}
+   {StrView{"SCRAM-SHA-256"}, &SaslScramSha256ClientCreator},
+   {StrView{"OUTER-AUTH"},    &SaslOuterAuthClientCreator},
 };
 static const SaslClientMech_Password* FindSaslClientCreator(fon9::StrView name) {
    for (SaslClientMech_Password& c : SaslClientMech_Password_) {

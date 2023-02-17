@@ -152,6 +152,7 @@ set(fon9src
  crypto/Sha1.cpp
  crypto/Sha256.cpp
  auth/AuthMgr.cpp
+ auth/OuterAuth.cpp
  auth/RoleMgr.cpp
  auth/UserMgr.cpp
  auth/PassIdMgr.cpp
@@ -161,6 +162,8 @@ set(fon9src
  auth/PolicyAcl.cpp
  auth/PoDupLogon.cpp
  auth/SaslClient.cpp
+ auth/SaslOuterAuthClient.cpp
+ auth/SaslOuterAuthServer.cpp
  auth/SaslScramServer.cpp
  auth/SaslScramSha256.cpp
  auth/SaslScramSha256Client.cpp
