@@ -39,6 +39,8 @@ RcServerNote_SaslAuth::RcServerNote_SaslAuth(RcSession& ses, auth::AuthMgr& auth
    this->AuthSession_ = authMgr.CreateAuthSession(mechName, std::bind(&RcServerNote_SaslAuth::OnAuthVerifyCB, this, _1, _2));
 }
 RcServerNote_SaslAuth::~RcServerNote_SaslAuth() {
+   if (this->AuthSession_)
+      this->AuthSession_->Dispose();
 }
 unsigned RcServerNote_SaslAuth::PoDupLogonClient_AddRef() const {
    intrusive_ptr_add_ref(&this->RcSession_);

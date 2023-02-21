@@ -96,6 +96,12 @@ public:
    }
    virtual ~AuthSession();
 
+   /// 除了依靠 AuthSessionSP 自動解構外,
+   /// 當確定 AuthSession 不再使用時(此時可能已認證成功, 或仍在進行認證中),
+   /// 應呼叫此處, 讓 AuthSession 的衍生者可以先清除資源.
+   /// 預設: do nothing.
+   virtual void Dispose();
+
    /// 當收到 client 的 request 時, 透過這裡處理.
    /// 如果認證過程, 有多個步驟, 一樣透過這裡處理.
    virtual void AuthVerify(const AuthRequest& req) = 0;

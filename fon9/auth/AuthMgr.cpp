@@ -33,6 +33,8 @@ std::string AuthResult::MakeUFrom(StrView devid) const {
 
 AuthSession::~AuthSession() {
 }
+void AuthSession::Dispose() {
+}
 
 //--------------------------------------------------------------------------//
 
