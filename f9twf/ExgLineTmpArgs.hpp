@@ -23,6 +23,11 @@ struct f9twf_API ExgLineTmpArgs {
    std::string Verify() const;
 
    uint16_t GetPassNum() const;
+
+   fon9::TimeInterval GetFcInterval() const {
+      return this->FcInterval_.IsNullOrZero()
+         ? fon9::TimeInterval_Second(1) : this->FcInterval_;
+   }
 };
 
 /// - cfg = "FcmId=數字代號|SessionId=|Pass=|ApCode="; 每個欄位都必須提供.
