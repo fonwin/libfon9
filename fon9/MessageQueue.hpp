@@ -130,6 +130,11 @@ class MessageQueue {
       JoinThreads(this->ThreadPool_);
    }
 
+protected:
+   QueueController& GetQueueController() {
+      return this->QueueController_;
+   }
+
 public:
    using MessageHandler = MessageHandlerT;
    using MessageType = MessageT;
