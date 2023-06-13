@@ -158,7 +158,7 @@ class ConsoleSeedSession : public fon9::SeedSession {
          if (cmdln.Get1st() == '#')
             continue;
          if (cmdln == "quit") {
-            fon9_LOG_IMP("main.quit|user=", this->GetAuthr().GetUserId());
+            fon9_LOG_IMP("main.quit|user=", this->GetAuthr().AuthcId_);
             return State::QuitApp;
          }
          if (cmdln == "exit")
