@@ -32,9 +32,9 @@ void FixReceiver::OnBadCompID(const FixRecvEvArgs& rxargs, FixTag errTag, const 
    // 造成訊息無法繼續下去.
    // 所以如果此筆的序號正確, 則使用 WriteInputConform(), 讓下一筆正確序號的訊息能進入系統.
    if (rxargs.SeqSt_ == FixSeqSt::Conform)
-      fixRecorder.WriteInputConform(rxargs.MsgStr_);
+      fixRecorder.WriteInputConform(rxargs);
    else
-      fixRecorder.Write(f9fix_kCSTR_HdrError, rxargs.MsgStr_);
+      fixRecorder.Write(f9fix_kCSTR_HdrError, rxargs.OrigMsgStr());
    FixBuilder  fixb;
    RevPrint(fixb.GetBuffer(), f9fix_kFLD_SessionRejectReason_CompIDProblem f9fix_SPLTAGEQ(Text) "CompID problem");
    SendSessionReject(*rxargs.FixSender_, rxargs.Msg_.GetMsgSeqNum(), errTag, msgType, std::move(fixb));
@@ -54,7 +54,7 @@ void FixReceiver::OnRecvResendRequest(const FixRecvEvArgs& rxargs) {
    // if (rxargs.SeqSt_ != FixSeqSt::Conform)
    // 因為即使序號正確, 也會因 IsEnumContains(mcfg->FixSeqAllow_, FixSeqSt::NoPreRecord) 而沒有寫入紀錄,
    // 所以這裡離律強制寫入記錄.
-      rxargs.FixSender_->GetFixRecorder().Write(f9fix_kCSTR_HdrReplay, rxargs.MsgStr_);
+      rxargs.FixSender_->GetFixRecorder().Write(f9fix_kCSTR_HdrReplay, rxargs.OrigMsgStr());
    // -----]
    FixTag errTag;
    if (const FixParser::FixField* fldBeginSeqNo = rxargs.Msg_.GetField(errTag = f9fix_kTAG_BeginSeqNo)) {
@@ -86,7 +86,7 @@ void FixReceiver::OnRecvSequenceReset(const FixRecvEvArgs& rxargs) {
    const FixSeqNum  msgSeqNum = rxargs.Msg_.GetMsgSeqNum();
    const FixParser::FixField* fldNewSeqNo = rxargs.Msg_.GetField(f9fix_kTAG_NewSeqNo);
    if (fldNewSeqNo == nullptr) {
-      fixRecorder.Write(f9fix_kCSTR_HdrError, rxargs.MsgStr_);
+      fixRecorder.Write(f9fix_kCSTR_HdrError, rxargs.OrigMsgStr());
       SendRequiredTagMissing(*rxargs.FixSender_, msgSeqNum, f9fix_kTAG_NewSeqNo, f9fix_kMSGTYPE_SequenceReset);
       return;
    }
@@ -94,7 +94,7 @@ void FixReceiver::OnRecvSequenceReset(const FixRecvEvArgs& rxargs) {
 
    if (isGapFill) {
       if (fon9_UNLIKELY(newSeqNo < msgSeqNum)) {
-         fixRecorder.WriteInputConform(rxargs.MsgStr_);
+         fixRecorder.WriteInputConform(rxargs);
          FixBuilder fixb;
          RevPrint(fixb.GetBuffer(),
                   f9fix_kFLD_SessionRejectReason_ValueIsIncorrect
@@ -102,7 +102,7 @@ void FixReceiver::OnRecvSequenceReset(const FixRecvEvArgs& rxargs) {
          SendSessionReject(*rxargs.FixSender_, msgSeqNum, f9fix_kTAG_NewSeqNo, f9fix_kMSGTYPE_SequenceReset, std::move(fixb));
          return;
       }
-      fixRecorder.WriteInputSeqReset(rxargs.MsgStr_, newSeqNo, isGapFill);
+      fixRecorder.WriteInputSeqReset(rxargs.OrigMsgStr(), newSeqNo, isGapFill);
       if (rxargs.FixReceiver_->ResendRequestEndSeqNo_ < newSeqNo) {
          // 上次的 ResendRequest 補齊了! 檢查是否有保留訊息, 檢查是否已全部補齊.
          rxargs.FixReceiver_->ResendRequestEndSeqNo_ = 0;
@@ -111,7 +111,7 @@ void FixReceiver::OnRecvSequenceReset(const FixRecvEvArgs& rxargs) {
    }
    else { // SequenceReset: Reset mode.
       rxargs.FixReceiver_->ClearRecvKeeper();
-      fixRecorder.WriteInputSeqReset(rxargs.MsgStr_, newSeqNo, isGapFill);
+      fixRecorder.WriteInputSeqReset(rxargs.OrigMsgStr(), newSeqNo, isGapFill);
       rxargs.FixReceiver_->OnRecoverDone(rxargs);
    }
 }
@@ -127,7 +127,8 @@ void FixReceiver::CheckMsgKeeper(const FixRecvEvArgs& rxargs, FixSeqNum newSeqNo
       if (newSeqNo == msg.SeqNum_) {
          FixRecvEvArgs&  args = const_cast<FixRecvEvArgs&>(rxargs);
          StrView         fixmsg{&msg.MsgStr_};
-         args.MsgStr_ = fixmsg;
+         args.SetOrigMsgStr(fixmsg);
+         args.SetRxTime(UtcNow()); // 是否要使用 [當時] 的時間?
          args.Msg_.Clear();
          args.Msg_.ParseFields(fixmsg, FixParser::Until::FullMessage);
          this->DispatchFixMessage(args);
@@ -167,7 +168,7 @@ void FixReceiver::DispatchFixMessage(FixRecvEvArgs& rxargs) {
    const FixParser::FixField* fldMsgType = rxargs.Msg_.GetField(f9fix_kTAG_MsgType);
    const FixSeqNum            msgSeqNum = rxargs.Msg_.GetMsgSeqNum();
    if (fon9_UNLIKELY(!fldMsgType)) {
-      fixRecorder.Write(f9fix_kCSTR_HdrError, rxargs.MsgStr_);
+      fixRecorder.Write(f9fix_kCSTR_HdrError, rxargs.OrigMsgStr());
       SendRequiredTagMissing(*rxargs.FixSender_, msgSeqNum, f9fix_kTAG_MsgType, nullptr);
       return;
    }
@@ -182,12 +183,12 @@ void FixReceiver::DispatchFixMessage(FixRecvEvArgs& rxargs) {
    if (fon9_LIKELY(rxargs.SeqSt_ == FixSeqSt::Conform)) {
       if (fon9_LIKELY(cfg && cfg->FixMsgHandler_)) {
          if (fon9_LIKELY(!IsEnumContains(cfg->FixSeqAllow_, FixSeqSt::NoPreRecord)))
-            fixRecorder.WriteInputConform(rxargs.MsgStr_);
+            fixRecorder.WriteInputConform(rxargs);
          // 一般而言, 正常的連續訊息會來到這兒, 丟給 FixMsgHandler 處理!
          cfg->FixMsgHandler_(rxargs);
       }
       else {
-         fixRecorder.WriteInputConform(rxargs.MsgStr_);
+         fixRecorder.WriteInputConform(rxargs);
          this->OnFixMsgHandlerNotFound(rxargs, msgType);
       }
       this->OnMessageProcessed(rxargs, msgSeqNum);
@@ -215,18 +216,18 @@ void FixReceiver::OnMsgSeqNumNotExpected(const FixRecvEvArgs& rxargs, GapFlags f
    if (msgSeqNum <= this->LastGapSeqNo_) {
       // [回補範圍內] 的 [不連續訊息] => 不理會, 等候回補
       if (!(flags & GapSkipRecord))
-         fixRecorder.Write(f9fix_kCSTR_HdrIgnoreRecv, rxargs.MsgStr_);
+         fixRecorder.Write(f9fix_kCSTR_HdrIgnoreRecv, rxargs.OrigMsgStr());
       return;
    }
    this->LastGapSeqNo_ = msgSeqNum;
    if (!(flags & GapKeepRequired)) {
       if (!(flags & GapSkipRecord))
-         fixRecorder.Write(f9fix_kCSTR_HdrIgnoreRecv, rxargs.MsgStr_);
+         fixRecorder.Write(f9fix_kCSTR_HdrIgnoreRecv, rxargs.OrigMsgStr());
    }
    else {
       if (!(flags & GapSkipRecord))
-         fixRecorder.Write(f9fix_kCSTR_HdrGapRecv, rxargs.MsgStr_);
-      this->MsgKeeper_.emplace_back(rxargs.MsgStr_.ToString(), msgSeqNum);
+         fixRecorder.Write(f9fix_kCSTR_HdrGapRecv, rxargs.OrigMsgStr());
+      this->MsgKeeper_.emplace_back(rxargs.OrigMsgStr().ToString(), msgSeqNum);
       --msgSeqNum;
    }
    if (this->ResendRequestEndSeqNo_ > 0) // 回補中,等補到指定的序號時,再提出後續的回補要求.
@@ -238,11 +239,11 @@ void FixReceiver::OnMsgSeqNumTooLow(const FixRecvEvArgs& rxargs) {
    FixRecorder&   fixRecorder = rxargs.FixSender_->GetFixRecorder();
    if (const FixParser::FixField* fldPossDup = rxargs.Msg_.GetField(f9fix_kTAG_PossDupFlag))
       if (fldPossDup->Value_.Get1st() == 'Y') {
-         fixRecorder.Write(f9fix_kCSTR_HdrIgnoreRecv, rxargs.MsgStr_);
+         fixRecorder.Write(f9fix_kCSTR_HdrIgnoreRecv, rxargs.OrigMsgStr());
          this->OnRecvPossDup(rxargs);
          return;
       }
-   fixRecorder.Write(f9fix_kCSTR_HdrError, rxargs.MsgStr_);
+   fixRecorder.Write(f9fix_kCSTR_HdrError, rxargs.OrigMsgStr());
    FixBuilder  fixb;
    RevPrint(fixb.GetBuffer(),
             f9fix_SPLTAGEQ(Text) // "|58="

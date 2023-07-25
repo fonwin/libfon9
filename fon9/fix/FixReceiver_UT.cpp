@@ -78,17 +78,16 @@ int main(int argc, char** argv) {
    rxargs.FixConfig_   = &fixc;
 
    while (fgets(strbuf, sizeof(strbuf), infd)) {
-      rxargs.MsgStr_ = fon9::StrView_cstr(strbuf);
-      fon9::StrTrim(&rxargs.MsgStr_);
-      if (rxargs.MsgStr_.empty()
-       || rxargs.MsgStr_.Get1st() == '#')
+      fon9::StrView  fixmsg(fon9::StrView_cstr(strbuf));
+      fon9::StrTrim(&fixmsg);
+      if (fixmsg.empty() || fixmsg.Get1st() == '#')
          continue;
-      fon9::StrView  fixmsg{rxargs.MsgStr_};
-      auto           pres = fixParser.Parse(fixmsg);
+      rxargs.SetOrigMsgStr(fixmsg);
+      auto pres = fixParser.Parse(fixmsg);
       if (pres > f9fix::FixParser::NeedsMore)
          fixr.DispatchFixMessage(rxargs);
       else
-         fixo->GetFixRecorder().Write(f9fix_kCSTR_HdrError, rxargs.MsgStr_, "\n"
+         fixo->GetFixRecorder().Write(f9fix_kCSTR_HdrError, rxargs.OrigMsgStr(), "\n"
                                       f9fix_kCSTR_HdrError "ParseError|err=", pres);
    }
    return 0;

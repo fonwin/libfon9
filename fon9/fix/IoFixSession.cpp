@@ -36,7 +36,7 @@ bool IoFixManager::OnLogonAccepted(FixRecvEvArgs& rxargs, FixSenderSP fixout) {
    recorder.Write(f9fix_kCSTR_HdrInfo, "OnLogon.Accepted|from=", static_cast<IoFixSession*>(rxargs.FixSession_)->GetDeviceId());
    FixBuilder  fixb;
    if (rxargs.SeqSt_ == FixSeqSt::TooLow) {
-      recorder.Write(f9fix_kCSTR_HdrError, rxargs.MsgStr_);
+      recorder.Write(f9fix_kCSTR_HdrError, rxargs.OrigMsgStr());
       RevPrint(fixb.GetBuffer(), f9fix_SPLTAGEQ(Text)
                "Bad Logon, MsgSeqNum too low, expecting ", recorder.GetNextRecvSeq(),
                " but received ", rxargs.Msg_.GetMsgSeqNum());
@@ -49,9 +49,9 @@ bool IoFixManager::OnLogonAccepted(FixRecvEvArgs& rxargs, FixSenderSP fixout) {
          if (const FixParser::FixField* fldEncryptMethod = rxargs.Msg_.GetField(errTag = f9fix_kTAG_EncryptMethod)) {
             if (fldEncryptMethod->Value_.Get1st() == *f9fix_kCSTR_EncryptMethod_None) { // EncryptMethod 必須為 None
                if (rxargs.SeqSt_ == FixSeqSt::Conform)
-                  recorder.WriteInputConform(rxargs.MsgStr_);
+                  recorder.WriteInputConform(rxargs);
                else
-                  recorder.Write(f9fix_kCSTR_HdrIgnoreRecv, rxargs.MsgStr_);
+                  recorder.Write(f9fix_kCSTR_HdrIgnoreRecv, rxargs.OrigMsgStr());
                RevPrint(fixb.GetBuffer(), f9fix_kFLD_EncryptMethod_None);
                rxargs.FixSession_->SendLogonResponse(fixout, hbInt, std::move(fixb), rxargs);
                return true;
@@ -59,7 +59,7 @@ bool IoFixManager::OnLogonAccepted(FixRecvEvArgs& rxargs, FixSenderSP fixout) {
          }
       }
    }
-   recorder.Write(f9fix_kCSTR_HdrError, rxargs.MsgStr_);
+   recorder.Write(f9fix_kCSTR_HdrError, rxargs.OrigMsgStr());
    RevPrint(fixb.GetBuffer(), f9fix_SPLTAGEQ(Text) "Bad Logon, Tag#", errTag);
    rxargs.FixSession_->SendLogout(std::move(fixb), &recorder);
    return false;

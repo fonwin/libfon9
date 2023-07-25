@@ -45,9 +45,10 @@ fon9_WARN_DISABLE_PADDING;
 ///   - 可參考 IoFixSession: 使用 fon9::io 機制的 FixSession.
 /// - 負責協調一組 FixReceiver, FixSender, FixConfig 共同合作
 /// - 負責掌握狀態變化.
-class fon9_API FixSession : protected FixFeeder, public FixReceiver {
+class fon9_API FixSession : private FixFeeder, public FixReceiver {
    fon9_NON_COPY_NON_MOVE(FixSession);
    using baseFixReceiver = FixReceiver;
+   using baseFixFeeder = FixFeeder;
    FixSessionSt   FixSt_{FixSessionSt::Disconnected};
    uint32_t       HeartBtInt_;
    uint32_t       HbTestCount_;
@@ -76,6 +77,10 @@ protected:
    // override FixFeeder.
    void OnFixMessageParsed(StrView fixmsg) override;
    FixParser::Result OnFixMessageError(FixParser::Result res, StrView& fixmsgStream, const char* perr) override;
+   FixParser::Result FeedBuffer(DcQueue& rxbuf) {
+      this->RxArgs_.SetRxTime(UtcNow());
+      return baseFixFeeder::FeedBuffer(rxbuf);
+   }
 
    // override FixReceiver.
    void OnRecoverDone(const FixRecvEvArgs& rxargs) override;

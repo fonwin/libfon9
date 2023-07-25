@@ -17,12 +17,20 @@ void BuildTestMessage(f9fix::FixBuilder& fixb, fon9::StrView headerCompIds, unsi
    fon9::RevPrint(fixb.GetBuffer(), f9fix_SPLTAGEQ(SendingTime));
    fon9::RevPrint(fixb.GetBuffer(), f9fix_SPLFLDMSGTYPE(NewOrderSingle) f9fix_SPLTAGEQ(MsgSeqNum), seqNum, headerCompIds);
 }
+void WriteFixBuilderFinalMsg(f9fix::FixRecorder& fixr, f9fix::FixBuilder& fixb) {
+   f9fix::FixParser     fixpar;
+   f9fix::FixRecvEvArgs rxargs{fixpar};
+   std::string origFixMsg = fon9::BufferTo<std::string>(fixb.Final(ToStrView(fixr.BeginHeader_)));
+   rxargs.SetOrigMsgStr(&origFixMsg);
+   rxargs.SetRxTime(fon9::UtcNow());
+   fixr.WriteInputConform(rxargs);
+}
 void TestFixRecorder(f9fix::FixRecorder& fixr, const unsigned kTimes) {
    for (unsigned L = 0; L < kTimes; ++L) {
       f9fix::FixBuilder fixb;
       // Test: record recv message.
       BuildTestMessage(fixb, ToStrView(fixr.CompIDs_.Header_), L + 1, fixr.GetNextRecvSeq());
-      fixr.WriteInputConform(fon9::ToStrView(fon9::BufferTo<std::string>(fixb.Final(ToStrView(fixr.BeginHeader_)))));
+      WriteFixBuilderFinalMsg(fixr, fixb);
 
       // Test: record send message.
       fixb.Restart();
@@ -110,7 +118,7 @@ int main(int argc, char** argv) {
    // 再寫入一筆 recv, 讓 NextRecvSeq != NextSendSeq
    f9fix::FixBuilder fixb;
    BuildTestMessage(fixb, ToStrView(fixr->CompIDs_.Header_), kTimes + 1, fixr->GetNextRecvSeq());
-   fixr->WriteInputConform(fon9::ToStrView(fon9::BufferTo<std::string>(fixb.Final(ToStrView(fixr->BeginHeader_)))));
+   WriteFixBuilderFinalMsg(*fixr, fixb);
    fixr->WaitFlushed();
    fixr.reset(new f9fix::FixRecorder(f9fix_BEGIN_HEADER_V42, f9fix::CompIDs{compIds}));
    int count = 100;

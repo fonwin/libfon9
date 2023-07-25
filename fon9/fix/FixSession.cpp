@@ -37,7 +37,7 @@ void FixSession::OnFixSessionConnected() {
 }
 void FixSession::OnFixMessageParsed(StrView fixmsg) {
    ++this->MsgReceivedCount_;
-   this->RxArgs_.MsgStr_ = fixmsg;
+   this->RxArgs_.SetOrigMsgStr(fixmsg);
    if (fon9_LIKELY(this->FixSt_ == FixSessionSt::ApReady)) {
       // 為了加快 Ap 層的處以速度, ApReady 狀態下的訊息, 直接處理.
       this->DispatchFixMessage(this->RxArgs_);
@@ -341,7 +341,7 @@ void FixSession::OnRecvLogout(const FixRecvEvArgs& rxargs) {
       return;
    }
    if (rxargs.SeqSt_ != FixSeqSt::Conform)
-      rxargs.FixSender_->GetFixRecorder().Write(f9fix_kCSTR_HdrIgnoreRecv, rxargs.MsgStr_);
+      rxargs.FixSender_->GetFixRecorder().Write(f9fix_kCSTR_HdrIgnoreRecv, rxargs.OrigMsgStr());
    if (fixses->FixSt_ == FixSessionSt::ApReady)
       fixses->SendLogout(StrView{"Logout response"});
    if (rxargs.SeqSt_ == FixSeqSt::TooHigh)

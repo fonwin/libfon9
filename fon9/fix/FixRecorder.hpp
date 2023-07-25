@@ -4,6 +4,7 @@
 #define __fon9_fix_FixRecorder_hpp__
 #include "fon9/fix/FixParser.hpp"
 #include "fon9/fix/FixCompID.hpp"
+#include "fon9/fix/FixConfig.hpp"
 #include "fon9/buffer/RevBufferList.hpp"
 #include "fon9/FileAppender.hpp"
 
@@ -133,9 +134,9 @@ public:
 
    /// 寫入依正常順序收到的 FIX Message.
    /// 返回前 ++this->NextRecvSeq_;
-   void WriteInputConform(const StrView& fixmsg) {
-      RevBufferList rbuf{static_cast<BufferNodeSize>(fixmsg.size() + 64)};
-      RevPrint(rbuf, f9fix_kCSTR_HdrRecv, UtcNow(), ' ', fixmsg, '\n');
+   void WriteInputConform(const FixRecvEvArgs& rxargs) {
+      RevBufferList rbuf{static_cast<BufferNodeSize>(rxargs.OrigMsgStr().size() + 64)};
+      RevPrint(rbuf, f9fix_kCSTR_HdrRecv, rxargs.RxTime(), ' ', rxargs.OrigMsgStr(), '\n');
       auto  lk{this->Worker_.Lock()};
       ++this->NextRecvSeq_;
       this->WriteBuffer(std::move(lk), std::move(rbuf));

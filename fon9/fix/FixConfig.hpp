@@ -23,7 +23,7 @@ enum class FixSeqSt {
    /// 呼叫 FixMsgHandler 之前, 完全不寫任何記錄(即使序號符合規範).
    /// 如果 FixMsgTypeConfig::FixSeqAllow_ 設定了此旗標,
    /// 則在 FixMsgHandler 處理 FixSeqSt::Conform 通知時,
-   /// 應呼叫 `fixRecorder.WriteInputConform(args.MsgStr_);` 才能正確處理接收序號.
+   /// 應呼叫 `fixRecorder.WriteInputConform(rxargs);` 才能正確處理接收序號.
    /// 一般而言只有 SequenceReset 才會用到.
    NoPreRecord = 0x10,
 };
@@ -34,22 +34,41 @@ inline FixSeqSt CompareFixSeqNum(FixSeqNum rxMsgSeqNum, FixSeqNum expectSeqNum) 
         :                                 FixSeqSt::TooHigh;
 }
 
-fon9_WARN_DISABLE_PADDING;
-struct FixRecvEvArgs {
+class FixRecvEvArgs {
    fon9_NON_COPY_NON_MOVE(FixRecvEvArgs);
+   /// 原始 FIX Message.
+   StrView     OrigMsgStr_;
+   /// 收到訊息的時間.
+   TimeStamp   RxTime_;
+
+public:
    FixRecvEvArgs(FixParser& fixParser)
       : Msg_(fixParser) {
    }
    /// 已解析完畢的 FIX Message.
    FixParser&  Msg_;
-   /// FIX Message.
-   StrView     MsgStr_;
 
    /// 在呼叫 FixMsgHandler 時, 這裡會提供:
    /// - FixSeqSt::Conform 序號符合規範
    /// - FixSeqSt::TooHigh 如果序號高於預期, 且 FixMsgTypeConfig::FixSeqAllow_ 有設定 FixSeqSt::TooHigh
    /// - FixSeqSt::TooLow  如果序號高於預期, 且 FixMsgTypeConfig::FixSeqAllow_ 有設定 FixSeqSt::TooLow
    FixSeqSt    SeqSt_;
+   char        Padding____[4];
+
+   /// 原始 FIX Message.
+   const StrView& OrigMsgStr() const {
+      return this->OrigMsgStr_;
+   }
+   void SetOrigMsgStr(const StrView& origMsgStr) {
+      this->OrigMsgStr_ = origMsgStr;
+   }
+   /// 收到訊息的時間.
+   const TimeStamp RxTime() const {
+      return this->RxTime_;
+   }
+   void SetRxTime(TimeStamp now) {
+      this->RxTime_ = now;
+   }
 
    // this->SeqSt_ = CompareFixSeqNum(this->Msg_.GetMsgSeqNum(), this->FixSender_->GetFixRecorder().GetNextRecvSeq());
    void ResetSeqSt();
@@ -90,9 +109,10 @@ struct FixMsgTypeConfig {
    }
 
    /// 當訊息不連續時, 是否可以呼叫 FixMsgHandler_.
-   /// - 當序號連續時, 呼叫前必定會先寫 fixRecorder.WriteInputConform(args.MsgStr_);
+   /// - 當序號連續時, 呼叫前必定會先寫 fixRecorder.WriteInputConform(rxargs);
    /// - 不連續時, 則必須由 FixMsgHandler_ 自行記錄必要訊息.
    FixSeqSt          FixSeqAllow_{FixSeqSt::Conform};
+   char              Padding____[4];
    /// 當 FixReceiver 收到一筆可用訊息時, 透過這裡通知.
    FixMsgHandler     FixMsgHandler_;
    /// 當 FixReceiver 收到 SessionReject or BusinessReject 時.
@@ -150,8 +170,8 @@ public:
    /// 當有 Replay 的需求時(FixSender::Replay), 一律使用 FixSender::GapFill.
    /// 例如: 券商與交易所之間的連線, 券商端斷線後重連, 可能全都不重送.
    bool  IsNoReplay_{false};
+   char  Padding____[7];
 };
-fon9_WARN_POP;
 
 } } // namespaces
 #endif//__fon9_fix_FixConfig_hpp__
