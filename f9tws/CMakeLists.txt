@@ -34,7 +34,7 @@ set(f9tws_src
  TwsTools.cpp
 )
 add_library(f9tws_s STATIC ${f9tws_src})
-target_link_libraries(f9tws_s pthread rt dl)
+target_link_libraries(f9tws_s fon9_s pthread rt dl)
 
 add_library(f9tws SHARED ${f9tws_src})
 target_link_libraries(f9tws pthread rt dl)
@@ -42,8 +42,13 @@ target_link_libraries(f9tws pthread rt dl)
 #########################################################################
 ############################### Unit Test ###############################
 if(CMAKE_FON9_BUILD_UNIT_TEST)
+
    add_executable(f9twsExgMkt_UT ExgMkt_UT.cpp)
    target_link_libraries(f9twsExgMkt_UT fon9_s f9tws_s f9extests_s)
+
+   add_executable(f9twsTrade_UT f9twsTrade_UT.cpp ../fon9/framework/Fon9CoRun.cpp)
+   target_link_libraries(f9twsTrade_UT fon9_s f9tws_s)
+
 endif()
 ############################## Unit Test END ############################
 #########################################################################
