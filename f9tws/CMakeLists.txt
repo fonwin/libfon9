@@ -47,7 +47,7 @@ if(CMAKE_FON9_BUILD_UNIT_TEST)
    target_link_libraries(f9twsExgMkt_UT fon9_s f9tws_s f9extests_s)
 
    add_executable(f9twsTrade_UT f9twsTrade_UT.cpp ../fon9/framework/Fon9CoRun.cpp)
-   target_link_libraries(f9twsTrade_UT fon9_s f9tws_s)
+   target_link_libraries(f9twsTrade_UT fon9_s f9tws_s ${f9_s_lib})
 
 endif()
 ############################## Unit Test END ############################

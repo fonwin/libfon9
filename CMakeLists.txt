@@ -33,7 +33,9 @@ set(C_FLAGS
  ${FON9_C_FLAGS}
  )
 string(REPLACE ";" " " CMAKE_C_FLAGS "${C_FLAGS}")
-
+# ---
+include(AddF9card.cmake)
+# ---
 include_directories(.)
 
 add_subdirectory(fon9)
