@@ -93,7 +93,10 @@ public:
    UserEv      EvLastErr_;
    /// 密碼錯誤次數, 一旦認證成功(或改密碼成功)此值會歸零.
    uint8_t     ErrCount_ = 0;
-   uint8_t     Padding_FilledForAlign___[3];
+   /// 密碼有效期限, 超過時間必須更改密碼才能登入.
+   /// 0=不限;
+   uint8_t     ExpDays_ = 0;
+   uint8_t     Padding_FilledForAlign___[2];
    UserFlags   UserFlags_ = UserFlags::NeedChgPass;
    /// 配合 UserFlags::AllowBeAuthz; 檢查: 有哪些 authc 允許使用此 UserRec 當成 authz;
    /// 使用 ';' 分隔, 不理會空白;

@@ -25,7 +25,8 @@ static void SerializeVer(Archive& ar, ArchiveWorker<Archive, UserRec>& rec, unsi
       rec.EvLastErr_.From_,
       rec.ErrCount_,
       rec.UserFlags_,
-      rec.AuthcList_
+      rec.AuthcList_,
+      rec.ExpDays_
    );
 }
 
@@ -111,6 +112,7 @@ seed::Fields UserMgr::MakeFields() {
    fields.Add(fon9_MakeField2(UserRec, AuthcList));
    fields.Add(fon9_MakeField2(UserRec, NotBefore));
    fields.Add(fon9_MakeField2(UserRec, NotAfter));
+   fields.Add(fon9_MakeField2(UserRec, ExpDays));
 
    fields.Add(fon9_MakeField (UserRec, EvChgPass_.Time_,  "ChgPassTime"));
    fields.Add(fon9_MakeField (UserRec, EvChgPass_.From_,  "ChgPassFrom"));
@@ -204,6 +206,15 @@ AuthR UserTree::AuthUpdate(fon9_Auth_R rcode, const AuthRequest& req, AuthResult
          RevBufferList rbuf{128};
          if (!authr.AuthzId_.empty())
             RevPrint(rbuf, "|ForAuthc=", authr.AuthcId_);
+         if (user->ExpDays_) {
+            TimeStamp expDate = ((user->EvChgPass_.Time_.IsNullOrZero() || rcode == fon9_Auth_PassChanged)
+                                 ? now
+                                 : (user->EvChgPass_.Time_ + TimeInterval_Day(user->ExpDays_)));
+            expDate += GetLocalTimeZoneOffset();
+            RevPrint(rbuf, "|ExpDays=", user->ExpDays_, "|ExpDate=", expDate, FmtTS{"K"});
+            if (GetYYYYMMDD(now + GetLocalTimeZoneOffset()) > GetYYYYMMDD(expDate))
+               user->UserFlags_ |= UserFlags::NeedChgPass;
+         }
          RevPrint(rbuf,
                   "Last logon: ", user->EvLastAuth_.Time_, kFmtYsMsD_HH_MM_SS_L,
                   " from ", user->EvLastAuth_.From_,
