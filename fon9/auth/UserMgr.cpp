@@ -26,7 +26,8 @@ static void SerializeVer(Archive& ar, ArchiveWorker<Archive, UserRec>& rec, unsi
       rec.ErrCount_,
       rec.UserFlags_,
       rec.AuthcList_,
-      rec.ExpDays_
+      rec.ExpDays_,
+      rec.MaxErrCount_
    );
 }
 
@@ -121,6 +122,7 @@ seed::Fields UserMgr::MakeFields() {
    fields.Add(fon9_MakeField (UserRec, EvLastErr_.Time_,  "LastErrTime"));
    fields.Add(fon9_MakeField (UserRec, EvLastErr_.From_,  "LastErrFrom"));
    fields.Add(fon9_MakeField2(UserRec, ErrCount));
+   fields.Add(fon9_MakeField2(UserRec, MaxErrCount));
    return fields;
 }
 
@@ -174,6 +176,9 @@ AuthR UserTree::AuthUpdate(fon9_Auth_R rcode, const AuthRequest& req, AuthResult
    const TimeStamp  now = aux.LogArgs_.UtcTime_;
    auto             lockedUser = this->GetLockedUserForAuthz(authr);
    if (UserRec* user = lockedUser.second) {
+      if (user->MaxErrCount_ && user->ErrCount_ >= user->MaxErrCount_) {
+         ERR_RETURN(fon9_Auth_EUserLocked, "over-max-err-count");
+      }
       fon9_WARN_DISABLE_SWITCH;
       switch (rcode) {
       case fon9_Auth_CheckLogon:
