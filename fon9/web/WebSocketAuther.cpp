@@ -69,7 +69,8 @@ void WebSocketAuther::OnAuthVerify(auth::AuthR authr, auth::AuthSessionSP authSe
             // 因此, 會回到 device op thread, 處理後續的傳送, 因此 log 可能會有 "Async.DeviceContinueSend" 的訊息.
             authSession->GetAuthResult().UpdateRoleConfig();
             if (WebSocketSP ws = pthis->Owner_->CreateWebSocketService(dev, authSession->GetAuthResult())) {
-               pthis->Send(WebSocketOpCode::TextFrame, &authr.Info_);
+               // ExtInfo 提供的額外訊息可參考 UserMgr.cpp
+               pthis->Send(WebSocketOpCode::TextFrame, ToStrView(authr.Info_ + ",ExtInfo=" + authSession->GetAuthResult().ExtInfo_));
                httpSession->UpgradeTo(std::move(ws));
             }
             else {
