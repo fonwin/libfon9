@@ -44,7 +44,7 @@ fon9_IoManager::DeviceItemSP fon9_IoManager::CreateSession(const fon9_IoSessionP
 void fon9_IoManager::DestroyDevice(fon9::io::DeviceSP dev, std::string cause, int isWait) {
    dev->AsyncDispose(std::move(cause));
    if (isWait) {
-      dev->WaitGetDeviceId();
+      dev->WaitGetDeviceInfo();
       while (dev->use_count() > 1)
          std::this_thread::yield();
    }
@@ -149,11 +149,15 @@ void RcClientMgr::OnDevice_StateUpdated(io::Device& dev, const io::StateUpdatedA
 void RcClientMgr::OnSession_StateUpdated(io::Device& dev, StrView stmsg, LogLevel) {
    assert(dynamic_cast<RcClientSession*>(dev.Session_.get()) != nullptr);
    auto* ses = static_cast<RcClientSession*>(dev.Session_.get());
-   if (ses->GetSessionSt() == RcSessionSt::ApReady && ses->LogFlags_ & f9rc_ClientLogFlag_Link)
-      fon9_LOG_INFO(this->Name_, ".Rc.ApReady"
-                    "|ses=", ToPtr(static_cast<f9rc_ClientSession*>(ses)),
-                    "|dev=", ToPtr(ses->GetDevice()),
-                    stmsg);
+   if (ses->GetSessionSt() == RcSessionSt::ApReady) {
+      if (ses->LogFlags_ & f9rc_ClientLogFlag_Link)
+         fon9_LOG_INFO(this->Name_, ".Rc.ApReady"
+                       "|ses=", ToPtr(static_cast<f9rc_ClientSession*>(ses)),
+                       "|dev=", ToPtr(ses->GetDevice()),
+                       stmsg);
+      if (ses->FnOnLinkEv_)
+         ses->FnOnLinkEv_(ses, f9io_State_Listening /* = Listening for Config = Client ApReady */, stmsg.ToCStrView());
+   }
 }
 
 } } // namespace
