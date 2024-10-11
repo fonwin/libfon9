@@ -6,18 +6,11 @@
 
 namespace f9twf {
 
-static const fon9::TimeInterval  kMiHbInterval = fon9::TimeInterval_Second(35);
-static const fon9::TimeInterval  kMiStChkInterval = fon9::TimeInterval_Second(5);
-//--------------------------------------------------------------------------//
 void ExgMiSystemBase::Ctor() {
    this->Channels_[0] = new ExgMiChannel{*this, 1, f9fmkt_TradingMarket_TwFUT, "MiReceiverCh1"};
    this->Channels_[1] = new ExgMiChannel{*this, 2, f9fmkt_TradingMarket_TwOPT, "MiReceiverCh2"};
 }
 ExgMiSystemBase::~ExgMiSystemBase() {
-   this->HbTimer_.DisposeAndWait();
-}
-void ExgMiSystemBase::OnParentTreeClear(fon9::seed::Tree& parent) {
-   base::OnParentTreeClear(parent);
    this->HbTimer_.DisposeAndWait();
 }
 void ExgMiSystemBase::PlantIoMgr(fon9::seed::MaTree& root, fon9::IoManagerArgs& iomArgs) {
@@ -31,21 +24,14 @@ void ExgMiSystemBase::PlantIoMgr(fon9::seed::MaTree& root, fon9::IoManagerArgs& 
    iomArgs.IoServiceSrc_ = fon9::IoManagerTree::Plant(*this->Sapling_, iomArgs);
 }
 void ExgMiSystemBase::OnMdSystemStartup(unsigned tdayYYYYMMDD, const std::string& logPath) {
-   this->HbTimer_.RunAfter(kMiStChkInterval);
    base::OnMdSystemStartup(tdayYYYYMMDD, logPath);
    for (const ExgMiChannelSP& ch : this->Channels_) {
       if (ch.get())
          ch->DailyClear();
    }
 }
-void ExgMiSystemBase::EmitHbTimer(fon9::TimerEntry* timer, fon9::TimeStamp now) {
-   ExgMiSystemBase& rthis = ContainerOf(*static_cast<decltype(ExgMiSystemBase::HbTimer_)*>(timer), &ExgMiSystemBase::HbTimer_);
-   const auto       sch = rthis.NoDataEventSch_.Check(now, fon9::SchSt::Unknown);
-   if (sch.SchSt_ != fon9::SchSt::InSch) {
-      timer->RunAfter(kMiHbInterval);
-      return;
-   }
-   for (const ExgMiChannelSP& ch : rthis.Channels_) {
+fon9::TimeInterval ExgMiSystemBase::OnMdSystem_HbTimer(fon9::TimeStamp now) {
+   for (const ExgMiChannelSP& ch : this->Channels_) {
       if (!ch)
          continue;
       const auto curSt = *ch->GetMdReceiverStPtr();
@@ -70,8 +56,8 @@ void ExgMiSystemBase::EmitHbTimer(fon9::TimerEntry* timer, fon9::TimeStamp now) 
          case fon9::fmkt::MdReceiverSt::DailyClearNoData:
          case fon9::fmkt::MdReceiverSt::DataBroken:
          case fon9::fmkt::MdReceiverSt::DataIn:
-            // 無資料事件, 每經過 kMiHbInterval, 就需要觸發一次?
-            if (now - ch->HbChkTime_ >= kMiHbInterval) {
+            // 無資料事件, 每經過 kMdHbInterval, 就需要觸發一次?
+            if (now - ch->HbChkTime_ >= kMdHbInterval) {
                warnInfo = "No data";
                newSt = (oldSt == fon9::fmkt::MdReceiverSt::DataIn
                         ? fon9::fmkt::MdReceiverSt::DataBroken
@@ -87,16 +73,16 @@ void ExgMiSystemBase::EmitHbTimer(fon9::TimerEntry* timer, fon9::TimeStamp now) 
             fon9::RevPutChar(rbuf_, '\n');
             if (!warnInfo.empty())
                fon9::RevPrint(rbuf_, "|info=", warnInfo);
-            fon9::RevPrint(rbuf_, rthis.Name_, '.', ch->Name_, ".StEv"
-                           "|sch=", rthis.NoDataEventSch_, "|HbInterval=", kMiHbInterval,
+            fon9::RevPrint(rbuf_, this->Name_, '.', ch->Name_, ".StEv"
+                           "|sch=", this->NoDataEventSch_, "|HbInterval=", kMdHbInterval,
                            "|Bf=", oldSt, "|Af=", newSt);
             fon9::LogWrite(logLv, std::move(rbuf_));
          }
          ch->SetMdReceiverSt(newSt, now);
-         rthis.OnMdReceiverStChanged(*ch, oldSt, newSt);
+         this->OnMdReceiverStChanged(*ch, oldSt, newSt);
       }
    }
-   timer->RunAfter(kMiStChkInterval);
+   return kMdStChkInterval;
 }
 void ExgMiSystemBase::OnMdReceiverStChanged(ExgMiChannel& ch, fon9::fmkt::MdReceiverSt bf, fon9::fmkt::MdReceiverSt af) {
    this->StChangedEventSubject_.Publish(ch, bf, af);

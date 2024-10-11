@@ -79,5 +79,34 @@ void MdSystem::SetInfoToDescription() {
    this->SetDescription(rbuf.ToStrT<std::string>());
    fon9_LOG_IMP("MdSystem.Startup|name=", this->Name_, '|', this->GetDescription());
 }
+//--------------------------------------------------------------------------//
+const TimeInterval   MdSystemWithHb::kMdStChkInterval = TimeInterval_Second(5);
+const TimeInterval   MdSystemWithHb::kMdHbInterval    = TimeInterval_Second(35);
+
+MdSystemWithHb::~MdSystemWithHb() {
+   this->HbTimer_.DisposeAndWait();
+}
+TimeInterval MdSystemWithHb::OnMdSystem_HbTimer(TimeStamp now) {
+   (void)now;
+   // 會來到這裡, 表示衍生者沒有處理 OnMdSystem_HbTimer(), 所以停止 HbTimer_; 不再浪費系統資源.
+   this->HbTimer_.StopNoWait();
+   return TimeInterval{};
+}
+void MdSystemWithHb::OnParentTreeClear(fon9::seed::Tree& parent) {
+   base::OnParentTreeClear(parent);
+   this->HbTimer_.DisposeAndWait();
+}
+void MdSystemWithHb::OnMdSystemStartup(unsigned tdayYYYYMMDD, const std::string& logPath) {
+   this->HbTimer_.RunAfter(kMdStChkInterval);
+   base::OnMdSystemStartup(tdayYYYYMMDD, logPath);
+}
+void MdSystemWithHb::EmitHbTimer(TimerEntry* timer, TimeStamp now) {
+   MdSystemWithHb& rthis = ContainerOf(*static_cast<decltype(MdSystemWithHb::HbTimer_)*>(timer), &MdSystemWithHb::HbTimer_);
+   const auto      sch = rthis.NoDataEventSch_.Check(now, SchSt::Unknown);
+   if (sch.SchSt_ == SchSt::InSch)
+      timer->RunAfter(rthis.OnMdSystem_HbTimer(now));
+   else
+      timer->RunAfter(kMdHbInterval);
+}
 
 } } // namespaces

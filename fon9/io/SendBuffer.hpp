@@ -79,7 +79,10 @@ public:
    }
    /// 必須自行確定: (1) 在 op safe 狀態, 或 (2) 在 op thread 裡面 且 已禁止 writable 事件.
    DcQueueList* OpImpl_CheckSendQueue() {
-      assert(this->Status_ == Status::Sending);
+      assert(this->Status_ == Status::Sending
+             // 在 FdrSocket::CheckSendQueueEmpty() 呼叫時, 可能已送完(狀態不是Sending).
+             // 應該要多一個 bool SendBuffer::IsSendEmpty() const; 來處理, 才更符合語意, 但已經上線使用, 就先不改了!
+             || (this->Sending_.empty() && this->Queue_.empty()));
       this->Sending_.push_back(std::move(this->Queue_));
       if (!this->Sending_.empty())
          return &this->Sending_;

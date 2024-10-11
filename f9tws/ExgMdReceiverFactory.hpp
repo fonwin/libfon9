@@ -2,7 +2,7 @@
 // \author fonwinz@gmail.com
 #ifndef __f9tws_ExgMdReceiverFactory_hpp__
 #define __f9tws_ExgMdReceiverFactory_hpp__
-#include "f9tws/ExgMdSystem.hpp"
+#include "f9tws/ExgMdSystemBase.hpp"
 #include "fon9/framework/IoFactory.hpp"
 
 namespace f9tws {
@@ -11,10 +11,10 @@ class f9tws_API ExgMdReceiverFactory : public fon9::SessionFactory {
    fon9_NON_COPY_NON_MOVE(ExgMdReceiverFactory);
    using base = fon9::SessionFactory;
 public:
-   const ExgMdSystemSP  MdDispatcher_;
+   const ExgMdSystemBaseSP  MdDispatcher_;
 
    template <class... ArgsT>
-   ExgMdReceiverFactory(ExgMdSystemSP mdDispatcher, ArgsT&&... args)
+   ExgMdReceiverFactory(ExgMdSystemBaseSP mdDispatcher, ArgsT&&... args)
       : base(std::forward<ArgsT>(args)...)
       , MdDispatcher_(std::move(mdDispatcher)) {
    }

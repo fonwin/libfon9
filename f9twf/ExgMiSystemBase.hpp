@@ -20,19 +20,16 @@ namespace f9twf {
 /// - 可能衍生出:
 ///   - ExgMiSystemRts: 提供給 Rts 發行系統之用;
 ///   - ExgMiSystemXXX: 特殊的專用系統;
-class f9twf_API ExgMiSystemBase : public fon9::fmkt::MdSystem {
+class f9twf_API ExgMiSystemBase : public fon9::fmkt::MdSystemWithHb {
    fon9_NON_COPY_NON_MOVE(ExgMiSystemBase);
-   using base = fon9::fmkt::MdSystem;
+   using base = fon9::fmkt::MdSystemWithHb;
 
    std::array<ExgMiChannelSP, 2> Channels_;
    void Ctor();
 
-   static void EmitHbTimer(fon9::TimerEntry* timer, fon9::TimeStamp now);
-   fon9::DataMemberEmitOnTimer<&ExgMiSystemBase::EmitHbTimer> HbTimer_;
-
 protected:
+   fon9::TimeInterval OnMdSystem_HbTimer(fon9::TimeStamp now) override;
    void OnMdSystemStartup(unsigned tdayYYYYMMDD, const std::string& logPath) override;
-   void OnParentTreeClear(fon9::seed::Tree& parent) override;
 
    /// channel 狀態異動時的通知, 通知前會先紀錄 log;
    /// 預設呼叫 this->StChangedEventSubject_.Publish(ch, bf, af);
