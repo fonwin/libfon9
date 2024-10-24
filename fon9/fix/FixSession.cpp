@@ -17,8 +17,11 @@ FixSession::~FixSession() {
 }
 //--------------------------------------------------------------------------//
 void FixSession::ClearFixSession(FixSessionSt st) {
-   this->FixSt_ = st;
-   this->MsgReceivedCount_ = this->HbTestCount_ = 0;
+   {
+      StLocker stLocker = this->RunSt_.Lock();
+      stLocker->FixSt_ = st;
+      stLocker->MsgReceivedCount_ = stLocker->HbTestCount_ = 0;
+   }
    this->ClearFeedBuffer();
    this->ClearRecvKeeper();
 }
@@ -36,14 +39,19 @@ void FixSession::OnFixSessionConnected() {
    this->FixSessionTimerRunAfter(this->RxArgs_.FixConfig_->TiWaitForLogon_);
 }
 void FixSession::OnFixMessageParsed(StrView fixmsg) {
-   ++this->MsgReceivedCount_;
-   this->RxArgs_.SetOrigMsgStr(fixmsg);
-   if (fon9_LIKELY(this->FixSt_ == FixSessionSt::ApReady)) {
+   FixSessionSt curst;
+   {
+      StLocker stLocker = this->RunSt_.Lock();
+      ++stLocker->MsgReceivedCount_;
+      this->RxArgs_.SetOrigMsgStr(fixmsg);
+      curst = stLocker->FixSt_;
+   }
+   if (fon9_LIKELY(curst == FixSessionSt::ApReady)) {
       // 為了加快 Ap 層的處以速度, ApReady 狀態下的訊息, 直接處理.
       this->DispatchFixMessage(this->RxArgs_);
       return;
    }
-   switch (this->FixSt_) {
+   switch (curst) {
    case FixSessionSt::Disconnected:
       return;
    case FixSessionSt::Connected: // this = Acceptor; fixmsg = Logon Request.
@@ -98,15 +106,18 @@ static void CopyFixField(RevBuffer& msgbuf, const StrView& fldTo, const FixParse
       RevPrint(msgbuf, fldTo, fldFrom->Value_);
 }
 void FixSession::SendLogout(FixBuilder&& fixb, FixRecorder* fixr) {
+   StLocker stLocker = this->RunSt_.Lock();
    if (FixSender* fixout = this->FixSender_.get()) {
-      if (this->FixSt_ != FixSessionSt::LogoutPending) {
-         this->FixSt_ = FixSessionSt::LogoutPending;
+      if (stLocker->FixSt_ != FixSessionSt::LogoutPending) {
+         stLocker->FixSt_ = FixSessionSt::LogoutPending;
+         stLocker.unlock();
          this->FixSessionTimerRunAfter(this->RxArgs_.FixConfig_->TiLogoutPending_);
          fixout->Send(f9fix_SPLFLDMSGTYPE(Logout), std::move(fixb));
       }
       return;
    }
-   this->FixSt_ = FixSessionSt::Disconnected;
+   stLocker->FixSt_ = FixSessionSt::Disconnected;
+   stLocker.unlock();
    this->FixSessionTimerStopNoWait();
    RevBuffer&   msgbuf = fixb.GetBuffer();
    CopyFixField(msgbuf, f9fix_SPLTAGEQ(TargetCompID), this->FixParser_.GetField(f9fix_kTAG_SenderCompID));
@@ -130,9 +141,12 @@ void FixSession::SendLogout(FixBuilder&& fixb, FixRecorder* fixr) {
 }
 //--------------------------------------------------------------------------//
 void FixSession::SendLogon(FixSenderSP fixout, uint32_t heartBtInt, FixBuilder&& fixb) {
-   assert(this->FixSt_ < FixSessionSt::LogonSent);
-   this->FixSt_ = FixSessionSt::LogonSent;
-   this->HeartBtInt_ = heartBtInt;
+   {
+      StLocker stLocker = this->RunSt_.Lock();
+      assert(stLocker->FixSt_ < FixSessionSt::LogonSent);
+      stLocker->FixSt_ = FixSessionSt::LogonSent;
+      stLocker->HeartBtInt_ = heartBtInt;
+   }
    if (this->ResetNextSendSeq_ > 0) {
       fixout->ResetNextSendSeq(this->ResetNextSendSeq_);
       this->ResetNextSendSeq_ = 0;
@@ -152,38 +166,44 @@ void FixSession::SendLogonResponse(FixSenderSP fixout, uint32_t heartBtInt, FixB
    this->OnLogonResponsed(rxargs, FixReceiver::GapSkipRecord);
 }
 void FixSession::OnLogonResponsed(const FixRecvEvArgs& rxargs, FixReceiver::GapFlags gapf) {
+   StLocker stLocker = this->RunSt_.Lock();
    if (rxargs.SeqSt_ == FixSeqSt::Conform) {
       // - Logon Request/Response 訊息沒有 gap, 不用回補
       // - 接下來要等對方要求我方補齊(可能會接著收到對方的 ResendRequest)
-      this->SendLogonTestRequest();
+      this->SendLogonTestRequest(std::move(stLocker));
    }
    else {
-      this->FixSt_ = FixSessionSt::LogonRecovering;
+      stLocker->FixSt_ = FixSessionSt::LogonRecovering;
+      stLocker->MsgReceivedCount_ = 0;
+      stLocker.unlock();
       this->FixSessionTimerRunAfter(this->RxArgs_.FixConfig_->TiLogonRecover_);
-      this->MsgReceivedCount_ = 0;
       this->OnMsgSeqNumNotExpected(rxargs, gapf);
    }
 }
-void FixSession::SendLogonTestRequest() {
-   if (FixSessionSt::LogonSent <= this->FixSt_ && this->FixSt_ <= FixSessionSt::LogonTest) {
-      this->FixSt_ = FixSessionSt::LogonTest;
+void FixSession::SendLogonTestRequest(StLocker&& stLocker) {
+   if (FixSessionSt::LogonSent <= stLocker->FixSt_ && stLocker->FixSt_ <= FixSessionSt::LogonTest) {
+      stLocker->FixSt_ = FixSessionSt::LogonTest;
+      stLocker.unlock();
       this->FixSessionTimerRunAfter(this->RxArgs_.FixConfig_->TiLogonTest_);
       FixBuilder fixb;
       RevPrint(fixb.GetBuffer(), f9fix_SPLTAGEQ(TestReqID) "LogonTest");
       this->FixSender_->Send(f9fix_SPLFLDMSGTYPE(TestRequest), std::move(fixb));
    }
 }
-void FixSession::SetApReadyStImpl() {
-   assert (this->FixSt_ < FixSessionSt::ApReady);
+void FixSession::SetApReadyStImpl(StLocker&& stLocker) {
+   assert (stLocker->FixSt_ < FixSessionSt::ApReady);
    if (FixSender* fixout = this->FixSender_.get()) {
+      stLocker->HbTestCount_ = 0;
+      stLocker->FixSt_ = FixSessionSt::ApReady;
+      this->FixSessionTimerRunAfter(TimeInterval_Second(stLocker->HeartBtInt_));
+      stLocker.unlock();
       fixout->GetFixRecorder().Write(f9fix_kCSTR_HdrInfo, "ApReady");
-      this->HbTestCount_ = 0;
-      this->FixSt_ = FixSessionSt::ApReady;
-      this->FixSessionTimerRunAfter(TimeInterval_Second(this->HeartBtInt_));
       this->OnFixSessionApReady();
    }
-   else
+   else {
+      stLocker.unlock();
       this->CloseFixSession("SetApReadySt|err=No FixSender.");
+   }
 }
 void FixSession::SendSessionReject(FixSeqNum refSeqNum, FixTag refTagID, const StrView& refMsgType, FixBuilder&& fixb) {
    if (FixSender* fixout = this->FixSender_.get())
@@ -193,73 +213,82 @@ void FixSession::SendSessionReject(FixSeqNum refSeqNum, FixTag refTagID, const S
 // 來自 FixReceiver 的事件.
 void FixSession::OnRecoverDone(const FixRecvEvArgs& rxargs) {
    baseFixReceiver::OnRecoverDone(rxargs);
-   this->SendLogonTestRequest();
+   this->SendLogonTestRequest(this->RunSt_.Lock());
 }
 void FixSession::OnLogoutRequired(const FixRecvEvArgs&, FixBuilder&& fixb) {
    this->SendLogout(std::move(fixb));
 }
 //--------------------------------------------------------------------------//
 void FixSession::FixSessionOnTimer() {
-   switch (this->FixSt_) {
-   case FixSessionSt::Disconnected:
-      break;
-   case FixSessionSt::Connected:
-   case FixSessionSt::LogonSent:
-      this->CloseFixSession("Logon timeout.");
-      break;
-   case FixSessionSt::LogonRecovering:
-      if (this->MsgReceivedCount_ == 0)
-         this->CloseFixSession("LogonRecover timeout.");
-      else {
-         this->MsgReceivedCount_ = 0;
-         this->FixSessionTimerRunAfter(this->RxArgs_.FixConfig_->TiLogonRecover_);
-      }
-      break;
-   case FixSessionSt::LogonTest:
-      if (this->MsgReceivedCount_ == 0) {
-         ++this->HbTestCount_;
-         if (this->HbTestCount_ >= this->RxArgs_.FixConfig_->MaxLogonTestCount_) {
-            this->CloseFixSession("LogonTest|err=Remote no response");
-            break;
-         }
-      }
-      else {
-         this->HbTestCount_ = 0;
-         this->MsgReceivedCount_ = 0;
-      }
-      this->SendLogonTestRequest();
-      break;
-   case FixSessionSt::LogoutPending:
-      this->CloseFixSession("Logout timeout.");
-      break;
-   case FixSessionSt::ApReady:
-      TimeInterval hbTi = UtcNow() - this->FixSender_->GetLastSentTime();
-      hbTi = TimeInterval_Second(this->HeartBtInt_) - hbTi;
-      if (hbTi > TimeInterval_Second(1)) { // 距離上次送出資料, 還需要再等一會兒, 才到達需要送 Hb 的時間.
-         this->FixSessionTimerRunAfter(hbTi);
+   const char* strClostReason = nullptr;
+   {
+      StLocker stLocker = this->RunSt_.Lock();
+      switch (stLocker->FixSt_) {
+      case FixSessionSt::Disconnected:
          break;
-      }
-      this->FixSessionTimerRunAfter(TimeInterval_Second(this->HeartBtInt_));
-      if (this->MsgReceivedCount_ == 0) {
-         ++this->HbTestCount_;
-         const uint32_t hbTestRequestCount = this->RxArgs_.FixConfig_->HbTestRequestCount_;
-         if (this->HbTestCount_ >= hbTestRequestCount + 1) {
-            this->CloseFixSession("Remote no response");
+      case FixSessionSt::Connected:
+      case FixSessionSt::LogonSent:
+         strClostReason = "Logon timeout.";
+         break;
+      case FixSessionSt::LogonRecovering:
+         if (stLocker->MsgReceivedCount_ == 0)
+            strClostReason = "LogonRecover timeout.";
+         else {
+            stLocker->MsgReceivedCount_ = 0;
+            this->FixSessionTimerRunAfter(this->RxArgs_.FixConfig_->TiLogonRecover_);
+         }
+         break;
+      case FixSessionSt::LogonTest:
+         if (stLocker->MsgReceivedCount_ == 0) {
+            ++stLocker->HbTestCount_;
+            if (stLocker->HbTestCount_ >= this->RxArgs_.FixConfig_->MaxLogonTestCount_) {
+               strClostReason = "LogonTest|err=Remote no response";
+               break;
+            }
+         }
+         else {
+            stLocker->HbTestCount_ = 0;
+            stLocker->MsgReceivedCount_ = 0;
+         }
+         this->SendLogonTestRequest(std::move(stLocker));
+         return;
+      case FixSessionSt::LogoutPending:
+         strClostReason = "Logout timeout.";
+         break;
+      case FixSessionSt::ApReady:
+         TimeInterval hbTi = UtcNow() - this->FixSender_->GetLastSentTime();
+         hbTi = TimeInterval_Second(stLocker->HeartBtInt_) - hbTi;
+         if (hbTi > TimeInterval_Second(1)) { // 距離上次送出資料, 還需要再等一會兒, 才到達需要送 Hb 的時間.
+            this->FixSessionTimerRunAfter(hbTi);
             break;
          }
-         if (this->HbTestCount_ >= hbTestRequestCount) {
-            FixBuilder fixb;
-            RevPrint(fixb.GetBuffer(), f9fix_SPLTAGEQ(TestReqID) "AliveTest");
-            this->FixSender_->Send(f9fix_SPLFLDMSGTYPE(TestRequest), std::move(fixb));
-            break;
+         this->FixSessionTimerRunAfter(TimeInterval_Second(stLocker->HeartBtInt_));
+         if (stLocker->MsgReceivedCount_ == 0) {
+            ++stLocker->HbTestCount_;
+            const uint32_t hbTestRequestCount = this->RxArgs_.FixConfig_->HbTestRequestCount_;
+            if (stLocker->HbTestCount_ >= hbTestRequestCount + 1) {
+               strClostReason = "Remote no response";
+               break;
+            }
+            if (stLocker->HbTestCount_ >= hbTestRequestCount) {
+               stLocker.unlock();
+               FixBuilder fixb;
+               RevPrint(fixb.GetBuffer(), f9fix_SPLTAGEQ(TestReqID) "AliveTest");
+               this->FixSender_->Send(f9fix_SPLFLDMSGTYPE(TestRequest), std::move(fixb));
+               return;
+            }
          }
+         else {
+            stLocker->HbTestCount_ = 0;
+            stLocker->MsgReceivedCount_ = 0;
+         }
+         stLocker.unlock();
+         SendHeartbeat(*this->FixSender_, nullptr);
+         return;
       }
-      else {
-         this->HbTestCount_ = 0;
-         this->MsgReceivedCount_ = 0;
-      }
-      SendHeartbeat(*this->FixSender_, nullptr);
-      break;
+   } // auto stLocker unlock();
+   if (strClostReason) {
+      this->CloseFixSession(strClostReason);
    }
 }
 //--------------------------------------------------------------------------//
@@ -272,7 +301,7 @@ std::string FixSession::ResetNextSendSeq(StrView strNum) {
       this->ResetNextSendSeq_ = 0;
       return res + "Cleared\n";
    }
-   if (this->FixSt_ == FixSessionSt::ApReady) {
+   if (this->RunSt_.Lock()->FixSt_ == FixSessionSt::ApReady) {
       this->ResetNextSendSeq_ = 0;
       assert(this->FixSender_.get() != nullptr);
       this->FixSender_->SequenceReset(nextSendSeq);
@@ -329,7 +358,7 @@ void FixSession::OnRecvTestRequest(const FixRecvEvArgs& rxargs) {
    rxargs.FixSession_->SetApReadySt();
 }
 void FixSession::OnRecvLogonResponse(const FixRecvEvArgs& rxargs) {
-   if (rxargs.FixSession_->FixSt_ == FixSessionSt::LogonSent)
+   if (rxargs.FixSession_->RunSt_.Lock()->FixSt_ == FixSessionSt::LogonSent)
       rxargs.FixSession_->OnLogonResponsed(rxargs, FixReceiver::GapDontKeep);
    else
       SendInvalidMsgType(*rxargs.FixSender_, rxargs.Msg_.GetMsgSeqNum(), f9fix_kMSGTYPE_Logon);
@@ -342,7 +371,7 @@ void FixSession::OnRecvLogout(const FixRecvEvArgs& rxargs) {
    }
    if (rxargs.SeqSt_ != FixSeqSt::Conform)
       rxargs.FixSender_->GetFixRecorder().Write(f9fix_kCSTR_HdrIgnoreRecv, rxargs.OrigMsgStr());
-   if (fixses->FixSt_ == FixSessionSt::ApReady)
+   if (fixses->RunSt_.Lock()->FixSt_ == FixSessionSt::ApReady)
       fixses->SendLogout(StrView{"Logout response"});
    if (rxargs.SeqSt_ == FixSeqSt::TooHigh)
       fixses->OnMsgSeqNumNotExpected(rxargs, FixReceiver::GapDontKeep);

@@ -88,8 +88,11 @@ void IoFixSession::FixSessionTimerRunAfter(TimeInterval after) {
       this->Dev_->CommonTimerRunAfter(after);
 }
 void IoFixSession::OnDevice_CommonTimer(io::Device& dev, TimeStamp now) {
-   (void)now;
-   dev.OpQueue_.AddTask(io::DeviceAsyncOp{std::bind(&IoFixSession::FixSessionOnTimer, IoFixSessionSP{this})});
+   (void)dev;  (void)now;
+   // fonwin: 2024/10/20之前, 為何要用 OpQueue 執行呢?
+   // 應該由底層使用 lock 來保護相關資料!
+   // dev.OpQueue_.AddTask(io::DeviceAsyncOp{std::bind(&IoFixSession::FixSessionOnTimer, IoFixSessionSP{this})});
+   this->FixSessionOnTimer();
 }
 //--------------------------------------------------------------------------//
 void IoFixSession::OnDevice_Initialized(io::Device& dev) {

@@ -1,8 +1,10 @@
 #
 # 在 CMakeLists.txt, 檢查是否有支援 f9card 的 source code.
-# 因 ${f9_s_lib} 須連結 fon9, 所以必須在 add_subdirectory(fon9) 之後匯入此檔:
-#  add_subdirectory(fon9)
+# 要在 add_subdirectory(fon9) 之前使用 include() 加入此檔,
+# 避免在多個路徑下皆有 f9/ 造成 libf9_s 重複定義;
+#
 #  include(fon9/AddF9card.cmake)
+#  add_subdirectory(fon9)
 #
 if(NOT DEFINED F9PATH)
   set(F9PATH "${CMAKE_CURRENT_SOURCE_DIR}/f9")

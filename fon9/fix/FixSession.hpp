@@ -49,10 +49,16 @@ class fon9_API FixSession : private FixFeeder, public FixReceiver {
    fon9_NON_COPY_NON_MOVE(FixSession);
    using baseFixReceiver = FixReceiver;
    using baseFixFeeder = FixFeeder;
-   FixSessionSt   FixSt_{FixSessionSt::Disconnected};
-   uint32_t       HeartBtInt_;
-   uint32_t       HbTestCount_;
-   uint32_t       MsgReceivedCount_;
+   struct RunStImpl {
+      FixSessionSt   FixSt_{FixSessionSt::Disconnected};
+      uint32_t       HeartBtInt_;
+      uint32_t       HbTestCount_;
+      uint32_t       MsgReceivedCount_;    // 在2次Hb之間,共收到幾筆訊息.
+   };
+   using RunSt = MustLock<RunStImpl>;
+   using StLocker = RunSt::Locker;
+   RunSt          RunSt_;
+
    FixSeqNum      ResetNextSendSeq_{0}; // 用在 SendLogon() 時, 重設下一個傳送序號.
    FixSeqNum      ResetNextRecvSeq_{0}; // 當設定 FixSender_ 時, 重設下一個接收序號.
    FixRecvEvArgs  RxArgs_;
@@ -64,11 +70,12 @@ class fon9_API FixSession : private FixFeeder, public FixReceiver {
    FixSenderSP    FixSender_;
 
    bool Check1stMustLogon();
-   void SendLogonTestRequest();
-   void SetApReadyStImpl();
+   void SendLogonTestRequest(StLocker&& stLocker);
+   void SetApReadyStImpl(StLocker&& stLocker);
    void SetApReadySt() {
-      if (this->FixSt_ < FixSessionSt::ApReady)
-         this->SetApReadyStImpl();
+      StLocker stLocker = this->RunSt_.Lock();
+      if (stLocker->FixSt_ < FixSessionSt::ApReady)
+         this->SetApReadyStImpl(std::move(stLocker));
    }
    void OnLogonResponsed(const FixRecvEvArgs& rxargs, FixReceiver::GapFlags gapf);
    void ClearFixSession(FixSessionSt st);
@@ -119,7 +126,7 @@ public:
    virtual ~FixSession();
 
    FixSessionSt GetFixSessionSt() const {
-      return this->FixSt_;
+      return this->RunSt_.Lock()->FixSt_;
    }
 
    /// - Initiator: 在 OnDevice_LinkReady() 事件:
