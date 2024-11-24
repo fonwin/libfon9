@@ -199,9 +199,9 @@ void Framework::Dispose() {
 }
 
 void Framework::DisposeForAppQuit() {
+   GetDefaultTimerThread()->WaitForEndNow();
    this->Dispose();
    WaitDefaultThreadPoolQuit(GetDefaultThreadPool());
-   // TODO: GetDefaultTimerThread(); 如何結束?
 }
 
 } // namespaces

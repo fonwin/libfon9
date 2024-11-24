@@ -124,6 +124,7 @@ TimerThread::~TimerThread() {
 }
 void TimerThread::WaitForEndNow() {
    this->TimerController_.WaitForEndNow();
+   this->TimerController_.Lock()->Timers_.clear();
    JoinThread(this->Thread_);
 }
 
