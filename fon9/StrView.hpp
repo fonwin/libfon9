@@ -88,6 +88,14 @@ public:
       assert(ibegin <= this->end());
       this->Begin_ = ibegin;
    }
+   const char* IncBegin(unsigned count) {
+      assert(this->Begin_ + count <= this->End_);
+      return this->Begin_ += count;
+   }
+   const char* DecBegin(unsigned count) {
+      assert(this->Begin_ - count <= this->Begin_);
+      return this->Begin_ -= count;
+   }
 
    /// 設定結束位置: iend 必定 >= this->begin();
    /// 您必須自行確定 iend 是有效的.
