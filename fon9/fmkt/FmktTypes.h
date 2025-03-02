@@ -186,14 +186,32 @@ fon9_ENUM(f9fmkt_TradingRequestSt, uint8_t) {
    /// 建構時的初始值.
    f9fmkt_TradingRequestSt_Initialing = 0,
 
+   /// >= f9fmkt_TradingRequestSt_InternalAccepted 則表示此下單要求單已被 f9oms 接受.
+   f9fmkt_TradingRequestSt_InternalAccepted = 0x04,
+   /// 下單要求暫時存放系統之中, 等候執行.
+   f9fmkt_TradingRequestSt_WaitingRun = 0x05,
+   f9fmkt_TradingRequestSt_WaitingRunAtOther = 0x06,
+
+   /// >= f9fmkt_TradingRequestSt_Running 則表下單要求已進入執行步驟.
+   f9fmkt_TradingRequestSt_Running = 0x09,
    /// 條件單初步檢查成功, 正在等候條件成立.
    /// 條件成立後, 會繼續走 [風控、送單] 流程, 狀態依序變化.
    f9fmkt_TradingRequestSt_WaitingCond = 0x0a,
    f9fmkt_TradingRequestSt_WaitingCondAtOther = 0x0b,
 
+   // 保留:
+   // f9fmkt_OrderSt_NewStarting = 0x10,
+
+   /// 風控檢查前暫停執行.
+   /// 下次執行時: 跳過風控之前全部的步驟, 直接進行風控檢查;
+   f9fmkt_TradingRequestSt_WaitToCheck = 0x15,
    /// - 當檢查方式需要他方協助, 無法立即得到結果, 則在檢查前設定此狀態.
    /// - 如果檢查方式可立即完成:「失敗拒絕下單 or 檢查通過繼續下一步驟」, 則檢查前可以不用設定此狀態.
    f9fmkt_TradingRequestSt_Checking = 0x1c,
+   /// 準備送出前(可能為風控檢查後 or 風控檢查後的條件成立), 暫停執行.
+   /// 下次執行時: 跳過風控及條件等候,之前全部的步驟, 直接進行後續步驟(通常為送出下單要求);
+   f9fmkt_TradingRequestSt_WaitToGoOut = 0x1e,
+
    /// 下單要求排隊中.
    f9fmkt_TradingRequestSt_Queuing = 0x20,
    /// 下單要求在另一台主機排隊.
@@ -386,16 +404,24 @@ fon9_ENUM(f9fmkt_OrderSt, uint8_t) {
    ///   - 其他委託內容(例: ExgTime, Qty, Pri...)都不會變動.
    f9fmkt_OrderSt_ReportStale = 2,
 
+   /// f9fmkt_OrderSt_IniAccepted 用於 OmsOrder::Initiator() 及 OmsOrder::EndUpdate();
+   /// >= f9fmkt_OrderSt_IniAccepted 則表示此單已被 f9oms 接受.
+   /// 後續異動都可能會更新 LastOrderSt_;
+   f9fmkt_OrderSt_IniAccepted             = f9fmkt_TradingRequestSt_InternalAccepted,
+   f9fmkt_OrderSt_NewWaitingRun           = f9fmkt_TradingRequestSt_WaitingRun,
+   f9fmkt_OrderSt_NewWaitingRunAtOther    = f9fmkt_TradingRequestSt_WaitingRunAtOther,
+
+   /// >= f9fmkt_OrderSt_NewRunning 則表示新單要求已進入執行步驟.
+   f9fmkt_OrderSt_NewRunning              = f9fmkt_TradingRequestSt_Running,
    f9fmkt_OrderSt_NewWaitingCond          = f9fmkt_TradingRequestSt_WaitingCond,
    f9fmkt_OrderSt_NewWaitingCondAtOther   = f9fmkt_TradingRequestSt_WaitingCondAtOther,
       
-   /// f9fmkt_OrderSt_IniAccepted 用於 OmsOrder::Initiator() 及 OmsOrder::EndUpdate();
-   /// >= f9fmkt_OrderSt_IniAccepted 則表示此單已被 f9oms 接受.
-   /// 後續異動必須更新 LastOrderSt_;
-   f9fmkt_OrderSt_IniAccepted             = f9fmkt_OrderSt_NewWaitingCond,
-
+   /// 新單已開始執行, 之後的刪改都需要更新 BeforeQty 及 AfterQty;
    f9fmkt_OrderSt_NewStarting             = 0x10,
+   f9fmkt_OrderSt_NewWaitToCheck          = f9fmkt_TradingRequestSt_WaitToCheck,
    f9fmkt_OrderSt_NewChecking             = f9fmkt_TradingRequestSt_Checking,
+   f9fmkt_OrderSt_NewWaitToGoOut          = f9fmkt_TradingRequestSt_WaitToGoOut,
+
    f9fmkt_OrderSt_NewQueuing              = f9fmkt_TradingRequestSt_Queuing,
    f9fmkt_OrderSt_NewQueuingAtOther       = f9fmkt_TradingRequestSt_QueuingAtOther,
 
@@ -461,6 +487,20 @@ static inline int f9fmkt_OrderSt_IsAnyRejected(f9fmkt_OrderSt st) {
 }
 static inline int f9fmkt_OrderSt_IsCanceled(f9fmkt_OrderSt st) {
    return f9fmkt_OrderSt_AsCanceled <= st && st <= f9fmkt_OrderSt_UserCanceled;
+}
+
+/// 是否為已成立的委託?
+static inline int f9fmkt_OrderSt_IsRunning(f9fmkt_OrderSt st) {
+   if (fon9_LIKELY(st >= f9fmkt_OrderSt_NewRunning))
+      // 已內部刪單,不論之前是否已成立,都視為[未成立];
+      // 其餘不論是否為失敗(Rejected) or 成交 or 交易所取消... 都視為[已成立];
+      return(st != f9fmkt_OrderSt_NewQueuingCanceled);
+   // 有亂序回報, 表示委託 [已成立];
+   return(st == f9fmkt_OrderSt_ReportPending || st == f9fmkt_OrderSt_ReportStale);
+}
+/// 是否為尚未成立的委託?
+static inline int f9fmkt_OrderSt_IsNotRunning(f9fmkt_OrderSt st) {
+   return !f9fmkt_OrderSt_IsRunning(st);
 }
 
 /// \ingroup fmkt

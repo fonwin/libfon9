@@ -67,6 +67,9 @@ public:
    TradingRxSNO ForceResetRxSNO(TradingRxSNO sno) {
       return this->RxSNO_ = sno;
    }
+   void ForceResetRxKind(f9fmkt_RxKind rxKind) {
+      this->RxKind_ = rxKind;
+   }
 
    /// 將內容依照 Fields 的順序輸出到 rbuf;
    /// - 前方須包含 Name, 尾端 **不可加 '\n'**
