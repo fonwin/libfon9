@@ -274,6 +274,9 @@ fon9_ENUM(f9fmkt_TradingRequestSt, uint8_t) {
    // ** 保留最後狀態, 維運人員較容易研判問題.
    //f9fmkt_TradingRequestSt_Broken = 0xdb,
 
+   /// [St<Running:尚未成立] 的取消(刪單);
+   f9fmkt_TradingRequestSt_NotRunCanceled = 0xdc,
+
    /// 排隊中的要求被取消, 此筆要求沒送出.
    /// 可能因程式結束後重啟, 或新單排隊中但收到刪單要求.
    f9fmkt_TradingRequestSt_QueuingCanceled = 0xe2,
@@ -447,6 +450,8 @@ fon9_ENUM(f9fmkt_OrderSt, uint8_t) {
    f9fmkt_OrderSt_NewDone                 = f9fmkt_TradingRequestSt_Done,
  //f9fmkt_OrderSt_NewBroken               = f9fmkt_TradingRequestSt_Broken,
 
+   f9fmkt_OrderSt_NewNotRunCanceled       = f9fmkt_TradingRequestSt_NotRunCanceled,
+
    f9fmkt_OrderSt_NewQueuingCanceled      = f9fmkt_TradingRequestSt_QueuingCanceled,
    f9fmkt_OrderSt_NewLineRejected         = f9fmkt_TradingRequestSt_LineRejected,
    f9fmkt_OrderSt_NewOrdNoRejected        = f9fmkt_TradingRequestSt_OrdNoRejected,
@@ -492,9 +497,7 @@ static inline int f9fmkt_OrderSt_IsCanceled(f9fmkt_OrderSt st) {
 /// 是否為已成立的委託?
 static inline int f9fmkt_OrderSt_IsRunning(f9fmkt_OrderSt st) {
    if (fon9_LIKELY(st >= f9fmkt_OrderSt_NewRunning))
-      // 已內部刪單,不論之前是否已成立,都視為[未成立];
-      // 其餘不論是否為失敗(Rejected) or 成交 or 交易所取消... 都視為[已成立];
-      return(st != f9fmkt_OrderSt_NewQueuingCanceled);
+      return(st != f9fmkt_OrderSt_NewNotRunCanceled);
    // 有亂序回報, 表示委託 [已成立];
    return(st == f9fmkt_OrderSt_ReportPending || st == f9fmkt_OrderSt_ReportStale);
 }
