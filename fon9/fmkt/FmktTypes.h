@@ -21,6 +21,9 @@ fon9_ENUM(f9fmkt_RxKind, char) {
    f9fmkt_RxKind_RequestQuery  = 'Q',
    /// 修改條件單的觸發條件.
    f9fmkt_RxKind_RequestChgCond = 'c',
+   /// 強制繼續執行等候中的下單要求.
+   /// 例: 強制執行等候中的條件單;
+   f9fmkt_RxKind_RequestForceContinue = 'r',
    /// 重新嘗試某筆下單要求.
    /// 例: 某下單要求被風控阻擋, 之後風控額度開放 or 主管確認可放行, 則透過此類要求重新執行下單步驟.
    f9fmkt_RxKind_RequestRerun = 'R',
