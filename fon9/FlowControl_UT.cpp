@@ -21,7 +21,7 @@ fon9::FlowControlCalc   fcCalc;
 void TestCalcUsed(fon9::TimeStamp now, unsigned usedCount,
                   unsigned afUsedCount, fon9::TimeInterval expResult) {
    char strbuf[1024];
-   sprintf(strbuf, "fcCalc|max=%u/%g|seg=%u|Used=%3u|step=%3g|afUsed=%3u|res=% -4g",
+   snprintf(strbuf, sizeof(strbuf), "fcCalc|max=%u/%g|seg=%u|Used=%3u|step=%3g|afUsed=%3u|res=% -4g",
            fcMax, fcInterval.To<double>(), segCount, usedCount,
            (now - kStartTime).To<double>(), afUsedCount, expResult.To<double>());
    fon9_CheckTestResult(strbuf, (fcCalc.CalcUsed(now, usedCount) == expResult

@@ -143,7 +143,7 @@ void print_latencies(latencies_t& latencies) {
 
     const size_t iterations = latencies.size();
     char outbuf[1024];
-    int  outlen = sprintf(outbuf, "%'11ld|%'11ld|%'11ld|%'11ld|%'11ld|%'11ld|%'11.0f|"
+    int  outlen = snprintf(outbuf, sizeof(outbuf), "%'11ld|%'11ld|%'11ld|%'11ld|%'11ld|%'11ld|%'11.0f|"
            , latencies[(size_t)iterations * 0.5]
            , latencies[(size_t)iterations * 0.75]
            , latencies[(size_t)iterations * 0.9]
@@ -153,7 +153,7 @@ void print_latencies(latencies_t& latencies) {
            , (sum * 1.0) / iterations
         );
     for (size_t i = 3; i >= 1; --i)
-        outlen += sprintf(outbuf + outlen, "%'11ld|", latencies[iterations - i]);
+        outlen += snprintf(outbuf + outlen, sizeof(outbuf)-outlen, "%'11ld|", latencies[iterations - i]);
     puts(outbuf);
 }
 

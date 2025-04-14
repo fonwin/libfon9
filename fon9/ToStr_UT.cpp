@@ -38,8 +38,8 @@ void TestPic9ToStrRev() {
    const char fmt[] = {'%', '0', static_cast<char>(Width + '0'), 'u', 0};
    for (unsigned L = 0; L < 1234567; ++L) {
       char* pout = fon9::Pic9ToStrRev<Width>(nbuf.end(), L);
-      fon9_MSC_WARN_DISABLE(4774);//'sprintf' : format string expected in argument 2 is not a string literal
-      sprintf(nbuf.Buffer_, fmt, L);
+      fon9_MSC_WARN_DISABLE(4774);//'snprintf' : format string expected in argument 3 is not a string literal
+      snprintf(nbuf.Buffer_, sizeof(nbuf.Buffer_), fmt, L);
       fon9_MSC_WARN_POP;
       if (strcmp(nbuf.Buffer_, pout) != 0) {
          std::cout << "[ERROR] Pic9ToStrRev<" << Width << ">(" << L << ") output is '" << pout << "'" <<
@@ -76,8 +76,8 @@ void ToStr_benchmark() {
 
    stopWatch.ResetTimer();
    for (long L = -kTimes / 2; L < kTimes / 2; L++)
-      sprintf(nbuf.Buffer_, "%ld", L);
-   stopWatch.PrintResult("sprintf(long)    ", kTimes);
+      snprintf(nbuf.Buffer_, sizeof(nbuf.Buffer_), "%ld", L);
+   stopWatch.PrintResult("snprintf(long)   ", kTimes);
 
    fon9::RevBufferFixedSize<1024> rbuf;
    stopWatch.ResetTimer();
@@ -107,8 +107,8 @@ void ToStr_benchmark() {
 
    stopWatch.ResetTimer();
    for (unsigned L = 0; L < kTimes; L++)
-      sprintf(nbuf.Buffer_, "%09u", L);
-   stopWatch.PrintResult("sprintf(%09u)    ", kTimes);
+      snprintf(nbuf.Buffer_, sizeof(nbuf.Buffer_), "%09u", L);
+   stopWatch.PrintResult("snprintf(%09u)   ", kTimes);
 }
 
 int main() {

@@ -233,7 +233,7 @@ void StrTo_Benchmark() {
    sum = 0;
    nums.reserve(kTimes);
    for (int i = 0 - (kTimes / 2); i < static_cast<int>(kTimes / 2); ++i) {
-      nums.emplace_back(strbuf, sprintf(strbuf, "%d", i));
+      nums.emplace_back(strbuf, snprintf(strbuf, sizeof(strbuf), "%d", i));
       sum += i;
    }
 
@@ -290,7 +290,7 @@ void StrTo_Benchmark() {
    double dsum = 0;
    for (int i = 0 - (kTimes / 2); i < static_cast<int>(kTimes / 2); ++i) {
       L = static_cast<unsigned>((L + 1) % TestDecT::Divisor);
-      nums.emplace_back(strbuf, sprintf(strbuf, "%d.%0*u", i, TestDecT::Scale, L));
+      nums.emplace_back(strbuf, snprintf(strbuf, sizeof(strbuf), "%d.%0*u", i, TestDecT::Scale, L));
       sum = i * TestDecT::Divisor;
       if (i < 0)
          sum -= L;
@@ -299,7 +299,7 @@ void StrTo_Benchmark() {
       dsum += static_cast<double>(sum) / TestDecT::Divisor;
    }
 
-   sprintf(strbuf, "StrToNum(i%u" "d" "%u)", static_cast<unsigned>(sizeof(TestDecT)) * 8u, TestDecT::Scale);
+   snprintf(strbuf, sizeof(strbuf), "StrToNum(i%u" "d" "%u)", static_cast<unsigned>(sizeof(TestDecT)) * 8u, TestDecT::Scale);
    std::string strDecT{strbuf};
    strDecT.append(17 - strDecT.size(), ' ');
    double dchksum = 0;

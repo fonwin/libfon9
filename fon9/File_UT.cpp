@@ -244,7 +244,7 @@ int main() {
    // fat32: /dir/0..32766: ERROR_CANNOT_MAKE(82) => too_many_files_open_in_system
    for (int dL = 0; dL < 5; ++dL)
       for (int L = 0; L < 1000 * 1000; ++L) {
-         fon9::StrView fn{fname, static_cast<size_t>(sprintf(fname, "E:/dir/%d/TestWrX_%d", dL, L))};
+         fon9::StrView fn{fname, static_cast<size_t>(snprintf(fname, sizeof(fname), "E:/dir/%d/TestWrX_%d", dL, L))};
          FR fr = fd.Open(fn.ToString(), FM::Write | FM::CreatePath);
          if (!fr) {
             PrintFileResult("Open many files:", fd, fr, FR{std::errc::too_many_files_open_in_system});

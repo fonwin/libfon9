@@ -20,9 +20,11 @@ void TestHash(const char* testName, const TestCaseItem* items, size_t testCount)
    fon9::byte output[Alg::kOutputSize];
    for (size_t L = 0; L < testCount; ++L) {
       Alg::Hash(items->Value_, strlen(items->Value_), output);
-      char strout[Alg::kOutputSize * 3];
+      char  strout[Alg::kOutputSize * 3];
+      char* strbeg = strout;
+      char* strend = strout + sizeof(strout);
       for (size_t i = 0; i < Alg::kOutputSize; ++i)
-         sprintf(strout + i * 2, "%02x", output[i]);
+         strbeg += snprintf(strbeg, strend - strbeg, "%02x", output[i]);
       if (strcmp(strout, items->Result_) != 0) {
          std::cout << "|in=" << items->Value_ << "\r[ERROR] " << std::endl;
          abort();

@@ -60,7 +60,7 @@ std::ostream& operator<<(std::ostream& os, fon9::BaseFmt b) {
    return os << b.Value_;
 }
 
-// 測試單一格式: fmt = "%..."; 測試 sprintf(fmt) 與 fon9::RevPrint(fmt+1) 的結果是否相同.
+// 測試單一格式: fmt = "%..."; 測試 snprintf(fmt) 與 fon9::RevPrint(fmt+1) 的結果是否相同.
 template <typename ValueT>
 void CheckFormat(const char* fmt, ValueT value) {
    std::cout << "[TEST ] fmt=\"" << fmt << "\"" << std::setw(static_cast<int>(10 - strlen(fmt))) << "";
@@ -71,15 +71,15 @@ void CheckFormat(const char* fmt, ValueT value) {
    std::cout << "|result=\"" << rbuf.GetCurrent() << "\"";
 
    char  sbuf[1024];
-   fon9_MSC_WARN_DISABLE(4774)//C4774: 'sprintf' : format string expected in argument 2 is not a string literal
-      sprintf(sbuf, fmt, value);
+   fon9_MSC_WARN_DISABLE(4774)//'snprintf' : format string expected in argument 3 is not a string literal
+      snprintf(sbuf, sizeof(sbuf), fmt, value);
    fon9_MSC_WARN_POP;
 
    if (strcmp(sbuf, rbuf.GetCurrent()) == 0) {
       std::cout << "\r[OK   ]" << std::endl;
       return;
    }
-   std::cout << "|sprintf=\"" << sbuf << "\""
+   std::cout << "|snprintf=\"" << sbuf << "\""
       << "\r[ERROR]" << std::endl;
    abort();
 }
@@ -99,8 +99,8 @@ void CheckFormat(const strlist& fmtlist, const char* spec, ValueT value) {
       fmt += spec;
 
       char  sbuf[1024];
-      fon9_MSC_WARN_DISABLE(4774)//C4774: 'sprintf' : format string expected in argument 2 is not a string literal
-         sprintf(sbuf, fmt.c_str(), value);
+      fon9_MSC_WARN_DISABLE(4774)//C4774: 'snprintf' : format string expected in argument 3 is not a string literal
+         snprintf(sbuf, sizeof(sbuf), fmt.c_str(), value);
       fon9_MSC_WARN_POP;
 
       if (strcmp(sbuf, rbuf.GetCurrent()) == 0)
@@ -108,7 +108,7 @@ void CheckFormat(const strlist& fmtlist, const char* spec, ValueT value) {
 
       std::cout << "|fmt=\"" << fmt << "\""
          << "|result=\"" << rbuf.GetCurrent() << "\""
-         << "|sprintf=\"" << sbuf << "\""
+         << "|snprintf=\"" << sbuf << "\""
          << "\r[ERROR]" << std::endl;
       abort();
    }
@@ -118,7 +118,7 @@ void CheckFormat(const strlist& fmtlist, const char* spec, ValueT value) {
 void TestFormatOutput() {
    // CheckFormat("% #.0x", fon9::ToHex{0});
 
-   std::cout << "fon9::RevPrint(FmtDef)|sprintf()\n" << std::endl;
+   std::cout << "fon9::RevPrint(FmtDef)|snprintf()\n" << std::endl;
    // flags: ("-" or "") * ("+" or " " or "") * ("#" or "") * ("0" or "")
    strlist fmtlist = strlist{"-", ""} *strlist{"+", " "} *strlist{"#"} *strlist{"0"};
    AddWidthPrecision(fmtlist);
