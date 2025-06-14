@@ -344,7 +344,7 @@ void RcSession::SendProtocolVersion() {
    if (aux.ParamCount_ > 0)
       RevPutChar(rbuf, ':');
    RevPrint(rbuf, cstrProtocolHead cstrProtocolHeadVer);
-   this->Dev_->SendBuffered(rbuf.MoveOut());
+   this->Dev_->Send(rbuf.MoveOut());
 }
 //--------------------------------------------------------------------------//
 void RcSession::OnDevice_CommonTimer(io::Device& dev, TimeStamp now) {

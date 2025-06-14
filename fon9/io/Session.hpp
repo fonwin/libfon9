@@ -8,7 +8,7 @@
 
 namespace fon9 { namespace io {
 
-enum SendDirectResult {
+enum class SendDirectResult {
    SendError,
    Sent,
    Queue,

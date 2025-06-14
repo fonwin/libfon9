@@ -18,7 +18,7 @@ public:
    const OwnerDeviceSP  Owner_;
 
    IocpDgramImpl(OwnerDevice* owner, Socket&& so, SocketResult& soRes)
-      : base(owner->IoService_, std::move(so), soRes)
+      : base(*owner, owner->IoService_, std::move(so), soRes)
       , Owner_{owner} {
    }
 
@@ -35,7 +35,7 @@ fon9_WARN_POP;
 
 /// \ingroup io
 /// Windows Dgram(UDP,Multicast) Device 使用 IOCP.
-using IocpDgram = DeviceImpl_DeviceStartSend<IocpDgramImpl::OwnerDevice, IocpSocket>;
+using IocpDgram = DeviceIocp_DeviceStartSend<IocpDgramImpl::OwnerDevice, IocpSocket>;
 
 } } // namespaces
 #endif//__fon9_io_win_IocpDgram_hpp__

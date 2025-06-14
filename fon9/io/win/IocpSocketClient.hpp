@@ -22,8 +22,8 @@ protected:
    State State_{};
 
 public:
-   IocpSocketClientImpl(IocpServiceSP iosv, Socket&& so, SocketResult& soRes)
-      : IocpSocket(std::move(iosv), std::move(so), soRes) {
+   IocpSocketClientImpl(Device& owner, IocpServiceSP iosv, Socket&& so, SocketResult& soRes)
+      : IocpSocket(owner, std::move(iosv), std::move(so), soRes) {
    }
    bool IsClosing() const {
       return this->State_ == State::Closing;

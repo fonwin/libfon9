@@ -6,7 +6,7 @@ namespace fon9 { namespace io {
 
 void IocpDgramImpl::OpImpl_Close() {
    this->State_ = State::Closing;
-   CancelIoEx(reinterpret_cast<HANDLE>(this->Socket_.GetSocketHandle()), &this->SendOverlapped_);
+   this->CancelIocpSend();
    CancelIoEx(reinterpret_cast<HANDLE>(this->Socket_.GetSocketHandle()), &this->RecvOverlapped_);
 }
 bool IocpDgramImpl::OpImpl_ConnectTo(const SocketAddress& addr, SocketResult& soRes) {
@@ -60,7 +60,7 @@ void IocpDgramImpl::OnIocpSocket_Received(DcQueueList& rxbuf) {
 void IocpDgramImpl::OnIocpSocket_Writable(DWORD bytesTransfered) {
    if (fon9_LIKELY(this->State_ == State::Connected)) {
       OwnerDevice::ContinueSendAux aux{bytesTransfered};
-      DeviceContinueSend(*this->Owner_, this->SendBuffer_, aux);
+      DeviceContinueSend(*this->Owner_, this->SendBufferedBuffer_, aux);
    }
    else if (fon9_LIKELY(this->State_ == State::Connecting)) {
       this->State_ = State::Connected;

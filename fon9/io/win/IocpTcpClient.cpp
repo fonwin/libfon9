@@ -10,7 +10,7 @@ void IocpTcpClientImpl::OpImpl_Close() {
    if (::shutdown(this->Socket_.GetSocketHandle(), SD_SEND) != 0)
       // shutdown() 有 CancelIoEx() 的效果, 所以可以不用再呼叫 CancelIoEx().
       // 但如果 shutdown() 失敗, 有可能是 ConnectEx() 尚未完成, 所以在 shutdown() 失敗時呼叫 CancelIoEx().
-      CancelIoEx(reinterpret_cast<HANDLE>(this->Socket_.GetSocketHandle()), &this->SendOverlapped_);
+      this->CancelIocpSend();
 
    // --------------------
    // 本地 shutdown(SD_SEND) 之後:
@@ -31,11 +31,11 @@ bool IocpTcpClientImpl::OpImpl_ConnectTo(const SocketAddress& addr, SocketResult
          return false;
    }
    this->State_ = State::Connecting;
-   ZeroStruct(this->SendOverlapped_);
+   ZeroStruct(this->SendBufferedOverlapped_);
    intrusive_ptr_add_ref(this);
    if (FnConnectEx(this->Socket_.GetSocketHandle(), &addr.Addr_, addr.GetAddrLen(),
                    nullptr, 0, nullptr,//SendBuffer
-                   &this->SendOverlapped_)) {
+                   &this->SendBufferedOverlapped_)) {
    }
    else {
       int eno = WSAGetLastError();
@@ -67,7 +67,7 @@ void IocpTcpClientImpl::OnIocpSocket_Received(DcQueueList& rxbuf) {
 void IocpTcpClientImpl::OnIocpSocket_Writable(DWORD bytesTransfered) {
    if (fon9_LIKELY(this->State_ == State::Connected)) {
       OwnerDevice::ContinueSendAux aux{bytesTransfered};
-      DeviceContinueSend(*this->Owner_, this->SendBuffer_, aux);
+      DeviceContinueSend(*this->Owner_, this->SendBufferedBuffer_, aux);
    }
    else if (fon9_LIKELY(this->State_ == State::Connecting)) {
       this->State_ = State::Connected;

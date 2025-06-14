@@ -106,7 +106,7 @@ public:
    /// 透過 fon9_PutIoVectorElement(T* piov, void* dat, size_t datsz); 設定資料區塊位置&大小.
    /// \return 傳回取出的區塊數量.
    template <typename T, size_t maxCount>
-   size_t PeekBlockVector(T (&vect)[maxCount]) {
+   size_t PeekBlockVector(T (&vect)[maxCount], BufferList* split = nullptr) {
       if (this->MemCurrent_ == nullptr)
          return 0;
       fon9_PutIoVectorElement(vect, const_cast<byte*>(this->MemCurrent_), this->GetCurrBlockSize());
@@ -122,6 +122,9 @@ public:
             if (!IsEnumContains(vnode->StyleFlags_, BufferNodeVirtual::StyleFlag::AllowCrossing))
                break;
          }
+      }
+      if (node && split) {
+         this->BlockList_.cut(count, node, *split);
       }
       return count;
    }

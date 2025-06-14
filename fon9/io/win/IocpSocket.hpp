@@ -9,8 +9,6 @@
 
 namespace fon9 { namespace io {
 
-fon9_WARN_DISABLE_PADDING;
-fon9_MSC_WARN_DISABLE_NO_PUSH(4623); /* 'IocpSendASAP_AuxMem' : default constructor was implicitly defined as deleted */
 /// \ingroup io
 /// 使用 Overlapped I/O 建議 SNDBUF=0, 可以讓 WSASend(1024*1024*100) 更快返回.
 ///
@@ -31,14 +29,48 @@ class fon9_API IocpSocket : public IocpHandler {
    bool DropRecv();
 
 protected:
-   WSAOVERLAPPED  SendOverlapped_;
-   SendBuffer     SendBuffer_;
+   WSAOVERLAPPED        SendBufferedOverlapped_;
+   SendBuffer           SendBufferedBuffer_;
    const SocketAddress* SendTo_{nullptr}; // 若有效, 則使用 WSASendTo();
 
    WSAOVERLAPPED  RecvOverlapped_;
    RecvBuffer     RecvBuffer_;
 
    DWORD          Eno_{0}; // Eno_ 通常在 OnIocp_Error() 時設定, 在解構時清除 SendBuffer_ 使用.
+   CHAR           Padding___[4];
+
+   struct OverlappedSendASAP : public WSAOVERLAPPED {
+      fon9_NON_COPY_NON_MOVE(OverlappedSendASAP);
+      DcQueueList    Buffer_;
+      OverlappedSendASAP() = default;
+      ~OverlappedSendASAP() {
+      }
+   };
+   class SendASAPBufferImpl {
+      fon9_NON_COPY_NON_MOVE(SendASAPBufferImpl);
+   public:
+      const size_t   BufferSize_;
+      BufferList     Queue_;
+
+         SendASAPBufferImpl();
+      ~SendASAPBufferImpl();
+      void ForceClearBuffer(const ErrC& errc);
+      OverlappedSendASAP* FromOverlapped(OVERLAPPED* lpOverlapped);
+      const OverlappedSendASAP* FindOverlapped(OVERLAPPED* lpOverlapped) const {
+         const auto idx = fon9::unsigned_cast(static_cast<OverlappedSendASAP*>(lpOverlapped) - this->Container_);
+         return idx < this->BufferSize_ ? &this->Container_[idx] : nullptr;
+      };
+      OverlappedSendASAP* Alloc();
+      void Free(OverlappedSendASAP* ovbuf);
+      bool OnIocp_Done(OVERLAPPED* lpOverlapped, DWORD bytesTransfered);
+      void CancelIocpSend(HANDLE so);
+   private:
+      using FreeList = std::vector<OverlappedSendASAP*>;
+      OverlappedSendASAP* const  Container_;
+      FreeList                   FreeList_;
+   };
+   using SendASAPBuffer = MustLock<SendASAPBufferImpl>;
+   SendASAPBuffer     SendASAPBuffer_;
 
    virtual void OnIocp_Error(OVERLAPPED* lpOverlapped, DWORD eno) override;
    virtual void OnIocp_Done(OVERLAPPED* lpOverlapped, DWORD bytesTransfered) override;
@@ -47,19 +79,24 @@ protected:
    virtual void OnIocpSocket_Writable(DWORD bytesTransfered) = 0;
    virtual void OnIocpSocket_Error(OVERLAPPED* lpOverlapped, DWORD eno) = 0;
 
+   void CancelIocpSend();
+   Device::SendResult IocpSendASAP(SendASAPBuffer::Locker& asap, BufferList&& src);
+
 public:
    const Socket   Socket_;
+   Device&        OwnerDevice_;
 
-   IocpSocket(IocpServiceSP iosv, Socket&& so, SocketResult& soRes);
+   IocpSocket(Device& owner, IocpServiceSP iosv, Socket&& so, SocketResult& soRes);
    ~IocpSocket();
 
    virtual unsigned IocpSocketAddRef() = 0;
    virtual unsigned IocpSocketReleaseRef() = 0;
 
    StrView GetOverlappedKind(OVERLAPPED* lpOverlapped) const {
-      return lpOverlapped == &this->SendOverlapped_ ? StrView{"Send"}
-         : lpOverlapped == &this->RecvOverlapped_ ? StrView{"Recv"}
-      : StrView{"Unknown"};
+      return lpOverlapped == &this->SendBufferedOverlapped_             ? StrView{"Send"}
+           : lpOverlapped == &this->RecvOverlapped_                     ? StrView{"Recv"}
+           : this->SendASAPBuffer_.Lock()->FindOverlapped(lpOverlapped) ? StrView{"ASAP"}
+           : StrView{"Unknown"};
    }
    std::string GetErrorMessage(OVERLAPPED* lpOverlapped, DWORD eno) const;
 
@@ -86,7 +123,7 @@ public:
    //--------------------------------------------------------------------------//
 
    SendBuffer& GetSendBuffer() {
-      return this->SendBuffer_;
+      return this->SendBufferedBuffer_;
    }
    void ContinueToSend(DcQueueList& toSend) {
       this->IocpSocketAddRef();
@@ -94,51 +131,15 @@ public:
    }
    Device::SendResult SendAfterAddRef(DcQueueList& dcbuf);
 
-   struct SendASAP_AuxMem : public SendAuxMem {
-      using SendAuxMem::SendAuxMem;
-
-      Device::SendResult StartToSend(DeviceOpLocker& sc, DcQueueList& toSend) {
-         IocpSocket& impl = ContainerOf(SendBuffer::StaticCast(toSend), &IocpSocket::SendBuffer_);
-         impl.IocpSocketAddRef();
-         sc.Destroy();
-         toSend.Append(this->Src_, this->Size_);
-         return impl.SendAfterAddRef(toSend);
-      }
-   };
-
-   struct SendASAP_AuxBuf : public SendAuxBuf {
-      using SendAuxBuf::SendAuxBuf;
-
-      Device::SendResult StartToSend(DeviceOpLocker& sc, DcQueueList& toSend) {
-         IocpSocket& impl = ContainerOf(SendBuffer::StaticCast(toSend), &IocpSocket::SendBuffer_);
-         impl.IocpSocketAddRef();
-         Device& dev = sc.GetDevice();
-         sc.Destroy();
-         toSend.push_back(std::move(*this->Src_));
-         if (fon9_LIKELY(!toSend.empty()))
-            return impl.SendAfterAddRef(toSend);
-         // 會來到此處, 必定: 原本的 this->Src_ 都是 BufferNodeVirtual, 且已經 PopConsumed();
-         // 如果此時 impl.SendBuffer_ 為空, 就不需要送出了!
-         sc.Create(dev, AQueueTaskKind::Send);
-         if (fon9_LIKELY(sc.GetALocker().IsAllowInplace_)) {
-            DcQueueList* qu = impl.SendBuffer_.OpImpl_CheckSendQueue();
-            if (fon9_LIKELY(qu == nullptr)) {
-               sc.Destroy();
-               impl.IocpSocketReleaseRef();
-               return Device::SendResult{0};
-            }
-            assert(qu == &toSend && !qu->empty());
-         }
-         sc.Destroy();
-         return impl.SendAfterAddRef(toSend);
-      }
-   };
+   Device::SendResult IocpSendASAP(const void* src, size_t size);
+   Device::SendResult IocpSendASAP(BufferList&& src);
 
    struct SendBuffered_AuxMem : public SendAuxMem {
       using SendAuxMem::SendAuxMem;
+      SendBuffered_AuxMem() = delete;
 
       Device::SendResult StartToSend(DeviceOpLocker& sc, DcQueueList& toSend) {
-         IocpSocket& impl = ContainerOf(SendBuffer::StaticCast(toSend), &IocpSocket::SendBuffer_);
+         IocpSocket& impl = ContainerOf(SendBuffer::StaticCast(toSend), &IocpSocket::SendBufferedBuffer_);
          impl.IocpSocketAddRef();
          sc.Destroy();
          toSend.Append(this->Src_, this->Size_);
@@ -149,11 +150,12 @@ public:
 
    struct SendBuffered_AuxBuf : public SendAuxBuf {
       using SendAuxBuf::SendAuxBuf;
+      SendBuffered_AuxBuf() = delete;
 
       Device::SendResult StartToSend(DeviceOpLocker& sc, DcQueueList& toSend) {
-         IocpSocket& impl = ContainerOf(SendBuffer::StaticCast(toSend), &IocpSocket::SendBuffer_);
+         IocpSocket& impl = ContainerOf(SendBuffer::StaticCast(toSend), &IocpSocket::SendBufferedBuffer_);
          impl.IocpSocketAddRef();
-         // 來到此處 dev.SendBuffer_.Status_ 必定在 Sending 狀態,
+         // 來到此處 dev.SendBufferedBuffer_.Status_ 必定在 Sending 狀態,
          // 在 Sending 狀態的 SendBuffer, 會將送出要求放在另一個 Queue_ (不會是這裡的 toSend),
          // 所以這裡可以先將 sc 銷毀(解鎖), 並安全的把 this->Src_ 放到 toSend;
          sc.Destroy();
@@ -179,12 +181,11 @@ public:
       }
       void ContinueToSend(ContinueSendChecker& sc, DcQueueList& toSend) const {
          sc.Destroy();
-         IocpSocket& impl = ContainerOf(SendBuffer::StaticCast(toSend), &IocpSocket::SendBuffer_);
+         IocpSocket& impl = ContainerOf(SendBuffer::StaticCast(toSend), &IocpSocket::SendBufferedBuffer_);
          impl.ContinueToSend(toSend);
       }
    };
 };
-fon9_WARN_POP;
 
 } } // namespaces
 #endif//__fon9_io_win_IocpSocket_hpp__

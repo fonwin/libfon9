@@ -79,6 +79,26 @@ protected:
       *thisBack = *srcBack;
       *srcBack = nullptr;
    }
+   // 將 node(不含) 之後的 Nodes 移到 out 尾端;
+   void cut_back (Node** thisBack, size_t newCount, Node* newBack, SinglyLinkedList& outList, Node** outBack) {
+      assert(newCount <= this->Count_);
+      if (newBack && newCount < this->Count_) {
+         const auto outcnt = this->Count_ - newCount;
+         this->Count_ = newCount;
+         if (Node* next = newBack->GetNext()) {
+            newBack->SetNext(nullptr);
+            if (*outBack)
+               (*outBack)->SetNext(next);
+            *outBack = *thisBack;
+            outList.Count_ += outcnt;
+            if (outList.Head_ == nullptr)
+               outList.Head_ = next;
+            *thisBack = newBack;
+            assert(outList.Count_ == CalcNodeCount(outList.Head_));
+         }
+      }
+      assert(this->Count_ == CalcNodeCount(this->Head_));
+   }
 
 public:
    ~SinglyLinkedList() {
@@ -278,6 +298,11 @@ public:
       SinglyLinkedList2 tmp{std::move(*this)};
       *this = std::move(rhs);
       rhs = std::move(tmp);
+   }
+
+   // 將 node(不含) 之後的 Nodes 移到 out 尾端;
+   void cut (size_t newCount, Node* newBack, SinglyLinkedList2& outList) {
+      this->cut_back(&this->Back_, newCount, newBack, outList, &outList.Back_);
    }
 };
 

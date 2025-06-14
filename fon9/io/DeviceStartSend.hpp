@@ -92,11 +92,7 @@ struct SendAuxBuf {
 ///   // 在 sc.IsAllowInplace() && sc.ToSendingAndUnlock(sbuf) 的情況下呼叫.
 ///   // [ASAP: 立即送] or [Buffered: 啟動 Writable 偵測, 在 Writable 時送].
 ///   // - ASAP:
-///   //   - IOCP:
-///   //     - IocpSocketAddRef()
-///   //     - sc.Destroy();
-///   //     - 要送出的資料填入 toSend, 
-///   ///    - SendAfterAddRef(): 透過 WSASend(), 然後在 OnIocp_Done() 繼續送.
+///   //   - IOCP: 2025/6/14 修正, 由 IocpSocket 處理 ASAP;
 ///   //   - Fdr:
 ///   //     - 直接送出(send, write).
 ///   //     - 若有剩餘資料, 則放入 toSend, 然後啟動 writable 偵測.
@@ -153,25 +149,69 @@ class DeviceImpl_DeviceStartSend : public DeviceBase {
 public:
    using DeviceBase::DeviceBase;
 
-   Device::SendResult SendASAP(const void* src, size_t size) {
+   Device::SendResult SendASAP(const void* src, size_t size) override {
       if (size <= 0)
          return Device::SendResult{0};
       typename DeviceBase::template SendAuxImpl<typename IoImpl::SendASAP_AuxMem>   aux{src, size};
       return DeviceStartSend(*this, aux);
    }
-   Device::SendResult SendASAP(BufferList&& src) {
+   Device::SendResult SendASAP(BufferList&& src) override {
       if (src.empty())
          return Device::SendResult{0};
       typename DeviceBase::template SendAuxImpl<typename IoImpl::SendASAP_AuxBuf>   aux{src};
       return DeviceStartSend(*this, aux);
    }
-   Device::SendResult SendBuffered(const void* src, size_t size) {
+   Device::SendResult SendBuffered(const void* src, size_t size) override {
       if (size <= 0)
          return Device::SendResult{0};
       typename DeviceBase::template SendAuxImpl<typename IoImpl::SendBuffered_AuxMem>   aux{src, size};
       return DeviceStartSend(*this, aux);
    }
-   Device::SendResult SendBuffered(BufferList&& src) {
+   Device::SendResult SendBuffered(BufferList&& src) override {
+      if (src.empty())
+         return Device::SendResult{0};
+      typename DeviceBase::template SendAuxImpl<typename IoImpl::SendBuffered_AuxBuf>   aux{src};
+      return DeviceStartSend(*this, aux);
+   }
+};
+
+template <class DeviceBase, class IoImpl>
+class DeviceIocp_DeviceStartSend : public DeviceBase {
+   fon9_NON_COPY_NON_MOVE(DeviceIocp_DeviceStartSend);
+   DeviceIocp_DeviceStartSend() = delete;
+   template <class ThisT>
+   static auto TSendASAP(ThisT* pthis, const void* src, size_t size) -> decltype(pthis->ImplSP_->IocpSendASAP(src, size)) {
+      return pthis->ImplSP_->IocpSendASAP(src, size);
+   }
+   template <class ThisT>
+   static auto TSendASAP(ThisT* pthis, const void* src, size_t size) -> decltype(pthis->IocpSendASAP(src, size)) {
+      return pthis->IocpSendASAP(src, size);
+   }
+   template <class ThisT>
+   static auto TSendASAP(ThisT* pthis, BufferList&& src) -> decltype(pthis->ImplSP_->IocpSendASAP(BufferList{})) {
+      return pthis->ImplSP_->IocpSendASAP(std::move(src));
+   }
+   template <class ThisT>
+   static auto TSendASAP(ThisT* pthis, BufferList&& src) -> decltype(pthis->IocpSendASAP(BufferList{})) {
+      return pthis->IocpSendASAP(std::move(src));
+   }
+
+public:
+   using DeviceBase::DeviceBase;
+
+   Device::SendResult SendASAP(const void* src, size_t size) override {
+      return TSendASAP(this, src, size);
+   }
+   Device::SendResult SendASAP(BufferList&& src) override {
+      return TSendASAP(this, std::move(src));
+   }
+   Device::SendResult SendBuffered(const void* src, size_t size) override {
+      if (size <= 0)
+         return Device::SendResult{0};
+      typename DeviceBase::template SendAuxImpl<typename IoImpl::SendBuffered_AuxMem>   aux{src, size};
+      return DeviceStartSend(*this, aux);
+   }
+   Device::SendResult SendBuffered(BufferList&& src) override {
       if (src.empty())
          return Device::SendResult{0};
       typename DeviceBase::template SendAuxImpl<typename IoImpl::SendBuffered_AuxBuf>   aux{src};

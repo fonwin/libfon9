@@ -37,7 +37,7 @@ class IocpTcpListener::AcceptedClient : public DeviceAcceptedClient, public Iocp
          }
       };
       ContinueSendAux aux{bytesTransfered};
-      DeviceContinueSend(*this, this->SendBuffer_, aux);
+      DeviceContinueSend(*this, this->SendBufferedBuffer_, aux);
    }
 
    virtual void OpImpl_StartRecv(RecvBufferSize preallocSize) override {
@@ -51,12 +51,14 @@ class IocpTcpListener::AcceptedClient : public DeviceAcceptedClient, public Iocp
    }
 
 public:
+   fon9_MSC_WARN_DISABLE(4355); // warning C4355 : 'this' : used in base member initializer list
    AcceptedClient(IocpTcpListener& owner, Socket soAccepted, SessionSP ses, ManagerSP mgr, const DeviceOptions& optsDefault, SocketResult& soRes)
       : base(&owner, std::move(ses), std::move(mgr), &optsDefault)
-      , IocpSocket(owner.IocpService_, std::move(soAccepted), soRes) {
+      , IocpSocket(*this, owner.IocpService_, std::move(soAccepted), soRes) {
    }
+   fon9_MSC_WARN_POP;
 
-   using Impl = DeviceImpl_DeviceStartSend<DeviceAcceptedClientWithSend<AcceptedClient>, IocpSocket>;
+   using Impl = DeviceIocp_DeviceStartSend<DeviceAcceptedClientWithSend<AcceptedClient>, IocpSocket>;
 };
 
 //--------------------------------------------------------------------------//
