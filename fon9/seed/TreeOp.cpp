@@ -6,6 +6,10 @@ namespace fon9 { namespace seed {
 
 SubscribableOp::~SubscribableOp() {
 }
+OpResult SubscribableOp::CheckSubscribeRights(Tab& tab, const SeedVisitor& from) {
+   (void)tab; (void)from;
+   return OpResult::no_error;
+}
 OpResult SubscribableOp::Subscribe(SubConn* pSubConn, Tab&, FnSeedSubr) {
    return SubscribeUnsupported(pSubConn);
 }

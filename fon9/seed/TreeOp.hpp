@@ -230,6 +230,11 @@ protected:
 public:
    SubscribableOp() = default;
 
+   /// 額外檢查是否有權限訂閱.
+   /// 來到這裡之前必定已經先檢查過 ACL;
+   /// 預設傳回 OpResult::no_error;
+   virtual OpResult CheckSubscribeRights(Tab& tab, const SeedVisitor& from);
+
    /// 訂閱異動通知.
    virtual OpResult Subscribe(SubConn* pSubConn, Tab& tab, FnSeedSubr subr);
    /// 取消異動通知.

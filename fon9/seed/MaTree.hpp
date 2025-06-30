@@ -25,6 +25,30 @@ using NamedSeedContainerImpl = SortedVectorSet<NamedSeedSP, CmpNamedSeedSP>;
 // 若在 opTree 有提供訂閱, 在訂閱成功時, 可能會需要取得 gv, 因此需要使用 recursive_mutex;
 using MaTreeBase = TreeLockContainerT<NamedSeedContainerImpl, std::recursive_mutex>;
 
+class MaTreePodOp : public PodOpLocker<MaTreePodOp, MaTreeBase::Locker> {
+   fon9_NON_COPY_NON_MOVE(MaTreePodOp);
+   using base = PodOpLocker<MaTreePodOp, MaTreeBase::Locker>;
+public:
+   const NamedSeedSP Seed_;
+   bool              IsWrote_{false};
+   char              Padding____[7];
+   MaTreePodOp(const NamedSeedSP& v, Tree& sender, OpResult res, const StrView& key, MaTreeBase::Locker& locker);
+   ~MaTreePodOp();
+   void BeginWrite(Tab& tab, FnWriteOp fnCallback) override;
+   void OnVisitorCommand(Tab* tab, StrView cmdln, FnCommandResultHandler resHandler, SeedVisitor& visitor) override;
+   OpResult CheckSubscribeRights(Tab& tab, const SeedVisitor& from) override;
+   OpResult Subscribe(SubConn* pSubConn, Tab& tab, FnSeedSubr subr) override;
+   OpResult Unsubscribe(SubConn* pSubConn, Tab& tab) override;
+   OpResult SubscribeStream(SubConn* pSubConn, Tab& tab, StrView args, FnSeedSubr subr) override;
+   OpResult UnsubscribeStream(SubConn* pSubConn, Tab& tab) override;
+
+   NamedSeed& GetSeedRW(Tab&) {
+      return *this->Seed_;
+   }
+   TreeSP HandleGetSapling(Tab&);
+   void HandleSeedCommand(MaTreeBase::Locker& ulk, SeedOpResult& res, StrView cmdln, FnCommandResultHandler&& resHandler);
+};
+
 /// \ingroup seed
 /// 在 fon9 裡面, 通常會將一組相關物件集中, 然後用 **物件名字** 來管理, 例:
 /// - 系統最底層用一個 MaTree Root_; 來管理整個應用系統.
@@ -57,6 +81,12 @@ public:
    /// 呼叫 OnSeedCommand() 時, ulk 在解鎖狀態.
    virtual void OnSeedCommand(SeedOpResult& res, StrView cmdln, FnCommandResultHandler resHandler,
                               MaTreeBase::Locker&& ulk, SeedVisitor* visitor);
+
+   virtual OpResult FromPodOp_CheckSubscribeRights(Tab& tab, const SeedVisitor& from);
+   virtual OpResult FromPodOp_Subscribe(const MaTreePodOp& lk, SubConn* pSubConn, Tab& tab, FnSeedSubr subr);
+   virtual OpResult FromPodOp_Unsubscribe(const MaTreePodOp& lk, SubConn* pSubConn, Tab& tab);
+   virtual OpResult FromPodOp_SubscribeStream(const MaTreePodOp& lk, SubConn* pSubConn, Tab& tab, StrView args, FnSeedSubr subr);
+   virtual OpResult FromPodOp_UnsubscribeStream(const MaTreePodOp& lk, SubConn* pSubConn, Tab& tab);
 
    /// 應在 Parent Tree 收到 OnParentSeedClear() 時呼叫.
    /// 預設: sapling->OnParentSeedClear();
@@ -97,30 +127,8 @@ class fon9_API MaTree : public MaTreeBase {
    fon9_NON_COPY_NON_MOVE(MaTree);
    using base = MaTreeBase;
 protected:
-   fon9_WARN_DISABLE_PADDING;
-   class PodOp : public PodOpLocker<PodOp, Locker> {
-      fon9_NON_COPY_NON_MOVE(PodOp);
-      using base = PodOpLocker<PodOp, Locker>;
-   public:
-      const NamedSeedSP Seed_;
-      bool              IsWrote_{false};
-      PodOp(ContainerImpl::value_type& v, Tree& sender, OpResult res, const StrView& key, Locker& locker);
-      ~PodOp();
-      void BeginWrite(Tab& tab, FnWriteOp fnCallback) override;
-      void OnVisitorCommand(Tab* tab, StrView cmdln, FnCommandResultHandler resHandler, SeedVisitor& visitor) override;
-
-      NamedSeed& GetSeedRW(Tab&) {
-         return *this->Seed_;
-      }
-      TreeSP HandleGetSapling(Tab&) {
-         return this->Seed_->GetSapling();
-      }
-      void HandleSeedCommand(Locker& ulk, SeedOpResult& res, StrView cmdln, FnCommandResultHandler&& resHandler) {
-         this->Unlock();
-         this->Seed_->OnSeedCommand(res, cmdln, std::move(resHandler), std::move(ulk), nullptr);
-      }
-   };
-
+   friend class MaTreePodOp;
+   using PodOp = MaTreePodOp;
    class TreeOp : public fon9::seed::TreeOp {
       fon9_NON_COPY_NON_MOVE(TreeOp);
       using base = fon9::seed::TreeOp;
@@ -134,7 +142,6 @@ protected:
       // void Add(StrView strKeyText, FnPodOp fnCallback) override;
       // void Remove(StrView strKeyText, Tab* tab, FnPodRemoved fnCallback) override;
    };
-   fon9_WARN_POP;
 
    /// 在 Add() 成功返回前(尚未解鎖) 的事件通知.
    virtual void OnMaTree_AfterAdd(Locker&, NamedSeed& seed);
@@ -234,5 +241,12 @@ inline TreeSPT<T> GetNamedSapling(MaTreeSP node, StrView path) {
    return nullptr;
 }
 
+inline TreeSP MaTreePodOp::HandleGetSapling(Tab&) {
+   return this->Seed_->GetSapling();
+}
+inline void MaTreePodOp::HandleSeedCommand(MaTreeBase::Locker& ulk, SeedOpResult& res, StrView cmdln, FnCommandResultHandler&& resHandler) {
+   this->Unlock();
+   this->Seed_->OnSeedCommand(res, cmdln, std::move(resHandler), std::move(ulk), nullptr);
+}
 } } // namespaces
 #endif//__fon9_seed_MaTree_hpp__

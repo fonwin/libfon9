@@ -33,6 +33,25 @@ void NamedSeed::OnSeedCommand(SeedOpResult& res, StrView cmdln,
    res.OpResult_ = OpResult::not_supported_cmd;
    resHandler(res, nullptr);
 }
+OpResult NamedSeed::FromPodOp_CheckSubscribeRights(Tab& tab, const SeedVisitor& from) {
+   return OpResult::no_error;
+}
+OpResult NamedSeed::FromPodOp_Subscribe(const MaTreePodOp& lk, SubConn* pSubConn, Tab& tab, FnSeedSubr subr) {
+   (void)lk; (void)tab; (void)subr;
+   return SubscribeUnsupported(pSubConn);
+}
+OpResult NamedSeed::FromPodOp_Unsubscribe(const MaTreePodOp& lk, SubConn* pSubConn, Tab& tab) {
+   (void)lk; (void)pSubConn; (void)tab;
+   return OpResult::not_supported_subscribe;
+}
+OpResult NamedSeed::FromPodOp_SubscribeStream(const MaTreePodOp& lk, SubConn* pSubConn, Tab& tab, StrView args, FnSeedSubr subr) {
+   (void)lk; (void)tab; (void)args; (void)subr;
+   return SubscribeStreamUnsupported(pSubConn);
+}
+OpResult NamedSeed::FromPodOp_UnsubscribeStream(const MaTreePodOp& lk, SubConn* pSubConn, Tab& tab) {
+   (void)lk; (void)pSubConn; (void)tab;
+   return OpResult::not_supported_subscribe_stream;
+}
 TreeSP NamedSeed::GetSapling() {
    return nullptr;
 }
@@ -113,24 +132,40 @@ void MaTree::OnParentSeedClear() {
 //--------------------------------------------------------------------------//
 
 fon9_MSC_WARN_DISABLE(4355);/* 'this' : used in base member initializer list*/
-MaTree::PodOp::PodOp(ContainerImpl::value_type& v, Tree& sender, OpResult res, const StrView& key, Locker& locker)
+MaTreePodOp::MaTreePodOp(const NamedSeedSP& v, Tree& sender, OpResult res, const StrView& key, MaTreeBase::Locker& locker)
    : base{*this, sender, res, key, locker}
    , Seed_{v} {
+   assert(v.get() != nullptr);
 }
-MaTree::PodOp::~PodOp() {
+MaTreePodOp::~MaTreePodOp() {
    if (this->IsWrote_) {
       this->Lock();
       static_cast<MaTree*>(this->Sender_)->OnMaTree_AfterUpdated(this->Locker_, *this->Seed_);
    }
 }
-void MaTree::PodOp::BeginWrite(Tab& tab, FnWriteOp fnCallback) {
+void MaTreePodOp::BeginWrite(Tab& tab, FnWriteOp fnCallback) {
    base::BeginWrite(tab, std::move(fnCallback));
    this->IsWrote_ = true;
 }
-void MaTree::PodOp::OnVisitorCommand(Tab* tab, StrView cmdln, FnCommandResultHandler resHandler, SeedVisitor& visitor) {
+void MaTreePodOp::OnVisitorCommand(Tab* tab, StrView cmdln, FnCommandResultHandler resHandler, SeedVisitor& visitor) {
    this->Tab_ = tab;
    this->Unlock();
    this->Seed_->OnSeedCommand(*this, cmdln, std::move(resHandler), std::move(this->Locker_), &visitor);
+}
+OpResult MaTreePodOp::CheckSubscribeRights(Tab& tab, const SeedVisitor& from) {
+   return this->Seed_->FromPodOp_CheckSubscribeRights(tab, from);
+}
+OpResult MaTreePodOp::Subscribe(SubConn* pSubConn, Tab& tab, FnSeedSubr subr) {
+   return this->Seed_->FromPodOp_Subscribe(*this, pSubConn, tab, std::move(subr));
+}
+OpResult MaTreePodOp::Unsubscribe(SubConn* pSubConn, Tab& tab) {
+   return this->Seed_->FromPodOp_Unsubscribe(*this, pSubConn, tab);
+}
+OpResult MaTreePodOp::SubscribeStream(SubConn* pSubConn, Tab& tab, StrView args, FnSeedSubr subr) {
+   return this->Seed_->FromPodOp_SubscribeStream(*this, pSubConn, tab, args, std::move(subr));
+}
+OpResult MaTreePodOp::UnsubscribeStream(SubConn* pSubConn, Tab& tab) {
+   return this->Seed_->FromPodOp_UnsubscribeStream(*this, pSubConn, tab);
 }
 // -----------------------------------
 static void MakeNamedSeedView(NamedSeedContainerImpl::iterator ivalue, Tab* tab, RevBuffer& rbuf) {
@@ -143,8 +178,8 @@ void MaTree::TreeOp::GridView(const GridViewRequest& req, FnGridViewOp fnCallbac
                               req, std::move(fnCallback), &MakeNamedSeedView);
 }
 void MaTree::TreeOp::Get(StrView strKeyText, FnPodOp fnCallback) {
-   TreeOp_Get_MustLock<PodOp>(*this, static_cast<MaTree*>(&this->Tree_)->Container_,
-                              strKeyText, std::move(fnCallback));
+   TreeOp_Get_MustLock<MaTreePodOp>(*this, static_cast<MaTree*>(&this->Tree_)->Container_,
+                                    strKeyText, std::move(fnCallback));
 }
 fon9_WARN_POP;
 // -----------------------------------

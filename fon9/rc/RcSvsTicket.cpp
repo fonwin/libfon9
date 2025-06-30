@@ -188,7 +188,7 @@ void RcSvsSubscribeRunner::Subscribe(seed::Tree& tree, seed::Tab& tab, seed::Sub
       // 尋找 tree 的過程中, 收到 [取消訂閱] 要求.
       // 訂閱要求失敗: 因為取消訂閱.
       opErrC = static_cast<seed::OpResult>(f9sv_Result_Unsubscribed);
-   else {
+   else if (this->Visitor_.get() == nullptr || (opErrC = opSubr.CheckSubscribeRights(tab, *this->Visitor_)) == seed::OpResult::no_error) {
       note.Runner_ = this;
       auto fnSubr = std::bind(&RcSeedVisitorServerNote::OnSubscribeNotify,
                               RcSvsSubrSP{psubr}, std::placeholders::_1);

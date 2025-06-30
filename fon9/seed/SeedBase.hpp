@@ -26,6 +26,7 @@ template <class T>
 using TreeSPT = intrusive_ptr<T>;
 using TreeSP  = TreeSPT<Tree>;
 class TreeOp;
+class SeedVisitor;
 
 class Layout;
 /// \ingroup seed
