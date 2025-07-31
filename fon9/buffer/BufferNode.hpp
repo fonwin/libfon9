@@ -84,7 +84,7 @@ protected:
       Raise<std::bad_alloc>();
    }
    static constexpr BufferNodeSize GetMemBeginOffset(const BufferNode* const x = nullptr) {
-      return static_cast<BufferNodeSize>(x->MemBegin_ - reinterpret_cast<const byte*>(x));
+      return static_cast<BufferNodeSize>(x->MemBegin_ - static_cast<const byte*>(static_cast<const void*>(x)));
    }
    const byte* GetMemBegin() const {
       return this->MemBegin_;

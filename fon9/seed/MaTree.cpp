@@ -34,6 +34,7 @@ void NamedSeed::OnSeedCommand(SeedOpResult& res, StrView cmdln,
    resHandler(res, nullptr);
 }
 OpResult NamedSeed::FromPodOp_CheckSubscribeRights(Tab& tab, const SeedVisitor& from) {
+   (void)tab; (void)from;
    return OpResult::no_error;
 }
 OpResult NamedSeed::FromPodOp_Subscribe(const MaTreePodOp& lk, SubConn* pSubConn, Tab& tab, FnSeedSubr subr) {

@@ -147,6 +147,32 @@ inline void ForceZeroNonTrivial(T& r) {
 }
 
 /// \ingroup Misc
+/// 使用 memcpy 複製內容, 請小心使用;
+/// gcc 可能會有 stringop-overflow 誤判, 此時可以用此函式複製內容;
+template<class T>
+inline void ForceCopyStruct(T* dst, const T* src) {
+   memcpy(dst, src, sizeof(T));
+}
+
+/// \ingroup Misc
+/// 分配一個 T 的空間, 但不呼叫建構;
+template <class T>
+class DontCtor {
+   fon9_MSC_WARN_DISABLE(4582);// '...U::Val_': constructor is not implicitly called.
+   union U {
+      T   Val_;
+      U() {}
+   };
+   fon9_MSC_WARN_POP;
+   U U_;
+public:
+   T& operator*() { return this->U_.Val_; }
+   T* operator->() { return &this->U_.Val_; }
+   const T& operator*()  const { return this->U_.Val_; }
+   const T* operator->() const { return &this->U_.Val_; }
+};
+
+/// \ingroup Misc
 /// 判斷 T 是否為 char, byte, int8_t, uint8_t 之類的 1 byte 傳統型別.
 template <class T>
 struct IsTrivialByte {

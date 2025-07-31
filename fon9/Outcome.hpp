@@ -26,7 +26,7 @@ enum class OutcomeSt {
 [[noreturn]] fon9_API void RaiseOutcomeException(OutcomeSt st);
 
 fon9_WARN_DISABLE_PADDING;
-fon9_GCC_WARN_DISABLE("-Wstrict-aliasing");
+fon9_GCC_WARN_DISABLE_NO_PUSH("-Wstrict-aliasing");
 //fon9_MSC_WARN_DISABLE_NO_PUSH(4582  //'fon9::Outcome<Value,fon9::ErrC>::ResultTemp_': constructor is not implicitly called
 //                              4583);//'fon9::Outcome<Value,fon9::ErrC>::ResultTemp_': destructor is not implicitly called
 
@@ -175,8 +175,8 @@ public:
    void Clear() {
       switch (this->St_) {
       case OutcomeSt::NoValue: return;
-      case OutcomeSt::Result:  destroy_at(&this->GetResultImpl()); break;
-      case OutcomeSt::Error:   destroy_at(&this->GetErrorImpl());  break;
+      case OutcomeSt::Result:  fon9::destroy_at(&this->GetResultImpl()); break;
+      case OutcomeSt::Error:   fon9::destroy_at(&this->GetErrorImpl());  break;
       }
       this->St_ = OutcomeSt::NoValue;
    }
@@ -243,6 +243,7 @@ public:
 };
 fon9_WARN_POP;
 
+fon9_GCC_WARN_DISABLE("-Wmaybe-uninitialized");
 template <class RevBuffer, class ResultT, class ErrorT>
 inline void RevPrint(RevBuffer& rbuf, const Outcome<ResultT, ErrorT>& oc) {
    if (oc.IsError())
@@ -252,6 +253,7 @@ inline void RevPrint(RevBuffer& rbuf, const Outcome<ResultT, ErrorT>& oc) {
    else
       RevPrint(rbuf, "no result");
 }
+fon9_GCC_WARN_POP;
 
 //--------------------------------------------------------------------------//
 
@@ -282,6 +284,7 @@ public:
 };
 using Result3 = Result3T<ErrC>;
 
+fon9_GCC_WARN_DISABLE("-Wmaybe-uninitialized");
 template <class RevBuffer, class ErrorT>
 inline void RevPrint(RevBuffer& rbuf, const Result3T<ErrorT>& oc) {
    if (oc.IsError())
@@ -289,6 +292,7 @@ inline void RevPrint(RevBuffer& rbuf, const Result3T<ErrorT>& oc) {
    else if (oc.HasResult())
       RevPrint(rbuf, "OK");
 }
+fon9_GCC_WARN_POP;
 
 //--------------------------------------------------------------------------//
 
@@ -335,11 +339,13 @@ public:
 using Result2 = Result2T<ErrC>;
 fon9_WARN_POP;
 
+fon9_GCC_WARN_DISABLE("-Wmaybe-uninitialized");
 template <class RevBuffer, class ErrorT>
 inline void RevPrint(RevBuffer& rbuf, const Result2T<ErrorT>& oc) {
    if (oc.IsError())
       RevPrint(rbuf, "errfn=", oc.GetErrorFn(), "|err=", oc.GetError());
 }
+fon9_GCC_WARN_POP;
 
 } // namespace
 #endif//__fon9_Outcome_hpp__

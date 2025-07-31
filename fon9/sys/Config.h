@@ -47,6 +47,7 @@ extern "C" {
       #define fon9_GCC_WARN_DISABLE_NO_PUSH(warn)
       #define fon9_GCC_WARN_DISABLE(warn)
       #define fon9_GCC_WARN_POP
+      #define fon9_GCC_WARN_DISABLE_STRINGOP_OVERFLOW
 
       #define fon9_BEFORE_INCLUDE_STD  \
                fon9_MSC_WARN_DISABLE(\
@@ -96,6 +97,11 @@ extern "C" {
       #define fon9_AFTER_INCLUDE_STD
       #define fon9_WARN_DISABLE_PADDING                  fon9_GCC_MAKE_DIAG(GCC diagnostic push)
       #define fon9_WARN_POP                              fon9_GCC_WARN_POP
+      #if __GNUC__ >= 7
+      #define fon9_GCC_WARN_DISABLE_STRINGOP_OVERFLOW    fon9_GCC_WARN_DISABLE("-Wstringop-overflow")
+      #else
+      #define fon9_GCC_WARN_DISABLE_STRINGOP_OVERFLOW    fon9_GCC_MAKE_DIAG(GCC diagnostic push)
+      #endif
    #endif
    #define fon9_WARN_DISABLE_SWITCH                      fon9_MSC_WARN_DISABLE(4061 4062); fon9_GCC_WARN_DISABLE("-Wswitch")
 

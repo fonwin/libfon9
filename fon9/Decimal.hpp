@@ -282,7 +282,7 @@ inline char* ToStrRev(char* pout, const Decimal<IntTypeT, ScaleN>& value, const 
 
 template <typename IntTypeT, DecScaleT ScaleN, class AuxT = StrToDecIntAux<IntTypeT>, class ResultT = Decimal<IntTypeT, ScaleN>>
 inline ResultT StrTo(const StrView& str, ResultT value = ResultT::Null(), const char** endptr = nullptr) {
-   return ResultT::Make<ScaleN>(StrToDec(str, ScaleN, value.GetOrigValue(), endptr));
+   return ResultT::template Make<ScaleN>(StrToDec(str, ScaleN, value.GetOrigValue(), endptr));
 }
 
 //--------------------------------------------------------------------------//

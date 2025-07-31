@@ -427,6 +427,7 @@ fon9_ENUM(f9fmkt_OrderSt, uint8_t) {
    f9fmkt_OrderSt_NewWaitToCheck          = f9fmkt_TradingRequestSt_WaitToCheck,
    f9fmkt_OrderSt_NewChecking             = f9fmkt_TradingRequestSt_Checking,
    f9fmkt_OrderSt_NewWaitToGoOut          = f9fmkt_TradingRequestSt_WaitToGoOut,
+   f9fmkt_OrderSt_NewAlreadyGoOut         = f9fmkt_OrderSt_NewWaitToGoOut + 1,
 
    f9fmkt_OrderSt_NewQueuing              = f9fmkt_TradingRequestSt_Queuing,
    f9fmkt_OrderSt_NewQueuingAtOther       = f9fmkt_TradingRequestSt_QueuingAtOther,
@@ -497,6 +498,18 @@ static inline int f9fmkt_OrderSt_IsCanceled(f9fmkt_OrderSt st) {
    return f9fmkt_OrderSt_AsCanceled <= st && st <= f9fmkt_OrderSt_UserCanceled;
 }
 
+// 委託狀態(st): 為亂序回報(ReportPending) or 臭酸回報(ReportStale) or (st >= rhs);
+static inline int f9fmkt_OrderSt_IsAfterOrEqual(f9fmkt_OrderSt st, f9fmkt_OrderSt rhs) {
+   if (fon9_LIKELY(st >= rhs))
+      return true;
+   return(st == f9fmkt_OrderSt_ReportPending || st == f9fmkt_OrderSt_ReportStale);
+}
+// 委託狀態(st): st < rhs 且 沒有[亂序回報(ReportPending) or 臭酸回報(ReportStale)];
+static inline int f9fmkt_OrderSt_IsBefore(f9fmkt_OrderSt st, f9fmkt_OrderSt rhs) {
+   if (fon9_LIKELY(st < rhs))
+      return(st != f9fmkt_OrderSt_ReportPending && st != f9fmkt_OrderSt_ReportStale);
+   return false;
+}
 /// 是否為已成立的委託?
 static inline int f9fmkt_OrderSt_IsRunning(f9fmkt_OrderSt st) {
    if (fon9_LIKELY(st >= f9fmkt_OrderSt_NewRunning))

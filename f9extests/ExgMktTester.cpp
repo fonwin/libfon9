@@ -13,7 +13,8 @@ MktDataFile::MktDataFile(char* argv[]) : Size_{0}, Buffer_{nullptr} {
       perror("Open MktDataFile fail");
       return;
    }
-   const std::unique_ptr<FILE, decltype(&fclose)> fdauto{fd, &fclose};
+   using fclose_t = int(*)(FILE*); // gcc 13 不喜歡 decltype(&fclose); 會有警告;
+   const std::unique_ptr<FILE, fclose_t> fdauto{fd, &fclose};
    fseek(fd, 0, SEEK_END);
    auto fsize = ftell(fd);
    std::cout << "FileSize=" << fsize << std::endl;

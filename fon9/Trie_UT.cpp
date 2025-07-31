@@ -113,7 +113,7 @@ struct AuxTest {
 
       if (isFound != (expectKey != nullptr))
          std::cout << "|find result not expect!";
-      else if (isFound && *expectKey != GetKey(ifind))
+      else if (isFound && expectKey && *expectKey != GetKey(ifind))
          std::cout << "|key not match!";
       else {
          std::cout << "\r[OK   ]" << std::endl;

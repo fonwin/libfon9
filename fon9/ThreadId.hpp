@@ -3,6 +3,7 @@
 #ifndef __fon9_ThreadId_hpp__
 #define __fon9_ThreadId_hpp__
 #include "fon9/StrView.hpp"
+#include <stdint.h>
 
 namespace fon9 {
 

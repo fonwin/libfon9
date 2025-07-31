@@ -7,6 +7,7 @@
 namespace fon9 {
 
 fon9_WARN_DISABLE_PADDING;
+fon9_GCC_WARN_DISABLE_NO_PUSH("-Wmaybe-uninitialized");
 /// \ingroup Misc
 /// 預先保留 T 的空間, 在必要時才建立 T.
 /// 在 ~DyObj() 解構時, 如果 T 物件存在, 則自動解構T.
