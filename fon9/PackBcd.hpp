@@ -7,6 +7,7 @@
 namespace fon9 {
 
 namespace impl {
+fon9_GCC_WARN_DISABLE_STRINGOP_OVERFLOW;
 template <typename NumT, unsigned PackedWidth>
 struct AuxPackBcd {
    using next = AuxPackBcd<NumT, PackedWidth - 2>;
@@ -36,6 +37,7 @@ struct AuxPackBcd<NumT, 1> {
       *pbuf = static_cast<unsigned char>(val);
    }
 };
+fon9_GCC_WARN_POP;
 } // namespace impl
   
 /// \ingroup AlNum

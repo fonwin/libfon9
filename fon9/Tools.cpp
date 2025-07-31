@@ -4,6 +4,8 @@
 
 #ifndef fon9_WINDOWS
 #include <iconv.h>
+#include <sched.h>
+#include <pthread.h>
 #endif
 
 namespace fon9 {

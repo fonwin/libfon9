@@ -53,7 +53,7 @@ struct ExgMcToMiConv::HandlerFns {
       fon9::ToPackBcd(miPk->VersionNo_, 3u);
       fon9::ToPackBcd(miPk->BodyLength_, miPkSz - sizeof(ExgMiNoBody));
       miPk->ProdId_ = pk.ProdId_;
-      *static_cast<ExgMdDayHighLow*>(miPk) = pk;
+      ForceCopyStruct(static_cast<ExgMdDayHighLow*>(miPk), static_cast<const ExgMdDayHighLow*>(&pk));
       conv.FinalMiMessageSeq(*miPk, miPkSz, buf.MoveOut());
    }
    static void ConvI081(ExgMcToMiConv& conv, const ExgMcMessage& e) {
