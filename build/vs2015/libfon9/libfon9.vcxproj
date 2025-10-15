@@ -267,6 +267,7 @@
     <ClInclude Include="..\..\..\fon9\Named.hpp" />
     <ClInclude Include="..\..\..\fon9\NamedIx.hpp" />
     <ClInclude Include="..\..\..\fon9\PackBcd.hpp" />
+    <ClInclude Include="..\..\..\fon9\PackHex.hpp" />
     <ClInclude Include="..\..\..\fon9\PassKey.hpp" />
     <ClInclude Include="..\..\..\fon9\PkCont.hpp" />
     <ClInclude Include="..\..\..\fon9\PkReceiver.hpp" />
@@ -559,6 +560,7 @@
     <ClCompile Include="..\..\..\fon9\ObjSupplier.cpp" />
     <ClCompile Include="..\..\..\fon9\Outcome.cpp" />
     <ClCompile Include="..\..\..\fon9\Named.cpp" />
+    <ClCompile Include="..\..\..\fon9\PackHex.cpp" />
     <ClCompile Include="..\..\..\fon9\PassKey.cpp" />
     <ClCompile Include="..\..\..\fon9\PkCont.cpp" />
     <ClCompile Include="..\..\..\fon9\PkReceiver.cpp" />

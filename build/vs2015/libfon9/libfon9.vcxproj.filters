@@ -1175,6 +1175,9 @@
     <ClInclude Include="..\..\..\fon9\framework\FrameworkFlag.hpp">
       <Filter>Header Files\framework</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\fon9\PackHex.hpp">
+      <Filter>Header Files\_base\_AlNum / StrTools</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" />
@@ -1917,6 +1920,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\fon9\framework\FrameworkFlag.cpp">
       <Filter>Source Files\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\fon9\PackHex.cpp">
+      <Filter>Source Files\_base\_AlNum</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

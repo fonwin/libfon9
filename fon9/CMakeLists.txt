@@ -5,6 +5,7 @@ set(fon9src
  ToStr.cpp
  FmtDef.cpp
  ToStrFmt.cpp
+ PackHex.cpp
  TimeInterval.cpp
  TimeStamp.cpp
  RevFormat.cpp
