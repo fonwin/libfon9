@@ -39,6 +39,13 @@ struct ExgMdHead {
    fon9::PackBcd<2>  VerNo_;
    fon9::PackBcd<8>  SeqNo_;
 
+   static constexpr uint32_t GetMaxSeqNo() {
+      return 99999999;
+   }
+   static constexpr uint32_t GetFirstSeqNoAfterOverflow() {
+      return 1;
+   }
+
    ExgMdMarket GetMarket() const {
       assert((this->Market_[0] & 0xf0) == 0);
       static_assert(sizeof(this->Market_) == 1, "");

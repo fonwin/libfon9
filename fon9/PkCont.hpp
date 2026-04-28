@@ -18,8 +18,10 @@ class fon9_API PkContFeeder {
    fon9_NON_COPY_NON_MOVE(PkContFeeder);
 public:
    using SeqT = uint64_t;
+   const SeqT MaxSeqNo_;
+   const SeqT FirstSeqNoAfterOverflow_;
 
-   PkContFeeder();
+   PkContFeeder(SeqT maxSeqNo, SeqT firstSeqNoAfterOverflow);
    virtual ~PkContFeeder();
 
    void Clear();
@@ -98,7 +100,13 @@ protected:
    void CallOnReceived(const void* pk, unsigned pksz, SeqT seq) {
       this->AfterNextSeq_ = seq + 1;
       this->PkContOnReceived(pk, pksz, seq);
-      this->NextSeq_ = this->AfterNextSeq_;
+      if (fon9_LIKELY(this->AfterNextSeq_ <= this->MaxSeqNo_))
+         this->NextSeq_ = this->AfterNextSeq_;
+      else { // (this->AfterNextSeq_ > this->MaxSeqNo_)
+         this->NextSeq_ = this->AfterNextSeq_ - this->MaxSeqNo_;
+         if (this->NextSeq_ == 1)
+            this->NextSeq_ = this->FirstSeqNoAfterOverflow_;
+      }
       ++this->ReceivedCount_;
    }
 
@@ -142,7 +150,11 @@ class PkHandlerPkCont : public PkHandlerBase, public PkContFeeder {
    fon9_NON_COPY_NON_MOVE(PkHandlerPkCont);
 public:
    using PkType = typename PkHandlerBase::PkType;
-   using PkHandlerBase::PkHandlerBase;
+   template <class... ArgsT>
+   PkHandlerPkCont(ArgsT&&... args)
+      : PkHandlerBase(std::forward<ArgsT>(args)...)
+      , PkContFeeder(PkType::GetMaxSeqNo(), PkType::GetFirstSeqNoAfterOverflow()) {
+   }
    virtual ~PkHandlerPkCont() {
    }
 

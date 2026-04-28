@@ -15,6 +15,9 @@ static const fon9::TimeInterval  kMcHbInterval = fon9::TimeInterval_Second(35);
 ExgMcMessageConsumer::~ExgMcMessageConsumer() {
 }
 //--------------------------------------------------------------------------//
+ExgMcChannel::ExgMcChannel()
+ : base(ExgMcHeadChannelSeq::GetMaxSeqNo(), ExgMcHeadChannelSeq::GetFirstSeqNoAfterOverflow()) {
+}
 ExgMcChannel::~ExgMcChannel() {
    this->HbTimer_.DisposeAndWait();
 }

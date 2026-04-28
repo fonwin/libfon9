@@ -192,7 +192,7 @@ class f9twf_API ExgMcChannel : private fon9::PkContFeeder {
    void ReloadDispatch(SeqT fromSeq);
 
 public:
-   ExgMcChannel() = default;
+   ExgMcChannel();
    ~ExgMcChannel();
 
    /// 若 ExgMcReceiver 連線到 McTunnel, 應該將 Channel.WaitInterval 設為 0;

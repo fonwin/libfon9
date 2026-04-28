@@ -89,6 +89,12 @@ struct ExgMdHead0 {
 struct ExgMiHeadInfoSeq {
    fon9::PackBcd<8>  InformationSeq_;
 
+   static constexpr uint32_t GetMaxSeqNo() {
+      return 99999999;
+   }
+   static constexpr uint32_t GetFirstSeqNoAfterOverflow() {
+      return 1;
+   }
    uint64_t GetSeqNo() const {
       return fon9::PackBcdTo<uint64_t>(this->InformationSeq_);
    }
@@ -96,6 +102,13 @@ struct ExgMiHeadInfoSeq {
 struct ExgMcHeadChannelSeq {
    fon9::PackBcd<4>  ChannelId_;
    fon9::PackBcd<10> ChannelSeq_;
+
+   static constexpr uint64_t GetMaxSeqNo() {
+      return 9999999999;
+   }
+   static constexpr uint64_t GetFirstSeqNoAfterOverflow() {
+      return 1;
+   }
 
    uint16_t GetChannelId() const {
       return fon9::PackBcdTo<uint16_t>(this->ChannelId_);
