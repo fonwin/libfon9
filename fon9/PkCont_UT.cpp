@@ -9,7 +9,10 @@
 struct Feeder : public fon9::PkContFeeder {
    fon9_NON_COPY_NON_MOVE(Feeder);
    using base = fon9::PkContFeeder;
-   Feeder() {
+
+   static const SeqT kMaxSeqNo = 999;
+   static const SeqT kFirstSeqNoAfterOverflow = 1;
+   Feeder() : base{kMaxSeqNo, kFirstSeqNoAfterOverflow} {
    }
    using base::NextSeq_;
    using base::ReceivedCount_;
@@ -39,8 +42,9 @@ struct Feeder : public fon9::PkContFeeder {
             << "\r[ERROR]" << std::endl;
          abort();
       }
-      this->ExpectedNextSeq_ = seq + 1;
-      ++this->ExpectedSeq_;
+      this->ExpectedNextSeq_ = (seq == this->kMaxSeqNo) ? this->kFirstSeqNoAfterOverflow : (seq + 1);
+      if (++this->ExpectedSeq_ > this->kMaxSeqNo)
+         this->ExpectedSeq_ = this->kFirstSeqNoAfterOverflow;
       if (this->NextSeq_ != seq)
          std::cout << "|gap=[" << this->NextSeq_ << ".." << seq << ")";
    }
@@ -81,8 +85,8 @@ int main(int argc, char* argv[]) {
    TimeWaiter waiter;
    waiter.WaitFor(fon9::TimeInterval{});
 
-   const Feeder::SeqT   kSeqFrom = 123;
-   const Feeder::SeqT   kSeqTo = 200;
+   const Feeder::SeqT   kSeqFrom = Feeder::kMaxSeqNo - (Feeder::kMaxSeqNo / 2);
+   const Feeder::SeqT   kSeqTo = kSeqFrom + (Feeder::kMaxSeqNo / 3);
    Feeder         feeder;
    Feeder::SeqT   seq = kSeqFrom;
    Feeder::SeqT   pkcount = kSeqTo - kSeqFrom + 1;
@@ -109,4 +113,39 @@ int main(int argc, char* argv[]) {
       feeder.Feed(seq + L);
    waiter.WaitFor(feeder.WaitInterval_ + fon9::TimeInterval_Millisecond(1));
    feeder.CheckReceivedCount(pkcount += kGapCount + 1);
+   // -----
+   const Feeder::SeqT   kTestOvCount = 10;
+   seq = feeder.kMaxSeqNo - kTestOvCount / 2;
+   std::cout << "[TEST ] PkCont.overflow|seq=" << seq << ".." << (seq + kTestOvCount);
+   feeder.Feed(feeder.ExpectedSeq_ = seq);
+   waiter.WaitFor(feeder.WaitInterval_ + fon9::TimeInterval_Millisecond(1)); // 等候強制跳號.
+   for (Feeder::SeqT L = 0; L < kTestOvCount; ++L) {
+      seq = (seq == feeder.kMaxSeqNo ? feeder.kFirstSeqNoAfterOverflow : (seq + 1));
+      feeder.Feed(seq);
+   }
+   feeder.CheckReceivedCount(pkcount += kTestOvCount + 1);
+   // ----- 拋棄過期(or重複)封包;
+   const auto kLastOvSeq = seq;
+   feeder.Feed(seq);
+   feeder.Feed(seq - 1);
+   feeder.Feed(feeder.kMaxSeqNo - kTestOvCount / 2);
+   // ----- 正常跳號;
+   seq = kLastOvSeq + feeder.kMaxSeqNo / 3;
+   std::cout << "[TEST ] PkCont.gap|";
+   feeder.Feed(feeder.ExpectedSeq_ = seq);
+   waiter.WaitFor(feeder.WaitInterval_ + fon9::TimeInterval_Millisecond(1));
+   feeder.Feed(feeder.ExpectedSeq_ = (seq += feeder.kMaxSeqNo / 3));
+   waiter.WaitFor(feeder.WaitInterval_ + fon9::TimeInterval_Millisecond(1));
+   feeder.CheckReceivedCount(pkcount += 2);
+   // ----- Overflow 跳號;
+   seq = feeder.kMaxSeqNo - kTestOvCount / 2;
+   std::cout << "[TEST ] PkCont.overflow.disorder|seq=" << seq << ".." << kLastOvSeq;
+   feeder.Feed(feeder.ExpectedSeq_ = seq);
+   waiter.WaitFor(feeder.WaitInterval_ + fon9::TimeInterval_Millisecond(1));
+   feeder.Feed(kLastOvSeq);
+   for (Feeder::SeqT L = 0; L < kTestOvCount - 1; ++L) {
+      seq = (seq == feeder.kMaxSeqNo ? feeder.kFirstSeqNoAfterOverflow : (seq + 1));
+      feeder.Feed(seq);
+   }
+   feeder.CheckReceivedCount(pkcount += kTestOvCount + 1);
 }

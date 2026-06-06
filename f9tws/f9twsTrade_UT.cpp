@@ -354,7 +354,8 @@ class TwsMdFeeder : public f9tws::ExgMdPkReceiver {
    public:
       SymbMdMgrSP SymbMgr_;
       Fmt6Feeder(SymbMdMgrSP symbMgr)
-         : SymbMgr_(std::move(symbMgr)) {
+         : base{f9tws::ExgMdHead::GetMaxSeqNo(), f9tws::ExgMdHead::GetFirstSeqNoAfterOverflow()}
+         , SymbMgr_(std::move(symbMgr)) {
       }
       ~Fmt6Feeder() {
          this->Clear();

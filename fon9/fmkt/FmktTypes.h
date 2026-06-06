@@ -501,14 +501,14 @@ static inline int f9fmkt_OrderSt_IsCanceled(f9fmkt_OrderSt st) {
 // 委託狀態(st): 為亂序回報(ReportPending) or 臭酸回報(ReportStale) or (st >= rhs);
 static inline int f9fmkt_OrderSt_IsAfterOrEqual(f9fmkt_OrderSt st, f9fmkt_OrderSt rhs) {
    if (fon9_LIKELY(st >= rhs))
-      return true;
+      return 1;
    return(st == f9fmkt_OrderSt_ReportPending || st == f9fmkt_OrderSt_ReportStale);
 }
 // 委託狀態(st): st < rhs 且 沒有[亂序回報(ReportPending) or 臭酸回報(ReportStale)];
 static inline int f9fmkt_OrderSt_IsBefore(f9fmkt_OrderSt st, f9fmkt_OrderSt rhs) {
    if (fon9_LIKELY(st < rhs))
       return(st != f9fmkt_OrderSt_ReportPending && st != f9fmkt_OrderSt_ReportStale);
-   return false;
+   return 0;
 }
 /// 是否為已成立的委託?
 static inline int f9fmkt_OrderSt_IsRunning(f9fmkt_OrderSt st) {

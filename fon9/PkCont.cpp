@@ -64,8 +64,11 @@ __PK_RECEIVED:
       }
       const auto kMaxGapAllow = this->MaxSeqNo_ / 2;
       if (seq < this->NextSeq_) {
-         if (this->NextSeq_ - seq < kMaxGapAllow) {
+         if ((seq + this->MaxSeqNo_) - this->NextSeq_ < kMaxGapAllow) {
             // 序號可能超過 this->MaxSeqNo_ 此時序號會變小!
+            // seq 改成若沒 MaxSeqNo 的調整, 正常的序號,
+            // 這樣在 pks->insert(PkRec{seq}); 的排序才會正確;
+            // 在 pks 取出後, 再將 i->Seq_ 調整回來;
             seq += this->MaxSeqNo_ + 1;
          }
          else {
