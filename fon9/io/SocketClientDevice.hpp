@@ -160,7 +160,7 @@ public:
       bool res;
       this->OpQueue_.InplaceOrWait(AQueueTaskKind::Send, DeviceAsyncOp{[&res](Device& dev) {
          if (ClientImpl* impl = static_cast<SocketClientDeviceT*>(&dev)->ImplSP_.get())
-            res = impl->GetSendBuffer().IsEmpty();
+            res = impl->IsSendBufferEmpty();
          else
             res = true;
       }});

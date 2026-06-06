@@ -10,19 +10,8 @@
 namespace fon9 { namespace io {
 
 /// \ingroup io
-/// 使用 Overlapped I/O 建議 SNDBUF=0, 可以讓 WSASend(1024*1024*100) 更快返回.
-///
-/// | SNDBUF |      txBytes  | WSASend() elapsed(ms) |
-/// |-------:|--------------:|-----------------------|
-/// |  10240 | 1024*1024*100 | 57, 33, 30, 28...     |
-/// |      0 |             0 | 33,  3,  3,  3...     |
-///
-/// - Windows 與 Socket 相關的 Device, 因使用 Overlapped IO, 因此 SNDBUF 預設為 0
-///   - 因為不論是 SendASAP(), SendBuffered(), 都必定會先把要送的資料放到 send buffer.
-///   - 然後 WSASend() 可能會在返回前就觸發 IocpService 的 IocpDone(SendOverlapped) 事件.
-///   - 此時的 IocpDone(SendOverlapped) 事件, 因 send buffer 還在 lock, 所以無法立即處理.
-///   - 造成需要 "Async.DeviceContinueSend": DeviceStartSend.hpp: DeviceContinueSend(); 使得效率不佳.
-///   - 加上 SNDBUF=0 則會降低「WSASend()..unlock send buffer」之前就觸發「IocpDone(SendOverlapped)事件」的機率.
+/// 使用 Overlapped I/O 的 Socket;
+/// 必要時須加大 SNDBUF 的設定, 否則若有瞬間大量, 可能會造成失敗而觸發斷線事件!
 ///
 class fon9_API IocpSocket : public IocpHandler {
    fon9_NON_COPY_NON_MOVE(IocpSocket);
@@ -52,7 +41,7 @@ protected:
       const size_t   BufferSize_;
       BufferList     Queue_;
 
-         SendASAPBufferImpl();
+      SendASAPBufferImpl();
       ~SendASAPBufferImpl();
       void ForceClearBuffer(const ErrC& errc);
       OverlappedSendASAP* FromOverlapped(OVERLAPPED* lpOverlapped);
@@ -64,6 +53,9 @@ protected:
       void Free(OverlappedSendASAP* ovbuf);
       bool OnIocp_Done(OVERLAPPED* lpOverlapped, DWORD bytesTransfered);
       void CancelIocpSend(HANDLE so);
+      bool IsNoSending() const {
+         return this->Queue_.empty() && this->FreeList_.size() == this->BufferSize_;
+      }
    private:
       using FreeList = std::vector<OverlappedSendASAP*>;
       OverlappedSendASAP* const  Container_;
@@ -124,6 +116,10 @@ public:
 
    SendBuffer& GetSendBuffer() {
       return this->SendBufferedBuffer_;
+   }
+   bool IsSendBufferEmpty() const {
+      return this->SendBufferedBuffer_.IsEmpty()
+         && this->SendASAPBuffer_.ConstLock()->IsNoSending();
    }
    void ContinueToSend(DcQueueList& toSend) {
       this->IocpSocketAddRef();

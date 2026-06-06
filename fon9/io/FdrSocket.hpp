@@ -109,6 +109,9 @@ public:
    SendBuffer& GetSendBuffer() {
       return this->SendBuffer_;
    }
+   bool IsSendBufferEmpty() const {
+      return this->SendBuffer_.IsEmpty();
+   }
    void CheckSendQueueEmpty(DeviceOpLocker& sc);
 
    struct ContinueSendAux : public FdrEventAux {
