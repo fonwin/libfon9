@@ -43,7 +43,7 @@ struct ExgMdHead {
       return 99999999;
    }
    static constexpr uint32_t GetFirstSeqNoAfterOverflow() {
-      return 1;
+      return 0;
    }
 
    ExgMdMarket GetMarket() const {

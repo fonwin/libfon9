@@ -93,7 +93,7 @@ struct ExgMiHeadInfoSeq {
       return 99999999;
    }
    static constexpr uint32_t GetFirstSeqNoAfterOverflow() {
-      return 1;
+      return 0;
    }
    uint64_t GetSeqNo() const {
       return fon9::PackBcdTo<uint64_t>(this->InformationSeq_);
@@ -107,7 +107,7 @@ struct ExgMcHeadChannelSeq {
       return 9999999999;
    }
    static constexpr uint64_t GetFirstSeqNoAfterOverflow() {
-      return 1;
+      return 0;
    }
 
    uint16_t GetChannelId() const {
